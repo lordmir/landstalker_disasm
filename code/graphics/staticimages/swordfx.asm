@@ -1,0 +1,6 @@
+InvScreenTilemap:           incbin  "assets_packed\graphics\static\inventory\invtilemap.lz77"
+MagicSwordGfx:              incbin  "assets_packed\graphics\static\swordeffects\magic.lz77"
+ThunderSwordGfx:            incbin  "assets_packed\graphics\static\swordeffects\thunder.lz77"
+GaiaSwordGfx:               incbin  "assets_packed\graphics\static\swordeffects\gaia.lz77"
+IceSwordGfx:                incbin  "assets_packed\graphics\static\swordeffects\ice.lz77"
+CoinFallGfx:                incbin  "assets_packed\graphics\static\swordeffects\coinfall.lz77"
