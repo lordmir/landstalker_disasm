@@ -460,7 +460,7 @@ LookupSpriteUnknownVal6F:			  ; CODE XREF: sub_12CAE+4p
 		andi.b	#$7F,d1
 		beq.s	loc_107CE
 		move.b	SpriteGraphic(a1),d1
-		lea	UnknownSpriteLookup_1(pc),a0
+		lea	SpriteAnimFlags(pc),a0
 
 loc_107C0:					  ; CODE XREF: LookupSpriteUnknownVal6F+1Ej
 		move.b	$00000001(a0),d3

@@ -138,7 +138,7 @@ GameLoadScreen:             include "code\title\gameloadscreen.asm"
                             PadTo   $010300
                             include "code\sprites\spritefuncsjumptable.asm"
                             include "code\sprites\spritefuncs1.asm"
-UnknownSpriteLookup_1:      incbin  "assets_packed\spritedata\spritetable6F.bin"
+SpriteAnimFlags:            incbin  "assets_packed\spritedata\spriteanimflags.bin"
                             Align   $2
                             include "code\gamelogic\playbackinput.asm"
 InputPlayback:              incbin  "assets_packed\misc\playbackinputtable.bin"
