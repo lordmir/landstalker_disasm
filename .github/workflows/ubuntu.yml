@@ -48,10 +48,10 @@ jobs:
       - name: Verify US Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
-        run: grep "Checksum: F37C" build_landstalker_us.log
+        run: "grep \"Checksum: F37C\" build_landstalker_us.log"
 
       - name: Verify US Expanded Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
-        run: grep "Checksum: 7489" build_landstalker_us_expanded.log
+        run: "grep \"Checksum: 7489\" build_landstalker_us_expanded.log"
 
