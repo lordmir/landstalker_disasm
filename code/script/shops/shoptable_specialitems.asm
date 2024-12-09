@@ -1,4 +1,4 @@
-ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
+		dc.b $25	  ; DATA XREF: sub_24B48+8t
 		dc.b $14
 		dc.w $0260			  ; Gumi Inn - register
 		ScriptID    $42,$2		  ; Run	text script at offset 0x02787A
@@ -16,7 +16,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE046: PRINT MSG 0x0093, MSGBOX CLEARED, END: "{5B}Sorry, but that's my{57}rock-bottom rate.{5E}"
 		ScriptID    $47,$9		  ; Run	text script at offset 0x027884
 						  ; 0xE047: PRINT MSG 0x0094, MSGBOX CLEARED, END: "{5B}What....?{5E}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $0260			  ; Gumi Inn - map
 		ScriptID    $48,$2		  ; Run	text script at offset 0x027886
@@ -26,7 +26,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE041: PRINT MSG 0x008E, MSGBOX CLEARED, END: "{5B}What are you doing!{5E}"
 		ScriptID    $49,$5		  ; Run	text script at offset 0x027888
 						  ; 0xA049: PRINT MSG 0x0096, END: "{5B}I'll show you the{57}{5F}, OK?{58}"
-		dc.b ITM_HOTELREGISTER
+		dc.b $25
 		dc.b $14
 		dc.w $026F			  ; Ryuma inn -	register
 		ScriptID    $5A,$2		  ; Run	text script at offset 0x0278AA
@@ -44,7 +44,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE05E: PRINT MSG 0x00AB, MSGBOX CLEARED, END: "{5B}I'm afraid you don't{57}have enough golds.  So sorry.{5E}"
 		ScriptID    $5F,$9		  ; Run	text script at offset 0x0278B4
 						  ; 0xE05F: PRINT MSG 0x00AC, MSGBOX CLEARED, END: "{5B}Well, if you should{57}change your mind....{5E}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $026F			  ; Ryuma inn -	map
 		ScriptID    $60,$2		  ; Run	text script at offset 0x0278B6
@@ -54,7 +54,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE059: PRINT MSG 0x00A6, MSGBOX CLEARED, END: "{5B}Hey!{57}You have to pay	for that!!{5E}"
 		ScriptID    $61,$5		  ; Run	text script at offset 0x0278B8
 						  ; 0xA061: PRINT MSG 0x00AE, END: "{5B}You want to see{57}the {5F}?{58}"
-		dc.b ITM_HOTELREGISTER
+		dc.b $25
 		dc.b $14
 		dc.w $02BD			  ; Mercator inn - Register
 		ScriptID    $77,$2		  ; Run	text script at offset 0x0278E4
@@ -72,7 +72,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE07B: PRINT MSG 0x00C8, MSGBOX CLEARED, END: "{5B}Oops!...{57}please come	again when you{57}have more golds.{5E}"
 		ScriptID    $7C,$9		  ; Run	text script at offset 0x0278EE
 						  ; 0xE07C: PRINT MSG 0x00C9, MSGBOX CLEARED, END: "{5B}Don't you need a rest?{57}Please come again soon...{5E}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $02BD			  ; Mercator inn - map
 		ScriptID    $7D,$2		  ; Run	text script at offset 0x0278F0
@@ -82,14 +82,14 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE076: PRINT MSG 0x00C3, MSGBOX CLEARED, END: "{5B}No, no!{57}It's not a gift.{5E}"
 		ScriptID    $7E,$5		  ; Run	text script at offset 0x0278F2
 						  ; 0xA07E: PRINT MSG 0x00CB, END: "{5B}Here.{57}Let me	show you.{58}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $02CF			  ; Verla shop - map
 		ScriptJump  ShopMap_07,$2	  ; Jump to address 0x025F00
 		ScriptJump  HandleMap,$3	  ; Jump to address 0x0250B2
 		ScriptJump  ShopSteal_07,$4	  ; Jump to address 0x025EB8
 		ScriptJump  ShopConfirmMap_07,$5  ; Jump to address 0x025F0C
-		dc.b ITM_SPELLBOOK
+		dc.b $24
 		dc.b $0A
 		dc.w $02E0			  ; Destel church - spellbook
 		ScriptID    $33,$2		  ; Run	text script at offset 0x02785C
@@ -97,7 +97,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 		ScriptJump  HandleSpellbook,$3	  ; Jump to address 0x025100
 		ScriptID    $39,$4		  ; Run	text script at offset 0x027868
 						  ; 0xE039: PRINT MSG 0x0086, MSGBOX CLEARED, END: "{5B}No, no!	 Don't take it{57}outside!  The world is not{57}ready for its magical powers!{5E}"
-		dc.b ITM_HOTELREGISTER
+		dc.b $25
 		dc.b $14
 		dc.w $02D9			  ; Destel inn - register
 		ScriptID    $5A,$2		  ; Run	text script at offset 0x0278AA
@@ -115,7 +115,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE05E: PRINT MSG 0x00AB, MSGBOX CLEARED, END: "{5B}I'm afraid you don't{57}have enough golds.  So sorry.{5E}"
 		ScriptID    $5F,$9		  ; Run	text script at offset 0x0278B4
 						  ; 0xE05F: PRINT MSG 0x00AC, MSGBOX CLEARED, END: "{5B}Well, if you should{57}change your mind....{5E}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $02D9			  ; Destel inn - map
 		ScriptID    $60,$2		  ; Run	text script at offset 0x0278B6
@@ -125,7 +125,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE059: PRINT MSG 0x00A6, MSGBOX CLEARED, END: "{5B}Hey!{57}You have to pay	for that!!{5E}"
 		ScriptID    $61,$5		  ; Run	text script at offset 0x0278B8
 						  ; 0xA061: PRINT MSG 0x00AE, END: "{5B}You want to see{57}the {5F}?{58}"
-		dc.b ITM_HOTELREGISTER
+		dc.b $25
 		dc.b $14
 		dc.w $02E9			  ; Kazalt inn - register
 		ScriptID    $2B,$2		  ; Run	text script at offset 0x02784C
@@ -143,15 +143,15 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE02F: PRINT MSG 0x007C, MSGBOX CLEARED, END: "{5B}You don't have{57}enough golds, do you?{5E}"
 		ScriptID    $30,$9		  ; Run	text script at offset 0x027856
 						  ; 0xE030: PRINT MSG 0x007D, MSGBOX CLEARED, END: "{5B}What a pity....{5E}"
-		dc.b ITM_EKEEKE
+		dc.b $00
 		dc.b $06
 		dc.w $0307			  ; Mir's tower - priest room
 		ScriptJump  GainItem,$2		  ; Jump to address 0x034AD0
-		dc.b ITM_DETOXGRASS
+		dc.b $12
 		dc.b $06
 		dc.w $0307			  ; Mir's tower - priest room
 		ScriptJump  GainItem,$2		  ; Jump to address 0x034AD0
-		dc.b ITM_DETOXBOOK
+		dc.b $21
 		dc.b $18
 		dc.w $FFFF			  ; Generic - Detox book
 		ScriptID    $F,$2		  ; Run	text script at offset 0x027814
@@ -176,7 +176,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE018: PRINT MSG 0x0065, MSGBOX CLEARED, END: "{5B}Hmmm{59}.{59}.{59}.{57}No poison...{57}No detoxification needed!{5E}"
 		dc.b $01			  ; Jump to address 0x024D40
 		dc.b $00
-		dc.b ITM_ANTICURSE
+		dc.b $22
 		dc.b $18
 		dc.w $FFFF			  ; Generic - Anticurse
 		ScriptID    $19,$2		  ; Run	text script at offset 0x027828
@@ -200,7 +200,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE01D: PRINT MSG 0x006A, MSGBOX CLEARED, END: "{5B}I really want{57}to help you{59}.{59}.{59}.{57}but you're not cursed.{5E}"
 		dc.b $08			  ; Jump to address 0x025458
 		dc.b $00
-		dc.b ITM_AWAKENINGBOOK
+		dc.b $11
 		dc.b $18
 		dc.w $FFFF			  ; Generic - Awakening	book
 		ScriptID    $1E,$2		  ; Run	text script at offset 0x027832
@@ -224,7 +224,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE022: PRINT MSG 0x006F, MSGBOX CLEARED, END: "{5B}W-what...?{57}But you're not{57}hallucinating now!{5E}"
 		dc.b $02			  ; Jump to address 0x024E70
 		dc.b $00
-		dc.b ITM_RECORDBOOK
+		dc.b $23
 		dc.b $18
 		dc.w $FFFF			  ; Generic - Record book
 		ScriptJump  HandleIdentifyRecordBook,$2	; Jump to address 0x025F18
@@ -237,7 +237,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 		ScriptJump  RequestGameContineMsg,$9 ; Jump to address 0x025F40
 		ScriptJump  ConfirmGameContinueMsg,$A ;	Jump to	address	0x025F48
 		ScriptJump  ConfirmGameStopMsg,$B ; Jump to address 0x025F50
-		dc.b ITM_HOTELREGISTER
+		dc.b $25
 		dc.b $14
 		dc.w $FFFF			  ; Generic - Hotel Register
 		ScriptID    $2B,$2		  ; Run	text script at offset 0x02784C
@@ -255,7 +255,7 @@ ShopSpecialItemsScript:dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
 						  ; 0xE02F: PRINT MSG 0x007C, MSGBOX CLEARED, END: "{5B}You don't have{57}enough golds, do you?{5E}"
 		ScriptID    $30,$9		  ; Run	text script at offset 0x027856
 						  ; 0xE030: PRINT MSG 0x007D, MSGBOX CLEARED, END: "{5B}What a pity....{5E}"
-		dc.b ITM_ISLANDMAP
+		dc.b $26
 		dc.b $0C
 		dc.w $FFFF			  ; Generic - Island Map
 		ScriptID    $31,$2		  ; Run	text script at offset 0x027858

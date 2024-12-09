@@ -1,4 +1,4 @@
-CharacterScriptTable:ScriptJump	 CS_0000,$0	  ; DATA XREF: PlayerTalk+26t
+		ScriptJump	 CS_0000,$0	  ; DATA XREF: PlayerTalk+26t
 						  ; Mayor (0x00) : Jump	to address 0x025F98
 		ScriptJump  CS_0001,$1		  ; Fara (0x01)	: Jump to address 0x025FB2
 		ScriptJump  CS_0002,$2		  ; Hahna (0x02) : Jump	to address 0x025FF0
