@@ -1,0 +1,57 @@
+name: build-ubuntu
+
+on:
+  push:
+  release:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-release:
+    name: Linux build
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: Release
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          path: landstalker_disasm
+
+      - name: Archive sources
+        working-directory: ${{github.workspace}}/
+        shell: bash
+        run: tar zvcf landstalker_disasm_sources.tar.gz landstalker_disasm/
+
+      - name: Install Dependencies
+        shell: bash
+        run: |
+             sudo apt-get update
+             sudo apt-get install -y \
+                wine \
+                python3 \
+                build-essential
+
+      - name: Build US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build.sh | tee build_landstalker_us.log
+
+      - name: Build Expanded US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build_expanded.sh | tee build_landstalker_us_expanded.log
+
+      - name: Verify US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: grep "Checksum: F37C" build_landstalker_us.log
+
+      - name: Verify US Expanded Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: grep "Checksum: 7489" build_landstalker_us_expanded.log
+
