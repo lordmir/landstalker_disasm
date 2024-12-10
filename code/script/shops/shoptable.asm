@@ -1,4 +1,4 @@
-ShopScript:	dc.w $0254			  ; DATA XREF: sub_24A98+2At
+		dc.w $0254			  ; DATA XREF: sub_24A98+2At
 						  ; sub_24D0C+At
 						  ; Massan Shop
 		dc.b $10			  ; Items/services normal price

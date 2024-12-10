@@ -1,0 +1,69 @@
+name: build-ubuntu
+
+on:
+  push:
+  release:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-release:
+    name: Linux build
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: Release
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          path: landstalker_disasm
+
+      - name: Archive sources
+        working-directory: ${{github.workspace}}/
+        shell: bash
+        run: tar zvcf landstalker_disasm_sources.tar.gz landstalker_disasm/
+
+      - name: Install Dependencies
+        shell: bash
+        run: |
+             sudo apt-get update
+             sudo apt-get install -y \
+                python3 \
+                build-essential
+
+      - name: Install Wine
+        shell: bash
+        run: |
+             sudo dpkg --add-architecture i386
+             sudo mkdir -pm755 /etc/apt/keyrings && sudo wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+             sudo wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
+             sudo apt-get update
+             sudo apt install --install-recommends winehq-stable
+
+      - name: Build US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build.sh | tee build_landstalker_us.log
+
+      - name: Build Expanded US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build_expanded.sh | tee build_landstalker_us_expanded.log
+
+      - name: Verify US Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: |
+             grep "Checksum: F37C" build_landstalker_us.log
+             echo ad9f49cf2d528ee40fab74f8687ed908036873e54a7dd30c5dc32286c29fc614 landstalker.bin | sha256sum -c
+
+      - name: Verify US Expanded Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: |
+             grep "Checksum: 7489" build_landstalker_us_expanded.log
+             echo e90a902363eb23425a2a6a0946c5f656b1817c9bbcf3e35e3e26491bfaadee91 landstalker_expanded.bin | sha256sum -c
+
