@@ -2075,8 +2075,13 @@ loc_266CE:					  ; CODE XREF: ROM:000266C6j
 		bsr.w	GetYesNoAnswer
 		bcc.s	loc_266DE
 		trap	#$01			  ; Trap01Handler
-		move.b	$00000016(sp,d6.w),(a3)
-
+; ---------------------------------------------------------------------------
+        ScriptID    $2CD,$0       ; Run text script at offset 0x027D90
+                                  ; 0x1553: SET BIT 3 OF FLAG 0x02A
+                                  ; 0xA28F: PRINT MSG 0x02DC, END: "{5B}You agree?  Great!!{57}It looks like I'm a drugstore{57}owner from now on!{62}"
+; ---------------------------------------------------------------------------
+        bra.s   loc_266F4
+; ---------------------------------------------------------------------------
 loc_266DE:					  ; CODE XREF: ROM:000266D6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
