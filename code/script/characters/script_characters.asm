@@ -2073,7 +2073,13 @@ CS_00C0_3:					  ; CODE XREF: ROM:000266C6j
 		bsr.w	GetYesNoAnswer
 		bcc.s	CS_00C0_4
 		trap	#$01			  ; Trap01Handler
-		move.b	$00000016(sp,d6.w),(a3)
+; ---------------------------------------------------------------------------
+		ScriptID    $2CD,$0		  ; Run	text script at offset 0x027D90
+						  ; 0x1553: SET	BIT 3 OF FLAG 0x02A
+						  ; 0xA28F: PRINT MSG 0x02DC, END: "{5B}You agree?  Great!!{57}It looks	like I'm a drugstore{57}owner from now on!{62}"
+; ---------------------------------------------------------------------------
+		bra.s	CS_00C0_6
+; ---------------------------------------------------------------------------
 
 CS_00C0_4:					  ; CODE XREF: ROM:000266D6j
 		trap	#$01			  ; Trap01Handler
@@ -2102,7 +2108,8 @@ CS_00C0_5:					  ; CODE XREF: ROM:000266E6j
 		bra.s	CS_00C0_3
 ; ---------------------------------------------------------------------------
 
-CS_00C0_6:					  ; CODE XREF: ROM:000266ECj
+CS_00C0_6:					  ; CODE XREF: ROM:000266DCj
+						  ; ROM:000266ECj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2D0,$0		  ; Run	text script at offset 0x027D96

@@ -13,7 +13,7 @@ loc_10F52:					  ; CODE XREF: ProcessTriggerAction+280j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_10F56:					  ; CODE XREF: ProcessTriggerAction:TriggerActionJumpTablej
+TA_00:						  ; CODE XREF: ProcessTriggerAction:TriggerActionJumpTablej
 		lea	(Sprite1_X).l,a0	  ; First dungeon: boulder trap
 		tst.b	FallRate(a0)
 		bpl.s	loc_10F82
@@ -46,7 +46,7 @@ loc_10F82:					  ; CODE XREF: ProcessTriggerAction+262j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_10FBA:					  ; CODE XREF: ROM:00010D0Cj
+TA_01:						  ; CODE XREF: ROM:00010D0Cj
 		lea	(Player_X).l,a0
 		moveq	#$0000000F,d7
 		move.l	a5,d1
@@ -66,7 +66,7 @@ loc_10FDC:					  ; CODE XREF: ROM:00010FD4j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_10FE8:					  ; CODE XREF: ROM:00010D10j
+TA_02:						  ; CODE XREF: ROM:00010D10j
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
 
@@ -87,7 +87,7 @@ loc_1100C:					  ; CODE XREF: ROM:00010FFAj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11018:					  ; CODE XREF: ROM:00010D14j
+TA_03:						  ; CODE XREF: ROM:00010D14j
 		tst.b	(Sprite6_Flags2).l
 		bpl.w	loc_10F4C
 		btst	#$03,(g_Flags+$A).l
@@ -95,7 +95,7 @@ loc_11018:					  ; CODE XREF: ROM:00010D14j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11032:					  ; CODE XREF: ROM:00010D18j
+TA_04:						  ; CODE XREF: ROM:00010D18j
 		tst.b	(Sprite7_Flags2).l
 		bpl.w	loc_10F4C
 		btst	#$03,(g_Flags+$A).l
@@ -103,7 +103,7 @@ loc_11032:					  ; CODE XREF: ROM:00010D18j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_1104C:					  ; CODE XREF: ROM:00010D1Cj
+TA_05:						  ; CODE XREF: ROM:00010D1Cj
 		tst.b	(Sprite8_Flags2).l
 		bpl.w	loc_10F4C
 		btst	#$03,(g_Flags+$A).l
@@ -111,7 +111,7 @@ loc_1104C:					  ; CODE XREF: ROM:00010D1Cj
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11066:					  ; CODE XREF: ROM:00010D20j
+TA_06:						  ; CODE XREF: ROM:00010D20j
 		lea	(Player_X).l,a0
 		moveq	#$0000000F,d7
 		move.l	a5,d1
@@ -131,13 +131,13 @@ loc_11088:					  ; CODE XREF: ROM:00011080j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11094:					  ; CODE XREF: ROM:00010D24j
+TA_07:						  ; CODE XREF: ROM:00010D24j
 		cmpi.b	#$0F,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_110A4:					  ; CODE XREF: ROM:00010D28j
+TA_08:						  ; CODE XREF: ROM:00010D28j
 		btst	#$01,(g_Flags+2).l
 		bne.w	loc_10F52
 		cmpi.b	#$35,(Player_X).l
@@ -149,7 +149,7 @@ loc_110A4:					  ; CODE XREF: ROM:00010D28j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_110D8:					  ; CODE XREF: ROM:00010D2Cj
+TA_09:						  ; CODE XREF: ROM:00010D2Cj
 		cmpi.b	#$30,(Player_Y).l
 		bne.w	loc_10F52
 		tst.w	(g_ControllerPlayback).l
@@ -157,7 +157,7 @@ loc_110D8:					  ; CODE XREF: ROM:00010D2Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_110F2:					  ; CODE XREF: ROM:00010D30j
+TA_0A:						  ; CODE XREF: ROM:00010D30j
 		cmpi.b	#$15,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$07,(Player_SubY).l
@@ -173,7 +173,7 @@ loc_110F2:					  ; CODE XREF: ROM:00010D30j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11136:					  ; CODE XREF: ROM:00010D34j
+TA_0B:						  ; CODE XREF: ROM:00010D34j
 		cmpi.w	#$1628,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$07,(Player_SubY).l
@@ -185,7 +185,7 @@ loc_11136:					  ; CODE XREF: ROM:00010D34j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11164:					  ; CODE XREF: ROM:00010D38j
+TA_0C:						  ; CODE XREF: ROM:00010D38j
 		cmpi.w	#$1828,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.w	#$0060,(Player_Z).l
@@ -195,7 +195,7 @@ loc_11164:					  ; CODE XREF: ROM:00010D38j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1118A:					  ; CODE XREF: ROM:00010D3Cj
+TA_0D:						  ; CODE XREF: ROM:00010D3Cj
 		cmpi.b	#$22,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$20,(Player_FloorHeight).l
@@ -203,7 +203,7 @@ loc_1118A:					  ; CODE XREF: ROM:00010D3Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_111A6:					  ; CODE XREF: ROM:00010D40j
+TA_0E:						  ; CODE XREF: ROM:00010D40j
 		cmpi.b	#$1C,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$13,(Player_Y).l
@@ -219,7 +219,7 @@ loc_111A6:					  ; CODE XREF: ROM:00010D40j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_111F0:					  ; CODE XREF: ROM:00010D44j
+TA_0F:						  ; CODE XREF: ROM:00010D44j
 		btst	#$05,(g_Flags).l
 		bne.w	loc_10F52
 		cmpi.b	#$1E,(Player_X).l
@@ -233,7 +233,7 @@ loc_1121E:					  ; CODE XREF: ROM:00011210j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11222:					  ; CODE XREF: ROM:00010D48j
+TA_10:						  ; CODE XREF: ROM:00010D48j
 		cmpi.b	#$27,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$26,(Player_Y).l
@@ -245,7 +245,7 @@ loc_11222:					  ; CODE XREF: ROM:00010D48j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11256:					  ; CODE XREF: ROM:00010D4Cj
+TA_11:						  ; CODE XREF: ROM:00010D4Cj
 		cmpi.w	#$0008,(Player_Z).l
 		bne.w	loc_10F52
 		tst.l	(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
@@ -262,19 +262,19 @@ loc_11256:					  ; CODE XREF: ROM:00010D4Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11270:					  ; CODE XREF: ROM:00010D50j
+TA_12:						  ; CODE XREF: ROM:00010D50j
 		cmpi.b	#$27,(Player_Y).l
 		bcs.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11280:					  ; CODE XREF: ROM:00010D54j
+TA_13:						  ; CODE XREF: ROM:00010D54j
 		cmpi.b	#$20,(Player_Y).l
 		bhi.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11290:					  ; CODE XREF: ROM:00010D58j
+TA_14:						  ; CODE XREF: ROM:00010D58j
 		move.b	(Player_X).l,d0
 		andi.b	#$FE,d0
 		cmpi.b	#$34,d0
@@ -288,7 +288,7 @@ loc_11290:					  ; CODE XREF: ROM:00010D58j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_112CA:					  ; CODE XREF: ROM:00010D5Cj
+TA_15:						  ; CODE XREF: ROM:00010D5Cj
 		cmpi.w	#$0008,(Player_Z).l
 		bne.w	loc_10F52
 		tst.l	(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
@@ -305,7 +305,7 @@ loc_112CA:					  ; CODE XREF: ROM:00010D5Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_112E4:					  ; CODE XREF: ROM:00010D60j
+TA_16:						  ; CODE XREF: ROM:00010D60j
 		cmpi.w	#$1819,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$07,(Player_SubX).l
@@ -318,7 +318,7 @@ loc_112E4:					  ; CODE XREF: ROM:00010D60j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1130A:					  ; CODE XREF: ROM:00010D64j
+TA_17:						  ; CODE XREF: ROM:00010D64j
 		cmpi.b	#$0A,(g_ControllerPlayback).l
 		bne.w	loc_10F52
 		btst	#$01,(g_Flags+4).l
@@ -326,13 +326,13 @@ loc_1130A:					  ; CODE XREF: ROM:00010D64j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11326:					  ; CODE XREF: ROM:00010D68j
+TA_18:						  ; CODE XREF: ROM:00010D68j
 		cmpi.b	#$1C,(Player_X).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11336:					  ; CODE XREF: ROM:00010D6Cj
+TA_19:						  ; CODE XREF: ROM:00010D6Cj
 		cmpi.b	#$2C,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$21,(Player_Y).l
@@ -340,7 +340,7 @@ loc_11336:					  ; CODE XREF: ROM:00010D6Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11352:					  ; CODE XREF: ROM:00010D70j
+TA_1A:						  ; CODE XREF: ROM:00010D70j
 		cmpi.b	#$24,(Player_X).l
 		bne.w	loc_10F52
 		trap	#$00			  ; Trap00Handler
@@ -350,7 +350,7 @@ loc_11352:					  ; CODE XREF: ROM:00010D70j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11366:					  ; CODE XREF: ROM:00010D74j
+TA_1B:						  ; CODE XREF: ROM:00010D74j
 		cmpi.b	#$13,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$21,(Player_Y).l
@@ -360,7 +360,7 @@ loc_11366:					  ; CODE XREF: ROM:00010D74j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1138E:					  ; CODE XREF: ROM:00010D78j
+TA_1C:						  ; CODE XREF: ROM:00010D78j
 		cmpi.b	#$0F,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$25,(Player_X).l
@@ -370,7 +370,7 @@ loc_1138E:					  ; CODE XREF: ROM:00010D78j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_113B6:					  ; CODE XREF: ROM:00010D7Cj
+TA_1D:						  ; CODE XREF: ROM:00010D7Cj
 		cmpi.b	#$25,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$27,(Player_X).l
@@ -382,7 +382,7 @@ loc_113B6:					  ; CODE XREF: ROM:00010D7Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_113EA:					  ; CODE XREF: ROM:00010D80j
+TA_1E:						  ; CODE XREF: ROM:00010D80j
 		lea	(Player_X).l,a0
 		moveq	#$0000000F,d7
 		move.l	a5,d1
@@ -402,7 +402,7 @@ loc_1140C:					  ; CODE XREF: ROM:00011404j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11418:					  ; CODE XREF: ROM:00010D84j
+TA_1F:						  ; CODE XREF: ROM:00010D84j
 		cmpi.w	#$0180,(Sprite2_SpriteUnderneath).l
 		beq.s	loc_11438
 		cmpi.w	#$0200,(Sprite2_SpriteUnderneath).l
@@ -415,7 +415,7 @@ loc_11438:					  ; CODE XREF: ROM:00011420j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1143C:					  ; CODE XREF: ROM:00010D88j
+TA_20:						  ; CODE XREF: ROM:00010D88j
 		move.b	(Sprite2_Action+1).l,d0
 		andi.b	#$3F,d0
 		bne.w	loc_10F52
@@ -432,7 +432,7 @@ loc_11464:					  ; CODE XREF: ROM:00011456j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11478:					  ; CODE XREF: ROM:00010D8Cj
+TA_21:						  ; CODE XREF: ROM:00010D8Cj
 		move.b	#$01,d0
 		cmpi.w	#$0180,(Sprite2_SpriteUnderneath).l
 		beq.s	loc_114A4
@@ -449,7 +449,7 @@ loc_114A4:					  ; CODE XREF: ROM:00011484j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_114AE:					  ; CODE XREF: ROM:00010D90j
+TA_22:						  ; CODE XREF: ROM:00010D90j
 		lea	(Sprite1_X).l,a0
 		moveq	#$00000006,d7
 
@@ -466,13 +466,13 @@ loc_114B6:					  ; CODE XREF: ROM:000114D6j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_114DE:					  ; CODE XREF: ROM:00010D94j
+TA_23:						  ; CODE XREF: ROM:00010D94j
 		cmpi.b	#$18,(Player_Y).l
 		bhi.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_114EE:					  ; CODE XREF: ROM:00010D98j
+TA_24:						  ; CODE XREF: ROM:00010D98j
 		cmpi.w	#$121B,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.w	#$0808,(Player_SubX).l
@@ -480,7 +480,7 @@ loc_114EE:					  ; CODE XREF: ROM:00010D98j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1150A:					  ; CODE XREF: ROM:00010D9Cj
+TA_25:						  ; CODE XREF: ROM:00010D9Cj
 		cmpi.b	#$18,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubY).l
@@ -488,7 +488,7 @@ loc_1150A:					  ; CODE XREF: ROM:00010D9Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11526:					  ; CODE XREF: ROM:00010DA0j
+TA_26:						  ; CODE XREF: ROM:00010DA0j
 		cmpi.b	#$16,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubX).l
@@ -496,7 +496,7 @@ loc_11526:					  ; CODE XREF: ROM:00010DA0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11542:					  ; CODE XREF: ROM:00010DA4j
+TA_27:						  ; CODE XREF: ROM:00010DA4j
 		move.b	(Player_X).l,d0
 		andi.b	#$FE,d0
 		cmpi.b	#$18,d0
@@ -511,7 +511,7 @@ loc_11542:					  ; CODE XREF: ROM:00010DA4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11570:					  ; CODE XREF: ROM:00010DA8j
+TA_28:						  ; CODE XREF: ROM:00010DA8j
 		cmpi.b	#$1B,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubY).l
@@ -519,7 +519,7 @@ loc_11570:					  ; CODE XREF: ROM:00010DA8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1158C:					  ; CODE XREF: ROM:00010DACj
+TA_29:						  ; CODE XREF: ROM:00010DACj
 		cmpi.b	#$18,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubX).l
@@ -527,7 +527,7 @@ loc_1158C:					  ; CODE XREF: ROM:00010DACj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_115A8:					  ; CODE XREF: ROM:00010DB0j
+TA_2A:						  ; CODE XREF: ROM:00010DB0j
 		cmpi.b	#$16,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$11,(Player_Y).l
@@ -541,7 +541,7 @@ loc_115CA:					  ; CODE XREF: ROM:000115BCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_115DA:					  ; CODE XREF: ROM:00010DB4j
+TA_2B:						  ; CODE XREF: ROM:00010DB4j
 		cmpi.b	#$15,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubX).l
@@ -549,19 +549,19 @@ loc_115DA:					  ; CODE XREF: ROM:00010DB4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_115F6:					  ; CODE XREF: ROM:00010DB8j
+TA_2C:						  ; CODE XREF: ROM:00010DB8j
 		cmpi.b	#$17,(Sprite1_HitBoxZEnd+1).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11606:					  ; CODE XREF: ROM:00010DBCj
+TA_2D:						  ; CODE XREF: ROM:00010DBCj
 		tst.w	(Player_SpriteUnderneath).l
 		bmi.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11614:					  ; CODE XREF: ROM:00010DC0j
+TA_2E:						  ; CODE XREF: ROM:00010DC0j
 		cmpi.b	#$19,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$20,(Player_FloorHeight).l
@@ -569,7 +569,7 @@ loc_11614:					  ; CODE XREF: ROM:00010DC0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11630:					  ; CODE XREF: ROM:00010DC4j
+TA_2F:						  ; CODE XREF: ROM:00010DC4j
 		move.w	(Player_X).l,d0
 		andi.w	#$FEFE,d0
 		cmpi.w	#$2220,d0
@@ -579,7 +579,7 @@ loc_11630:					  ; CODE XREF: ROM:00010DC4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11652:					  ; CODE XREF: ROM:00010DC8j
+TA_30:						  ; CODE XREF: ROM:00010DC8j
 		tst.b	(Sprite1_FallRate).l
 		bmi.w	loc_10F52
 		tst.b	(Sprite1_Flags2).l
@@ -591,7 +591,7 @@ loc_11652:					  ; CODE XREF: ROM:00010DC8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1167E:					  ; CODE XREF: ROM:00010DCCj
+TA_31:						  ; CODE XREF: ROM:00010DCCj
 		tst.b	(Sprite2_Flags2).l
 		bmi.w	loc_10F52
 		tst.b	(Sprite3_Flags2).l
@@ -599,13 +599,13 @@ loc_1167E:					  ; CODE XREF: ROM:00010DCCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11696:					  ; CODE XREF: ROM:00010DD0j
+TA_32:						  ; CODE XREF: ROM:00010DD0j
 		tst.b	(Sprite3_Flags2).l
 		bmi.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_116A4:					  ; CODE XREF: ROM:00010DD4j
+TA_33:						  ; CODE XREF: ROM:00010DD4j
 		move.w	(Player_Action).l,d0	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -621,13 +621,13 @@ loc_116A4:					  ; CODE XREF: ROM:00010DD4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_116B6:					  ; CODE XREF: ROM:00010DD8j
+TA_34:						  ; CODE XREF: ROM:00010DD8j
 		cmpi.w	#$1C14,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_116C6:					  ; CODE XREF: ROM:00010DDCj
+TA_35:						  ; CODE XREF: ROM:00010DDCj
 		move.w	(Player_Action).l,d0	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -643,7 +643,7 @@ loc_116C6:					  ; CODE XREF: ROM:00010DDCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_116D8:					  ; CODE XREF: ROM:00010DE0j
+TA_36:						  ; CODE XREF: ROM:00010DE0j
 		btst	#$04,(g_Flags+$15).l
 		bne.w	loc_10F52
 		cmpi.w	#$1317,(Player_X).l
@@ -667,7 +667,7 @@ loc_11724:					  ; CODE XREF: ROM:000116ECj
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11730:					  ; CODE XREF: ROM:00010DE4j
+TA_37:						  ; CODE XREF: ROM:00010DE4j
 		lea	(Sprite1_X).l,a1
 		jsr	(j_CheckIfChestOpened).l
 		bne.w	loc_10F4C
@@ -683,7 +683,7 @@ loc_11730:					  ; CODE XREF: ROM:00010DE4j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11774:					  ; CODE XREF: ROM:00010DE8j
+TA_38:						  ; CODE XREF: ROM:00010DE8j
 		tst.b	(Sprite1_Flags2).l
 		bmi.w	loc_10F52
 		tst.b	(Sprite2_Flags2).l
@@ -703,7 +703,7 @@ loc_11774:					  ; CODE XREF: ROM:00010DE8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_117CC:					  ; CODE XREF: ROM:00010DECj
+TA_39:						  ; CODE XREF: ROM:00010DECj
 		cmpi.w	#$273D,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.w	#$0018,(Player_Z).l
@@ -711,7 +711,7 @@ loc_117CC:					  ; CODE XREF: ROM:00010DECj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_117E8:					  ; CODE XREF: ROM:00010DF0j
+TA_3A:						  ; CODE XREF: ROM:00010DF0j
 		move.b	#ITM_ARMLET,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -719,7 +719,7 @@ loc_117E8:					  ; CODE XREF: ROM:00010DF0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_117FC:					  ; CODE XREF: ROM:00010DF4j
+TA_3B:						  ; CODE XREF: ROM:00010DF4j
 		cmpi.b	#$15,(Player_X).l
 		beq.s	loc_11812
 		cmpi.b	#$16,(Player_X).l
@@ -731,7 +731,7 @@ loc_11812:					  ; CODE XREF: ROM:00011804j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11822:					  ; CODE XREF: ROM:00010DF8j
+TA_3C:						  ; CODE XREF: ROM:00010DF8j
 		btst	#$00,(g_Flags+1).l
 		bne.w	loc_10F4C
 		btst	#$07,(g_Flags+$16).l
@@ -739,7 +739,7 @@ loc_11822:					  ; CODE XREF: ROM:00010DF8j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_1183E:					  ; CODE XREF: ROM:00010DFCj
+TA_3D:						  ; CODE XREF: ROM:00010DFCj
 		cmpi.b	#$11,(Player_Y).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubY).l
@@ -747,13 +747,13 @@ loc_1183E:					  ; CODE XREF: ROM:00010DFCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1185A:					  ; CODE XREF: ROM:00010E00j
+TA_3E:						  ; CODE XREF: ROM:00010E00j
 		cmpi.b	#$19,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1186A:					  ; CODE XREF: ROM:00010E04j
+TA_3F:						  ; CODE XREF: ROM:00010E04j
 		cmpi.b	#$20,(Player_FloorHeight).l
 		bne.w	loc_10F52
 		cmpi.w	#$0020,(Player_Z).l
@@ -761,7 +761,7 @@ loc_1186A:					  ; CODE XREF: ROM:00010E04j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11886:					  ; CODE XREF: ROM:00010E08j
+TA_40:						  ; CODE XREF: ROM:00010E08j
 		cmpi.b	#$17,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$15,(Player_Y).l
@@ -769,7 +769,7 @@ loc_11886:					  ; CODE XREF: ROM:00010E08j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_118A2:					  ; CODE XREF: ROM:00010E0Cj
+TA_41:						  ; CODE XREF: ROM:00010E0Cj
 		cmpi.b	#$14,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$16,(Player_Y).l
@@ -777,7 +777,7 @@ loc_118A2:					  ; CODE XREF: ROM:00010E0Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_118BE:					  ; CODE XREF: ROM:00010E10j
+TA_42:						  ; CODE XREF: ROM:00010E10j
 		cmpi.b	#$17,(Player_X).l
 		bhi.w	loc_10F52
 		cmpi.b	#$19,(Player_Y).l
@@ -785,19 +785,19 @@ loc_118BE:					  ; CODE XREF: ROM:00010E10j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_118DA:					  ; CODE XREF: ROM:00010E14j
+TA_43:						  ; CODE XREF: ROM:00010E14j
 		cmpi.w	#$6400,(Sprite9_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_118EA:					  ; CODE XREF: ROM:00010E18j
+TA_44:						  ; CODE XREF: ROM:00010E18j
 		cmpi.w	#$6400,(Sprite4_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_118FA:					  ; CODE XREF: ROM:00010E1Cj
+TA_45:						  ; CODE XREF: ROM:00010E1Cj
 		move.b	#ITM_PURPLEJEWEL,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -805,7 +805,7 @@ loc_118FA:					  ; CODE XREF: ROM:00010E1Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1190E:					  ; CODE XREF: ROM:00010E20j
+TA_46:						  ; CODE XREF: ROM:00010E20j
 		move.b	(Player_X).l,d0
 		subi.b	#$31,d0
 		cmpi.b	#$03,d0
@@ -817,7 +817,7 @@ loc_1190E:					  ; CODE XREF: ROM:00010E20j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11936:					  ; CODE XREF: ROM:00010E24j
+TA_47:						  ; CODE XREF: ROM:00010E24j
 		move.b	(Player_X).l,d0
 		subi.b	#$31,d0
 		cmpi.b	#$03,d0
@@ -829,25 +829,25 @@ loc_11936:					  ; CODE XREF: ROM:00010E24j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1195E:					  ; CODE XREF: ROM:00010E28j
+TA_48:						  ; CODE XREF: ROM:00010E28j
 		cmpi.b	#$FE,(g_ControllerPlaybackTimer).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1196E:					  ; CODE XREF: ROM:00010E2Cj
+TA_49:						  ; CODE XREF: ROM:00010E2Cj
 		cmpi.b	#$1F,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1197E:					  ; CODE XREF: ROM:00010E30j
+TA_4A:						  ; CODE XREF: ROM:00010E30j
 		cmpi.b	#$11,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_1198E:					  ; CODE XREF: ROM:00010E34j
+TA_4B:						  ; CODE XREF: ROM:00010E34j
 		cmpi.b	#$1C,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$19,(Player_Y).l
@@ -855,19 +855,19 @@ loc_1198E:					  ; CODE XREF: ROM:00010E34j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_119AA:					  ; CODE XREF: ROM:00010E38j
+TA_4C:						  ; CODE XREF: ROM:00010E38j
 		cmpi.b	#$1F,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_119BA:					  ; CODE XREF: ROM:00010E3Cj
+TA_4D:						  ; CODE XREF: ROM:00010E3Cj
 		cmpi.b	#$1D,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_119CA:					  ; CODE XREF: ROM:00010E40j
+TA_4E:						  ; CODE XREF: ROM:00010E40j
 		cmpi.b	#$12,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$0F,(Player_Y).l
@@ -875,19 +875,19 @@ loc_119CA:					  ; CODE XREF: ROM:00010E40j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_119E6:					  ; CODE XREF: ROM:00010E44j
+TA_4F:						  ; CODE XREF: ROM:00010E44j
 		cmpi.b	#$11,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_119F6:					  ; CODE XREF: ROM:00010E48j
+TA_50:						  ; CODE XREF: ROM:00010E48j
 		cmpi.w	#$272A,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A06:					  ; CODE XREF: ROM:00010E4Cj
+TA_51:						  ; CODE XREF: ROM:00010E4Cj
 		cmpi.w	#$262E,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubX).l
@@ -895,7 +895,7 @@ loc_11A06:					  ; CODE XREF: ROM:00010E4Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A22:					  ; CODE XREF: ROM:00010E50j
+TA_52:						  ; CODE XREF: ROM:00010E50j
 		cmpi.b	#$2C,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$25,(Player_Y).l
@@ -903,7 +903,7 @@ loc_11A22:					  ; CODE XREF: ROM:00010E50j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A3E:					  ; CODE XREF: ROM:00010E54j
+TA_53:						  ; CODE XREF: ROM:00010E54j
 		cmpi.w	#$2225,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$07,(Player_SubY).l
@@ -911,13 +911,13 @@ loc_11A3E:					  ; CODE XREF: ROM:00010E54j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A5A:					  ; CODE XREF: ROM:00010E58j
+TA_54:						  ; CODE XREF: ROM:00010E58j
 		cmpi.w	#$3715,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A6A:					  ; CODE XREF: ROM:00010E5Cj
+TA_55:						  ; CODE XREF: ROM:00010E5Cj
 		cmpi.w	#$3719,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$06,(Player_SubX).l
@@ -925,7 +925,7 @@ loc_11A6A:					  ; CODE XREF: ROM:00010E5Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11A86:					  ; CODE XREF: ROM:00010E60j
+TA_56:						  ; CODE XREF: ROM:00010E60j
 		move.b	(Player_X).l,d0
 		subi.b	#$2E,d0
 		cmpi.b	#$03,d0
@@ -938,7 +938,7 @@ loc_11A86:					  ; CODE XREF: ROM:00010E60j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11AB0:					  ; CODE XREF: ROM:00010E64j
+TA_57:						  ; CODE XREF: ROM:00010E64j
 		move.b	(Player_X).l,d0
 		subi.b	#$27,d0
 		cmpi.b	#$14,d0
@@ -951,7 +951,7 @@ loc_11AB0:					  ; CODE XREF: ROM:00010E64j
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11ADA:					  ; CODE XREF: ROM:00010E68j
+TA_58:						  ; CODE XREF: ROM:00010E68j
 		move.b	(Player_Action+1).l,d0	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -967,7 +967,7 @@ loc_11ADA:					  ; CODE XREF: ROM:00010E68j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11AEC:					  ; CODE XREF: ROM:00010E6Cj
+TA_59:						  ; CODE XREF: ROM:00010E6Cj
 		cmpi.b	#$23,(Player_X).l
 		bne.w	loc_10F52
 		move.b	(Player_Y).l,d0
@@ -977,31 +977,31 @@ loc_11AEC:					  ; CODE XREF: ROM:00010E6Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B0E:					  ; CODE XREF: ROM:00010E70j
+TA_5A:						  ; CODE XREF: ROM:00010E70j
 		cmpi.w	#$1E1E,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B1E:					  ; CODE XREF: ROM:00010E74j
+TA_5B:						  ; CODE XREF: ROM:00010E74j
 		cmpi.w	#$371A,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B2E:					  ; CODE XREF: ROM:00010E78j
+TA_5C:						  ; CODE XREF: ROM:00010E78j
 		cmpi.w	#$112D,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B3E:					  ; CODE XREF: ROM:00010E7Cj
+TA_5D:						  ; CODE XREF: ROM:00010E7Cj
 		cmpi.w	#$1816,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B4E:					  ; CODE XREF: ROM:00010E80j
+TA_5E:						  ; CODE XREF: ROM:00010E80j
 		cmpi.b	#$2F,(Player_X).l
 		bne.w	loc_10F52
 		move.b	(Player_Y).l,d0
@@ -1011,7 +1011,7 @@ loc_11B4E:					  ; CODE XREF: ROM:00010E80j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B70:					  ; CODE XREF: ROM:00010E84j
+TA_5F:						  ; CODE XREF: ROM:00010E84j
 		move.b	(g_Flags+1).l,d0
 		andi.b	#$0F,d0
 		cmpi.b	#$0F,d0
@@ -1019,7 +1019,7 @@ loc_11B70:					  ; CODE XREF: ROM:00010E84j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B86:					  ; CODE XREF: ROM:00010E88j
+TA_60:						  ; CODE XREF: ROM:00010E88j
 		move.b	#ITM_SUNSTONE,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -1027,7 +1027,7 @@ loc_11B86:					  ; CODE XREF: ROM:00010E88j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11B9A:					  ; CODE XREF: ROM:00010E8Cj
+TA_61:						  ; CODE XREF: ROM:00010E8Cj
 		move.b	(Player_X).l,d0
 		andi.b	#$FE,d0
 		cmpi.b	#$20,d0
@@ -1037,7 +1037,7 @@ loc_11B9A:					  ; CODE XREF: ROM:00010E8Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11BBC:					  ; CODE XREF: ROM:00010E90j
+TA_62:						  ; CODE XREF: ROM:00010E90j
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
 
@@ -1058,13 +1058,13 @@ loc_11BE0:					  ; CODE XREF: ROM:00011BCEj
 		bra.w	loc_10F52
 ; ---------------------------------------------------------------------------
 
-loc_11BEC:					  ; CODE XREF: ROM:00010E94j
+TA_63:						  ; CODE XREF: ROM:00010E94j
 		cmpi.b	#$1A,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11BFC:					  ; CODE XREF: ROM:00010E98j
+TA_64:						  ; CODE XREF: ROM:00010E98j
 		cmpi.b	#$21,(Player_X).l
 		bne.w	loc_10F52
 		move.b	(Player_Y).l,d0
@@ -1075,7 +1075,7 @@ loc_11BFC:					  ; CODE XREF: ROM:00010E98j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11C20:					  ; CODE XREF: ROM:00010E9Cj
+TA_65:						  ; CODE XREF: ROM:00010E9Cj
 		cmpi.b	#$13,(Player_X).l
 		bne.w	loc_10F52
 		move.b	(Player_Y).l,d0
@@ -1085,7 +1085,7 @@ loc_11C20:					  ; CODE XREF: ROM:00010E9Cj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11C42:					  ; CODE XREF: ROM:00010EA0j
+TA_66:						  ; CODE XREF: ROM:00010EA0j
 		cmpi.b	#$10,(Player_Y).l
 		bne.w	loc_10F52
 		move.b	(Player_X).l,d0
@@ -1095,7 +1095,7 @@ loc_11C42:					  ; CODE XREF: ROM:00010EA0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11C64:					  ; CODE XREF: ROM:00010EA4j
+TA_67:						  ; CODE XREF: ROM:00010EA4j
 		move.b	(Player_X).l,d0
 		subi.b	#$2B,d0
 		cmpi.b	#$02,d0
@@ -1105,13 +1105,13 @@ loc_11C64:					  ; CODE XREF: ROM:00010EA4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11C86:					  ; CODE XREF: ROM:00010EA8j
+TA_68:						  ; CODE XREF: ROM:00010EA8j
 		cmpi.w	#$312B,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11C96:					  ; CODE XREF: ROM:00010EACj
+TA_69:						  ; CODE XREF: ROM:00010EACj
 		btst	#$04,(g_AdditionalFlags+$A).l
 		bne.w	loc_10F52
 		move.b	(Player_X).l,d0
@@ -1128,7 +1128,7 @@ loc_11C96:					  ; CODE XREF: ROM:00010EACj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11CDE:					  ; CODE XREF: ROM:00010EB0j
+TA_6A:						  ; CODE XREF: ROM:00010EB0j
 		lea	(Sprite1_X).l,a0
 		cmpi.b	#$7F,(a0)
 		bne.w	loc_10F52
@@ -1149,19 +1149,19 @@ loc_11CDE:					  ; CODE XREF: ROM:00010EB0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11D36:					  ; CODE XREF: ROM:00010EB4j
+TA_6B:						  ; CODE XREF: ROM:00010EB4j
 		cmpi.w	#$6400,(Sprite5_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11D46:					  ; CODE XREF: ROM:00010EB8j
+TA_6C:						  ; CODE XREF: ROM:00010EB8j
 		cmpi.w	#$1613,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11D56:					  ; CODE XREF: ROM:00010EBCj
+TA_6D:						  ; CODE XREF: ROM:00010EBCj
 		cmpi.b	#$29,(Player_X).l
 		bcs.w	loc_10F52
 		cmpi.b	#$2D,(Player_Y).l
@@ -1171,13 +1171,13 @@ loc_11D56:					  ; CODE XREF: ROM:00010EBCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11D7E:					  ; CODE XREF: ROM:00010EC0j
+TA_6E:						  ; CODE XREF: ROM:00010EC0j
 		cmpi.w	#$6400,(Sprite4_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11D8E:					  ; CODE XREF: ROM:00010EC4j
+TA_6F:						  ; CODE XREF: ROM:00010EC4j
 		move.b	#ITM_AXEMAGIC,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -1185,7 +1185,7 @@ loc_11D8E:					  ; CODE XREF: ROM:00010EC4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11DA2:					  ; CODE XREF: ROM:00010EC8j
+TA_70:						  ; CODE XREF: ROM:00010EC8j
 		cmpi.w	#$201D,(Player_X).l
 		bne.w	loc_10F52
 		move.b	(Player_RotationAndSize).l,d0
@@ -1195,13 +1195,13 @@ loc_11DA2:					  ; CODE XREF: ROM:00010EC8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11DC4:					  ; CODE XREF: ROM:00010ECCj
+TA_71:						  ; CODE XREF: ROM:00010ECCj
 		cmpi.w	#$00FE,(g_ControllerPlayback).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11DD4:					  ; CODE XREF: ROM:00010ED0j
+TA_72:						  ; CODE XREF: ROM:00010ED0j
 		move.b	#ITM_KEY,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -1210,13 +1210,13 @@ loc_11DD4:					  ; CODE XREF: ROM:00010ED0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11DEC:					  ; CODE XREF: ROM:00010ED4j
+TA_73:						  ; CODE XREF: ROM:00010ED4j
 		cmpi.w	#$2820,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11DFC:					  ; CODE XREF: ROM:00010ED8j
+TA_74:						  ; CODE XREF: ROM:00010ED8j
 		move.w	(Sprite2_X).l,d0
 		cmp.w	(word_FF12F0).l,d0
 		beq.w	loc_10F52
@@ -1224,7 +1224,7 @@ loc_11DFC:					  ; CODE XREF: ROM:00010ED8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11E16:					  ; CODE XREF: ROM:00010EDCj
+TA_75:						  ; CODE XREF: ROM:00010EDCj
 		cmpi.b	#$36,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.b	#$08,(Player_SubX).l
@@ -1235,7 +1235,7 @@ loc_11E16:					  ; CODE XREF: ROM:00010EDCj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11E40:					  ; CODE XREF: ROM:00010EE0j
+TA_76:						  ; CODE XREF: ROM:00010EE0j
 		cmpi.b	#$0E,(Sprite2_X).l
 		beq.w	loc_11E74
 		cmpi.b	#$0E,(Sprite3_X).l
@@ -1283,7 +1283,7 @@ loc_11EB0:					  ; CODE XREF: ROM:00011E7Ej
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11EBC:					  ; CODE XREF: ROM:00010EE4j
+TA_77:						  ; CODE XREF: ROM:00010EE4j
 		btst	#$05,(g_AdditionalFlags+9).l
 		beq.w	loc_10F52
 		btst	#$01,(g_AdditionalFlags+$B).l
@@ -1299,7 +1299,7 @@ loc_11EBC:					  ; CODE XREF: ROM:00010EE4j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11EFC:					  ; CODE XREF: ROM:00010EE8j
+TA_78:						  ; CODE XREF: ROM:00010EE8j
 		move.b	#ITM_LANTERN,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		tst.w	d1
@@ -1307,7 +1307,7 @@ loc_11EFC:					  ; CODE XREF: ROM:00010EE8j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F10:					  ; CODE XREF: ROM:00010EECj
+TA_79:						  ; CODE XREF: ROM:00010EECj
 		move.w	(Player_X).l,d0
 		andi.w	#$FEFE,d0
 		cmpi.w	#$2E2E,d0
@@ -1317,7 +1317,7 @@ loc_11F10:					  ; CODE XREF: ROM:00010EECj
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F32:					  ; CODE XREF: ROM:00010EF0j
+TA_7A:						  ; CODE XREF: ROM:00010EF0j
 		move.b	(Player_X).l,d0
 		andi.b	#$FE,d0
 		cmpi.b	#$16,d0
@@ -1332,37 +1332,37 @@ loc_11F32:					  ; CODE XREF: ROM:00010EF0j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F68:					  ; CODE XREF: ROM:00010EF4j
+TA_7B:						  ; CODE XREF: ROM:00010EF4j
 		cmpi.w	#$0040,(Player_Z).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F78:					  ; CODE XREF: ROM:00010EF8j
+TA_7C:						  ; CODE XREF: ROM:00010EF8j
 		cmpi.b	#$21,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F88:					  ; CODE XREF: ROM:00010EFCj
+TA_7D:						  ; CODE XREF: ROM:00010EFCj
 		cmpi.w	#$6400,(Sprite3_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11F98:					  ; CODE XREF: ROM:00010F00j
+TA_7E:						  ; CODE XREF: ROM:00010F00j
 		cmpi.b	#$19,(Player_Y).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11FA8:					  ; CODE XREF: ROM:00010F04j
+TA_7F:						  ; CODE XREF: ROM:00010F04j
 		cmpi.w	#$6400,(Sprite2_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11FB8:					  ; CODE XREF: ROM:00010F08j
+TA_80:						  ; CODE XREF: ROM:00010F08j
 		cmpi.w	#$2116,(Player_X).l
 		bne.w	loc_10F52
 		cmpi.w	#$00A0,(Player_Z).l
@@ -1370,37 +1370,37 @@ loc_11FB8:					  ; CODE XREF: ROM:00010F08j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11FD4:					  ; CODE XREF: ROM:00010F0Cj
+TA_81:						  ; CODE XREF: ROM:00010F0Cj
 		cmpi.b	#$7F,(Sprite1_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11FE4:					  ; CODE XREF: ROM:00010F10j
+TA_82:						  ; CODE XREF: ROM:00010F10j
 		cmpi.b	#$7F,(Sprite2_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_11FF4:					  ; CODE XREF: ROM:00010F14j
+TA_83:						  ; CODE XREF: ROM:00010F14j
 		cmpi.b	#$7F,(Sprite3_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_12004:					  ; CODE XREF: ROM:00010F18j
+TA_84:						  ; CODE XREF: ROM:00010F18j
 		cmpi.b	#$15,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_12014:					  ; CODE XREF: ROM:00010F1Cj
+TA_85:						  ; CODE XREF: ROM:00010F1Cj
 		cmpi.b	#$11,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_12024:					  ; CODE XREF: ROM:00010F20j
+TA_86:						  ; CODE XREF: ROM:00010F20j
 		cmpi.b	#$19,(Player_X).l
 		bcc.w	loc_10F52
 		cmpi.b	#$16,(Player_Y).l
@@ -1420,13 +1420,13 @@ loc_12024:					  ; CODE XREF: ROM:00010F20j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_12070:					  ; CODE XREF: ROM:00010F24j
+TA_87:						  ; CODE XREF: ROM:00010F24j
 		cmpi.w	#$6400,(Sprite3_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_12080:					  ; CODE XREF: ROM:00010F28j
+TA_88:						  ; CODE XREF: ROM:00010F28j
 		cmpi.b	#$1C,(Player_X).l
 		beq.s	loc_12096
 		cmpi.b	#$1D,(Player_X).l
@@ -1442,13 +1442,13 @@ loc_12096:					  ; CODE XREF: ROM:00012088j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_120BE:					  ; CODE XREF: ROM:00010F2Cj
+TA_89:						  ; CODE XREF: ROM:00010F2Cj
 		cmpi.w	#$6400,(Sprite2_CurrentHealth).l
 		bcc.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_120CE:					  ; CODE XREF: ROM:00010F30j
+TA_8A:						  ; CODE XREF: ROM:00010F30j
 		tst.b	(byte_FF1142).l
 		bne.w	loc_10F52
 		tst.b	(byte_FF1145).l
@@ -1456,7 +1456,7 @@ loc_120CE:					  ; CODE XREF: ROM:00010F30j
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
 
-loc_120E6:					  ; CODE XREF: ROM:00010F34j
+TA_8B:						  ; CODE XREF: ROM:00010F34j
 		cmpi.w	#$3634,(Player_X).l
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
