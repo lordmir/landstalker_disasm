@@ -45,11 +45,11 @@ ItemUseDetoxGrass:				  ; CODE XREF: ROM:00008626j
 ; ---------------------------------------------------------------------------
 
 ItemUseGaiaStatue:				  ; CODE XREF: ROM:0000862Cj
-		btst	#$02,(g_Vars+7).l	  ; Check for lava room	flag
+		btst	#$02,(g_AdditionalFlags+7).l ; Check for lava room flag
 		bne.s	loc_8758
 		cmpi.w	#$020A,(g_RmNum1).l
 		bne.s	loc_8758
-		bset	#$02,(g_Vars+7).l
+		bset	#$02,(g_AdditionalFlags+7).l
 		bra.s	loc_8762
 ; ---------------------------------------------------------------------------
 

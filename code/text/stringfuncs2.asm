@@ -17,7 +17,7 @@ sub_2343A:					  ; DATA XREF: sub_22EE8t
 RefreshAndClearTextbox:				  ; CODE XREF: sub_2343Ap
 						  ; DATA XREF: j_RefreshAndClearTextboxt
 		movem.l	d0-a6,-(sp)
-		bsr.s	ClearTextbox
+		bsr.s	ReloadTextbox
 		bsr.w	ReloadTextboxSprites
 		movem.l	(sp)+,d0-a6
 		rts
@@ -31,7 +31,7 @@ SetUpTextDisplay:				  ; DATA XREF: j_SetUpTextDisplayt
 		move.w	#$8AB8,d0		  ; HINT on line 184
 		move.w	#$0001,d1
 		bsr.s	SetVDPForTextbox
-		bsr.s	ClearTextbox
+		bsr.s	ReloadTextbox
 		bra.w	ReloadTextboxSprites
 ; End of function SetUpTextDisplay
 
@@ -81,19 +81,19 @@ TestIfInventoryIsOpen:				  ; CODE XREF: sub_22F7C:loc_22F8Ep
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ClearTextbox:					  ; CODE XREF: RefreshAndClearTextbox+4p
+ReloadTextbox:					  ; CODE XREF: RefreshAndClearTextbox+4p
 						  ; SetUpTextDisplay+Ap ...
 		bsr.s	LoadTextboxTilemap
 		bsr.s	ClearTextboxTiles
 		bsr.w	DMACopyTextboxTiles
 		rts
-; End of function ClearTextbox
+; End of function ReloadTextbox
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadTextboxTilemap:				  ; CODE XREF: ClearTextboxp
+LoadTextboxTilemap:				  ; CODE XREF: ReloadTextboxp
 		clr.w	(g_VDPSpr79_Y).l
 		move.w	#$0001,(word_FF1194).l
 		move.b	#$01,(byte_FF1129).l
@@ -147,7 +147,7 @@ loc_2351E:					  ; CODE XREF: ReloadTextboxSprites+10j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ClearTextboxTiles:				  ; CODE XREF: ClearTextbox+2p
+ClearTextboxTiles:				  ; CODE XREF: ReloadTextbox+2p
 		tst.b	(byte_FF1128).l
 		beq.w	loc_2353A
 		nop

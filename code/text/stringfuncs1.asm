@@ -48,7 +48,7 @@ sub_22F66:					  ; CODE XREF: PrintString+38p
 		bls.s	locret_22FCA
 
 HandleNewLine:					  ; CODE XREF: HandleControlChars+4j
-						  ; HandleControlChars:loc_2329Ap ...
+						  ; HandleControlChars:HandleNewLineAndPromptp	...
 		movem.w	d0,-(sp)
 		bsr.s	sub_22F7C
 		movem.w	(sp)+,d0
@@ -111,7 +111,7 @@ sub_22FD2:					  ; CODE XREF: PrintString+24p
 		cmpi.w	#~$0015,d0
 		beq.s	locret_22FF0
 		movem.l	d0,-(sp)
-		bsr.w	sub_23314
+		bsr.w	InsertNewline
 		movem.l	(sp)+,d0
 		movem.l	(sp)+,d1
 		bra.w	loc_22F52
@@ -175,10 +175,10 @@ loc_2304E:					  ; CODE XREF: GetNextChar+82j
 		movea.l	(dword_FF1848).l,a0
 		bsr.w	DecodeChar
 		move.l	a0,(dword_FF1848).l
-		cmpi.b	#CHR_55,d0		  ; String begin
+		cmpi.b	#CHR_STR_BEGIN,d0	  ; String begin
 		beq.s	loc_23080
 		bcs.s	loc_2307A
-		subi.b	#CHR_56,d0		  ; Down arrow prompt
+		subi.b	#CHR_ARROW_PROMPT,d0	  ; Down arrow prompt
 		andi.w	#$00FF,d0
 		add.w	d0,d0
 		lea	ControlChars(pc),a1
@@ -211,11 +211,11 @@ loc_23094:					  ; CODE XREF: GetNextChar+6j
 		move.l	a1,(dword_FF1844).l
 		cmpi.w	#$FFFF,d0
 		beq.s	loc_230C0
-		cmpi.w	#CHR_69,d0
+		cmpi.w	#CHR_HYPHENATION_POINT,d0
 		beq.s	loc_23094
-		cmpi.w	#CHR_6A,d0
+		cmpi.w	#CHR_BREAKING_SPACE,d0
 		beq.s	loc_230BC
-		cmpi.w	#CHR_6B,d0
+		cmpi.w	#CHR_BREAK_POINT,d0
 		beq.s	loc_23094
 		rts
 ; ---------------------------------------------------------------------------
@@ -244,7 +244,7 @@ ProcessChar:					  ; CODE XREF: PrintString:loc_22F60p
 
 loc_230D6:					  ; CODE XREF: ProcessChar+2j
 						  ; HandleControlChars+76j
-		cmpi.b	#CHR_Colon,d0
+		cmpi.b	#CHR_BEGIN_TALK,d0
 		bne.s	loc_230F4
 		andi.b	#$01,(byte_FF1144).l
 		ori.b	#$22,(byte_FF1144).l
@@ -310,15 +310,15 @@ HandleControlChars:				  ; CODE XREF: ProcessChar+8j
 
 ; FUNCTION CHUNK AT 0002332A SIZE 0000000C BYTES
 
-		bra.w	loc_231CA
+		bra.w	HandleYesNo
 ; ---------------------------------------------------------------------------
 		bra.w	HandleNewLine
 ; ---------------------------------------------------------------------------
-		bra.w	loc_231DA
+		bra.w	PopName
 ; ---------------------------------------------------------------------------
 		bra.w	HandleItemName
 ; ---------------------------------------------------------------------------
-		bra.w	HandleEndOfString
+		bra.w	HandleWaitForInput
 ; ---------------------------------------------------------------------------
 		bra.w	HandleSpeakerName
 ; ---------------------------------------------------------------------------
@@ -326,19 +326,19 @@ HandleControlChars:				  ; CODE XREF: ProcessChar+8j
 ; ---------------------------------------------------------------------------
 		bra.w	locret_2320C
 ; ---------------------------------------------------------------------------
-		bra.w	loc_2320E
+		bra.w	Handle1sPauseOrInput
 ; ---------------------------------------------------------------------------
-		bra.w	loc_23238
+		bra.w	Handle1_5sPauseOrInput
 ; ---------------------------------------------------------------------------
-		bra.w	loc_2323E
+		bra.w	Handle2sPauseOrInput
 ; ---------------------------------------------------------------------------
-		bra.w	loc_23244
+		bra.w	Handle1sPause
 ; ---------------------------------------------------------------------------
 		bra.w	HandleNumericVariable
 ; ---------------------------------------------------------------------------
-		bra.w	loc_2329A
+		bra.w	HandleNewLineAndPrompt
 ; ---------------------------------------------------------------------------
-		bra.w	sub_23314
+		bra.w	InsertNewline
 ; ---------------------------------------------------------------------------
 		bra.w	HandleContinuePrompt
 ; ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ loc_231C4:					  ; CODE XREF: HandleControlChars+6Cj
 		bra.w	loc_230D6
 ; ---------------------------------------------------------------------------
 
-loc_231CA:					  ; CODE XREF: HandleControlCharsj
+HandleYesNo:					  ; CODE XREF: HandleControlCharsj
 		bsr.w	sub_2313C
 		bcs.s	loc_231D4
 		bsr.w	DMACopyTextboxTiles
@@ -372,23 +372,23 @@ loc_231D4:					  ; CODE XREF: HandleControlChars+7Ej
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_231DA:					  ; CODE XREF: HandleControlChars+8j
-		bsr.w	sub_23336
-		bra.w	sub_2335C
+PopName:					  ; CODE XREF: HandleControlChars+8j
+		bsr.w	PopItem
+		bra.w	CopyStringToBuffer
 ; ---------------------------------------------------------------------------
 
 HandleItemName:					  ; CODE XREF: HandleControlChars+Cj
-		bsr.w	sub_23336
+		bsr.w	PopItem
 		bsr.w	LoadUncompressedString
-		bra.w	sub_2335C
+		bra.w	CopyStringToBuffer
 ; ---------------------------------------------------------------------------
 
 HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
-		bsr.w	sub_23314
-		bsr.w	sub_23336
-		bsr.w	sub_29470
-		bsr.w	sub_2335C
-		move.w	#$0047,(a1)+
+		bsr.w	InsertNewline
+		bsr.w	PopItem
+		bsr.w	GetChrName
+		bsr.w	CopyStringToBuffer
+		move.w	#CHR_Colon,(a1)+
 		clr.w	(a1)+
 		move.w	#$FFFF,(a1)+
 		rts
@@ -402,15 +402,15 @@ locret_2320C:					  ; CODE XREF: HandleControlChars+1Cj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_2320E:					  ; CODE XREF: HandleControlChars+20j
-		move.w	#$003B,d0
+Handle1sPauseOrInput:				  ; CODE XREF: HandleControlChars+20j
+		move.w	#00059,d0
 
 loc_23212:					  ; CODE XREF: HandleControlChars+ECj
 						  ; HandleControlChars+F2j
 		movem.w	d2,-(sp)
 
 loc_23216:					  ; CODE XREF: HandleControlChars+DEj
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
 		andi.b	#$70,d1
 		bne.s	loc_23232
@@ -423,18 +423,18 @@ loc_23232:					  ; CODE XREF: HandleControlChars+D6j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_23238:					  ; CODE XREF: HandleControlChars+24j
-		move.w	#$0059,d0
+Handle1_5sPauseOrInput:				  ; CODE XREF: HandleControlChars+24j
+		move.w	#00089,d0
 		bra.s	loc_23212
 ; ---------------------------------------------------------------------------
 
-loc_2323E:					  ; CODE XREF: HandleControlChars+28j
-		move.w	#$0077,d0
+Handle2sPauseOrInput:				  ; CODE XREF: HandleControlChars+28j
+		move.w	#00119,d0
 		bra.s	loc_23212
 ; ---------------------------------------------------------------------------
 
-loc_23244:					  ; CODE XREF: HandleControlChars+2Cj
-		move.w	#$003B,d0
+Handle1sPause:					  ; CODE XREF: HandleControlChars+2Cj
+		move.w	#00059,d0
 		jmp	(j_Sleep).l
 ; ---------------------------------------------------------------------------
 
@@ -458,7 +458,7 @@ loc_23276:					  ; CODE XREF: HandleControlChars+122j
 		rts
 ; ---------------------------------------------------------------------------
 
-HandleEndOfString:				  ; CODE XREF: HandleControlChars+10j
+HandleWaitForInput:				  ; CODE XREF: HandleControlChars+10j
 		movem.w	d2,-(sp)
 
 loc_23284:					  ; CODE XREF: HandleControlChars+13Cj
@@ -473,7 +473,7 @@ loc_2328E:					  ; CODE XREF: HandleControlChars+146j
 		bra.s	loc_23232
 ; ---------------------------------------------------------------------------
 
-loc_2329A:					  ; CODE XREF: HandleControlChars+34j
+HandleNewLineAndPrompt:				  ; CODE XREF: HandleControlChars+34j
 		bsr.w	HandleNewLine
 
 HandleContinuePrompt:				  ; CODE XREF: HandleControlChars+3Cj
@@ -502,7 +502,7 @@ loc_232B8:					  ; CODE XREF: HandleControlChars+172j
 
 sub_232CE:					  ; CODE XREF: HandleControlChars+13Ap
 						  ; HandleControlChars+144p ...
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
 		andi.b	#$70,d1
 		rts
@@ -532,7 +532,7 @@ loc_232F4:					  ; CODE XREF: sub_232E0+10j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_23314:					  ; CODE XREF: sub_22FD2+Ep
+InsertNewline:					  ; CODE XREF: sub_22FD2+Ep
 						  ; HandleControlChars+38j ...
 		move.b	(byte_FF1144).l,d2
 		lsr.b	#$01,d2
@@ -540,7 +540,7 @@ sub_23314:					  ; CODE XREF: sub_22FD2+Ep
 		cmp.w	(word_FF1194).l,d2
 		bne.w	HandleNewLine
 		rts
-; End of function sub_23314
+; End of function InsertNewline
 
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR HandleControlChars
@@ -550,7 +550,7 @@ locret_2332A:					  ; CODE XREF: HandleControlChars+54j
 ; ---------------------------------------------------------------------------
 
 loc_2332C:					  ; CODE XREF: HandleControlChars+64j
-		bsr.s	sub_23336
+		bsr.s	PopItem
 		move.b	d1,(byte_FF112A).l
 		rts
 ; END OF FUNCTION CHUNK	FOR HandleControlChars
@@ -558,13 +558,13 @@ loc_2332C:					  ; CODE XREF: HandleControlChars+64j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_23336:					  ; CODE XREF: HandleControlChars:loc_231DAp
+PopItem:					  ; CODE XREF: HandleControlChars:PopNamep
 						  ; HandleControlChars:HandleItemNamep	...
 		movea.l	(dword_FF184C).l,a1
 		move.w	(a1)+,d1
 		move.l	a1,(dword_FF184C).l
 		rts
-; End of function sub_23336
+; End of function PopItem
 
 ; ---------------------------------------------------------------------------
 
@@ -589,19 +589,19 @@ loc_23354:					  ; CODE XREF: ROM:0002334Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2335C:					  ; CODE XREF: HandleControlChars+8Ej
+CopyStringToBuffer:				  ; CODE XREF: HandleControlChars+8Ej
 						  ; HandleControlChars+9Aj ...
 		lea	(unk_FF119E).l,a1
 		move.l	a1,(dword_FF1844).l
 
-loc_23368:					  ; CODE XREF: sub_2335C+12j
+loc_23368:					  ; CODE XREF: CopyStringToBuffer+12j
 		clr.w	d0
 		move.b	(a2)+,d0
 		move.w	d0,(a1)+
 		dbf	d7,loc_23368
 		move.w	#$FFFF,(a1)
 		rts
-; End of function sub_2335C
+; End of function CopyStringToBuffer
 
 ; ---------------------------------------------------------------------------
 ControlChars:	dc.w ~$0015			  ; DATA XREF: GetNextChar+2Ct

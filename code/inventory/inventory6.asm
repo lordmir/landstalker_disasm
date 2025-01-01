@@ -156,7 +156,7 @@ loc_EE0C:					  ; CODE XREF: ROM:0000EDF8j
 
 loc_EE12:					  ; CODE XREF: sub_EAD4+5Ej
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$18-g_Buffer(a1),a0
+		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
 		lea	EquipInventoryLayout(pc),a2
 		move.w	(a0),d0
@@ -174,7 +174,7 @@ loc_EE44:					  ; CODE XREF: sub_EAD4+360j
 		move.w	(a1),d1
 		add.w	d1,d1
 		lea	(g_Buffer).l,a2
-		lea	g_Buffer+$10-g_Buffer(a2,d1.w),a2
+		lea	$00000010(a2,d1.w),a2
 		move.w	(a0),(a2)
 		lea	((g_Buffer+$10)).l,a0
 		clr.w	d0
@@ -306,7 +306,7 @@ loc_EFB8:					  ; CODE XREF: ROM:0000EF2Ej
 		bne.w	loc_EEF6
 		move.w	-$00000004(a6),d0
 		move.b	d0,(g_SaveSlot).l
-		jsr	(sub_154C).l
+		jsr	(GetCurrentSaveSlot).l
 		jsr	(WaitUntilVBlank).l
 		move.w	-$00000004(a6),d0
 		bsr.w	sub_F72E
@@ -686,7 +686,7 @@ loc_F27A:					  ; CODE XREF: sub_F250+1Cj
 
 sub_F282:					  ; CODE XREF: ROM:0000F0ECp
 						  ; sub_F202+4p ...
-		lea	off_F296(pc),a0
+		lea	SaveGameWindowBegin(pc),a0
 		andi.b	#$03,d0
 		ext.w	d0
 		ext.l	d0
@@ -696,7 +696,7 @@ sub_F282:					  ; CODE XREF: ROM:0000F0ECp
 ; End of function sub_F282
 
 ; ---------------------------------------------------------------------------
-off_F296:	dc.l g_Buffer+$56		  ; DATA XREF: sub_F282t
+SaveGameWindowBegin:dc.l g_Buffer+$56		  ; DATA XREF: sub_F282t
 		dc.l g_Buffer+$7A
 		dc.l g_Buffer+$376
 		dc.l g_Buffer+$39A
@@ -706,7 +706,7 @@ off_F296:	dc.l g_Buffer+$56		  ; DATA XREF: sub_F282t
 
 sub_F2A6:					  ; CODE XREF: sub_F13A+4p
 		move.w	-$00000002(a6),d0
-		lea	word_F2BE(pc),a0
+		lea	SaveGameNigelPos(pc),a0
 		andi.b	#$03,d0
 		ext.w	d0
 		ext.l	d0
@@ -716,7 +716,7 @@ sub_F2A6:					  ; CODE XREF: sub_F13A+4p
 ; End of function sub_F2A6
 
 ; ---------------------------------------------------------------------------
-word_F2BE:	dc.w $00A4,$00CC		  ; DATA XREF: sub_F2A6+4t
+SaveGameNigelPos:dc.w $00A4,$00CC		  ; DATA XREF: sub_F2A6+4t
 		dc.w $0134,$00CC
 		dc.w $00A4,$011C
 		dc.w $0134,$011C
@@ -731,7 +731,7 @@ byte_F2DB:	dc.b $0F,$06,$06,$06,$06,$00,$FF  ; DATA XREF: sub_F0F8+Ao
 
 sub_F2E2:					  ; CODE XREF: ROM:loc_F024p
 						  ; sub_FA24p ...
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
 		move.b	-$00000008(a6),d0
 		bne.s	loc_F2FA

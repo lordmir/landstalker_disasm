@@ -48,9 +48,10 @@ loc_9C16:					  ; CODE XREF: sub_9BFE+22j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.b	#$C0,d0
 		cmpi.b	#$C0,d0
 		bne.s	loc_9C3A

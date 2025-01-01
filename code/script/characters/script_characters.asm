@@ -8,7 +8,7 @@ CS_0143:
 						  ; 0xA0F1: PRINT MSG 0x013E, END: "{5B}Go back	now, and you'll{57}be given something good, OK?{58}"
 		ScriptID    $104,$1		  ; Answer 'yes': Run text script at offset 0x0279FE
 						  ; 0x75C7: SET	BIT 7 OF FLAG 0x038, MSGBOX CLEARED, END
-		ScriptJump  ClearTextbox_0,$2	  ; Answer 'no':  Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$2	  ; Answer 'no':  Jump to address 0x028FB8
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ CS_0002:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0000			  ; Params 00, 00
-		ScriptJump  loc_26006,$1	  ; Jump to address 0x026006
+		ScriptJump  CS_0002_1,$1	  ; Jump to address 0x026006
 						  ;
 		dc.w $0002			  ; Params 00, 02
 		ScriptID    $12D,$3		  ; Run	text script at offset 0x027A50
@@ -133,7 +133,7 @@ CS_0002:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26006:
+CS_0002_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $128,$0		  ; Prompt:	  Run text script at offset 0x027A46
@@ -251,17 +251,17 @@ CS_0003:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0000			  ; Params 00, 00
-		ScriptJump  loc_26084,$1	  ; Jump to address 0x026084
+		ScriptJump  CS_0003_1,$1	  ; Jump to address 0x026084
 						  ;
 		dc.w $0003			  ; Params 00, 03
-		ScriptJump  loc_26090,$3	  ; Jump to address 0x026090
+		ScriptJump  CS_0003_2,$3	  ; Jump to address 0x026090
 						  ;
 		dc.w $0004			  ; Params 00, 04
 		ScriptID    $15B,$5		  ; Run	text script at offset 0x027AAC
 						  ; 0xE140: PRINT MSG 0x018D, MSGBOX CLEARED, END: "{5B}We have	to move	this{57}debris to get to Mercator.{5E}"
 						  ;
 		dc.w $0007			  ; Params 00, 07
-		ScriptJump  loc_2609C,$7	  ; Jump to address 0x02609C
+		ScriptJump  CS_0003_3,$7	  ; Jump to address 0x02609C
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $160,$9		  ; Run	text script at offset 0x027AB6
@@ -277,7 +277,7 @@ CS_0003:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26084:
+CS_0003_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $14E,$0		  ; Prompt:	  Run text script at offset 0x027A92
@@ -292,7 +292,7 @@ loc_26084:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26090:
+CS_0003_2:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C1			  ; Bit	1 of flag 0x018
@@ -310,7 +310,7 @@ loc_26090:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_2609C:
+CS_0003_3:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DA			  ; Bit	2 of flag 0x01B
@@ -348,7 +348,7 @@ CS_0082:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0000			  ; Params 00, 00
-		ScriptJump  loc_260D0,$1	  ; Jump to address 0x0260D0
+		ScriptJump  CS_0082_1,$1	  ; Jump to address 0x0260D0
 						  ;
 		dc.w $0002			  ; Params 00, 02
 		ScriptID    $16A,$3		  ; Run	text script at offset 0x027ACA
@@ -365,7 +365,7 @@ CS_0082:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_260D0:
+CS_0082_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C0			  ; Bit	0 of flag 0x018
@@ -421,7 +421,7 @@ CS_0085:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0000			  ; Params 00, 00
-		ScriptJump  loc_26112,$1	  ; Jump to address 0x026112
+		ScriptJump  CS_0085_1,$1	  ; Jump to address 0x026112
 						  ;
 		dc.w $0002			  ; Params 00, 02
 		ScriptID    $179,$3		  ; Run	text script at offset 0x027AE8
@@ -435,7 +435,7 @@ CS_0085:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26112:
+CS_0085_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $174,$0		  ; Prompt:	  Run text script at offset 0x027ADE
@@ -468,12 +468,12 @@ CS_0004:
 						  ; 0xE166: PRINT MSG 0x01B3, MSGBOX CLEARED, END: "{5B}The curse on us	will never{57}be lifted	unless Helga{57}dies....howoooo!....{5E}"
 						  ;
 		dc.w $0203			  ; Params 02, 03
-		ScriptJump  loc_26130,$5	  ; Jump to address 0x026130
+		ScriptJump  CS_0004_1,$5	  ; Jump to address 0x026130
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26130:
+CS_0004_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00E2			  ; Bit	2 of flag 0x01C
@@ -576,7 +576,7 @@ CS_0008:
 						  ; 0x7C08: LOAD CUSTOM	ACTION 0x08 (0x01211C CSA_0008), MSGBOX	CLEARED, END
 						  ;
 		dc.w $0002			  ; Params 00, 02
-		ScriptJump  loc_261A8,$3	  ; Jump to address 0x0261A8
+		ScriptJump  CS_0008_1,$3	  ; Jump to address 0x0261A8
 						  ;
 		dc.w $0003			  ; Params 00, 03
 		ScriptID    $198,$5		  ; Run	text script at offset 0x027B26
@@ -627,7 +627,7 @@ CS_0008:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_261A8:
+CS_0008_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0012			  ; Bit	2 of flag 0x002
@@ -770,12 +770,12 @@ CS_0093:
 						  ; 0xE1A0: PRINT MSG 0x01ED, MSGBOX CLEARED, END: "{5B}a second...{5E}"
 						  ;
 		dc.w $0005			  ; Params 00, 05
-		ScriptJump  loc_2622C,$3	  ; Jump to address 0x02622C
+		ScriptJump  CS_0093_1,$3	  ; Jump to address 0x02622C
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2622C:
+CS_0093_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C3			  ; Bit	3 of flag 0x018
@@ -848,12 +848,12 @@ CS_0096:
 						  ; 0xE1AB: PRINT MSG 0x01F8, MSGBOX CLEARED, END: "{5B}commonplace nowadays....{5E}"
 						  ;
 		dc.w $0005			  ; Params 00, 05
-		ScriptJump  loc_26276,$3	  ; Jump to address 0x026276
+		ScriptJump  CS_0096_1,$3	  ; Jump to address 0x026276
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26276:
+CS_0096_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C3			  ; Bit	3 of flag 0x018
@@ -1181,11 +1181,11 @@ CS_00A1:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-CS_00A2:
+CS_00A2:					  ; Params 61, 00
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0008			  ; Params 00, 08
-		ScriptJump  loc_263BC,$1	  ; Jump to address 0x0263BC
+		ScriptJump  CS_00A2_1,$1	  ; Jump to address 0x0263BC
 						  ;
 		dc.w $0018			  ; Params 00, 18
 		ScriptID    $218,$3		  ; Run	text script at offset 0x027C26
@@ -1200,7 +1200,7 @@ CS_00A2:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_263BC:
+CS_00A2_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $214,$0		  ; Prompt:	  Run text script at offset 0x027C1E
@@ -1333,7 +1333,7 @@ CS_00A6:
 						  ; 0xE20C: PRINT MSG 0x0259, MSGBOX CLEARED, END: "{5B}Go take	a look around town,{57}young man!{5E}"
 						  ;
 		dc.w $0006			  ; Params 00, 06
-		ScriptJump  loc_2644A,$3	  ; Jump to address 0x02644A
+		ScriptJump  CS_00A6_1,$3	  ; Jump to address 0x02644A
 						  ;
 		dc.w $0007			  ; Params 00, 07
 		ScriptID    $23C,$5		  ; Run	text script at offset 0x027C6E
@@ -1357,7 +1357,7 @@ CS_00A6:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2644A:
+CS_00A6_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $238,$0		  ; Prompt:	  Run text script at offset 0x027C66
@@ -1367,12 +1367,12 @@ loc_2644A:
 						  ; 0x820F: PRINT MSG 0x025C: "{5B}Quick response!{57}Are you sure?{57}OK!{62}"
 						  ; 0x1420: SET	BIT 0 OF FLAG 0x004
 						  ; 0xE210: PRINT MSG 0x025D, MSGBOX CLEARED, END: "{5B}Their hideout is in{57}the cave	on the promontory.{57}You can get there	by raft.{5E}"
-		ScriptJump  loc_26456,$2	  ; Answer 'no':  Jump to address 0x026456
+		ScriptJump  CS_00A6_2,$2	  ; Answer 'no':  Jump to address 0x026456
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26456:
+CS_00A6_2:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $23D,$0		  ; Prompt:	  Run text script at offset 0x027C70
@@ -1612,7 +1612,7 @@ CS_0013:
 						  ; 0xE23B: PRINT MSG 0x0288, MSGBOX CLEARED, END: "{5B}I said,	do not disturb me!{57}Hammana, hammena,	hammina...{5E}"
 						  ;
 		dc.w $0018			  ; Params 00, 18
-		ScriptJump  loc_26542,$B	  ; Jump to address 0x026542
+		ScriptJump  CS_0013_1,$B	  ; Jump to address 0x026542
 						  ;
 		dc.w $001A			  ; Params 00, 1A
 		ScriptID    $276,$D		  ; Run	text script at offset 0x027CE2
@@ -1622,7 +1622,7 @@ CS_0013:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26542:
+CS_0013_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0132			  ; Bit	2 of flag 0x026
@@ -1862,7 +1862,7 @@ CS_0015:
 						  ; 0xE269: PRINT MSG 0x02B6, MSGBOX CLEARED, END: "{5B}You again!{57}I	said members only!{57}Now, out!	 Out!{5E}"
 						  ;
 		dc.w $000E			  ; Params 00, 0E
-		ScriptJump  loc_26616,$5	  ; Jump to address 0x026616
+		ScriptJump  CS_0015_1,$5	  ; Jump to address 0x026616
 						  ;
 		dc.w $000F			  ; Params 00, 0F
 		ScriptID    $2A6,$7		  ; Run	text script at offset 0x027D42
@@ -1871,7 +1871,7 @@ CS_0015:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26616:
+CS_0015_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Bit	2 of flag 0x003
@@ -1887,10 +1887,10 @@ CS_0016:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_26638,$1	  ; Jump to address 0x026638
+		ScriptJump  CS_0016_1,$1	  ; Jump to address 0x026638
 						  ;
 		dc.w $000C			  ; Params 00, 0C
-		ScriptJump  loc_26650,$3	  ; Jump to address 0x026650
+		ScriptJump  CS_0016_2,$3	  ; Jump to address 0x026650
 						  ;
 		dc.w $000E			  ; Params 00, 0E
 		ScriptID    $2AB,$5		  ; Run	text script at offset 0x027D4C
@@ -1903,7 +1903,7 @@ CS_0016:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26638:					  ; Trap01Handler
+CS_0016_1:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
 		ScriptID    $2A7,$0		  ; Run	text script at offset 0x027D44
@@ -1913,17 +1913,17 @@ loc_26638:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		move.w	#$00C8,d0
 
-loc_26640:					  ; CODE XREF: ROM:00026B02j
+CS_0016_3:					  ; CODE XREF: ROM:00026B02j
 		bsr.w	TestFlagBit
-		beq.s	locret_2664E
+		beq.s	CS_0016_4
 		move.w	#$002C,d0
 		bsr.w	SetFlagBit
 
-locret_2664E:					  ; CODE XREF: ROM:00026644j
+CS_0016_4:					  ; CODE XREF: ROM:00026644j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26650:
+CS_0016_2:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $001E			  ; Bit	6 of flag 0x003
@@ -1963,7 +1963,7 @@ CS_0017:
 CS_00BD:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
-word_26676:	dc.w $0009			  ; Params 00, 09
+		dc.w $0009			  ; Params 00, 09
 		ScriptID    $2B4,$1		  ; Run	text script at offset 0x027D5E
 						  ; 0x8277: PRINT MSG 0x02C4: "{5B}Quite expensive, but	I feel{57}much better!	I've got to go{57}home now and...{62}"
 						  ; 0xE278: PRINT MSG 0x02C5, MSGBOX CLEARED, END: "{5B}practice what I	learned...{5E}"
@@ -2011,25 +2011,25 @@ CS_00C0:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_266B2,$1	  ; Jump to address 0x0266B2
+		ScriptJump  CS_00C0_1,$1	  ; Jump to address 0x0266B2
 						  ;
 		dc.w $0101			  ; Params 01, 01
-		ScriptJump  loc_266BE,$3	  ; Jump to address 0x0266BE
+		ScriptJump  CS_00C0_2,$3	  ; Jump to address 0x0266BE
 						  ;
 		dc.w $0102			  ; Params 01, 02
 		ScriptID    $2D7,$5		  ; Run	text script at offset 0x027DA4
 						  ; 0xE295: PRINT MSG 0x02E2, MSGBOX CLEARED, END: "{5B}Did you	go to the market?{5E}"
 						  ;
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26706,$7	  ; Jump to address 0x026706
+		ScriptJump  CS_00C0_8,$7	  ; Jump to address 0x026706
 						  ;
 		dc.w $0103			  ; Params 01, 03
-		ScriptJump  loc_266FA,$9	  ; Jump to address 0x0266FA
+		ScriptJump  CS_00C0_7,$9	  ; Jump to address 0x0266FA
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_266B2:
+CS_00C0_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C7			  ; Bit	7 of flag 0x018
@@ -2045,7 +2045,7 @@ loc_266B2:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_266BE:					  ; Trap01Handler
+CS_00C0_2:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
 		ScriptID    $2C4,$0		  ; Run	text script at offset 0x027D7E
@@ -2054,18 +2054,16 @@ loc_266BE:					  ; Trap01Handler
 						  ; 0xA288: PRINT MSG 0x02D5, END: "{5B}Would you give me{57}your opinion?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_266CE
-
-loc_266C8:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	CS_00C0_3
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2C7,$0		  ; Run	text script at offset 0x027D84
 						  ; 0xE289: PRINT MSG 0x02D6, MSGBOX CLEARED, END: "{5B}Yeah, I	know that you're{57}busy.  Visit me later when{57}you have nothing better to do.{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_266F8
+		bra.s	CS_00C0_9
 ; ---------------------------------------------------------------------------
 
-loc_266CE:					  ; CODE XREF: ROM:000266C6j
+CS_00C0_3:					  ; CODE XREF: ROM:000266C6j
 						  ; ROM:000266F2j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
@@ -2073,29 +2071,27 @@ loc_266CE:					  ; CODE XREF: ROM:000266C6j
 						  ; 0xA28A: PRINT MSG 0x02D7, END: "{5B}How about a drugstore?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_266DE
+		bcc.s	CS_00C0_4
 		trap	#$01			  ; Trap01Handler
 		move.b	$00000016(sp,d6.w),(a3)
 
-loc_266DE:					  ; CODE XREF: ROM:000266D6j
+CS_00C0_4:					  ; CODE XREF: ROM:000266D6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2C9,$0		  ; Run	text script at offset 0x027D88
 						  ; 0xA28B: PRINT MSG 0x02D8, END: "{5B}Hmmm....okay, then,{57}how about a variety shop?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_266EE
-
-loc_266E8:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	CS_00C0_5
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2CF,$0		  ; Run	text script at offset 0x027D94
 						  ; 0xA290: PRINT MSG 0x02DD, END: "{5B}You agree?  Then it's{57}settled!  I'm a variety shop{57}owner from now on!{62}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_266F4
+		bra.s	CS_00C0_6
 ; ---------------------------------------------------------------------------
 
-loc_266EE:					  ; CODE XREF: ROM:000266E6j
+CS_00C0_5:					  ; CODE XREF: ROM:000266E6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2CA,$0		  ; Run	text script at offset 0x027D8A
@@ -2103,10 +2099,10 @@ loc_266EE:					  ; CODE XREF: ROM:000266E6j
 						  ; 0x828D: PRINT MSG 0x02DA: "{5B}choose between the two.{57}I'll follow your advice.{62}"
 						  ; 0xA28E: PRINT MSG 0x02DB, END: "{5B}Now, let's try once more.{62}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_266CE
+		bra.s	CS_00C0_3
 ; ---------------------------------------------------------------------------
 
-loc_266F4:					  ; CODE XREF: ROM:000266ECj
+CS_00C0_6:					  ; CODE XREF: ROM:000266ECj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $2D0,$0		  ; Run	text script at offset 0x027D96
@@ -2119,11 +2115,11 @@ loc_266F4:					  ; CODE XREF: ROM:000266ECj
 						  ; 0x77E8: RECEIVE ITEM [0xFF1196], MSGBOX CLEARED, END
 ; ---------------------------------------------------------------------------
 
-locret_266F8:					  ; CODE XREF: ROM:000266CCj
+CS_00C0_9:					  ; CODE XREF: ROM:000266CCj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_266FA:
+CS_00C0_7:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DD			  ; Bit	5 of flag 0x01B
@@ -2139,14 +2135,14 @@ loc_266FA:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26706:
+CS_00C0_8:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0152			  ; Bit	2 of flag 0x02A
 		ScriptID    $2DE,$1		  ; Flag set:	Run text script	at offset 0x027DB2
 						  ; 0x829C: PRINT MSG 0x02E9: "{5B}Was the market already{57}closed?  That's okay.{57}They'll open it up again.{62}"
 						  ; 0xE29D: PRINT MSG 0x02EA, MSGBOX CLEARED, END: "{5B}I'll just stay here and{57}get things ready so I can{57}go for myself next month.{5E}"
-		ScriptJump  loc_266B2,$2	  ; Flag clear:	Jump to	address	0x0366B2
+		ScriptJump  CS_00C0_1,$2	  ; Flag clear:	Jump to	address	0x0366B2
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
@@ -2163,10 +2159,10 @@ CS_00C1:
 						  ; 0xE29F: PRINT MSG 0x02EC, MSGBOX CLEARED, END: "{5B}My dad is thinking of{57}changing his job.{5E}"
 						  ;
 		dc.w $0102			  ; Params 01, 02
-		ScriptJump  loc_2672C,$5	  ; Jump to address 0x02672C
+		ScriptJump  CS_00C1_1,$5	  ; Jump to address 0x02672C
 						  ;
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26738,$7	  ; Jump to address 0x026738
+		ScriptJump  CS_00C1_2,$7	  ; Jump to address 0x026738
 						  ;
 		dc.w $0103			  ; Params 01, 03
 		ScriptID    $2E4,$9		  ; Run	text script at offset 0x027DBE
@@ -2175,7 +2171,7 @@ CS_00C1:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2672C:
+CS_00C1_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0153			  ; Bit	3 of flag 0x02A
@@ -2187,7 +2183,7 @@ loc_2672C:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26738:
+CS_00C1_2:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0152			  ; Bit	2 of flag 0x02A
@@ -2343,12 +2339,12 @@ CS_0019:
 						  ; 0xE2C6: PRINT MSG 0x0313, MSGBOX CLEARED, END: "{5B}What are we going to do{57}now?{5E}"
 						  ;
 		dc.w $001D			  ; Params 00, 1D
-		ScriptJump  loc_267CC,$9	  ; Jump to address 0x0267CC
+		ScriptJump  CS_0019_1,$9	  ; Jump to address 0x0267CC
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_267CC:
+CS_0019_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $014A			  ; Bit	2 of flag 0x029
@@ -2366,7 +2362,7 @@ CS_001A:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_267E6,$1	  ; Jump to address 0x0267E6
+		ScriptJump  CS_001A_1,$1	  ; Jump to address 0x0267E6
 						  ;
 		dc.w $0014			  ; Params 00, 14
 		ScriptID    $315,$3		  ; Run	text script at offset 0x027E20
@@ -2377,7 +2373,7 @@ CS_001A:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_267E6:					  ; Trap01Handler
+CS_001A_1:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
 		ScriptID    $30E,$0		  ; Run	text script at offset 0x027E12
@@ -2385,12 +2381,10 @@ loc_267E6:					  ; Trap01Handler
 						  ; 0xA2CA: PRINT MSG 0x0317, END: "{5B}Will you hear my story?{58}"
 ; ---------------------------------------------------------------------------
 
-loc_267EA:					  ; CODE XREF: ROM:000267FAj
+CS_001A_2:					  ; CODE XREF: ROM:000267FAj
 		bsr.w	GetYesNoAnswer		  ; Params 61, 00
-		bcc.s	loc_267F6		  ; Params 64, 06
-
-loc_267F0:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	CS_001A_3		  ; Params 64, 06
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $310,$0		  ; Run	text script at offset 0x027E16
 						  ; 0x82CB: PRINT MSG 0x0318: "{5B}Needless to say, I'm Ludwig,{57}the world-famous composer{57}from the continent.{62}"
@@ -2398,19 +2392,19 @@ loc_267F0:					  ; Trap01Handler
 						  ; 0x82CD: PRINT MSG 0x031A: "{5B}she just vanished!!{57}I'm afraid my lessons weren't{57}good enough for her...{62}"
 						  ; 0xE2CE: PRINT MSG 0x031B, MSGBOX CLEARED, END: "{5B}She might at least say{57}good-bye before leaving...{57}Sigh!...how cute she was....{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_267FC
+		bra.s	CS_001A_4
 ; ---------------------------------------------------------------------------
 
-loc_267F6:					  ; CODE XREF: ROM:000267EEj
+CS_001A_3:					  ; CODE XREF: ROM:000267EEj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $314,$0		  ; Run	text script at offset 0x027E1E
 						  ; 0xA2CF: PRINT MSG 0x031C, END: "{5B}Oh, please listen....{58}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_267EA
+		bra.s	CS_001A_2
 ; ---------------------------------------------------------------------------
 
-locret_267FC:					  ; CODE XREF: ROM:000267F4j
+CS_001A_4:					  ; CODE XREF: ROM:000267F4j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2494,12 +2488,12 @@ CS_00C8:
 						  ; 0xE2E5: PRINT MSG 0x0332, MSGBOX CLEARED, END: "{5B}Ah, Princess......{57}Zzzzzzzz.....{5E}"
 						  ;
 		dc.w $001D			  ; Params 00, 1D
-		ScriptJump  loc_2684E,$5	  ; Jump to address 0x02684E
+		ScriptJump  CS_00C8_1,$5	  ; Jump to address 0x02684E
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2684E:
+CS_00C8_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $014A			  ; Bit	2 of flag 0x029
@@ -2516,7 +2510,7 @@ CS_00C9:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_26868,$1	  ; Jump to address 0x026868
+		ScriptJump  CS_00C9_1,$1	  ; Jump to address 0x026868
 						  ;
 		dc.w $0014			  ; Params 00, 14
 		ScriptID    $32E,$3		  ; Run	text script at offset 0x027E52
@@ -2525,7 +2519,7 @@ CS_00C9:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26868:
+CS_00C9_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0028			  ; Bit	0 of flag 0x005
@@ -2592,7 +2586,7 @@ CS_00CB:
 						  ; 0xE2F9: PRINT MSG 0x0346, MSGBOX CLEARED, END: "{5B}Finally	he's seen the light!{57}We've been preaching to him{57}for six hours!{5E}"
 						  ;
 		dc.w $001B			  ; Params 00, 1B
-		ScriptJump  loc_268AC,$B	  ; Jump to address 0x0268AC
+		ScriptJump  CS_00CB_1,$B	  ; Jump to address 0x0268AC
 						  ;
 		dc.w $001D			  ; Params 00, 1D
 		ScriptID    $345,$D		  ; Run	text script at offset 0x027E80
@@ -2601,7 +2595,7 @@ CS_00CB:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_268AC:
+CS_00CB_1:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $341,$0		  ; Prompt:	  Run text script at offset 0x027E78
@@ -2625,7 +2619,7 @@ CS_00CC:
 						  ; 0xE2FF: PRINT MSG 0x034C, MSGBOX CLEARED, END: "{5B}Heh, heh, heh...You'd better{57}leave....this place isn't for{57}sightseers.....heh, heh, heh...{5E}"
 						  ;
 		dc.w $0014			  ; Params 00, 14
-		ScriptJump  loc_268CA,$3	  ; Jump to address 0x0268CA
+		ScriptJump  CS_00CC_1,$3	  ; Jump to address 0x0268CA
 						  ;
 		dc.w $0015			  ; Params 00, 15
 		ScriptID    $34B,$5		  ; Run	text script at offset 0x027E8C
@@ -2634,7 +2628,7 @@ CS_00CC:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_268CA:
+CS_00CC_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00A2			  ; Bit	2 of flag 0x014
@@ -2649,10 +2643,8 @@ loc_268CA:
 ; ---------------------------------------------------------------------------
 
 CS_001B:					  ; Money won from Greenpea
-		cmpi.w	#01600,(g_Vars+$1C).l
-		blt.s	loc_268EC
-
-loc_268E0:
+		cmpi.w	#01600,(g_AdditionalFlags+$1C).l
+		blt.s	CS_001B_1
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0008			  ; Bit	0 of flag 0x001
@@ -2662,10 +2654,10 @@ loc_268E0:
 						  ; 0x1408: SET	BIT 0 OF FLAG 0x001
 						  ; 0xE588: PRINT MSG 0x05D5, MSGBOX CLEARED, END: "{5B}No-no-no!  Please...{57}get out!  You're some kind{57}of con-artist, aren't you?{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_268F6
+		bra.s	CS_001B_2
 ; ---------------------------------------------------------------------------
 
-loc_268EC:					  ; CODE XREF: ROM:000268DEj
+CS_001B_1:					  ; CODE XREF: ROM:000268DEj
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0008			  ; Bit	0 of flag 0x001
@@ -2676,7 +2668,7 @@ loc_268EC:					  ; CODE XREF: ROM:000268DEj
 						  ; 0x7C34: LOAD CUSTOM	ACTION 0x34 (0x0121CC CSA_0034), MSGBOX	CLEARED, END
 ; ---------------------------------------------------------------------------
 
-locret_268F6:					  ; CODE XREF: ROM:000268EAj
+CS_001B_2:					  ; CODE XREF: ROM:000268EAj
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2738,23 +2730,21 @@ CS_00CF:
 CS_00D0:
 		move.w	#$001B,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_2694A
+		beq.s	CS_00D0_3
 		move.w	#$000F,d0
 		bsr.w	TestFlagBit
-		bne.s	loc_26944
-
-loc_2693E:					  ; Trap01Handler
-		trap	#$01
+		bne.s	CS_00D0_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $681,$0		  ; Run	text script at offset 0x0284F8
 						  ; 0x18D0: LOAD CHARACTER SCRIPT * (0x00D0)
 						  ; 0x8591: PRINT MSG 0x05DE: "{5B}Collecting jars is his hobby.{57}Scattering jars and	making{57}somebody put them back{62}"
 						  ; 0xE592: PRINT MSG 0x05DF, MSGBOX CLEARED, END: "{5B}is my hobby.{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_26948
+		bra.s	CS_00D0_2
 ; ---------------------------------------------------------------------------
 
-loc_26944:					  ; CODE XREF: ROM:0002693Cj
+CS_00D0_1:					  ; CODE XREF: ROM:0002693Cj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $67F,$0		  ; Run	text script at offset 0x0284F4
@@ -2762,25 +2752,23 @@ loc_26944:					  ; CODE XREF: ROM:0002693Cj
 						  ; 0xE590: PRINT MSG 0x05DD, MSGBOX CLEARED, END: "{5B}Please help me again.{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_26948:					  ; CODE XREF: ROM:00026942j
-		bra.s	locret_2695E
+CS_00D0_2:					  ; CODE XREF: ROM:00026942j
+		bra.s	CS_00D0_5
 ; ---------------------------------------------------------------------------
 
-loc_2694A:					  ; CODE XREF: ROM:00026932j
+CS_00D0_3:					  ; CODE XREF: ROM:00026932j
 		move.w	#$001A,d0
 		bsr.w	TestFlagBit
-		bne.s	loc_2695A
-
-loc_26954:					  ; Trap01Handler
-		trap	#$01
+		bne.s	CS_00D0_4
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $35C,$0		  ; Run	text script at offset 0x027EAE
 						  ; 0x7C38: LOAD CUSTOM	ACTION 0x38 (0x0121DC CSA_0038), MSGBOX	CLEARED, END
 ; ---------------------------------------------------------------------------
-		bra.s	locret_2695E
+		bra.s	CS_00D0_5
 ; ---------------------------------------------------------------------------
 
-loc_2695A:					  ; CODE XREF: ROM:00026952j
+CS_00D0_4:					  ; CODE XREF: ROM:00026952j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $684,$0		  ; Run	text script at offset 0x0284FE
@@ -2788,7 +2776,7 @@ loc_2695A:					  ; CODE XREF: ROM:00026952j
 						  ; 0xE593: PRINT MSG 0x05E0, MSGBOX CLEARED, END: "{5B}I have a bad back.{57}Those jars are just{57}too heavy for me...{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_2695E:					  ; CODE XREF: ROM:loc_26948j
+CS_00D0_5:					  ; CODE XREF: ROM:CS_00D0_2j
 						  ; ROM:00026958j
 		rts
 ; ---------------------------------------------------------------------------
@@ -3067,7 +3055,7 @@ CS_001D:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_26A6C,$1	  ; Jump to address 0x026A6C
+		ScriptJump  CS_001D_1,$1	  ; Jump to address 0x026A6C
 						  ;
 		dc.w $000C			  ; Params 00, 0C
 		ScriptID    $39B,$3		  ; Run	text script at offset 0x027F2C
@@ -3093,7 +3081,7 @@ CS_001D:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26A6C:
+CS_001D_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $002A			  ; Bit	2 of flag 0x005
@@ -3224,7 +3212,7 @@ CS_00E5:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_26AFA,$1	  ; Jump to address 0x026AFA
+		ScriptJump  CS_00E5_1,$1	  ; Jump to address 0x026AFA
 						  ;
 		dc.w $000F			  ; Params 00, 0F
 		ScriptID    $3B9,$3		  ; Run	text script at offset 0x027F68
@@ -3235,7 +3223,7 @@ CS_00E5:
 						  ; 0xE36A: PRINT MSG 0x03B7, MSGBOX CLEARED, END: "{5B}I'd like to come along and{57}help, but standing here is{57}an important duty!{5E}"
 						  ;
 		dc.w $0017			  ; Params 00, 17
-		ScriptJump  loc_26B06,$7	  ; Jump to address 0x026B06
+		ScriptJump  CS_00E5_2,$7	  ; Jump to address 0x026B06
 						  ;
 		dc.w $0018			  ; Params 00, 18
 		ScriptID    $3BE,$9		  ; Run	text script at offset 0x027F72
@@ -3248,7 +3236,7 @@ CS_00E5:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26AFA:					  ; Trap01Handler
+CS_00E5_1:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
 		ScriptID    $3B7,$0		  ; Run	text script at offset 0x027F64
@@ -3256,12 +3244,12 @@ loc_26AFA:					  ; Trap01Handler
 						  ; 0xE368: PRINT MSG 0x03B5, MSGBOX CLEARED, END: "{5B}This is	the castle of{57}Mercator.{57}I	cannot allow you inside.{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_26AFE:					  ; CODE XREF: ROM:00026B34j
+CS_00E5_3:					  ; CODE XREF: ROM:00026B34j
 		move.w	#$00C6,d0
-		bra.w	loc_26640
+		bra.w	CS_0016_3
 ; ---------------------------------------------------------------------------
 
-loc_26B06:
+CS_00E5_2:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DC			  ; Bit	4 of flag 0x01B
@@ -3277,7 +3265,7 @@ CS_00E6:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0009			  ; Params 00, 09
-		ScriptJump  loc_26B30,$1	  ; Jump to address 0x026B30
+		ScriptJump  CS_00E6_1,$1	  ; Jump to address 0x026B30
 						  ;
 		dc.w $000F			  ; Params 00, 0F
 		ScriptID    $3C3,$3		  ; Run	text script at offset 0x027F7C
@@ -3289,7 +3277,7 @@ CS_00E6:
 						  ; 0xE372: PRINT MSG 0x03BF, MSGBOX CLEARED, END: "{5B}Hahahahaha!!{5E}"
 						  ;
 		dc.w $0017			  ; Params 00, 17
-		ScriptJump  loc_26B36,$7	  ; Jump to address 0x026B36
+		ScriptJump  CS_00E6_2,$7	  ; Jump to address 0x026B36
 						  ;
 		dc.w $0018			  ; Params 00, 18
 		ScriptID    $3C7,$9		  ; Run	text script at offset 0x027F84
@@ -3303,7 +3291,7 @@ CS_00E6:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26B30:					  ; Trap01Handler
+CS_00E6_1:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
 		ScriptID    $3C0,$0		  ; Run	text script at offset 0x027F76
@@ -3311,10 +3299,10 @@ loc_26B30:					  ; Trap01Handler
 						  ; 0x836E: PRINT MSG 0x03BB: "{5B}You have not	been invited{57}by Duke	Mercator, have you?{62}"
 						  ; 0xE36F: PRINT MSG 0x03BC, MSGBOX CLEARED, END: "{5B}This is	not a place for{57}dirty little	kids like you!{57}Get out of here!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_26AFE
+		bra.s	CS_00E5_3
 ; ---------------------------------------------------------------------------
 
-loc_26B36:
+CS_00E6_2:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DC			  ; Bit	4 of flag 0x01B
@@ -3351,7 +3339,7 @@ CS_001E:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0011			  ; Params 00, 11
-		ScriptJump  loc_26B72,$1	  ; Jump to address 0x026B72
+		ScriptJump  CS_001E_1,$1	  ; Jump to address 0x026B72
 						  ;
 		dc.w $0012			  ; Params 00, 12
 		ScriptID    $49D,$3		  ; Run	text script at offset 0x028130
@@ -3359,32 +3347,32 @@ CS_001E:
 						  ; 0xE43A: PRINT MSG 0x0487, MSGBOX CLEARED, END: "{5B}Why dost thou not go{57}to the banquet room?{5E}"
 						  ;
 		dc.w $0013			  ; Params 00, 13
-		ScriptJump  loc_26B8A,$5	  ; Jump to address 0x026B8A
+		ScriptJump  CS_001E_3,$5	  ; Jump to address 0x026B8A
 						  ;
 		dc.w $0014			  ; Params 00, 14
-		ScriptJump  loc_26B96,$7	  ; Jump to address 0x026B96
+		ScriptJump  CS_001E_4,$7	  ; Jump to address 0x026B96
 						  ;
 		dc.w $0018			  ; Params 00, 18
-		ScriptJump  loc_26BA2,$9	  ; Jump to address 0x026BA2
+		ScriptJump  CS_001E_5,$9	  ; Jump to address 0x026BA2
 						  ;
 		dc.w $001D			  ; Params 00, 1D
-		ScriptJump  loc_26BAE,$B	  ; Jump to address 0x026BAE
+		ScriptJump  CS_001E_6,$B	  ; Jump to address 0x026BAE
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26B72:
+CS_001E_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00CE			  ; Bit	6 of flag 0x019
 		ScriptID    $49A,$1		  ; Flag clear:	Run text script	at offset 0x02812A
 						  ; 0x7C51: LOAD CUSTOM	ACTION 0x51 (0x012240 CSA_0051), MSGBOX	CLEARED, END
-		ScriptJump  loc_26B7E,$2	  ; Flag set:	Jump to	address	0x026B7E
+		ScriptJump  CS_001E_2,$2	  ; Flag set:	Jump to	address	0x026B7E
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26B7E:
+CS_001E_2:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00DB			  ; Bit	3 of flag 0x01B
@@ -3398,7 +3386,7 @@ loc_26B7E:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26B8A:
+CS_001E_3:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00CF			  ; Bit	7 of flag 0x019
@@ -3415,7 +3403,7 @@ loc_26B8A:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26B96:
+CS_001E_4:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00D1			  ; Bit	1 of flag 0x01A
@@ -3431,7 +3419,7 @@ loc_26B96:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26BA2:
+CS_001E_5:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00D5			  ; Bit	5 of flag 0x01A
@@ -3443,7 +3431,7 @@ loc_26BA2:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26BAE:
+CS_001E_6:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DE			  ; Bit	6 of flag 0x01B
@@ -3459,27 +3447,25 @@ loc_26BAE:
 						  ; 0x17E8: RECEIVE ITEM [0xFF1196]
 						  ; 0x181E: LOAD CHARACTER SCRIPT Arthur (0x001E)
 						  ; 0xE44F: PRINT MSG 0x049C, MSGBOX CLEARED, END: "{5B}Visit me anytime!{57}Take care of thyself!{5E}"
-		ScriptJump  loc_26BBA,$2	  ; Flag set:	Jump to	address	0x026BBA
+		ScriptJump  CS_001E_7,$2	  ; Flag set:	Jump to	address	0x026BBA
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26BBA:
+CS_001E_7:
 		move.w	#ITM_CASINOTICKET,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_26BCA
-
-loc_26BC4:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_001E_8
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $4B6,$0		  ; Run	text script at offset 0x028162
 						  ; 0x181E: LOAD CHARACTER SCRIPT Arthur (0x001E)
 						  ; 0xE44F: PRINT MSG 0x049C, MSGBOX CLEARED, END: "{5B}Visit me anytime!{57}Take care of thyself!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_26BCE
+		bra.s	CS_001E_9
 ; ---------------------------------------------------------------------------
 
-loc_26BCA:					  ; CODE XREF: ROM:00026BC2j
+CS_001E_8:					  ; CODE XREF: ROM:00026BC2j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $4B8,$0		  ; Run	text script at offset 0x028166
@@ -3488,7 +3474,7 @@ loc_26BCA:					  ; CODE XREF: ROM:00026BC2j
 						  ; 0x77E8: RECEIVE ITEM [0xFF1196], MSGBOX CLEARED, END
 ; ---------------------------------------------------------------------------
 
-locret_26BCE:					  ; CODE XREF: ROM:00026BC8j
+CS_001E_9:					  ; CODE XREF: ROM:00026BC8j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3626,14 +3612,14 @@ CS_00F1:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26C66,$1	  ; Jump to address 0x026C66
+		ScriptJump  CS_00F1_2,$1	  ; Jump to address 0x026C66
 						  ;
 		dc.w $0101			  ; Params 01, 01
 		ScriptID    $3E7,$3		  ; Run	text script at offset 0x027FC4
 						  ; 0xE38D: PRINT MSG 0x03DA, MSGBOX CLEARED, END: "{5B}Sorry!	This warehouse{57}is for traders only.{5E}"
 						  ;
 		dc.w $0102			  ; Params 01, 02
-		ScriptJump  loc_26C5A,$5	  ; Jump to address 0x026C5A
+		ScriptJump  CS_00F1_1,$5	  ; Jump to address 0x026C5A
 						  ;
 		dc.w $0103			  ; Params 01, 03
 		ScriptID    $3EA,$7		  ; Run	text script at offset 0x027FCA
@@ -3642,7 +3628,7 @@ CS_00F1:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26C5A:
+CS_00F1_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00A5			  ; Bit	5 of flag 0x014
@@ -3654,7 +3640,7 @@ loc_26C5A:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26C66:
+CS_00F1_2:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $3EB,$0		  ; Prompt:	  Run text script at offset 0x027FCC
@@ -3698,14 +3684,14 @@ CS_00F4:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00A4			  ; Bit	4 of flag 0x014
-		ScriptJump  loc_26C92,$1	  ; Flag set:	Jump to	address	0x026C92
+		ScriptJump  CS_00F4_1,$1	  ; Flag set:	Jump to	address	0x026C92
 		ScriptID    $3F2,$2		  ; Flag clear:	Run text script	at offset 0x027FDA
 						  ; 0x7C6A: LOAD CUSTOM	ACTION 0x6A (0x0122A4 CSA_006A), MSGBOX	CLEARED, END
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26C92:
+CS_00F4_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00D2			  ; Bit	2 of flag 0x01A
@@ -3763,12 +3749,12 @@ CS_00F7:
 						  ; 0xE3A1: PRINT MSG 0x03EE, MSGBOX CLEARED, END: "{5B}The goods you purchased{57}will	be sent	directly to your{57}shop with the bill.	 Thanks!{5E}"
 						  ;
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26CCA,$3	  ; Jump to address 0x026CCA
+		ScriptJump  CS_00F7_1,$3	  ; Jump to address 0x026CCA
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26CCA:
+CS_00F7_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00D9			  ; Bit	1 of flag 0x01B
@@ -3799,14 +3785,14 @@ CS_00F9:
 						  ; 0xE3A3: PRINT MSG 0x03F0, MSGBOX CLEARED, END: "{5B}Welcome	to{57}the castle of Mercator!{5E}"
 						  ;
 		dc.w $0014			  ; Params 00, 14
-		ScriptJump  loc_26CFA,$3	  ; Jump to address 0x026CFA
+		ScriptJump  CS_00F9_1,$3	  ; Jump to address 0x026CFA
 						  ;
 		dc.w $0017			  ; Params 00, 17
 		ScriptID    $405,$5		  ; Run	text script at offset 0x028000
 						  ; 0xE3A7: PRINT MSG 0x03F4, MSGBOX CLEARED, END: "{5B}Nigel!	Welcome	back!{57}Thank heavens the goddess{57}accepted my prayer!{5E}"
 						  ;
 		dc.w $0018			  ; Params 00, 18
-		ScriptJump  loc_26D06,$7	  ; Jump to address 0x026D06
+		ScriptJump  CS_00F9_2,$7	  ; Jump to address 0x026D06
 						  ;
 		dc.w $0019			  ; Params 00, 19
 		ScriptID    $409,$9		  ; Run	text script at offset 0x028008
@@ -3820,7 +3806,7 @@ CS_00F9:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26CFA:
+CS_00F9_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00D4			  ; Bit	4 of flag 0x01A
@@ -3833,7 +3819,7 @@ loc_26CFA:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_26D06:
+CS_00F9_2:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00E8			  ; Bit	0 of flag 0x01D
@@ -3964,12 +3950,12 @@ CS_00FE:
 						  ; 0xE3CA: PRINT MSG 0x0417, MSGBOX CLEARED, END: "{5B}Training rooms for{57}the soldiers from	here.{5E}"
 						  ;
 		dc.w $0014			  ; Params 00, 14
-		ScriptJump  loc_26D88,$3	  ; Jump to address 0x026D88
+		ScriptJump  CS_00FE_1,$3	  ; Jump to address 0x026D88
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26D88:
+CS_00FE_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00A1			  ; Bit	1 of flag 0x014
@@ -4000,7 +3986,7 @@ CS_0100:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0011			  ; Params 00, 11
-		ScriptJump  loc_26DAE,$1	  ; Jump to address 0x026DAE
+		ScriptJump  CS_0100_1,$1	  ; Jump to address 0x026DAE
 						  ;
 		dc.w $0012			  ; Params 00, 12
 		ScriptID    $433,$3		  ; Run	text script at offset 0x02805C
@@ -4010,7 +3996,7 @@ CS_0100:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26DAE:
+CS_0100_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00CC			  ; Bit	4 of flag 0x019
@@ -4066,7 +4052,7 @@ CS_0021:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0010			  ; Params 00, 10
-		ScriptJump  loc_26DEA,$1	  ; Jump to address 0x026DEA
+		ScriptJump  CS_0021_1,$1	  ; Jump to address 0x026DEA
 						  ;
 		dc.w $0013			  ; Params 00, 13
 		ScriptID    $43F,$3		  ; Run	text script at offset 0x028074
@@ -4076,7 +4062,7 @@ CS_0021:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26DEA:
+CS_0021_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00CA			  ; Bit	2 of flag 0x019
@@ -4289,7 +4275,7 @@ CS_010E:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0011			  ; Params 00, 11
-		ScriptJump  loc_26EC4,$1	  ; Jump to address 0x026EC4
+		ScriptJump  CS_010E_1,$1	  ; Jump to address 0x026EC4
 						  ;
 		dc.w $0012			  ; Params 00, 12
 		ScriptID    $478,$3		  ; Run	text script at offset 0x0280E6
@@ -4302,7 +4288,7 @@ CS_010E:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26EC4:
+CS_010E_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00CD			  ; Bit	5 of flag 0x019
@@ -4372,7 +4358,7 @@ CS_0112:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0011			  ; Params 00, 11
-		ScriptJump  loc_26F14,$1	  ; Jump to address 0x026F14
+		ScriptJump  CS_0112_1,$1	  ; Jump to address 0x026F14
 						  ;
 		dc.w $0012			  ; Params 00, 12
 		ScriptID    $489,$3		  ; Run	text script at offset 0x028108
@@ -4385,7 +4371,7 @@ CS_0112:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26F14:
+CS_0112_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $00CE			  ; Bit	6 of flag 0x019
@@ -4587,7 +4573,7 @@ CS_0120:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26FC0,$1	  ; Jump to address 0x026FC0
+		ScriptJump  CS_0120_1,$1	  ; Jump to address 0x026FC0
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $4FA,$3		  ; Run	text script at offset 0x0281EA
@@ -4596,7 +4582,7 @@ CS_0120:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26FC0:
+CS_0120_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0135			  ; Bit	5 of flag 0x026
@@ -4615,7 +4601,7 @@ CS_0121:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26FDA,$1	  ; Jump to address 0x026FDA
+		ScriptJump  CS_0121_1,$1	  ; Jump to address 0x026FDA
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $4FE,$3		  ; Run	text script at offset 0x0281F2
@@ -4624,7 +4610,7 @@ CS_0121:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26FDA:
+CS_0121_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0135			  ; Bit	5 of flag 0x026
@@ -4641,7 +4627,7 @@ CS_0122:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_26FF4,$1	  ; Jump to address 0x026FF4
+		ScriptJump  CS_0122_1,$1	  ; Jump to address 0x026FF4
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $501,$3		  ; Run	text script at offset 0x0281F8
@@ -4650,7 +4636,7 @@ CS_0122:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_26FF4:
+CS_0122_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0135			  ; Bit	5 of flag 0x026
@@ -4666,7 +4652,7 @@ CS_0123:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_2700E,$1	  ; Jump to address 0x02700E
+		ScriptJump  CS_0123_1,$1	  ; Jump to address 0x02700E
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $505,$3		  ; Run	text script at offset 0x028200
@@ -4677,7 +4663,7 @@ CS_0123:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2700E:
+CS_0123_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0136			  ; Bit	6 of flag 0x026
@@ -4709,7 +4695,7 @@ CS_0125:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_27036,$1	  ; Jump to address 0x027036
+		ScriptJump  CS_0125_1,$1	  ; Jump to address 0x027036
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $50D,$3		  ; Run	text script at offset 0x028210
@@ -4719,7 +4705,7 @@ CS_0125:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_27036:
+CS_0125_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0136			  ; Bit	6 of flag 0x026
@@ -4735,7 +4721,7 @@ CS_0126:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_27050,$1	  ; Jump to address 0x027050
+		ScriptJump  CS_0126_1,$1	  ; Jump to address 0x027050
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $513,$3		  ; Run	text script at offset 0x02821C
@@ -4746,7 +4732,7 @@ CS_0126:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_27050:
+CS_0126_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0137			  ; Bit	7 of flag 0x026
@@ -4764,7 +4750,7 @@ CS_0127:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_2706A,$1	  ; Jump to address 0x02706A
+		ScriptJump  CS_0127_1,$1	  ; Jump to address 0x02706A
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $518,$3		  ; Run	text script at offset 0x028226
@@ -4773,7 +4759,7 @@ CS_0127:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2706A:
+CS_0127_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0137			  ; Bit	7 of flag 0x026
@@ -4789,7 +4775,7 @@ CS_0128:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $001A			  ; Params 00, 1A
-		ScriptJump  loc_27084,$1	  ; Jump to address 0x027084
+		ScriptJump  CS_0128_1,$1	  ; Jump to address 0x027084
 						  ;
 		dc.w $001B			  ; Params 00, 1B
 		ScriptID    $51C,$3		  ; Run	text script at offset 0x02822E
@@ -4798,18 +4784,18 @@ CS_0128:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_27084:
+CS_0128_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0137			  ; Bit	7 of flag 0x026
-		ScriptJump  loc_27090,$1	  ; Flag set:	Jump to	address	0x027090
+		ScriptJump  CS_0128_2,$1	  ; Flag set:	Jump to	address	0x027090
 		ScriptID    $519,$2		  ; Flag clear:	Run text script	at offset 0x028228
 						  ; 0xE4A5: PRINT MSG 0x04F2, MSGBOX CLEARED, END: "{5B}Don't look at ME...{57}GET 'im!{5E}"
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_27090:
+CS_0128_2:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $013D			  ; Bit	5 of flag 0x027
@@ -5105,37 +5091,33 @@ CS_002D:					  ; Trap01Handler
 CS_0139:
 		move.w	#$000A,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_27172
-
-loc_2716C:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_0139_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A03,$0		  ; Run	text script at offset 0x028BFC
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C4: PRINT MSG 0x0811, MSGBOX CLEARED, END: "{5B}See you	again!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_2718A
+		bra.s	CS_0139_3
 ; ---------------------------------------------------------------------------
 
-loc_27172:					  ; CODE XREF: ROM:0002716Aj
+CS_0139_1:					  ; CODE XREF: ROM:0002716Aj
 		move.w	#$0008,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_27182
-
-loc_2717C:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_0139_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FC,$0		  ; Run	text script at offset 0x028BEE
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C0: PRINT MSG 0x080D, MSGBOX CLEARED, END: "{5B}Good luck!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_2718A
+		bra.s	CS_0139_3
 ; ---------------------------------------------------------------------------
 
-loc_27182:					  ; CODE XREF: ROM:0002717Aj
+CS_0139_2:					  ; CODE XREF: ROM:0002717Aj
 		move.w	#$0132,(g_Character).l
 
-locret_2718A:					  ; CODE XREF: ROM:00027170j
+CS_0139_3:					  ; CODE XREF: ROM:00027170j
 						  ; ROM:00027180j
 		rts
 ; ---------------------------------------------------------------------------
@@ -5143,37 +5125,33 @@ locret_2718A:					  ; CODE XREF: ROM:00027170j
 CS_013A:
 		move.w	#$000A,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_2719C
-
-loc_27196:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_013A_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A03,$0		  ; Run	text script at offset 0x028BFC
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C4: PRINT MSG 0x0811, MSGBOX CLEARED, END: "{5B}See you	again!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_271B4
+		bra.s	CS_013A_3
 ; ---------------------------------------------------------------------------
 
-loc_2719C:					  ; CODE XREF: ROM:00027194j
+CS_013A_1:					  ; CODE XREF: ROM:00027194j
 		move.w	#$0008,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_271AC
-
-loc_271A6:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_013A_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FC,$0		  ; Run	text script at offset 0x028BEE
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C0: PRINT MSG 0x080D, MSGBOX CLEARED, END: "{5B}Good luck!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_271B4
+		bra.s	CS_013A_3
 ; ---------------------------------------------------------------------------
 
-loc_271AC:					  ; CODE XREF: ROM:000271A4j
+CS_013A_2:					  ; CODE XREF: ROM:000271A4j
 		move.w	#$0159,(g_Character).l
 
-locret_271B4:					  ; CODE XREF: ROM:0002719Aj
+CS_013A_3:					  ; CODE XREF: ROM:0002719Aj
 						  ; ROM:000271AAj
 		rts
 ; ---------------------------------------------------------------------------
@@ -5181,37 +5159,33 @@ locret_271B4:					  ; CODE XREF: ROM:0002719Aj
 CS_013B:
 		move.w	#$000A,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_271C6
-
-loc_271C0:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_013B_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A03,$0		  ; Run	text script at offset 0x028BFC
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C4: PRINT MSG 0x0811, MSGBOX CLEARED, END: "{5B}See you	again!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_271DE
+		bra.s	CS_013B_3
 ; ---------------------------------------------------------------------------
 
-loc_271C6:					  ; CODE XREF: ROM:000271BEj
+CS_013B_1:					  ; CODE XREF: ROM:000271BEj
 		move.w	#$0008,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_271D6
-
-loc_271D0:					  ; Trap01Handler
-		trap	#$01
+		beq.s	CS_013B_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FC,$0		  ; Run	text script at offset 0x028BEE
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C0: PRINT MSG 0x080D, MSGBOX CLEARED, END: "{5B}Good luck!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_271DE
+		bra.s	CS_013B_3
 ; ---------------------------------------------------------------------------
 
-loc_271D6:					  ; CODE XREF: ROM:000271CEj
+CS_013B_2:					  ; CODE XREF: ROM:000271CEj
 		move.w	#$0135,(g_Character).l
 
-locret_271DE:					  ; CODE XREF: ROM:000271C4j
+CS_013B_3:					  ; CODE XREF: ROM:000271C4j
 						  ; ROM:000271D4j
 		rts
 ; ---------------------------------------------------------------------------
@@ -5224,20 +5198,20 @@ CS_013C:
 						  ; 0xE7D0: PRINT MSG 0x081D, MSGBOX CLEARED, END: "{5B}I'm sorry.{57}This is a private area.{57}No admittance!{5E}"
 						  ;
 		dc.w $001D			  ; Params 00, 1D
-		ScriptJump  loc_271EE,$3	  ; Jump to address 0x0271EE
+		ScriptJump  CS_013C_1,$3	  ; Jump to address 0x0271EE
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_271EE:
+CS_013C_1:
 		move.w	#$014B,d0
 		bsr.w	TestFlagBit
-		bne.s	loc_27202
+		bne.s	CS_013C_2
 		move.w	#$0137,(g_Character).l
-		bra.s	locret_27206
+		bra.s	CS_013C_3
 ; ---------------------------------------------------------------------------
 
-loc_27202:					  ; CODE XREF: ROM:000271F6j
+CS_013C_2:					  ; CODE XREF: ROM:000271F6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A19,$0		  ; Run	text script at offset 0x028C28
@@ -5245,14 +5219,14 @@ loc_27202:					  ; CODE XREF: ROM:000271F6j
 						  ; 0xE7D3: PRINT MSG 0x0820, MSGBOX CLEARED, END: "{5B}Welcome	to{57}the Casino Arthurlier!{57}Have fun!{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_27206:					  ; CODE XREF: ROM:00027200j
+CS_013C_3:					  ; CODE XREF: ROM:00027200j
 		rts
 ; ---------------------------------------------------------------------------
 
 CS_013D:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
-word_2720C:	dc.w $00E5			  ; Bit	5 of flag 0x01C
+		dc.w $00E5			  ; Bit	5 of flag 0x01C
 		ScriptID    $A67,$1		  ; Flag clear:	Run text script	at offset 0x028CC4
 						  ; 0x1BF3: LOAD SPECIAL CHARACTER Pixie (0x0B)
 						  ; 0x87FF: PRINT MSG 0x084C: "{5B}Oh, Friday!{57}To think I have not seen you{57}for 256 years!{62}"
@@ -5301,12 +5275,12 @@ CS_002E:
 						  ; 0xE452: PRINT MSG 0x049F, MSGBOX CLEARED, END: "{5B}Hey!  How did you{57}escape?!!	I'm not through{57}with you yet!!{5E}"
 						  ;
 		dc.w $001D			  ; Params 00, 1D
-		ScriptJump  loc_27230,$3	  ; Jump to address 0x027230
+		ScriptJump  CS_002E_1,$3	  ; Jump to address 0x027230
 						  ;
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_27230:
+CS_002E_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00E7			  ; Bit	7 of flag 0x01C
@@ -5373,7 +5347,7 @@ CS_0032:
 		bsr.w	HandleProgressDependentDialogue
 ; ---------------------------------------------------------------------------
 		dc.w $0010			  ; Params 00, 10
-		ScriptJump  loc_2727C,$1	  ; Jump to address 0x02727C
+		ScriptJump  CS_0032_1,$1	  ; Jump to address 0x02727C
 						  ;
 		dc.w $0011			  ; Params 00, 11
 		ScriptID    $447,$3		  ; Run	text script at offset 0x028084
@@ -5391,18 +5365,18 @@ CS_0032:
 		dc.w $FFFF
 ; ---------------------------------------------------------------------------
 
-loc_2727C:
+CS_0032_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00C9			  ; Bit	1 of flag 0x019
-		ScriptJump  loc_27288,$1	  ; Flag clear:	Jump to	address	0x027288
+		ScriptJump  CS_0032_2,$1	  ; Flag clear:	Jump to	address	0x027288
 		ScriptID    $446,$2		  ; Flag set:	Run text script	at offset 0x028082
 						  ; 0xE3E7: PRINT MSG 0x0434, MSGBOX CLEARED, END: "{5B}This gorgeous castle is{57}well	worth exploring.....{5E}"
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_27288:
+CS_0032_2:
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $441,$0		  ; Prompt:	  Run text script at offset 0x028078
@@ -5486,7 +5460,7 @@ CS_0039:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00DF			  ; Bit	7 of flag 0x01B
-		ScriptID    $8A7,$1		  ; Flag set:	Run text script	at offset 0x028944
+		ScriptID    $8A7,$1		  ; Flag clear:	Run text script	at offset 0x028944
 						  ; 0x86E9: PRINT MSG 0x0736: "{5B}My name is Kado.{57}I was once a famous{57}swordsman.{62}"
 						  ; 0x86EA: PRINT MSG 0x0737: "{5B}I used to work at the{57}castle, but	retired.  I didn't{57}like town life.{62}"
 						  ; 0x86EB: PRINT MSG 0x0738: "{5B}Are you a treasure{57}hunter?  Then you must	need{57}a better sword than that...{62}"
@@ -5496,12 +5470,12 @@ CS_0039:
 						  ; 0x86EC: PRINT MSG 0x0739: "{5B}It has a special power.{62}"
 						  ; 0x86ED: PRINT MSG 0x073A: "{5B}When	the sword is fully{57}charged, a magic flame will{57}burn any enemy it touches!{62}"
 						  ; 0xE6EE: PRINT MSG 0x073B, MSGBOX CLEARED, END: "{5B}I think	you can{57}appreciate the value{57}of the sword.{62}"
-		ScriptJump  loc_272DC,$2	  ; Flag clear:	Jump to	address	0x0272DC
+		ScriptJump  CS_0039_1,$2	  ; Flag set:	Jump to	address	0x0272DC
 ; ---------------------------------------------------------------------------
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_272DC:
+CS_0039_1:
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00E3			  ; Bit	3 of flag 0x01C
@@ -5521,7 +5495,7 @@ loc_272DC:
 CS_003A:
 		move.w	#ITM_SUNSTONE,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_272F8
+		beq.s	CS_003A_1
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $4DE,$0		  ; Run	text script at offset 0x0281B2
@@ -5529,10 +5503,10 @@ CS_003A:
 						  ; 0x846E: PRINT MSG 0x04BB: "{5B}You've found the {5F}!{62}"
 						  ; 0xE46F: PRINT MSG 0x04BC, MSGBOX CLEARED, END: "{5B}Perhaps	you know this{57}forest	better than me!	 Will{57}you take my place?{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_2730C
+		bra.s	CS_003A_2
 ; ---------------------------------------------------------------------------
 
-loc_272F8:					  ; CODE XREF: ROM:000272F0j
+CS_003A_1:					  ; CODE XREF: ROM:000272F0j
 		bsr.w	SetFlagBitOnTalking
 ; ---------------------------------------------------------------------------
 		dc.w $00D7			  ; Bit	7 of flag 0x01A
@@ -5563,7 +5537,7 @@ loc_272F8:					  ; CODE XREF: ROM:000272F0j
 						  ; 0xE46D: PRINT MSG 0x04BA, MSGBOX CLEARED, END: "{5B}The {5F} is in{57}the northeast	sector of{57}this forest.{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_2730C:					  ; CODE XREF: ROM:000272F6j
+CS_003A_2:					  ; CODE XREF: ROM:000272F6j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -5628,7 +5602,7 @@ CS_0142:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $014D			  ; Bit	5 of flag 0x029
-		ScriptJump  loc_2734C,$1	  ; Flag set:	Jump to	address	0x02734C
+		ScriptJump  CS_0142_1,$1	  ; Flag set:	Jump to	address	0x02734C
 		ScriptID    $A2A,$2		  ; Flag clear:	Run text script	at offset 0x028C4A
 						  ; 0x14E0: SET	BIT 0 OF FLAG 0x01C
 						  ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
@@ -5639,7 +5613,7 @@ CS_0142:
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_2734C:
+CS_0142_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $015B			  ; Bit	3 of flag 0x02B

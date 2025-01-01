@@ -41,7 +41,7 @@ DebugMenuEnter:					  ; DATA XREF: ROM:DebugMenuActionTableo
 ; ---------------------------------------------------------------------------
 
 DebugMenuExit:					  ; DATA XREF: ROM:DebugMenuActionTableo
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ SoundMenuEnter:					  ; DATA XREF: ROM:SoundMenuActionJmptableo
 ; ---------------------------------------------------------------------------
 
 SoundMenuExit:					  ; DATA XREF: ROM:SoundMenuActionJmptableo
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ MusicMenuPlay:					  ; DATA XREF: ROM:MusicMenuActionJmptableo
 ; ---------------------------------------------------------------------------
 
 MusicMenuExit:					  ; DATA XREF: ROM:MusicMenuActionJmptableo
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -278,7 +278,7 @@ MapMenuOpen:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 
 MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 		movem.l	d0-a6,-(sp)
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		asl.w	#$02,d1
 		lea	MapList(pc,d1.w),a0
@@ -287,7 +287,7 @@ MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 		move.w	d0,(RmNum2).l
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_RmNum1).l
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(sub_3E0).l
@@ -296,7 +296,7 @@ MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 ; ---------------------------------------------------------------------------
 
 MapMenuExit:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ FlagMenuOpen:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
 
 FlagMenuEnter:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
 		movem.l	d0-a6,-(sp)
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		lea	(g_Flags).l,a0
 		moveq	#$00000007,d0
@@ -383,7 +383,7 @@ loc_2A72A:					  ; CODE XREF: ROM:0002A732j
 
 loc_2A734:					  ; CODE XREF: ROM:0002A728j
 		jsr	(j_CheckForRoomTransition).l
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(sub_3E0).l
@@ -392,7 +392,7 @@ loc_2A734:					  ; CODE XREF: ROM:0002A728j
 ; ---------------------------------------------------------------------------
 
 FlagMenuExit:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bset	#$01,(byte_FF1917).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -491,7 +491,7 @@ loc_2A836:					  ; CODE XREF: IncrementVar+4j
 sub_2A840:					  ; CODE XREF: JmpToDebugActionTableEntry:loc_2A804p
 		movem.l	d1-a6,-(sp)
 		jsr	(j_WaitUntilVBlank).l
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
 		move.b	(byte_FF1916).l,d2
 		move.b	d1,(byte_FF1916).l

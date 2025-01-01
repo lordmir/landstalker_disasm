@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckForMenuOpen:				  ; CODE XREF: sub_16DC+10p
+CheckForMenuOpen:				  ; CODE XREF: GameLoop+10p
 
 ; FUNCTION CHUNK AT 0000774A SIZE 0000001C BYTES
 
@@ -40,7 +40,7 @@ loc_7654:					  ; CODE XREF: CheckForMenuOpen+26j
 		clr.w	d6
 		bsr.w	FillVSRAMOffset1
 		bsr.w	FlushDMACopyQueue
-		lea	((g_BackgroundBlocks+$180)).l,a0
+		lea	((g_ForegroundBlocks+$180)).l,a0
 		move.w	#$04BF,d7
 
 loc_76A0:					  ; CODE XREF: CheckForMenuOpen+80j
@@ -102,7 +102,7 @@ sub_7718:					  ; CODE XREF: CheckForMenuOpen+BAp
 		beq.s	loc_7744
 		clr.w	(g_SwordCharge_0).l
 		movem.l	d0-d1/a0,-(sp)
-		jsr	(sub_103AE).l
+		jsr	(j_RefreshSwordChargeHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 		movem.l	(sp)+,d0-d1/a0
@@ -162,7 +162,7 @@ locret_77A4:					  ; CODE XREF: CheckForMenuOpen+6j
 
 
 LoadMagicSwordGfx:				  ; CODE XREF: j_LoadMagicSwordGfxj
-						  ; sub_26E8+38p ...
+						  ; LoadGame+38p ...
 		bsr.w	FlushDMACopyQueue
 		move.b	(g_EquippedSword).l,d0
 		beq.s	locret_77F2

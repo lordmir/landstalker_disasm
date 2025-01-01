@@ -353,10 +353,10 @@ j_OrVDPReg:					  ; CODE XREF: DisplayLithograph+Ep
 
 ; Attributes: thunk
 
-j_AndVDPReg:					  ; CODE XREF: ROM:00015712p
+j_MaskVDPReg:					  ; CODE XREF: ROM:00015712p
 						  ; DisplayIslandMap+1AEp
 		jmp	(MaskVDPReg).l
-; End of function j_AndVDPReg
+; End of function j_MaskVDPReg
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -404,10 +404,10 @@ j_ConvertToBase10:				  ; CODE XREF: sub_F346+12p
 
 ; Attributes: thunk
 
-j_WaitForZ80:					  ; CODE XREF: sub_F2E2p
+j_UpdateControllerInputs:			  ; CODE XREF: sub_F2E2p
 						  ; HandleControlChars:loc_23216p ...
 		jmp	(UpdateControllerInputs).l
-; End of function j_WaitForZ80
+; End of function j_UpdateControllerInputs
 
 ; ---------------------------------------------------------------------------
 		jmp	(WaitForButtonPush).l
@@ -573,7 +573,7 @@ j_QueueHUDTilemapDMA:				  ; CODE XREF: sub_15914+34p
 ; Attributes: thunk
 
 sub_3BC:					  ; CODE XREF: ROM:0001576Ep
-						  ; sub_178FE+13C8p ...
+						  ; OnTick+13C8p ...
 		jmp	(sub_3456).l
 ; End of function sub_3BC
 
@@ -602,7 +602,7 @@ j_SaveGame:					  ; CODE XREF: ROM:00025010p
 
 ; Attributes: thunk
 
-j_CheckForCollision:				  ; CODE XREF: sub_178FE+12CCp
+j_CheckForCollision:				  ; CODE XREF: OnTick+12CCp
 		jmp	(CheckForCollision).l
 ; End of function j_CheckForCollision
 
@@ -631,20 +631,20 @@ sub_3E0:					  ; CODE XREF: ROM:000129C2p
 
 ; Attributes: thunk
 
-sub_3E6:					  ; CODE XREF: sub_10ACE:loc_10C8Ep
+j_FadeOutToDarkness:				  ; CODE XREF: sub_10ACE:loc_10C8Ep
 						  ; ROM:0001299Cp ...
 		jmp	(FadeOutToDarkness).l
-; End of function sub_3E6
+; End of function j_FadeOutToDarkness
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_3EC:					  ; CODE XREF: ROM:000126D4p
+j_WarpToRoom:					  ; CODE XREF: ROM:000126D4p
 						  ; ROM:00012A0Ap ...
-		jmp	(loc_620E).l
-; End of function sub_3EC
+		jmp	(WarpToRoom).l
+; End of function j_WarpToRoom
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -661,10 +661,10 @@ j_CheckForRoomTransition:			  ; CODE XREF: ROM:000126C8p
 
 ; Attributes: thunk
 
-sub_3F8:					  ; CODE XREF: sub_10ACE+18Ep
+j_LoadSprites:					  ; CODE XREF: sub_10ACE+18Ep
 						  ; ROM:00012736p ...
-		jmp	(sub_401C).l
-; End of function sub_3F8
+		jmp	(LoadSprites).l
+; End of function j_LoadSprites
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -691,20 +691,20 @@ sub_404:					  ; CODE XREF: ROM:0001273Cp
 
 ; Attributes: thunk
 
-sub_40A:					  ; CODE XREF: ROM:000128F6p
+j_DoTileSwap:					  ; CODE XREF: ROM:000128F6p
 						  ; ROM:00012912p ...
-		jmp	(sub_4B52).l
-; End of function sub_40A
+		jmp	(DoTileSwap).l
+; End of function j_DoTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_410:					  ; CODE XREF: sub_10ACE+20Cp
+j_InitVDP:					  ; CODE XREF: sub_10ACE+20Cp
 						  ; ROM:00013308p ...
-		jmp	(sub_8EA0).l
-; End of function sub_410
+		jmp	(InitVDP).l
+; End of function j_InitVDP
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -794,7 +794,7 @@ j_RestoreBGM:					  ; CODE XREF: ROM:00014FD6j
 ; Attributes: thunk
 
 sub_44C:					  ; CODE XREF: ROM:00013C80p
-		jmp	(sub_E154).l
+		jmp	(WarpPadFx).l
 ; End of function sub_44C
 
 ; ---------------------------------------------------------------------------
@@ -918,9 +918,9 @@ j_CheckIfLifestockSold:				  ; CODE XREF: InitialiseSprites+11Ap
 
 ; Attributes: thunk
 
-sub_4A6:					  ; CODE XREF: ROM:00014D6Ep
-		jmp	(loc_8D84).l
-; End of function sub_4A6
+j_StartGame:					  ; CODE XREF: ROM:00014D6Ep
+		jmp	(StartGame).l
+; End of function j_StartGame
 
 ; ---------------------------------------------------------------------------
 

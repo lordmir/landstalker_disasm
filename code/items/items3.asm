@@ -5,7 +5,7 @@ ItemUseGarlic:					  ; CODE XREF: ROM:0000864Aj
 		bne.w	ReturnFailure
 		cmpi.b	#$11,(Player_Y).l
 		bhi.w	ReturnFailure
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
 ItemUseAntiparalyze:				  ; CODE XREF: ROM:00008650j
@@ -37,9 +37,9 @@ ItemUseEinsteinWhistle:				  ; CODE XREF: ROM:00008656j
 		subi.b	#$1E,d0
 		cmpi.b	#$04,d0
 		bcc.w	ReturnFailure
-		btst	#$00,(g_Vars+6).l
+		btst	#$00,(g_AdditionalFlags+6).l
 		bne.w	ReturnFailure
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
 ItemUseSpellbook:				  ; CODE XREF: ROM:0000865Cj
@@ -52,7 +52,7 @@ ItemUseLithograph:				  ; CODE XREF: ROM:00008662j
 ; ---------------------------------------------------------------------------
 
 ItemUsePawnTicket:				  ; CODE XREF: ROM:00008668j
-		bset	#$07,(g_Vars+$19).l
+		bset	#$07,(g_AdditionalFlags+$19).l
 		bne.w	ReturnFailure
 
 loc_88DE:					  ; CODE XREF: ROM:00008928j
@@ -66,7 +66,7 @@ loc_88F2:					  ; CODE XREF: ROM:000088ECj
 		move.w	d0,(Player_CurrentHealth).l
 		move.w	#$000A,d0
 		jsr	(j_AddGold).l
-		jsr	(j_RefreshMaxHealthHUD).l
+		jsr	(j_RefreshCurrentHealthHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 		jsr	(j_EnableDMAQueueProcessing).l
@@ -96,15 +96,15 @@ ItemUseGolasEye:				  ; CODE XREF: ROM:0000866Ej
 		bcc.w	ReturnFailure
 		cmpi.b	#$20,(Player_FloorHeight).l
 		bne.w	ReturnFailure
-		btst	#$06,(g_Vars+$A).l
+		btst	#$06,(g_AdditionalFlags+$A).l
 		bne.w	ReturnFailure
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
 ItemUseDeathStatue:				  ; CODE XREF: ROM:00008674j
 		move.w	#$001C,d0
 		jsr	(j_PrintString).l
-		move.w	#$0014,d6
+		move.w	#00020,d6
 		bsr.w	GenerateRandomNumber
 		cmpi.b	#$08,d7
 		bcs.s	loc_899A
@@ -133,7 +133,7 @@ loc_89C6:					  ; CODE XREF: ROM:00008998j
 		subi.w	#$000C,d7
 		move.b	DeathStatueItemBonus(pc,d7.w),d0
 		move.b	#$09,d1
-		jsr	(sub_22ED4).l
+		jsr	(j_SetItemQuantity).l
 
 loc_89D8:					  ; CODE XREF: ROM:000089A6j
 						  ; ROM:000089C4j
@@ -190,7 +190,7 @@ ItemUseLogs:					  ; CODE XREF: ROM:00008686j
 		andi.w	#$FEFE,d0
 		cmpi.w	#$2C2E,d0
 		bne.w	ReturnFailure
-		bset	#$00,(g_Vars+$B).l
+		bset	#$00,(g_AdditionalFlags+$B).l
 		bne.w	ReturnFailure
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
@@ -208,7 +208,7 @@ loc_8A7A:					  ; CODE XREF: ROM:00008A52j
 		andi.b	#$FE,d0
 		cmpi.w	#$0010,d0
 		bne.w	ReturnFailure
-		bset	#$01,(g_Vars+$B).l
+		bset	#$01,(g_AdditionalFlags+$B).l
 		bne.w	ReturnFailure
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
@@ -229,7 +229,7 @@ ItemUseIdolStone:				  ; CODE XREF: ROM:00008692j
 		bcs.w	ReturnFailure
 		cmpi.b	#$1B,(Player_Y).l
 		bhi.w	ReturnFailure
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
 ItemUseKey:					  ; CODE XREF: ROM:00008698j
@@ -245,12 +245,12 @@ ItemUseKey:					  ; CODE XREF: ROM:00008698j
 		bne.w	ReturnFailure
 
 loc_8B2A:					  ; CODE XREF: ROM:00008B20j
-		jsr	(sub_103BE).l
+		jsr	(j_CheckUnlockDoor).l
 		bcc.w	ReturnFailure
 
 loc_8B34:					  ; CODE XREF: ROM:00008B1Aj
 		bsr.s	ConsumeItem
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
 ItemUseBell:					  ; CODE XREF: ROM:0000869Ej
@@ -269,7 +269,7 @@ CheckForLifestock:				  ; CODE XREF: sub_620A+49Cp
 loc_8B4C:					  ; CODE XREF: CheckForLifestock+38j
 		tst.w	(a0)
 		bmi.s	loc_8B8C
-		cmpi.b	#$7F,(a0)
+		cmpi.b	#$7F,X(a0)
 		beq.s	loc_8B78
 		cmpi.b	#SpriteB_Item,SpriteGraphic(a0)
 		bne.s	loc_8B68
@@ -311,7 +311,7 @@ loc_8B8C:					  ; CODE XREF: CheckForLifestock+Aj
 
 ItemUseShortcake:				  ; CODE XREF: ROM:000086A4j
 		bsr.w	ConsumeItem
-		bra.w	loc_8BB2
+		bra.w	ReturnSuccessAndEnablePostUse
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -328,7 +328,7 @@ ConsumeItem:					  ; CODE XREF: ROM:000086DCp
 
 ; ---------------------------------------------------------------------------
 
-loc_8BB2:					  ; CODE XREF: ROM:0000884Aj
+ReturnSuccessAndEnablePostUse:			  ; CODE XREF: ROM:0000884Aj
 						  ; ROM:000088C2j ...
 		bset	#$07,(byte_FF1152).l
 
@@ -388,8 +388,8 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		move.w	#$0230,(g_RmNum1).l	  ; Wood cutter	area
 		move.w	#$1732,(Player_X).l
 		bset	#$06,(Player_Flags2).l
-		bset	#$00,(g_Vars+6).l
-		bsr.w	loc_620E
+		bset	#$00,(g_AdditionalFlags+6).l
+		bsr.w	WarpToRoom
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicDogWhistle
@@ -401,19 +401,19 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		movem.l	(sp)+,d0
 		move.l	d0,(Player_X).l
 		bclr	#$06,(Player_Flags2).l
-		bclr	#$00,(g_Vars+6).l
-		bsr.w	loc_620E
+		bclr	#$00,(g_AdditionalFlags+6).l
+		bsr.w	WarpToRoom
 		move.b	(g_BGM).l,d0
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_LoadFromD0
 ; ---------------------------------------------------------------------------
-		bset	#$00,(g_Vars+6).l
+		bset	#$00,(g_AdditionalFlags+6).l
 		rts
 ; ---------------------------------------------------------------------------
 
 PostUseGolasEye:				  ; CODE XREF: ROM:000086BCj
-		bset	#$06,(g_Vars+$A).l
+		bset	#$06,(g_AdditionalFlags+$A).l
 		bset	#$00,(g_Flags+1).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -424,11 +424,11 @@ PostUseIdolStone:				  ; CODE XREF: ROM:000086C2j
 		dc.w SND_Rumble
 ; ---------------------------------------------------------------------------
 		move.b	#$08,d0
-		bsr.w	sub_4B52
+		bsr.w	DoTileSwap
 		move.w	#$001E,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		move.b	#$10,d0
-		bsr.w	sub_4B52
+		bsr.w	DoTileSwap
 		bset	#$06,(g_Flags).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -455,7 +455,7 @@ PostUseKey:					  ; CODE XREF: ROM:000086C8j
 
 loc_8CEE:					  ; CODE XREF: ROM:00008CC8j
 						  ; ROM:00008CCEj
-		jsr	(sub_103A4).l
+		jsr	(j_UnlockDoor).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -469,7 +469,7 @@ PostUseShortcake:				  ; CODE XREF: ROM:000086CEj
 		jsr	(j_PlayCutsceneScript).l
 		move.b	#$00,d0
 		move.b	#$09,d1
-		jsr	(sub_22ED4).l
+		jsr	(j_SetItemQuantity).l
 		move.w	#$FFFF,d0
 		lea	(Player_X).l,a5
 		jsr	(j_AddHealth).l
@@ -484,10 +484,10 @@ loc_8D44:					  ; CODE XREF: ROM:00008D00j
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(j_PlayCutsceneScript).l
 		move.w	#$00FF,(Player_CurrentHealth).l
-		jsr	(j_RefreshMaxHealthHUD).l
+		jsr	(j_RefreshCurrentHealthHUD).l
 		move.b	#$00,d0
 		move.b	#$00,d1
-		jsr	(sub_22ED4).l
+		jsr	(j_SetItemQuantity).l
 		jsr	(j_UpdateEkeEkeHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l

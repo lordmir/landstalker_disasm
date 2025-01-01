@@ -69,9 +69,9 @@ loc_152C:					  ; CODE XREF: CheckSRAM+3Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_154C:					  ; CODE XREF: ROM:0000EFD8p
+GetCurrentSaveSlot:				  ; CODE XREF: ROM:0000EFD8p
 		move.b	(g_SaveSlot).l,d0
-; End of function sub_154C
+; End of function GetCurrentSaveSlot
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -273,7 +273,7 @@ SaveGameRamPtrs:dc.l g_Flags			  ; Address ; DATA XREF: SaveGame+Ct
 		dc.w $0001			  ; Length
 		dc.l g_HourCount		  ; Address
 		dc.w $0001			  ; Length
-		dc.l g_Vars			  ; Address
+		dc.l g_AdditionalFlags		  ; Address
 		dc.w $001F			  ; Length
 		dc.l g_PlayerStatus		  ; Address
 		dc.w $0000			  ; Length

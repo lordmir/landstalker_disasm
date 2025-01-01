@@ -5,21 +5,21 @@ ResetGame:					  ; CODE XREF: ROM:000004D6j
 		lea	(ResetSP).w,sp
 		jsr	(j_DisplaySegaLogo).l
 		jsr	(j_DisplayTitle).l
-		bcc.w	loc_4B8
+		bcc.w	ResetAll
 
 loc_16CA:					  ; CODE XREF: ROM:000004F8j
-		bsr.w	sub_26E8
-		bsr.w	loc_8D84
+		bsr.w	LoadGame
+		bsr.w	StartGame
 
 loc_16D2:					  ; CODE XREF: ROM:000016D6j
-		bsr.w	sub_16DC
+		bsr.w	GameLoop
 		bcc.s	loc_16D2
-		bra.w	loc_4DC
+		bra.w	GameOver
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_16DC:					  ; CODE XREF: ROM:loc_16D2p
+GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		bsr.w	ProcessFloorType
 		andi.w	#$1000,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
@@ -27,15 +27,16 @@ sub_16DC:					  ; CODE XREF: ROM:loc_16D2p
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bsr.w	ProcessControlScript
 		bsr.w	CheckForMenuOpen
 		bsr.w	CheckForDebugButtons
 		bsr.w	CheckForDebugSaveGame
 		bsr.w	CheckForLadderClimb
-		bsr.w	sub_66AC
+		bsr.w	ProcessActionButton
 		bsr.w	HandleDirectionalInput
 		jsr	(sub_10348).l
 		jsr	(sub_10358).l
@@ -48,9 +49,9 @@ sub_16DC:					  ; CODE XREF: ROM:loc_16D2p
 		jsr	(sub_103D8).l
 		jsr	(sub_1034C).l
 		bsr.w	sub_7274
-		jsr	(sub_10310).l
+		jsr	(j_UpdateFrames).l
 		jsr	(sub_10350).l
-		jsr	(sub_401C).l
+		jsr	(LoadSprites).l
 		jsr	(sub_9DA2).l
 		jsr	(sub_10380).l
 		jsr	CheckAndDoLavaPaletteFx(pc)
@@ -65,13 +66,13 @@ sub_16DC:					  ; CODE XREF: ROM:loc_16D2p
 		jsr	(sub_10384).l
 		tst.b	d0
 		rts
-; End of function sub_16DC
+; End of function GameLoop
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ProcessControlScript:				  ; CODE XREF: sub_16DC+Cp
+ProcessControlScript:				  ; CODE XREF: GameLoop+Cp
 		move.w	(g_ControllerPlayback).l,d0
 		beq.s	loc_17C6
 		move.b	(g_ControllerPlayback).l,(g_Controller1State).l
@@ -117,7 +118,7 @@ loc_17E6:					  ; CODE XREF: ProcessControlScript+44j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_17EE:					  ; CODE XREF: sub_16DC+4Ap
+sub_17EE:					  ; CODE XREF: GameLoop+4Ap
 
 ; FUNCTION CHUNK AT 0000192A SIZE 0000000C BYTES
 
@@ -136,9 +137,10 @@ sub_17EE:					  ; CODE XREF: sub_16DC+4Ap
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		move.b	Action1(a0),d1
 		move.b	#$09,d0
 		lsr.b	#$01,d1
@@ -159,9 +161,10 @@ sub_17EE:					  ; CODE XREF: sub_16DC+4Ap
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 
 locret_1856:					  ; CODE XREF: sub_17EE+6j
 						  ; sub_17EE+1Ej
@@ -172,7 +175,7 @@ locret_1856:					  ; CODE XREF: sub_17EE+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1858:					  ; CODE XREF: sub_16DC+46p
+sub_1858:					  ; CODE XREF: GameLoop+46p
 
 ; FUNCTION CHUNK AT 00002242 SIZE 000001AE BYTES
 ; FUNCTION CHUNK AT 000023F2 SIZE 00000018 BYTES
@@ -217,7 +220,7 @@ locret_18C2:					  ; CODE XREF: sub_1858+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-HandleDirectionalInput:				  ; CODE XREF: sub_16DC+24p
+HandleDirectionalInput:				  ; CODE XREF: GameLoop+24p
 		bclr	#$06,(g_PlayerStatus).l
 		clr.w	d0
 		bsr.w	CheckForCollision
@@ -291,9 +294,9 @@ HandleDirectionalControl:
 ; ---------------------------------------------------------------------------
 		bra.w	HandleRightButton	  ; RIGHT selected
 ; ---------------------------------------------------------------------------
-		bra.w	HandleRightUp		  ; RIGHT + UP selected
+		bra.w	HandleUpRight		  ; RIGHT + UP selected
 ; ---------------------------------------------------------------------------
-		bra.w	HandleRightDown		  ; RIGHT + DOWN selected
+		bra.w	HandleDownRight		  ; RIGHT + DOWN selected
 ; ---------------------------------------------------------------------------
 		bra.w	locret_19B6		  ; RIGHT + UP + DOWN selected
 ; ---------------------------------------------------------------------------
@@ -315,9 +318,9 @@ HandleDirectionalControl:
 ; ---------------------------------------------------------------------------
 		bra.w	HandleRightButton	  ; LEFT selected, confusion
 ; ---------------------------------------------------------------------------
-		bra.w	HandleRightDown		  ; LEFT + UP selected,	confusion
+		bra.w	HandleDownRight		  ; LEFT + UP selected,	confusion
 ; ---------------------------------------------------------------------------
-		bra.w	HandleRightUp		  ; LEFT + DOWN	selected, confusion
+		bra.w	HandleUpRight		  ; LEFT + DOWN	selected, confusion
 ; ---------------------------------------------------------------------------
 		bra.w	locret_19B6		  ; LEFT + UP +	DOWN selected, confusion
 ; ---------------------------------------------------------------------------
@@ -348,14 +351,14 @@ HandleUpButton:					  ; CODE XREF: HandleDirectionalControl+4j
 		tst.b	(g_PlayerStatus).l
 		bmi.s	loc_19CE
 		btst	#$06,RotationAndSize(a5)
-		beq.w	HandleRightUp		  ; Travel in the NE (-Y) direction
+		beq.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		bra.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 ; ---------------------------------------------------------------------------
 
 loc_19CE:					  ; CODE XREF: HandleDirectionalControl+88j
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleUpLeft		  ; Travel in the NW (-X) direction
-		bra.w	HandleRightUp		  ; Travel in the NE (-Y) direction
+		bra.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 ; ---------------------------------------------------------------------------
 
 HandleRightButton:				  ; CODE XREF: HandleDirectionalControl+20j
@@ -363,14 +366,14 @@ HandleRightButton:				  ; CODE XREF: HandleDirectionalControl+20j
 		tst.b	(g_PlayerStatus).l
 		bmi.s	loc_19F2
 		btst	#$06,RotationAndSize(a5)
-		beq.w	HandleRightUp		  ; Travel in the NE (-Y) direction
-		bra.w	HandleRightDown		  ; Travel in the SE (+X) direction
+		beq.w	HandleUpRight		  ; Travel in the NE (-Y) direction
+		bra.w	HandleDownRight		  ; Travel in the SE (+X) direction
 ; ---------------------------------------------------------------------------
 
 loc_19F2:					  ; CODE XREF: HandleDirectionalControl+ACj
 		btst	#$06,RotationAndSize(a5)
-		beq.w	HandleRightDown		  ; Travel in the SE (+X) direction
-		bra.w	HandleRightUp		  ; Travel in the NE (-Y) direction
+		beq.w	HandleDownRight		  ; Travel in the SE (+X) direction
+		bra.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 ; ---------------------------------------------------------------------------
 
 HandleDownButton:				  ; CODE XREF: HandleDirectionalControl+8j
@@ -379,12 +382,12 @@ HandleDownButton:				  ; CODE XREF: HandleDirectionalControl+8j
 		bmi.s	loc_1A16
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
-		bra.w	HandleRightDown		  ; Travel in the SE (+X) direction
+		bra.w	HandleDownRight		  ; Travel in the SE (+X) direction
 ; ---------------------------------------------------------------------------
 
 loc_1A16:					  ; CODE XREF: HandleDirectionalControl+D0j
 		btst	#$06,RotationAndSize(a5)
-		beq.w	HandleRightDown		  ; Travel in the SE (+X) direction
+		beq.w	HandleDownRight		  ; Travel in the SE (+X) direction
 		bra.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 ; ---------------------------------------------------------------------------
 
@@ -403,7 +406,7 @@ loc_1A3A:					  ; CODE XREF: HandleDirectionalControl+F4j
 		bra.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 ; ---------------------------------------------------------------------------
 
-HandleRightUp:					  ; CODE XREF: HandleDirectionalControl+24j
+HandleUpRight:					  ; CODE XREF: HandleDirectionalControl+24j
 						  ; HandleDirectionalControl+58j ...
 		tst.w	(g_ControllerPlayback).l  ; Travel in the NE (-Y) direction
 		bne.s	loc_1A58
@@ -427,9 +430,10 @@ loc_1A58:					  ; CODE XREF: HandleDirectionalControl+118j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		beq.s	loc_1A98
 		btst	#$04,GroundHeight(a0)
 		bne.w	loc_1B36
@@ -460,9 +464,10 @@ loc_1AC4:					  ; CODE XREF: HandleDirectionalControl+18Aj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	loc_1AE6
 		clr.w	AnimationFrame(a5)
 		move.b	#$FF,Unk0D(a5)
@@ -493,9 +498,10 @@ loc_1B0A:					  ; CODE XREF: HandleDirectionalControl+174j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
@@ -503,7 +509,7 @@ loc_1B0A:					  ; CODE XREF: HandleDirectionalControl+174j
 		cmp.b	d0,d3
 		bcc.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		cmp.b	d1,d3
-		bcc.w	HandleRightDown		  ; Travel in the SE (+X) direction
+		bcc.w	HandleDownRight		  ; Travel in the SE (+X) direction
 		bra.w	loc_1C38
 ; ---------------------------------------------------------------------------
 
@@ -515,9 +521,10 @@ loc_1B36:					  ; CODE XREF: HandleDirectionalControl+142j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		clr.w	d0
 		tst.b	(byte_FF1142).l
 		beq.s	loc_1B4E
@@ -617,9 +624,10 @@ loc_1C38:					  ; CODE XREF: HandleDirectionalControl+1ECj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	locret_1C5A
 		andi.b	#$3F,(Player_RotationAndSize).l
 		bset	#$00,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
@@ -628,16 +636,17 @@ loc_1C38:					  ; CODE XREF: HandleDirectionalControl+1ECj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bset	#$00,(Player_Unk6D).l
 
 locret_1C5A:					  ; CODE XREF: HandleDirectionalControl+30Aj
 		rts
 ; ---------------------------------------------------------------------------
 
-HandleRightDown:				  ; CODE XREF: HandleDirectionalControl+28j
+HandleDownRight:				  ; CODE XREF: HandleDirectionalControl+28j
 						  ; HandleDirectionalControl+54j ...
 		tst.w	(g_ControllerPlayback).l  ; Travel in the SE (+X) direction
 		bne.s	loc_1C6C
@@ -650,9 +659,10 @@ loc_1C6C:					  ; CODE XREF: HandleDirectionalControl+32Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		move.w	HitBoxXEnd(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		add.w	d0,HitBoxXStart(a5)
@@ -670,9 +680,10 @@ loc_1C6C:					  ; CODE XREF: HandleDirectionalControl+32Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		beq.s	loc_1CB0
 		btst	#$04,GroundHeight(a0)
 		bne.w	loc_1CD6
@@ -684,7 +695,7 @@ loc_1CB0:					  ; CODE XREF: HandleDirectionalControl+36Ej
 		cmpi.b	#$0E,d5
 		beq.w	loc_1DC6
 		cmp.b	d0,d3
-		bcc.w	HandleRightUp		  ; Travel in the NE (-Y) direction
+		bcc.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 		bra.w	loc_1DC6
@@ -789,9 +800,10 @@ loc_1DC6:					  ; CODE XREF: HandleDirectionalControl+38Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	locret_1DF0
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$40,(Player_RotationAndSize).l
@@ -801,9 +813,10 @@ loc_1DC6:					  ; CODE XREF: HandleDirectionalControl+38Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bset	#$03,(Player_Unk6D).l
 
 locret_1DF0:					  ; CODE XREF: HandleDirectionalControl+498j
@@ -823,9 +836,10 @@ loc_1E02:					  ; CODE XREF: HandleDirectionalControl+4C2j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		move.w	HitBoxYEnd(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		add.w	d0,HitBoxYStart(a5)
@@ -845,7 +859,7 @@ loc_1E02:					  ; CODE XREF: HandleDirectionalControl+4C2j
 		cmp.b	d0,d3
 		bcc.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		cmp.b	d1,d3
-		bcc.w	HandleRightDown		  ; Travel in the SE (+X) direction
+		bcc.w	HandleDownRight		  ; Travel in the SE (+X) direction
 		bra.w	loc_1F50
 ; ---------------------------------------------------------------------------
 
@@ -949,9 +963,10 @@ loc_1F50:					  ; CODE XREF: HandleDirectionalControl+50Ej
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	locret_1F7A
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$80,(Player_RotationAndSize).l
@@ -961,9 +976,10 @@ loc_1F50:					  ; CODE XREF: HandleDirectionalControl+50Ej
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bset	#$01,(Player_Unk6D).l
 
 locret_1F7A:					  ; CODE XREF: HandleDirectionalControl+622j
@@ -1013,9 +1029,10 @@ loc_1FE4:					  ; CODE XREF: HandleDirectionalControl+6AAj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	loc_2006
 		clr.w	AnimationFrame(a5)
 		move.b	#$FF,Unk0D(a5)
@@ -1048,15 +1065,16 @@ loc_202A:					  ; CODE XREF: HandleDirectionalControl+694j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
 		beq.w	loc_2154
 		cmp.b	d0,d3
-		bcc.w	HandleRightUp		  ; Travel in the NE (-Y) direction
+		bcc.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 		bra.w	loc_2154
@@ -1070,9 +1088,10 @@ loc_2056:					  ; CODE XREF: HandleDirectionalControl+676j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		clr.w	d0
 		tst.b	(byte_FF1142).l
 		beq.s	loc_206E
@@ -1171,9 +1190,10 @@ loc_2154:					  ; CODE XREF: HandleDirectionalControl+70Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	locret_2176
 		ori.b	#$C0,(Player_RotationAndSize).l
 		bset	#$02,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
@@ -1182,9 +1202,10 @@ loc_2154:					  ; CODE XREF: HandleDirectionalControl+70Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bset	#$02,(Player_Unk6D).l
 
 locret_2176:					  ; CODE XREF: HandleDirectionalControl+826j
@@ -1194,7 +1215,7 @@ locret_2176:					  ; CODE XREF: HandleDirectionalControl+826j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckForLadderClimb:				  ; CODE XREF: sub_16DC+1Cp
+CheckForLadderClimb:				  ; CODE XREF: GameLoop+1Cp
 		move.b	(g_Controller1State).l,d1
 		and.b	d1,(g_LadderClimbJumpState).l
 		btst	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
@@ -1203,9 +1224,10 @@ CheckForLadderClimb:				  ; CODE XREF: sub_16DC+1Cp
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.s	locret_21AC
 		bsr.s	sub_21AE
 		tst.b	d7
@@ -1255,9 +1277,10 @@ sub_21B6:					  ; CODE XREF: CheckForLadderClimb:loc_21A4p
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 
 locret_21DC:					  ; CODE XREF: sub_21B6+1Cj
 		rts
@@ -1267,7 +1290,7 @@ locret_21DC:					  ; CODE XREF: sub_21B6+1Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_21DE:					  ; CODE XREF: sub_16DC+38p
+sub_21DE:					  ; CODE XREF: GameLoop+38p
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
 
@@ -1276,13 +1299,13 @@ loc_21E6:					  ; CODE XREF: sub_21DE+4Ej
 		bne.s	loc_21FC
 		tst.b	Unk4D(a0)
 		beq.s	loc_21FC
-		andi.w	#$6700,Action(a0)
+		andi.w	#$6700,QueuedAction(a0)
 		bra.s	loc_2202
 ; ---------------------------------------------------------------------------
 
 loc_21FC:					  ; CODE XREF: sub_21DE+Ej
 						  ; sub_21DE+14j
-		andi.w	#$6000,Action(a0)
+		andi.w	#$6000,QueuedAction(a0)
 
 loc_2202:					  ; CODE XREF: sub_21DE+1Cj
 		move.b	(a0),d0
@@ -1579,7 +1602,7 @@ sub_247E:					  ; CODE XREF: HandleDirectionalControl+616p
 
 
 sub_249A:					  ; CODE XREF: sub_404j
-						  ; sub_16DC+8Ep
+						  ; GameLoop+8Ep
 		tst.b	(g_PlayerMoving).l
 		beq.s	locret_24F2
 		clr.b	(g_PlayerMoving).l
@@ -1605,7 +1628,7 @@ locret_24F2:					  ; CODE XREF: sub_249A+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24F4:					  ; CODE XREF: sub_16DC+34p
+sub_24F4:					  ; CODE XREF: GameLoop+34p
 		lea	(Player_X).l,a5
 		moveq	#$0000000F,d7
 
@@ -1636,7 +1659,7 @@ loc_2520:					  ; CODE XREF: sub_24F4+1Ej
 		bmi.s	locret_253E
 		cmpi.b	#$7F,d0
 		beq.s	loc_250A
-		tst.w	Unk2A(a5)
+		tst.w	BehavParam(a5)
 		bne.s	loc_24FC
 		btst	#$05,Flags2(a5)
 		beq.s	loc_250A
@@ -1651,7 +1674,7 @@ locret_253E:					  ; CODE XREF: sub_24F4+32j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2540:					  ; CODE XREF: sub_16DC+42p
+sub_2540:					  ; CODE XREF: GameLoop+42p
 		lea	(Player_X).l,a5
 		moveq	#$0000000F,d7
 

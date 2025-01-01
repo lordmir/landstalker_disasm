@@ -31,7 +31,7 @@ sub_2DCE:					  ; CODE XREF: LoadRoom_0+40p
 
 ; ---------------------------------------------------------------------------
 
-CheckForDebugButtons:				  ; CODE XREF: sub_16DC+14p
+CheckForDebugButtons:				  ; CODE XREF: GameLoop+14p
 		tst.w	(DebugModeEnable).w
 		bmi.w	locret_2F24
 		tst.b	(g_Flags+8).l
@@ -124,7 +124,7 @@ locret_2F0A:					  ; CODE XREF: sub_2F00j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckForDebugSaveGame:				  ; CODE XREF: sub_16DC+18p
+CheckForDebugSaveGame:				  ; CODE XREF: GameLoop+18p
 
 ; FUNCTION CHUNK AT 00002EB8 SIZE 00000048 BYTES
 
@@ -143,7 +143,7 @@ locret_2F24:					  ; CODE XREF: ROM:00002E32j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadGameSelectScreen:				  ; CODE XREF: sub_26E8+8p
+LoadGameSelectScreen:				  ; CODE XREF: LoadGame+8p
 		bsr.s	CheckRAM
 		move.b	(g_SaveSlot).l,d0
 		jsr	(InitGameSelectScreen).l
@@ -201,7 +201,7 @@ CollisionDetect:				  ; CODE XREF: j_CollisionDetectj
 loc_2F98:					  ; CODE XREF: CollisionDetect+6Ej
 		cmp.w	d7,d0
 		beq.s	loc_2FD8
-		tst.w	(a0)
+		tst.w	X(a0)
 		bmi.s	loc_2FE6		  ; End	of sprites
 		cmp.w	HitBoxXEnd(a0),d1
 		bhi.s	loc_2FD8
@@ -332,7 +332,7 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 ; ---------------------------------------------------------------------------
 
 loc_30BC:					  ; CODE XREF: sub_3058+30j
-		cmpi.w	#$0001,InitFlags4(a0)
+		cmpi.w	#$0001,InitFlags4_DropProbability(a0)
 		bne.s	loc_30CA
 		tst.b	GoldOrChestContents(a0)
 		beq.s	loc_308A
@@ -561,7 +561,7 @@ sub_324C:					  ; CODE XREF: sub_21AEp
 
 
 sub_3252:					  ; CODE XREF: sub_2232p
-		move.w	Player_Z-Player_X(a0),d6
+		move.w	Z(a0),d6
 		bsr.s	TestForFalling
 		sub.w	Z(a0),d6
 		beq.s	locret_3264
@@ -808,7 +808,7 @@ loc_3444:					  ; CODE XREF: sub_33EA+22j
 
 
 sub_3456:					  ; CODE XREF: sub_3BCj
-						  ; sub_66AC+18Cp ...
+						  ; ProcessActionButton+18Cp ...
 		movem.l	a5,-(sp)
 		move.l	a5,d0
 		subi.l	#Player_X,d0

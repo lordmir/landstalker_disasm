@@ -8,7 +8,7 @@ GetItemShopSellPrice:				  ; CODE XREF: sub_24B48+4p
 		clr.w	d0
 		move.b	(byte_FF1903).l,d0
 		move.w	d0,(word_FF1198).l
-		bsr.w	GetItemRSP
+		bsr.w	GetItemBuyPrice
 		clr.w	d2
 		cmpi.w	#ITM_LIFESTOCK,d0
 		bne.s	loc_24CE4		  ; Lifestock price modifier

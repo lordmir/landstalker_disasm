@@ -71,7 +71,7 @@ sub_1A356:					  ; CODE XREF: DoCustomRoomActions+2F0p
 
 
 CheckRoomFlagsToHideSprites:			  ; CODE XREF: CheckFlags+8p
-		bsr.s	CheckFlagsToToggleSpriteVisibility
+		bsr.s	CheckSpriteVisibleFlags
 		bsr.s	CheckOneTimeEventFlags
 		rts
 ; End of function CheckRoomFlagsToHideSprites
@@ -80,11 +80,11 @@ CheckRoomFlagsToHideSprites:			  ; CODE XREF: CheckFlags+8p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckFlagsToToggleSpriteVisibility:		  ; CODE XREF: CheckRoomFlagsToHideSpritesp
+CheckSpriteVisibleFlags:			  ; CODE XREF: CheckRoomFlagsToHideSpritesp
 		lea	SpriteVisibilityFlags(pc),a0
 		lea	(g_Flags).l,a1
 
-loc_1A38C:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+52j
+loc_1A38C:					  ; CODE XREF: CheckSpriteVisibleFlags+52j
 		move.w	(a0),d0
 		bmi.s	locret_1A3D6
 		cmp.w	(g_RmNum1).l,d0
@@ -100,11 +100,11 @@ loc_1A38C:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+52j
 		bra.s	loc_1A3B8
 ; ---------------------------------------------------------------------------
 
-loc_1A3B2:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+22j
+loc_1A3B2:					  ; CODE XREF: CheckSpriteVisibleFlags+22j
 		btst	d1,(a1,d0.w)
 		beq.s	loc_1A3D2
 
-loc_1A3B8:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+2Ej
+loc_1A3B8:					  ; CODE XREF: CheckSpriteVisibleFlags+2Ej
 		move.b	$00000003(a0),d0
 		andi.b	#$1F,d0
 		lea	(Sprite1_X).l,a5
@@ -112,15 +112,15 @@ loc_1A3B8:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+2Ej
 		bsr.w	HideSpriteAtD0
 		movem.l	(sp)+,a0-a1
 
-loc_1A3D2:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+14j
-						  ; CheckFlagsToToggleSpriteVisibility+2Cj ...
+loc_1A3D2:					  ; CODE XREF: CheckSpriteVisibleFlags+14j
+						  ; CheckSpriteVisibleFlags+2Cj ...
 		addq.l	#$04,a0
 		bra.s	loc_1A38C
 ; ---------------------------------------------------------------------------
 
-locret_1A3D6:					  ; CODE XREF: CheckFlagsToToggleSpriteVisibility+Cj
+locret_1A3D6:					  ; CODE XREF: CheckSpriteVisibleFlags+Cj
 		rts
-; End of function CheckFlagsToToggleSpriteVisibility
+; End of function CheckSpriteVisibleFlags
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -206,8 +206,8 @@ loc_1A450:					  ; CODE XREF: CheckLockedDoorSpriteFlags+4j
 
 loc_1A45A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+1Cj
 		move.w	#$FFFF,(a0,d2.w)	  ; Move offscreen
-		addi.w	#$0080,d2
-		cmpi.w	#$0800,d2
+		addi.w	#SPRITE_SIZE,d2
+		cmpi.w	#ALL_SPRITES_SIZE,d2
 		bne.s	loc_1A45A		  ; Move offscreen
 
 locret_1A46A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+6j
@@ -230,12 +230,12 @@ loc_1A470:					  ; CODE XREF: CheckPermanentSwitchFlags+34j
 		bcc.s	locret_1A4A2
 		btst	d0,(a1,d1.w)
 		beq.s	loc_1A49C
-		andi.b	#$3F,$00000004(a0,d2.w)
-		ori.b	#$80,$00000004(a0,d2.w)
-		move.w	#$0004,$00000024(a0,d2.w)
-		bclr	#$00,$00000008(a0,d2.w)
-		clr.w	$0000002A(a0,d2.w)
-		bset	#$07,$00000048(a0,d2.w)
+		andi.b	#$3F,RotationAndSize(a0,d2.w)
+		ori.b	#$80,RotationAndSize(a0,d2.w)
+		move.w	#$0004,AnimationIndex(a0,d2.w)
+		bclr	#$00,Flags1(a0,d2.w)
+		clr.w	BehavParam(a0,d2.w)
+		bset	#$07,Unk48(a0,d2.w)
 
 loc_1A49C:					  ; CODE XREF: CheckPermanentSwitchFlags+Cj
 		movea.l	a6,a0
@@ -254,7 +254,7 @@ locret_1A4A2:					  ; CODE XREF: CheckPermanentSwitchFlags+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A4A4:					  ; DATA XREF: sub_103BEt
+CheckUnlockDoor:				  ; DATA XREF: j_CheckUnlockDoort
 		lea	LockedDoorSpriteFlags(pc),a0
 		bsr.s	FindNextRoomFlagMatch
 		bcc.s	loc_1A4B8
@@ -264,26 +264,26 @@ sub_1A4A4:					  ; DATA XREF: sub_103BEt
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_1A4B8:					  ; CODE XREF: sub_1A4A4+6j
-						  ; sub_1A4A4+Cj
+loc_1A4B8:					  ; CODE XREF: CheckUnlockDoor+6j
+						  ; CheckUnlockDoor+Cj
 		tst.b	d0
 		rts
-; End of function sub_1A4A4
+; End of function CheckUnlockDoor
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A4BC:					  ; DATA XREF: sub_103A4t
+UnlockDoor:					  ; DATA XREF: j_UnlockDoort
 		lea	LockedDoorSpriteFlags(pc),a0
 		bsr.s	FindNextRoomFlagMatch
 		bcc.s	locret_1A4CE
 		bset	d0,(a1,d1.w)
 		move.w	#$FFFF,(a0,d2.w)
 
-locret_1A4CE:					  ; CODE XREF: sub_1A4BC+6j
+locret_1A4CE:					  ; CODE XREF: UnlockDoor+6j
 		rts
-; End of function sub_1A4BC
+; End of function UnlockDoor
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -388,16 +388,16 @@ sub_1A56A:					  ; CODE XREF: ROM:0001626Cp
 		clr.w	d7
 
 loc_1A572:					  ; CODE XREF: sub_1A56A+20j
-		cmpi.b	#$FF,(a0)
+		cmpi.b	#$FF,X(a0)
 		beq.s	loc_1A58C
 		cmpa.l	a0,a5
 		beq.s	loc_1A58C
-		cmpi.b	#$26,$0000000B(a0)
+		cmpi.b	#SpriteB_SacredTree,SpriteGraphic(a0)
 		bne.s	loc_1A586
 		addq.b	#$01,d7
 
 loc_1A586:					  ; CODE XREF: sub_1A56A+18j
-		lea	$00000080(a0),a0
+		lea	SPRITE_SIZE(a0),a0
 		bra.s	loc_1A572
 ; ---------------------------------------------------------------------------
 

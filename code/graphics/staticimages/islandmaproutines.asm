@@ -28,7 +28,7 @@ var_80		= -$80
 loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_3E682
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		jsr	(j_EnableVDPSpriteUpdate).l
 		lea	MapDots(pc),a0
 		lea	(g_Blockset).l,a1
@@ -75,11 +75,11 @@ loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		lea	IslandMapBgMap(pc),a0
 		lea	(g_Buffer).l,a1
 		bsr.w	DecompTilemap
-		lea	((g_BackgroundBlocks+$17E)).l,a1
+		lea	((g_ForegroundBlocks+$17E)).l,a1
 		move.w	#$2000,d4
 		move.w	#$0300,d5
 		bsr.w	sub_3ED64
-		lea	((g_BackgroundBlocks+$17E)).l,a0
+		lea	((g_ForegroundBlocks+$17E)).l,a0
 		lea	($0000E180).l,a1
 		move.w	#$0640,d0
 		move.w	#$0002,d1
@@ -110,7 +110,7 @@ loc_3E7F6:					  ; CODE XREF: DisplayIslandMap+1A4j
 		dbf	d7,loc_3E7F6
 		clr.w	d0
 		move.b	#$EF,d1
-		jsr	(j_AndVDPReg).l
+		jsr	(j_MaskVDPReg).l
 		move.w	var_82(a6),d0
 		lea	off_3E86C(pc),a0
 		lsl.w	#$02,d0
@@ -165,7 +165,7 @@ off_3E86C:	dc.l sub_3EC44			  ; DATA XREF: DisplayIslandMap+1B8t
 sub_3E87C:					  ; DATA XREF: ROM:0003E874o
 		jsr	(j_FadeInFromDarkness).l
 		jsr	(j_WaitForNextButtonPress).l
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		rts
 ; End of function sub_3E87C
 
@@ -177,7 +177,7 @@ sub_3E890:					  ; DATA XREF: ROM:0003E878o
 		jsr	(j_InitFadeFromBlackParams).l
 		move.b	#$01,-$0000008F(a6)
 		move.w	#$001C,-$00000092(a6)
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,-$00000085(a6)
 		move.w	#$00C8,-$0000008E(a6)
 		clr.w	-$00000096(a6)
@@ -214,7 +214,7 @@ loc_3E8DA:					  ; CODE XREF: sub_3E890+44j
 
 
 sub_3E90A:					  ; DATA XREF: sub_3E890:loc_3E8C8t
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		lea	(g_Controller1State).l,a0
 		lea	-$00000085(a6),a1
 		tst.b	(a0)
@@ -701,7 +701,7 @@ loc_3EC4A:					  ; CODE XREF: sub_3EC44+28j
 		beq.s	loc_3EC4A
 
 loc_3EC6E:					  ; CODE XREF: sub_3EC44+20j
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		rts
 ; End of function sub_3EC44
 

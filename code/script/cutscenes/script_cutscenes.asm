@@ -3,7 +3,7 @@
 XS_001B:
 		move.w	#$0021,d0
 		bsr.w	TestFlagBit
-		bne.s	loc_2736E
+		bne.s	XS_001B_1
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $5A9,$0		  ; Prompt:	  Run text script at offset 0x028348
@@ -14,10 +14,10 @@ XS_001B:
 		ScriptID    $5AC,$2		  ; Answer 'no':  Run text script at offset 0x02834E
 						  ; 0xE515: PRINT MSG 0x0562, MSGBOX CLEARED, END: "{5B}Why not?{57}It could be	fun!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_27378
+		bra.s	XS_001B_2
 ; ---------------------------------------------------------------------------
 
-loc_2736E:					  ; CODE XREF: ROM:00027360j
+XS_001B_1:					  ; CODE XREF: ROM:00027360j
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $5AD,$0		  ; Prompt:	  Run text script at offset 0x028350
@@ -29,7 +29,7 @@ loc_2736E:					  ; CODE XREF: ROM:00027360j
 						  ; 0xE518: PRINT MSG 0x0565, MSGBOX CLEARED, END: "{5B}Right.{57}We don't have to go.{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_27378:					  ; CODE XREF: ROM:0002736Cj
+XS_001B_2:					  ; CODE XREF: ROM:0002736Cj
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -78,31 +78,25 @@ XS_002E:					  ; Trap01Handler
 XS_0036:
 		move.w	#$0023,d0
 		bsr.w	TestFlagBit
-		bne.s	loc_273AE
-
-loc_273A4:					  ; Trap01Handler
-		trap	#$01
+		bne.s	XS_0036_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $253,$0		  ; Run	text script at offset 0x027C9C
 						  ; 0x18AA: LOAD CHARACTER SCRIPT * (0x00AA)
 						  ; 0xE223: PRINT MSG 0x0270, MSGBOX CLEARED, END: "{5B}If ya ain't got a{57}safe-conduct pass, ya ain't{57}gettin' in these gates!{5E}"
 ; ---------------------------------------------------------------------------
-
-loc_273A8:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $257,$0		  ; Run	text script at offset 0x027CA4
 						  ; 0x18AB: LOAD CHARACTER SCRIPT * (0x00AB)
 						  ; 0xE226: PRINT MSG 0x0273, MSGBOX CLEARED, END: "{5B}My legs	are sore from{57}standing here all day long.{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_273E6
+		bra.s	XS_0036_6
 ; ---------------------------------------------------------------------------
 
-loc_273AE:					  ; CODE XREF: ROM:000273A2j
+XS_0036_1:					  ; CODE XREF: ROM:000273A2j
 		move.l	d0,-(sp)
-
-loc_273B0:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $61E,$0		  ; Run	text script at offset 0x028432
 						  ; 0x18AA: LOAD CHARACTER SCRIPT * (0x00AA)
@@ -114,23 +108,21 @@ loc_273B0:					  ; Trap01Handler
 						  ; 0xA557: PRINT MSG 0x05A4, END: "{5B}Heh heh...I'll letcha in{57}for {5A} golds.  Whaddaya say?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_273E0
+		bcc.s	XS_0036_4
 		move.l	(g_PrintNumericDwordValue).l,d0
 		jsr	(j_RemoveGold).l
-		bcc.s	loc_273DA
+		bcc.s	XS_0036_2
 		jsr	(j_GetGold).l
 		jsr	(j_RemoveGold).l
-
-loc_273D4:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $628,$0		  ; Run	text script at offset 0x028446
 						  ; 0xE55B: PRINT MSG 0x05A8, MSGBOX CLEARED, END: "{5B}...Is that all?{57}OK, go ahead!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_273DE
+		bra.s	XS_0036_3
 ; ---------------------------------------------------------------------------
 
-loc_273DA:					  ; CODE XREF: ROM:000273C6j
+XS_0036_2:					  ; CODE XREF: ROM:000273C6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $625,$0		  ; Run	text script at offset 0x028440
@@ -139,29 +131,27 @@ loc_273DA:					  ; CODE XREF: ROM:000273C6j
 						  ; 0xE55A: PRINT MSG 0x05A7, MSGBOX CLEARED, END: "{5B}It all depends on your luck!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_273DE:					  ; CODE XREF: ROM:000273D8j
-		bra.s	loc_273E4
+XS_0036_3:					  ; CODE XREF: ROM:000273D8j
+		bra.s	XS_0036_5
 ; ---------------------------------------------------------------------------
 
-loc_273E0:					  ; CODE XREF: ROM:000273B8j
+XS_0036_4:					  ; CODE XREF: ROM:000273B8j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $629,$0		  ; Run	text script at offset 0x028448
 						  ; 0xE55C: PRINT MSG 0x05A9, MSGBOX CLEARED, END: "{5B}What a miser!{57}OK, go	ahead!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_273E4:					  ; CODE XREF: ROM:loc_273DEj
+XS_0036_5:					  ; CODE XREF: ROM:XS_0036_3j
 		move.l	(sp)+,d0
 
-locret_273E6:					  ; CODE XREF: ROM:000273ACj
+XS_0036_6:					  ; CODE XREF: ROM:000273ACj
 		rts
 ; ---------------------------------------------------------------------------
 
 XS_0037:
 		move.l	d0,-(sp)
-
-loc_273EA:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $62A,$0		  ; Run	text script at offset 0x02844A
 						  ; 0x1BF6: LOAD SPECIAL CHARACTER Fahl	(0x0E)
@@ -169,77 +159,71 @@ loc_273EA:					  ; Trap01Handler
 						  ; 0xA55E: PRINT MSG 0x05AB, END: "{5B}Will you challenge me?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_27436
-
-loc_273F4:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_0037_5
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $62D,$0		  ; Run	text script at offset 0x028450
 						  ; 0x1014: LOAD 20 INTO NUMERIC VARIABLE
 						  ; 0xA55F: PRINT MSG 0x05AC, END: "{5B}Now, pay me{57}{5A} golds, OK?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_27436
+		bcc.s	XS_0037_5
 		move.l	(g_PrintNumericDwordValue).l,d0
 		jsr	(j_RemoveGold).l
-		bcc.s	loc_27418
-
-loc_2740C:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_0037_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $62F,$0		  ; Run	text script at offset 0x028454
 						  ; 0xE560: PRINT MSG 0x05AD, MSGBOX CLEARED, END: "{5B}I'm sorry, but it's{57}my job.  I can't do it if you{57}don't have enough money.{5E}"
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
-		bra.s	loc_27432
+		bra.s	XS_0037_4
 ; ---------------------------------------------------------------------------
 
-loc_27418:					  ; CODE XREF: ROM:0002740Aj
+XS_0037_1:					  ; CODE XREF: ROM:0002740Aj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $631,$0		  ; Run	text script at offset 0x028458
 						  ; 0xA562: PRINT MSG 0x05AF, END: "{5B}Do you want to hear{57}the rules?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_27428
-
-loc_27422:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_0037_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
-word_27424:	ScriptID    $632,$0		  ; Run	text script at offset 0x02845A
+		ScriptID    $632,$0		  ; Run	text script at offset 0x02845A
 						  ; 0x8563: PRINT MSG 0x05B0: "{5B}I'll change into various{57}monsters who will attack you{57}one after the other.{62}"
 						  ; 0x8564: PRINT MSG 0x05B1: "{5B}I'll evaluate your{57}skill by the number of{57}monsters you defeat{62}"
 						  ; 0x8565: PRINT MSG 0x05B2: "{5B}without getting hit.{57}Once	you get	hit, it's over.{62}"
 						  ; 0x8566: PRINT MSG 0x05B3: "{5B}Your	reward will be based on{57}the number of monsters you kill.{57}Got it?{62}"
 						  ; 0xE567: PRINT MSG 0x05B4, MSGBOX CLEARED, END: "{5B}Now, ready...{59}set...{59}GO!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_2742C
+		bra.s	XS_0037_3
 ; ---------------------------------------------------------------------------
 
-loc_27428:					  ; CODE XREF: ROM:00027420j
+XS_0037_2:					  ; CODE XREF: ROM:00027420j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $637,$0		  ; Run	text script at offset 0x028464
 						  ; 0xE568: PRINT MSG 0x05B5, MSGBOX CLEARED, END: "{5B}Now, ready...{59}set..{59}GO!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_2742C:					  ; CODE XREF: ROM:00027426j
+XS_0037_3:					  ; CODE XREF: ROM:00027426j
 		st	(g_YesNoPromptResult).l
 
-loc_27432:					  ; CODE XREF: ROM:00027416j
+XS_0037_4:					  ; CODE XREF: ROM:00027416j
 						  ; ROM:0002743Aj
 		move.l	(sp)+,d0
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_27436:					  ; CODE XREF: ROM:000273F2j
+XS_0037_5:					  ; CODE XREF: ROM:000273F2j
 						  ; ROM:000273FCj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $630,$0		  ; Run	text script at offset 0x028456
 						  ; 0xE561: PRINT MSG 0x05AE, MSGBOX CLEARED, END: "{5B}Take care of yourself!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_27432
+		bra.s	XS_0037_4
 ; ---------------------------------------------------------------------------
 
 XS_0038:
@@ -251,7 +235,7 @@ XS_0038:
 						  ; 0x1019: LOAD 25 INTO NUMERIC VARIABLE
 						  ; 0x856A: PRINT MSG 0x05B7: "{5B}I'll give you {5A} golds{57}if you stop now.{62}"
 						  ; 0xA56B: PRINT MSG 0x05B8, END: "{5B}Will you go on?{57}{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $63D,$2		  ; Answer 'no':  Run text script at offset 0x028470
 						  ; 0x856C: PRINT MSG 0x05B9: "{5B}{5A}	golds.	Take them!{62}"
 						  ; 0x17E9: RECEIVE [NUMERIC_VAR] GOLDS
@@ -270,7 +254,7 @@ XS_0039:
 						  ; 0x1032: LOAD 50 INTO NUMERIC VARIABLE
 						  ; 0x856F: PRINT MSG 0x05BC: "{5B}I'll give you {5A} golds{57}if you stop now.{62}"
 						  ; 0xA570: PRINT MSG 0x05BD, END: "{5B}Want to	continue?{57}{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $63D,$2		  ; Answer 'no':  Run text script at offset 0x028470
 						  ; 0x856C: PRINT MSG 0x05B9: "{5B}{5A}	golds.	Take them!{62}"
 						  ; 0x17E9: RECEIVE [NUMERIC_VAR] GOLDS
@@ -288,7 +272,7 @@ XS_003A:
 						  ; 0x8571: PRINT MSG 0x05BE: "{5B}Excellent!!{57}You don't need anymore{57}training!{62}"
 						  ; 0x1064: LOAD 100 INTO NUMERIC VARIABLE
 						  ; 0xA572: PRINT MSG 0x05BF, END: "{5B}Take {5A} golds!{57}Still want to continue?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $63D,$2		  ; Answer 'no':  Run text script at offset 0x028470
 						  ; 0x856C: PRINT MSG 0x05B9: "{5B}{5A}	golds.	Take them!{62}"
 						  ; 0x17E9: RECEIVE [NUMERIC_VAR] GOLDS
@@ -306,7 +290,7 @@ XS_003B:
 						  ; 0x8573: PRINT MSG 0x05C0: "{5B}I give up!  You're the{57}strongest man I've ever met!{62}"
 						  ; 0x10C8: LOAD 200 INTO NUMERIC VARIABLE
 						  ; 0xA574: PRINT MSG 0x05C1, END: "{5B}Please...take the{57}{5A} golds.  Want to go on?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $63D,$2		  ; Answer 'no':  Run text script at offset 0x028470
 						  ; 0x856C: PRINT MSG 0x05B9: "{5B}{5A}	golds.	Take them!{62}"
 						  ; 0x17E9: RECEIVE [NUMERIC_VAR] GOLDS
@@ -324,7 +308,7 @@ XS_003C:
 						  ; 0x8575: PRINT MSG 0x05C2: "{5B}P....{59}please...{59}{57}I'm almost...{57}worn out...{62}"
 						  ; 0x1190: LOAD 400 INTO NUMERIC VARIABLE
 						  ; 0xA576: PRINT MSG 0x05C3, END: "{5B}Take the {5A} golds...{57}...You STILL want to go on?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $63D,$2		  ; Answer 'no':  Run text script at offset 0x028470
 						  ; 0x856C: PRINT MSG 0x05B9: "{5B}{5A}	golds.	Take them!{62}"
 						  ; 0x17E9: RECEIVE [NUMERIC_VAR] GOLDS
@@ -337,40 +321,36 @@ XS_003C:
 XS_003F:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
-word_2747A:	ScriptID    $65E,$0		  ; Run	text script at offset 0x0284B2
+		ScriptID    $65E,$0		  ; Run	text script at offset 0x0284B2
 						  ; 0x181B: LOAD CHARACTER SCRIPT Owner	(0x001B)
 						  ; 0x857C: PRINT MSG 0x05C9: "{5B}Welcome to Greenpea's!{57}Step right up!  Have some{57}fun!  Make some money!{62}"
 						  ; 0x1032: LOAD 50 INTO NUMERIC VARIABLE
 						  ; 0xA57D: PRINT MSG 0x05CA, END: "{5B}{5A} golds for one play.{57}Okay?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_27488
-
-loc_27482:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	XS_003F_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $665,$0		  ; Run	text script at offset 0x0284C0
 						  ; 0xE580: PRINT MSG 0x05CD, MSGBOX CLEARED, END: "{5B}Are you	nuts?{57}Don't you like gambling?{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_274BC
+		bra.s	XS_003F_5
 ; ---------------------------------------------------------------------------
 
-loc_27488:					  ; CODE XREF: ROM:00027480j
+XS_003F_1:					  ; CODE XREF: ROM:00027480j
 		move.l	(g_PrintNumericDwordValue).l,d0
 		jsr	(j_RemoveGold).l
-		bcc.s	loc_274A2
-
-loc_27496:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_003F_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $664,$0		  ; Run	text script at offset 0x0284BE
 						  ; 0xE57F: PRINT MSG 0x05CC, MSGBOX CLEARED, END: "{5B}Oops!{57}Come again when{57}you	have more money!{5E}"
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
-		bra.s	locret_274BC
+		bra.s	XS_003F_5
 ; ---------------------------------------------------------------------------
 
-loc_274A2:					  ; CODE XREF: ROM:00027494j
+XS_003F_2:					  ; CODE XREF: ROM:00027494j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $662,$0		  ; Run	text script at offset 0x0284BA
@@ -378,10 +358,8 @@ loc_274A2:					  ; CODE XREF: ROM:00027494j
 						  ; 0xA57E: PRINT MSG 0x05CB, END: "{5B}Thanks!	 Do you	need to{57}know	how to play?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_274B2
-
-loc_274AC:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_003F_3
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $666,$0		  ; Run	text script at offset 0x0284C2
 						  ; 0x8581: PRINT MSG 0x05CE: "{5B}Throw the ball over{57}the counter so it lands on{57}the moving plates.{62}"
@@ -389,20 +367,20 @@ loc_274AC:					  ; Trap01Handler
 						  ; 0x8583: PRINT MSG 0x05D0: "{5B}If the ball slides off,{57}you lose!	 You have only{57}one throw.{62}"
 						  ; 0xE584: PRINT MSG 0x05D1, MSGBOX CLEARED, END: "{5B}Are you	ready?{57}Okay!	 Then, let's go!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_274B6
+		bra.s	XS_003F_4
 ; ---------------------------------------------------------------------------
 
-loc_274B2:					  ; CODE XREF: ROM:000274AAj
+XS_003F_3:					  ; CODE XREF: ROM:000274AAj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $66A,$0		  ; Run	text script at offset 0x0284CA
 						  ; 0xE585: PRINT MSG 0x05D2, MSGBOX CLEARED, END: "{5B}Now, let's try!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_274B6:					  ; CODE XREF: ROM:000274B0j
+XS_003F_4:					  ; CODE XREF: ROM:000274B0j
 		st	(g_YesNoPromptResult).l
 
-locret_274BC:					  ; CODE XREF: ROM:00027486j
+XS_003F_5:					  ; CODE XREF: ROM:00027486j
 						  ; ROM:000274A0j
 		rts
 ; ---------------------------------------------------------------------------
@@ -416,20 +394,18 @@ XS_0042:					  ; Trap01Handler
 						  ; 0xA58B: PRINT MSG 0x05D8, END: "{5B}would you do me	a favor?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_274CE
-
-loc_274C8:					  ; Trap01Handler
-		trap	#$01
+		bcc.s	XS_0042_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $675,$0		  ; Run	text script at offset 0x0284E0
 						  ; 0x18D0: LOAD CHARACTER SCRIPT * (0x00D0)
 						  ; 0x858C: PRINT MSG 0x05D9: "{5B}The room upstairs is{57}a mess.  Would you put the{57}jars on the shelves neatly?{62}"
 						  ; 0xE58D: PRINT MSG 0x05DA, MSGBOX CLEARED, END: "{5B}Collecting jars	is{57}my husband's hobby....{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_274D2
+		bra.s	XS_0042_2
 ; ---------------------------------------------------------------------------
 
-loc_274CE:					  ; CODE XREF: ROM:000274C6j
+XS_0042_1:					  ; CODE XREF: ROM:000274C6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $678,$0		  ; Run	text script at offset 0x0284E6
@@ -437,7 +413,7 @@ loc_274CE:					  ; CODE XREF: ROM:000274C6j
 						  ; 0xE58E: PRINT MSG 0x05DB, MSGBOX CLEARED, END: "{5B}Fine!{57}I'll do it myself.{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_274D2:					  ; CODE XREF: ROM:000274CCj
+XS_0042_2:					  ; CODE XREF: ROM:000274CCj
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -489,20 +465,18 @@ XS_0046:					  ; Trap01Handler
 XS_0048:					  ; Any	status effect
 		moveq	#$0000000F,d0
 		bsr.w	TestPlayerStatus
-		beq.s	loc_27506
-
-loc_274FA:					  ; Trap01Handler
-		trap	#$01
+		beq.s	XS_0048_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $69F,$0		  ; Run	text script at offset 0x028534
 						  ; 0x1813: LOAD CHARACTER SCRIPT Teller (0x0013)
 						  ; 0xE5A1: PRINT MSG 0x05EE, MSGBOX CLEARED, END: "{5B}I can't cast a spell on{57}you now.  Go to the church{57}and get cured first.{5E}"
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
-		bra.s	locret_27510
+		bra.s	XS_0048_2
 ; ---------------------------------------------------------------------------
 
-loc_27506:					  ; CODE XREF: ROM:000274F8j
+XS_0048_1:					  ; CODE XREF: ROM:000274F8j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $698,$0		  ; Run	text script at offset 0x028526
@@ -513,7 +487,7 @@ loc_27506:					  ; CODE XREF: ROM:000274F8j
 ; ---------------------------------------------------------------------------
 		st	(g_YesNoPromptResult).l
 
-locret_27510:					  ; CODE XREF: ROM:00027504j
+XS_0048_2:					  ; CODE XREF: ROM:00027504j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -539,7 +513,7 @@ XS_005E:
 						  ; 0x182E: LOAD CHARACTER SCRIPT Kayla	(0x002E)
 						  ; 0x85DA: PRINT MSG 0x0627: "{5B}Hahahahaha!{57}Nice to meet you again!{57}Hahahahahahaha!{62}"
 						  ; 0xA5DB: PRINT MSG 0x0628, END: "{5B}I've been waiting for{57}you!  Now, come here!{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $6FE,$2		  ; Answer 'no':  Run text script at offset 0x0285F2
 						  ; 0x182E: LOAD CHARACTER SCRIPT Kayla	(0x002E)
 						  ; 0x85E0: PRINT MSG 0x062D: "{5B}You refused me!{57}I've never been{57}refused before!{62}"
@@ -566,9 +540,7 @@ XS_0064:					  ; CODE XREF: ROM:00027532j
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
 		bcs.s	XS_0064
-
-loc_27534:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $711,$0		  ; Run	text script at offset 0x028618
 						  ; 0x1BF1: LOAD SPECIAL CHARACTER Duke	(0x09)
@@ -589,7 +561,7 @@ XS_0069:
 		ScriptID    $72B,$0		  ; Prompt:	  Run text script at offset 0x02864C
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xA602: PRINT MSG 0x064F, END: "{5B}Nigel, are you going{57}to bed for the night?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $72D,$2		  ; Answer 'no':  Run text script at offset 0x028650
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xE603: PRINT MSG 0x0650, MSGBOX CLEARED, END: "{5B}Let's go{57}explore the castle, then.{5E}"
@@ -606,13 +578,11 @@ XS_0073:					  ; Trap01Handler
 						  ; 0xA615: PRINT MSG 0x0662, END: "{5B}Would you invest{57}{5A} golds in me?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_2756A
+		bcc.s	XS_0073_1
 		move.l	(g_PrintNumericDwordValue).l,d0
 		jsr	(j_RemoveGold).l
-		bcs.s	loc_2756A
-
-loc_2755E:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	XS_0073_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $750,$0		  ; Run	text script at offset 0x028696
 						  ; 0x14D2: SET	BIT 2 OF FLAG 0x01A
@@ -620,11 +590,11 @@ loc_2755E:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		st	(g_YesNoPromptResult).l
 
-locret_27568:					  ; CODE XREF: ROM:00027574j
+XS_0073_2:					  ; CODE XREF: ROM:00027574j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_2756A:					  ; CODE XREF: ROM:0002754Ej
+XS_0073_1:					  ; CODE XREF: ROM:0002754Ej
 						  ; ROM:0002755Cj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
@@ -632,7 +602,7 @@ loc_2756A:					  ; CODE XREF: ROM:0002754Ej
 						  ; 0xE616: PRINT MSG 0x0663, MSGBOX CLEARED, END: "{5B}Aren't you interested{57}in the money game?{5E}"
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
-		bra.s	locret_27568
+		bra.s	XS_0073_2
 ; ---------------------------------------------------------------------------
 
 XS_0075:
@@ -646,9 +616,7 @@ XS_0075:
 						  ; 0x18F1: LOAD CHARACTER SCRIPT * (0x00F1)
 						  ; 0xA61A: PRINT MSG 0x0667, END: "{5B}Hey, a buyer!{57}You want variety goods?{57}Sure, we've got lots!{62}"
 ; ---------------------------------------------------------------------------
-
-loc_27580:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $759,$0		  ; Run	text script at offset 0x0286A8
 						  ; 0xE61B: PRINT MSG 0x0668, MSGBOX CLEARED, END: "{5B}We've got all kinds{57}of items, and of good{57}quality, too!{5E}"
@@ -694,9 +662,7 @@ XS_0077:
 XS_0079:
 		move.w	#ITM_ARMLET,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_275B4
-
-loc_275A8:
+		beq.s	XS_0079_1
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $76A,$0		  ; Prompt:	  Run text script at offset 0x0286CA
@@ -708,10 +674,10 @@ loc_275A8:
 		ScriptID    $76D,$2		  ; Answer 'no':  Run text script at offset 0x0286D0
 						  ; 0xE62A: PRINT MSG 0x0677, MSGBOX CLEARED, END: "{5B}Do as you like.{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_275BE
+		bra.s	XS_0079_2
 ; ---------------------------------------------------------------------------
 
-loc_275B4:					  ; CODE XREF: ROM:000275A6j
+XS_0079_1:					  ; CODE XREF: ROM:000275A6j
 		bsr.w	HandleYesNoPrompt
 ; ---------------------------------------------------------------------------
 		ScriptID    $770,$0		  ; Prompt:	  Run text script at offset 0x0286D6
@@ -724,32 +690,30 @@ loc_275B4:					  ; CODE XREF: ROM:000275A6j
 						  ; 0xE62F: PRINT MSG 0x067C, MSGBOX CLEARED, END: "{5B}Do as you like.{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_275BE:					  ; CODE XREF: ROM:000275B2j
+XS_0079_2:					  ; CODE XREF: ROM:000275B2j
 		rts
 ; ---------------------------------------------------------------------------
 
 XS_007A:
 		move.w	#ITM_ARMLET,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_275D0
-
-loc_275CA:					  ; Trap01Handler
-		trap	#$01
+		beq.s	XS_007A_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $76F,$0		  ; Run	text script at offset 0x0286D4
 						  ; 0xE62C: PRINT MSG 0x0679, MSGBOX CLEARED, END: "{5B}I can see there's{57}something about you...{57}I don't know what it is...{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_275D4
+		bra.s	XS_007A_2
 ; ---------------------------------------------------------------------------
 
-loc_275D0:					  ; CODE XREF: ROM:000275C8j
+XS_007A_1:					  ; CODE XREF: ROM:000275C8j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $775,$0		  ; Run	text script at offset 0x0286E0
 						  ; 0xE631: PRINT MSG 0x067E, MSGBOX CLEARED, END: "{5B}Heh heh...come back{57}anytime you like...the undead{57}are always waiting...{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_275D4:					  ; CODE XREF: ROM:000275CEj
+XS_007A_2:					  ; CODE XREF: ROM:000275CEj
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -759,7 +723,7 @@ XS_007D:
 		ScriptID    $779,$0		  ; Prompt:	  Run text script at offset 0x0286E8
 						  ; 0x1834: LOAD CHARACTER SCRIPT Mir (0x0034)
 						  ; 0xA634: PRINT MSG 0x0681, END: "{5B}Are you	going in{57}at all costs?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $77B,$2		  ; Answer 'no':  Run text script at offset 0x0286EC
 						  ; 0x1834: LOAD CHARACTER SCRIPT Mir (0x0034)
 						  ; 0xE635: PRINT MSG 0x0682, MSGBOX CLEARED, END: "{5B}Go back	now.{57}Never step foot	in this{57}tower again.{5E}"
@@ -773,7 +737,7 @@ XS_007E:
 		ScriptID    $77D,$0		  ; Prompt:	  Run text script at offset 0x0286F0
 						  ; 0x1834: LOAD CHARACTER SCRIPT Mir (0x0034)
 						  ; 0xA636: PRINT MSG 0x0683, END: "{5B}Anything I can do for you?{58}"
-		ScriptJump  ClearTextbox_0,$1	  ; Answer 'yes': Jump to address 0x028FB8
+		ScriptJump  ClearTextbox,$1	  ; Answer 'yes': Jump to address 0x028FB8
 		ScriptID    $77F,$2		  ; Answer 'no':  Run text script at offset 0x0286F4
 						  ; 0x1834: LOAD CHARACTER SCRIPT Mir (0x0034)
 						  ; 0xE637: PRINT MSG 0x0684, MSGBOX CLEARED, END: "{5B}Go back	right now!{5E}"
@@ -805,7 +769,7 @@ XS_0089:					  ; Trap01Handler
 						  ; 0xA657: PRINT MSG 0x06A4, END: "{5B}I'm going to send you{57}directly to the ground, OK?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -835,58 +799,50 @@ XS_00A5:					  ; Trap01Handler
 						  ; 0xA6A7: PRINT MSG 0x06F4, END: "{5B}Give me	an {5F}!{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_27630
-
-loc_2761C:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	XS_00A5_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $834,$0		  ; Run	text script at offset 0x02885E
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xA6AD: PRINT MSG 0x06FA, END: "{5B}But...he's nearly{57}dead!  Please!{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_27630
-		bsr.s	sub_2763A
-		beq.s	locret_27638
-
-loc_2762A:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	XS_00A5_1
+		bsr.s	XS_00A5_2
+		beq.s	XS_00A5_3
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $836,$0		  ; Run	text script at offset 0x028862
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xE6AE: PRINT MSG 0x06FB, MSGBOX CLEARED, END: "{5B}I hate you!!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_27638
+		bra.s	XS_00A5_3
 ; ---------------------------------------------------------------------------
 
-loc_27630:					  ; CODE XREF: ROM:0002761Aj
+XS_00A5_1:					  ; CODE XREF: ROM:0002761Aj
 						  ; ROM:00027624j
-		bsr.s	sub_2763A
-		beq.s	locret_27638
-
-loc_27634:					  ; Trap01Handler
-		trap	#$01
+		bsr.s	XS_00A5_2
+		beq.s	XS_00A5_3
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $82B,$0		  ; Run	text script at offset 0x02884C
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xE6A8: PRINT MSG 0x06F5, MSGBOX CLEARED, END: "{5B}Thanks!{57}It's all right, poor dog!{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_27638:					  ; CODE XREF: ROM:00027628j
+XS_00A5_3:					  ; CODE XREF: ROM:00027628j
 						  ; ROM:0002762Ej ...
 		rts
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2763A:					  ; CODE XREF: ROM:00027626p
-						  ; ROM:loc_27630p
+XS_00A5_2:					  ; CODE XREF: ROM:00027626p
+						  ; ROM:XS_00A5_1p
 		move.w	(word_FF1198).l,d0
 		bsr.w	CheckIfItemIsOwned
-		bne.s	locret_27650
-
-loc_27646:					  ; Trap01Handler
-		trap	#$01
+		bne.s	XS_00A5_4
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $838,$0		  ; Run	text script at offset 0x028866
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
@@ -895,9 +851,9 @@ loc_27646:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
 
-locret_27650:					  ; CODE XREF: sub_2763A+Aj
+XS_00A5_4:					  ; CODE XREF: XS_00A5_2+Aj
 		rts
-; End of function sub_2763A
+; End of function XS_00A5_2
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -905,20 +861,18 @@ locret_27650:					  ; CODE XREF: sub_2763A+Aj
 
 XS_00AC:
 		movem.l	d0/d6-a0,-(sp)
-		lea	word_27672(pc),a0
+		lea	XS_00AC_Options(pc),a0
 		moveq	#$00000004,d6
 		jsr	(j_GenerateRandomNumber).l
 		add.w	d7,d7
 		move.w	(a0,d7.w),d0
 		bsr.w	RunTextCmd
 		movem.l	(sp)+,d0/d6-a0
-
-locret_27670:
 		rts
 ; End of function XS_00AC
 
 ; ---------------------------------------------------------------------------
-word_27672:	ScriptID    $852,$0		  ; DATA XREF: XS_00AC+4t
+XS_00AC_Options:ScriptID    $852,$0		  ; DATA XREF: XS_00AC+4t
 						  ; Mayor (0x00) : Run text script at offset 0x02889A
 						  ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
 						  ; 0xE6BB: PRINT MSG 0x0708, MSGBOX CLEARED, END: "{5B}Oh!!{57}Don't frighten me like that!{5E}"
@@ -935,18 +889,16 @@ word_27672:	ScriptID    $852,$0		  ; DATA XREF: XS_00AC+4t
 
 XS_00AD:
 		movem.l	d0/d6-a0,-(sp)
-		lea	word_2769A(pc),a0
+		lea	XS_00AD_Options(pc),a0
 		moveq	#$00000004,d6
 		jsr	(j_GenerateRandomNumber).l
 		add.w	d7,d7
 		move.w	(a0,d7.w),d0
 		bsr.w	RunTextCmd
 		movem.l	(sp)+,d0/d6-a0
-
-locret_27698:
 		rts
 ; ---------------------------------------------------------------------------
-word_2769A:	ScriptID    $85A,$0		  ; DATA XREF: ROM:0002767Et
+XS_00AD_Options:ScriptID    $85A,$0		  ; DATA XREF: ROM:0002767Et
 						  ; Mayor (0x00) : Run text script at offset 0x0288AA
 						  ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
 						  ; 0xE6BF: PRINT MSG 0x070C, MSGBOX CLEARED, END: "{5B}Woah!  That made me dizzy!{5E}"
@@ -969,10 +921,8 @@ XS_00B2:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		move.w	#ITM_RESTORATION,d0
 		bsr.w	GetRemainingItemAllowedCount
-		beq.s	loc_276B6
-
-loc_276B0:					  ; Trap01Handler
-		trap	#$01
+		beq.s	XS_00B2_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $873,$0		  ; Run	text script at offset 0x0288DC
 						  ; 0x86CF: PRINT MSG 0x071C: "{5B}I'll give you this.{57}I can't see it, but it{57}sure looks good.{62}"
@@ -981,17 +931,17 @@ loc_276B0:					  ; Trap01Handler
 						  ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
 						  ; 0xE6D0: PRINT MSG 0x071D, MSGBOX CLEARED, END: "{5B}I enjoyed talking{57}with you!	I can't see you,{57}but you're still my friend.{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	locret_276BA
+		bra.s	XS_00B2_2
 ; ---------------------------------------------------------------------------
 
-loc_276B6:					  ; CODE XREF: ROM:000276AEj
+XS_00B2_1:					  ; CODE XREF: ROM:000276AEj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $878,$0		  ; Run	text script at offset 0x0288E6
 						  ; 0xE6D1: PRINT MSG 0x071E, MSGBOX CLEARED, END: "{5B}Good luck!{57}I	can't see you, but{57}good luck!{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_276BA:					  ; CODE XREF: ROM:000276B4j
+XS_00B2_2:					  ; CODE XREF: ROM:000276B4j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1007,13 +957,13 @@ XS_00B3:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		moveq	#ITM_EINSTEINWHISTLE,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_276D0
-		bsr.w	ClearTextbox_0
+		beq.s	XS_00B3_1
+		bsr.w	ClearTextbox
 		st	d0
-		bra.s	loc_276D6
+		bra.s	XS_00B3_2
 ; ---------------------------------------------------------------------------
 
-loc_276D0:					  ; CODE XREF: ROM:000276C6j
+XS_00B3_1:					  ; CODE XREF: ROM:000276C6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $888,$0		  ; Run	text script at offset 0x028906
@@ -1022,7 +972,7 @@ loc_276D0:					  ; CODE XREF: ROM:000276C6j
 ; ---------------------------------------------------------------------------
 		clr.b	d0
 
-loc_276D6:					  ; CODE XREF: ROM:000276CEj
+XS_00B3_2:					  ; CODE XREF: ROM:000276CEj
 		move.b	d0,(g_YesNoPromptResult).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -1048,9 +998,7 @@ XS_00E5:					  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicDukeChase
 ; ---------------------------------------------------------------------------
-
-loc_276EE:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $94D,$0		  ; Run	text script at offset 0x028A90
 						  ; 0x1BF1: LOAD SPECIAL CHARACTER Duke	(0x09)
@@ -1080,9 +1028,7 @@ XS_00E9:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicMap
 ; ---------------------------------------------------------------------------
-
-loc_27706:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $95E,$0		  ; Run	text script at offset 0x028AB2
 						  ; 0x1836: LOAD CHARACTER SCRIPT Lara (0x0036)
@@ -1098,9 +1044,7 @@ loc_27706:					  ; Trap01Handler
 
 XS_00EB:
 		bsr.w	RestoreBGM_1
-
-loc_27714:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $963,$0		  ; Run	text script at offset 0x028ABC
 						  ; 0x1836: LOAD CHARACTER SCRIPT Lara (0x0036)
@@ -1123,9 +1067,7 @@ XS_00F0:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicFinalCutscene
 ; ---------------------------------------------------------------------------
-
-loc_27722:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $97B,$0		  ; Run	text script at offset 0x028AEC
 						  ; 0x1836: LOAD CHARACTER SCRIPT Lara (0x0036)
@@ -1142,9 +1084,7 @@ loc_27722:					  ; Trap01Handler
 
 XS_00F2:
 		bsr.w	RestoreBGM_1
-
-loc_2772C:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $986,$0		  ; Run	text script at offset 0x028B02
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
@@ -1162,8 +1102,6 @@ XS_00FE:					  ; Trap01Handler
 						  ; 0x1805: LOAD CHARACTER SCRIPT Owner	(0x0005)
 						  ; 0xA793: PRINT MSG 0x07E0, END: "Nigel got 2000 golds!"
 ; ---------------------------------------------------------------------------
-
-loc_27736:
 		bsr.w	Sleep_0
 ; ---------------------------------------------------------------------------
 		dc.w 00119
@@ -1183,24 +1121,22 @@ XS_0122:					  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		moveq	#0000000050,d0
 
-loc_27744:					  ; CODE XREF: ROM:00027780j
+XS_0122_1:					  ; CODE XREF: ROM:00027780j
 						  ; ROM:00027788j
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_27764
+		bcc.s	XS_0122_4
 		jsr	(j_RemoveGold).l
-		bcs.s	loc_27758
-
-loc_27752:					  ; Trap01Handler
-		trap	#$01
+		bcs.s	XS_0122_2
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FC,$0		  ; Run	text script at offset 0x028BEE
 						  ; 0x1939: LOAD CHARACTER SCRIPT * (0x0139)
 						  ; 0xE7C0: PRINT MSG 0x080D, MSGBOX CLEARED, END: "{5B}Good luck!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_27762
+		bra.s	XS_0122_3
 ; ---------------------------------------------------------------------------
 
-loc_27758:					  ; CODE XREF: ROM:00027750j
+XS_0122_2:					  ; CODE XREF: ROM:00027750j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FE,$0		  ; Run	text script at offset 0x028BF2
@@ -1208,23 +1144,23 @@ loc_27758:					  ; CODE XREF: ROM:00027750j
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
 
-loc_27762:					  ; CODE XREF: ROM:00027756j
-		bra.s	locret_27768
+XS_0122_3:					  ; CODE XREF: ROM:00027756j
+		bra.s	XS_0122_5
 ; ---------------------------------------------------------------------------
 
-loc_27764:					  ; CODE XREF: ROM:00027748j
+XS_0122_4:					  ; CODE XREF: ROM:00027748j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $9FF,$0		  ; Run	text script at offset 0x028BF4
 						  ; 0xE7C2: PRINT MSG 0x080F, MSGBOX CLEARED, END: "{5B}Ohhhh...so close!{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_27768:					  ; CODE XREF: ROM:loc_27762j
+XS_0122_5:					  ; CODE XREF: ROM:XS_0122_3j
 		rts
 ; ---------------------------------------------------------------------------
 
 XS_0123:
-		move.l	#$000000C8,(g_PrintNumericDwordValue).l
+		move.l	#0000000200,(g_PrintNumericDwordValue).l
 
 XS_0127:					  ; CODE XREF: ROM:00027794j
 		trap	#$01			  ; Trap01Handler
@@ -1251,7 +1187,7 @@ XS_0125:					  ; Trap01Handler
 						  ; 0xA7CA: PRINT MSG 0x0817, END: "{5B}20 golds for one turn.{57}Wanna	try?{58}"
 ; ---------------------------------------------------------------------------
 		moveq	#0000000020,d0
-		bra.s	loc_27744
+		bra.s	XS_0122_1
 ; ---------------------------------------------------------------------------
 
 XS_0128:					  ; Trap01Handler
@@ -1265,7 +1201,7 @@ XS_0128:					  ; Trap01Handler
 						  ; 0xA7CF: PRINT MSG 0x081C, END: "{5B}50 golds for one race.{57}Give it a try?{58}"
 ; ---------------------------------------------------------------------------
 		moveq	#0000000050,d0
-		bra.s	loc_27744
+		bra.s	XS_0122_1
 ; ---------------------------------------------------------------------------
 
 XS_0129:
@@ -1276,10 +1212,8 @@ XS_0129:
 XS_012A:
 		moveq	#ITM_CASINOTICKET,d0
 		bsr.w	CheckIfItemIsOwned
-		beq.s	loc_277B8
-
-loc_2779E:					  ; Trap01Handler
-		trap	#$01
+		beq.s	XS_012A_3
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A15,$0		  ; Run	text script at offset 0x028C20
 						  ; 0x193C: LOAD CHARACTER SCRIPT * (0x013C)
@@ -1288,20 +1222,18 @@ loc_2779E:					  ; Trap01Handler
 						  ; 0xA7D2: PRINT MSG 0x081F, END: "{5B}Care to	come in?{58}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_277B2
+		bcc.s	XS_012A_1
 		bsr.w	CheckAndConsumeItem
-
-loc_277AC:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A19,$0		  ; Run	text script at offset 0x028C28
 						  ; 0x193C: LOAD CHARACTER SCRIPT * (0x013C)
 						  ; 0xE7D3: PRINT MSG 0x0820, MSGBOX CLEARED, END: "{5B}Welcome	to{57}the Casino Arthurlier!{57}Have fun!{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_277B6
+		bra.s	XS_012A_2
 ; ---------------------------------------------------------------------------
 
-loc_277B2:					  ; CODE XREF: ROM:000277A6j
+XS_012A_1:					  ; CODE XREF: ROM:000277A6j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A1B,$0		  ; Run	text script at offset 0x028C2C
@@ -1309,11 +1241,11 @@ loc_277B2:					  ; CODE XREF: ROM:000277A6j
 						  ; 0xE7D4: PRINT MSG 0x0821, MSGBOX CLEARED, END: "{5B}See you!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_277B6:					  ; CODE XREF: ROM:000277B0j
-		bra.s	locret_277C2
+XS_012A_2:					  ; CODE XREF: ROM:000277B0j
+		bra.s	XS_012A_4
 ; ---------------------------------------------------------------------------
 
-loc_277B8:					  ; CODE XREF: ROM:0002779Cj
+XS_012A_3:					  ; CODE XREF: ROM:0002779Cj
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A1D,$0		  ; Run	text script at offset 0x028C30
@@ -1323,7 +1255,7 @@ loc_277B8:					  ; CODE XREF: ROM:0002779Cj
 ; ---------------------------------------------------------------------------
 		clr.b	(g_YesNoPromptResult).l
 
-locret_277C2:					  ; CODE XREF: ROM:loc_277B6j
+XS_012A_4:					  ; CODE XREF: ROM:XS_012A_2j
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1331,26 +1263,22 @@ XS_012B:
 		clr.b	(g_YesNoPromptResult).l
 		move.w	#$00E0,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_277F0
+		beq.s	XS_012B_3
 		move.w	#$00E1,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_277E4
-
-loc_277DE:					  ; Trap01Handler
-		trap	#$01
+		beq.s	XS_012B_1
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A26,$0		  ; Run	text script at offset 0x028C42
 						  ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
 						  ; 0xE7D9: PRINT MSG 0x0826, MSGBOX CLEARED, END: "{5B}I wish we could	grow{57}more trees underground...{5E}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_277EE
+		bra.s	XS_012B_2
 ; ---------------------------------------------------------------------------
 
-loc_277E4:					  ; CODE XREF: ROM:000277DCj
+XS_012B_1:					  ; CODE XREF: ROM:000277DCj
 		st	(g_YesNoPromptResult).l
-
-loc_277EA:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A23,$0		  ; Run	text script at offset 0x028C3C
 						  ; 0x14E1: SET	BIT 1 OF FLAG 0x01C
@@ -1358,11 +1286,11 @@ loc_277EA:					  ; Trap01Handler
 						  ; 0xE7D8: PRINT MSG 0x0825, MSGBOX CLEARED, END: "{5B}You met	my father, right?{57}In	that case, go on up and{57}cut the tree	to make	a raft!{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_277EE:					  ; CODE XREF: ROM:000277E2j
-		bra.s	locret_277F4
+XS_012B_2:					  ; CODE XREF: ROM:000277E2j
+		bra.s	XS_012B_4
 ; ---------------------------------------------------------------------------
 
-loc_277F0:					  ; CODE XREF: ROM:000277D2j
+XS_012B_3:					  ; CODE XREF: ROM:000277D2j
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $A20,$0		  ; Run	text script at offset 0x028C36
@@ -1371,6 +1299,6 @@ loc_277F0:					  ; CODE XREF: ROM:000277D2j
 						  ; 0xE7D7: PRINT MSG 0x0824, MSGBOX CLEARED, END: "{5B}I'm standing guard!{5E}"
 ; ---------------------------------------------------------------------------
 
-locret_277F4:					  ; CODE XREF: ROM:loc_277EEj
+XS_012B_4:					  ; CODE XREF: ROM:XS_012B_2j
 		rts
 ; ---------------------------------------------------------------------------

@@ -292,7 +292,7 @@ WaitForStartGame:				  ; CODE XREF: DisplayTitle+20Ap
 		move.w	#03599,d7
 
 loc_3998C:					  ; CODE XREF: WaitForStartGame+1Aj
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		andi.b	#CTRLBF_ANYBUTTON,(g_Controller1State).l
 		beq.s	loc_399AA
 		jsr	(j_WaitUntilVBlank).l
@@ -302,7 +302,7 @@ loc_3998C:					  ; CODE XREF: WaitForStartGame+1Aj
 
 loc_399AA:					  ; CODE XREF: WaitForStartGame+12j
 						  ; WaitForStartGame+36j
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		tst.b	(g_Controller1State).l
 		bmi.s	loc_399C6
 		jsr	(j_WaitUntilVBlank).l
@@ -340,7 +340,7 @@ loc_399D6:					  ; CODE XREF: ROM:000399D8j
 
 loc_399E4:					  ; CODE XREF: ROM:00039A52j
 		clr.b	-$0000001D(a6)
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		bne.s	loc_39A54
 		move.w	#$0136,d0

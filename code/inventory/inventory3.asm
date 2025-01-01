@@ -33,7 +33,7 @@ loc_D2AE:					  ; CODE XREF: sub_D25C+4Aj
 		dbf	d7,loc_D28A
 		lea	(g_Pal1Base).l,a0
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$1C-g_Buffer(a1),a2
+		lea	$0000001C(a1),a2
 		moveq	#$0000001F,d7
 
 loc_D2C8:					  ; CODE XREF: sub_D25C+6Ej
@@ -48,7 +48,7 @@ loc_D2DE:					  ; CODE XREF: sub_D25C+84j
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_D2DE
 		lea	(g_Buffer).l,a0
-		move.w	(unk_FF0F9C).l,g_Buffer+4-g_Buffer(a0)
+		move.w	(unk_FF0F9C).l,0000000004(a0)
 		rts
 ; End of function sub_D25C
 
@@ -275,7 +275,7 @@ sub_D4AE:					  ; CODE XREF: CheckForMenuOpen+88p
 						  ; ConsumeItem+14p ...
 		bsr.w	sub_D308
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$84-g_Buffer(a1),a0
+		lea	$00000084(a1),a0
 		move.w	(a0),d0
 		move.w	#$A000,d0
 		ori.w	#$0000,d0
@@ -285,7 +285,7 @@ loc_D4CA:					  ; CODE XREF: sub_D4AE+1Ej
 		move.w	d0,(a0)+
 		dbf	d7,loc_D4CA
 		bsr.w	sub_D50C
-		lea	((g_BackgroundBlocks+$204)).l,a0
+		lea	((g_ForegroundBlocks+$204)).l,a0
 		move.w	(a0)+,d0
 		move.w	#$043E,d7
 

@@ -36,7 +36,7 @@ loc_10F82:					  ; CODE XREF: ProcessTriggerAction+262j
 		bclr	#$07,$000001A0(a0)
 		bclr	#$07,$00000220(a0)
 		bclr	#$07,$000002A0(a0)
-		btst	#$06,(g_Vars+$A).l
+		btst	#$06,(g_AdditionalFlags+$A).l
 		bne.w	loc_10F4C
 		trap	#$00			  ; Trap00Handler
 ; END OF FUNCTION CHUNK	FOR ProcessTriggerAction
@@ -254,9 +254,10 @@ loc_11256:					  ; CODE XREF: ROM:00010D4Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
@@ -296,9 +297,10 @@ loc_112CA:					  ; CODE XREF: ROM:00010D5Cj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		bne.w	loc_10F52
 		bra.w	loc_10F4C
 ; ---------------------------------------------------------------------------
@@ -610,9 +612,10 @@ loc_116A4:					  ; CODE XREF: ROM:00010DD4j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.w	#$2730,d0
 		beq.w	loc_10F52
 		bra.w	loc_10F4C
@@ -631,9 +634,10 @@ loc_116C6:					  ; CODE XREF: ROM:00010DDCj
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.w	#$0700,d0
 		beq.w	loc_10F52
 		bra.w	loc_10F4C
@@ -954,9 +958,10 @@ loc_11ADA:					  ; CODE XREF: ROM:00010E68j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.b	#$3F,d0
 		beq.w	loc_10F52
 		bra.w	loc_10F4C
@@ -1107,7 +1112,7 @@ loc_11C86:					  ; CODE XREF: ROM:00010EA8j
 ; ---------------------------------------------------------------------------
 
 loc_11C96:					  ; CODE XREF: ROM:00010EACj
-		btst	#$04,(g_Vars+$A).l
+		btst	#$04,(g_AdditionalFlags+$A).l
 		bne.w	loc_10F52
 		move.b	(Player_X).l,d0
 		subi.b	#$22,d0
@@ -1279,9 +1284,9 @@ loc_11EB0:					  ; CODE XREF: ROM:00011E7Ej
 ; ---------------------------------------------------------------------------
 
 loc_11EBC:					  ; CODE XREF: ROM:00010EE4j
-		btst	#$05,(g_Vars+9).l
+		btst	#$05,(g_AdditionalFlags+9).l
 		beq.w	loc_10F52
-		btst	#$01,(g_Vars+$B).l
+		btst	#$01,(g_AdditionalFlags+$B).l
 		bne.w	loc_10F52
 		cmpi.b	#$14,(Player_X).l
 		bne.w	loc_10F52

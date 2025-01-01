@@ -52,7 +52,7 @@ loc_EA6C:					  ; CODE XREF: sub_EA4A+1Ej
 		lsr.w	#$04,d0
 		dbf	d7,loc_EA62
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$18-g_Buffer(a1),a0
+		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
 		lea	(unk_FF1BF4).l,a2
 		move.b	(a2),d0
@@ -75,7 +75,7 @@ loc_EA98:					  ; CODE XREF: sub_EA4A+4Aj
 
 loc_EAA6:					  ; CODE XREF: sub_EAD4+54j
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$18-g_Buffer(a1),a0
+		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
 		lea	(unk_FF1BF4).l,a2
 		move.w	(a1),d1
@@ -121,7 +121,7 @@ loc_EB02:					  ; CODE XREF: sub_EAD4:loc_EB7Aj
 						  ; sub_EAD4:loc_EB86j	...
 		move.w	(unk_FF0F9C).l,d0
 		lea	(g_Buffer).l,a0
-		move.w	d0,g_Buffer+4-g_Buffer(a0)
+		move.w	d0,0000000004(a0)
 		move.w	d0,$00000002(a0)
 
 loc_EB16:					  ; CODE XREF: sub_EAD4+9Cj
@@ -135,7 +135,7 @@ loc_EB16:					  ; CODE XREF: sub_EAD4+9Cj
 		andi.b	#CTRLBF_AC,d0		  ; A or C
 		bne.w	loc_EE12
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$18-g_Buffer(a1),a0
+		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
 		move.b	d1,d0
 		btst	#CTRL_UP,d0
@@ -304,7 +304,7 @@ sub_EC34:					  ; CODE XREF: ROM:0000EAD0p
 		bsr.w	sub_EA4A
 		bsr.s	InitEquipGreyedOutPal
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$84-g_Buffer(a1),a0
+		lea	$00000084(a1),a0
 		move.w	#$A000,d0
 		ori.w	#$0000,d0
 		move.w	#$0B63,d7

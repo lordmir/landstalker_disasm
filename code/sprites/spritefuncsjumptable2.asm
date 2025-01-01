@@ -22,8 +22,8 @@ sub_1A4404:					  ; DATA XREF: sub_178C8:loc_178F6t
 
 ; Attributes: thunk
 
-j_MoveSpriteOffscreen:				  ; DATA XREF: sub_178FE:loc_188BCt
-						  ; sub_178FE+FFCt ...
+j_MoveSpriteOffscreen:				  ; DATA XREF: OnTick:loc_188BCt
+						  ; OnTick+FFCt ...
 		jmp	MoveSpriteOffscreen(pc)
 ; End of function j_MoveSpriteOffscreen
 

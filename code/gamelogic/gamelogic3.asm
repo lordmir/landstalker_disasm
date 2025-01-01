@@ -61,21 +61,21 @@ JumpAcceleration:dc.b $04, $04,	$03, $03, $03, $02, $02, $02
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_401C:					  ; CODE XREF: sub_3F8j
-						  ; sub_16DC+6Ap ...
+LoadSprites:					  ; CODE XREF: j_LoadSpritesj
+						  ; GameLoop+6Ap ...
 		move.l	(loc_403C,pc),(JumpInstr2).l
 		move.w	((loc_403C+4),pc),(JumpInstr2+4).l
-		bsr.s	sub_40A4
+		bsr.s	ResetVdpSprites
 		bsr.w	sub_40F2
 		bsr.w	sub_4980
-		bsr.w	sub_41F6
+		bsr.w	LoadSpriteFrames
 		rts
-; End of function sub_401C
+; End of function LoadSprites
 
 ; ---------------------------------------------------------------------------
 
-loc_403C:					  ; DATA XREF: sub_401Ct
-						  ; sub_401C+8t
+loc_403C:					  ; DATA XREF: LoadSpritest
+						  ; LoadSprites+8t
 		jmp	(loc_433E).l
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -87,7 +87,7 @@ sub_4042:					  ; CODE XREF: LoadRoom_0+54p
 		move.w	((j_QueueDMAOp_0+4),pc),(JmpInstr1+4).l
 		move.l	(loc_409E,pc),(JumpInstr2).l
 		move.w	((loc_409E+4),pc),(JumpInstr2+4).l
-		bsr.s	sub_40A4
+		bsr.s	ResetVdpSprites
 		lea	(Player_X).l,a0
 		lea	(unk_FF11DE).l,a1
 		clr.w	d0
@@ -115,14 +115,14 @@ loc_409E:					  ; DATA XREF: sub_4042+10t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_40A4:					  ; CODE XREF: sub_401C+10p
+ResetVdpSprites:				  ; CODE XREF: LoadSprites+10p
 						  ; sub_4042+20p
 		lea	(g_VDPSpr16_Y).l,a2
 		moveq	#$00000007,d7
 		moveq	#$00000000,d0
 		move.l	#$000000FF,d1
 
-loc_40B4:					  ; CODE XREF: sub_40A4+30j
+loc_40B4:					  ; CODE XREF: ResetVdpSprites+30j
 		and.l	d1,(a2)+
 		move.l	d0,(a2)+
 		and.l	d1,(a2)+
@@ -151,13 +151,13 @@ loc_40B4:					  ; CODE XREF: sub_40A4+30j
 		move.l	d0,(a2)+
 		move.l	d0,(a2)+
 		rts
-; End of function sub_40A4
+; End of function ResetVdpSprites
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_40F2:					  ; CODE XREF: sub_401C+12p
+sub_40F2:					  ; CODE XREF: LoadSprites+12p
 		lea	(unk_FF11DE).l,a2
 		lea	(Player_X).l,a6
 		clr.w	d6
@@ -260,10 +260,10 @@ loc_41EE:					  ; CODE XREF: sub_4144+A4j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_41F6:					  ; CODE XREF: sub_401C+1Ap
-		bsr.s	sub_4214
+LoadSpriteFrames:				  ; CODE XREF: LoadSprites+1Ap
+		bsr.s	InitSpriteLoad
 
-loc_41F8:					  ; CODE XREF: sub_41F6:loc_420Ej
+loc_41F8:					  ; CODE XREF: LoadSpriteFrames:loc_420Ej
 		move.w	(a3)+,d0
 		bmi.s	locret_4212
 		lea	(Player_X).l,a1
@@ -272,40 +272,40 @@ loc_41F8:					  ; CODE XREF: sub_41F6:loc_420Ej
 		bne.s	loc_420E
 		bsr.s	LoadSpriteFrame
 
-loc_420E:					  ; CODE XREF: sub_41F6+14j
+loc_420E:					  ; CODE XREF: LoadSpriteFrames+14j
 		dbf	d7,loc_41F8
 
-locret_4212:					  ; CODE XREF: sub_41F6+4j
+locret_4212:					  ; CODE XREF: LoadSpriteFrames+4j
 		rts
-; End of function sub_41F6
+; End of function LoadSpriteFrames
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4214:					  ; CODE XREF: sub_41F6p
+InitSpriteLoad:					  ; CODE XREF: LoadSpriteFramesp
 						  ; sub_4266p
 		lea	(g_VDPSpr16_Y).l,a2
 		lea	(unk_FF11DE).l,a3
 		lea	(SpriteGfxPtrPtr).l,a4
-		move.w	#$03A8,d2
-		moveq	#$0000000F,d7
+		move.w	#$03A8,d2		  ; VDP	RAM Begin
+		moveq	#$0000000F,d7		  ; EntityCount
 		clr.b	d6
 		rts
-; End of function sub_4214
+; End of function InitSpriteLoad
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadSpriteFrame:				  ; CODE XREF: sub_41F6+16p
+LoadSpriteFrame:				  ; CODE XREF: LoadSpriteFrames+16p
 						  ; sub_4266+Ep
 		movea.l	(a4),a0
 		moveq	#$00000000,d0
 		move.b	SpriteGraphic(a1),d0
 		lsl.w	#$02,d0
-		move.w	TileSource(a4,d0.w),d1
-		move.w	RotationAndSize(a4,d0.w),d0
+		move.w	$00000006(a4,d0.w),d1
+		move.w	$00000004(a4,d0.w),d0
 		lsl.w	#$02,d0
 		adda.l	d0,a0
 		move.w	AnimationIndex(a1),d0
@@ -323,7 +323,7 @@ LoadSpriteFrame:				  ; CODE XREF: sub_41F6+16p
 
 
 sub_4266:					  ; CODE XREF: sub_4042+46p
-		bsr.s	sub_4214
+		bsr.s	InitSpriteLoad
 
 loc_4268:					  ; CODE XREF: sub_4266+10j
 		move.w	(a3)+,d0
@@ -379,7 +379,7 @@ loc_42BE:					  ; CODE XREF: ROM:000042A8j
 loc_42DC:					  ; CODE XREF: ROM:000042D4j
 		bsr.w	sub_4374
 		movem.w	(sp)+,d2/d6
-		cmpi.w	#$03FF,d2
+		cmpi.w	#$03FF,d2		  ; Flush every	87 tiles
 		bcs.s	loc_4318
 		bset	#$03,d6
 		bne.s	loc_42F6
@@ -474,7 +474,7 @@ sub_4374:					  ; CODE XREF: ROM:loc_42DCp
 
 loc_437A:					  ; CODE XREF: ROM:loc_436Ap
 		movem.l	a3-a6,-(sp)
-		bclr	#$06,Action(a1)
+		bclr	#$06,QueuedAction(a1)
 		bne.s	loc_43B2
 		btst	#$06,Flags1(a1)
 		bne.s	loc_43B2
@@ -515,7 +515,7 @@ loc_43D8:					  ; CODE XREF: sub_4374+42j
 		andi.b	#$0F,d1
 		beq.s	loc_4420
 		movem.l	d0/a1-a3,-(sp)
-		jsr	(sub_10354).l
+		jsr	(j_LoadStatusGfx).l
 		movem.l	(sp)+,d0/a1-a3
 		move.w	Unk10(a1),d1
 		subi.w	#$0040,d1
@@ -755,8 +755,8 @@ sub_45DE:					  ; CODE XREF: ROM:000042C6p
 		lsr.w	#$01,d1
 		movea.l	d1,a3
 		adda.l	#unk_FF1400,a3
-		move.w	$00000006(a1),d0
-		move.b	$00000006(a1),d6
+		move.w	TileSource(a1),d0
+		move.b	TileSource(a1),d6
 		andi.b	#$08,d6
 		bsr.s	LoadObjectVDPSprites
 		move.w	#$FFFF,(a3)
@@ -831,12 +831,12 @@ LoadSpriteGfx:					  ; CODE XREF: sub_F13A+40p
 		move.w	((j_QueueDMAOp_0+4),pc),(JmpInstr1+4).l
 		lea	(SpriteGfxPtrPtr).l,a4
 		movea.l	(a4),a0
-		lsl.w	#$02,d0
+		lsl.w	#$02,d0			  ; Sprite
 		move.w	$00000004(a4,d0.w),d0
 		lsl.w	#$02,d0
 		adda.l	d0,a0
-		movea.l	(a0,d2.w),a0
-		movea.l	(a0,d3.w),a0
+		movea.l	(a0,d2.w),a0		  ; Animation
+		movea.l	(a0,d3.w),a0		  ; Frame
 		movem.w	d1,-(sp)
 		move.w	d1,d0
 		movem.l	d4-d5/a3,-(sp)
@@ -974,7 +974,7 @@ Zeros:		dcb.w $F0,$0000			  ; DATA XREF: LoadSpriteTiles:loc_476Et
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4980:					  ; CODE XREF: sub_401C+16p
+sub_4980:					  ; CODE XREF: LoadSprites+16p
 		bra.w	loc_49BA
 ; ---------------------------------------------------------------------------
 		lea	(Player_X).l,a0
@@ -1266,13 +1266,13 @@ loc_4B4C:					  ; CODE XREF: sub_4B14+8j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4B52:					  ; CODE XREF: sub_40Aj
+DoTileSwap:					  ; CODE XREF: j_DoTileSwapj
 						  ; sub_4FA8+38p ...
 		move.b	(byte_FF1128).l,(byte_FF115A).l
 		clr.b	(byte_FF1128).l
 		movem.w	d0,-(sp)
-		bsr.w	sub_4EC6
-		bsr.w	sub_4DBC
+		bsr.w	LoadTileSwap
+		bsr.w	GetMapOffsets
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		move.b	(a0)+,d6
@@ -1284,18 +1284,18 @@ sub_4B52:					  ; CODE XREF: sub_40Aj
 		movem.l	a0,-(sp)
 		bsr.s	sub_4BA0
 		movem.l	(sp)+,a0
-		bsr.w	sub_4EAE
+		bsr.w	HMTileSwap
 		movem.w	(sp)+,d0
-		bsr.w	sub_4E94
+		bsr.w	MapTileSwap
 		move.b	(byte_FF115A).l,(byte_FF1128).l
 		rts
-; End of function sub_4B52
+; End of function DoTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4BA0:					  ; CODE XREF: sub_4B52+30p
+sub_4BA0:					  ; CODE XREF: DoTileSwap+30p
 		cmpi.b	#$01,$00000009(a0)
 		beq.s	loc_4BF2
 		bhi.w	loc_4C40
@@ -1558,45 +1558,49 @@ loc_4DB2:					  ; CODE XREF: sub_4CF4+2Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4DBC:					  ; CODE XREF: sub_4B52+18p
-						  ; sub_4E94+2p ...
+GetMapOffsets:					  ; CODE XREF: DoTileSwap+18p
+						  ; MapTileSwap+2p ...
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		ext.w	d0
 		ext.w	d1
-		bsr.s	sub_4DEC
-		lea	(g_BackgroundBlocks).l,a1
-		lea	(g_ForegroundBlocks).l,a2
+		bsr.s	GetMapCoordOffset	  ; d0 = X
+						  ; d1 = Y
+		lea	(g_ForegroundBlocks).l,a1
+		lea	(g_BackgroundBlocks).l,a2
 		adda.w	d1,a1
 		adda.w	d1,a2
 		rts
-; End of function sub_4DBC
+; End of function GetMapOffsets
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4DD8:					  ; CODE XREF: sub_4EAEp
-						  ; sub_4EAE+6p
+GetHeightmapCoordOffset:			  ; CODE XREF: HMTileSwapp
+						  ; HMTileSwap+6p
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		ext.w	d0
 		ext.w	d1
-		bsr.s	sub_4DEC
+		bsr.s	GetMapCoordOffset	  ; d0 = X
+						  ; d1 = Y
 		lea	(g_HeightMap).l,a1
 		adda.w	d1,a1
 		rts
-; End of function sub_4DD8
+; End of function GetHeightmapCoordOffset
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
+; d0 = X
+; d1 = Y
 
-sub_4DEC:					  ; CODE XREF: sub_4DBC+8p
-						  ; sub_4DD8+8p
+GetMapCoordOffset:				  ; CODE XREF: GetMapOffsets+8p
+						  ; GetHeightmapCoordOffset+8p
 		bsr.w	MultiplyD1By148
 		add.w	d0,d1
 		add.w	d0,d1
 		rts
-; End of function sub_4DEC
+; End of function GetMapCoordOffset
 

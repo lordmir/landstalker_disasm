@@ -3,8 +3,8 @@
 
 
 LoadAnimTiles:					  ; CODE XREF: LoadRoom_0+60p
-		lea	(unk_FF1134).l,a4
-		lea	(unk_FF1210).l,a5
+		lea	(byte_FF1134).l,a4
+		lea	(word_FF1210).l,a5
 		lea	(unk_FF1860).l,a6
 		clr.w	(a5)
 		clr.w	$00000004(a5)
@@ -57,11 +57,11 @@ locret_9DA0:					  ; CODE XREF: LoadAnimTiles+28j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_9DA2:					  ; CODE XREF: sub_7052+15Ap
+sub_9DA2:					  ; CODE XREF: CheckOpenChest+15Ap
 						  ; sub_7250+Ep
 						  ; DATA XREF: ...
-		lea	(unk_FF1134).l,a4
-		lea	(unk_FF1210).l,a5
+		lea	(byte_FF1134).l,a4
+		lea	(word_FF1210).l,a5
 		lea	(unk_FF1860).l,a6
 		bsr.s	sub_9DBC
 		addq.w	#$04,a4

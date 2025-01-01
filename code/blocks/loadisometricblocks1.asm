@@ -2,8 +2,8 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadTopTiles:					  ; CODE XREF: sub_90C4:loc_9110p
-						  ; sub_90C4:loc_913Ep
+LoadTopTiles:					  ; CODE XREF: InitBlocks:loc_9110p
+						  ; InitBlocks:loc_913Ep
 						  ; DATA XREF: ...
 		move.b	(g_PlayerXFlattened).l,d0
 		move.b	(g_PlayerYFlattened).l,d1

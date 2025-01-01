@@ -12,7 +12,7 @@
 DoVisualEffect:					  ; CODE XREF: sub_620A+ECp
 						  ; sub_620A+100p ...
 		movem.l	d0-a6,-(sp)
-		lea	off_E128(pc),a0
+		lea	VisualFXTable(pc),a0
 		move.w	d0,d1
 		lsl.l	#$02,d1
 		movea.l	(a0,d1.l),a0
@@ -22,36 +22,36 @@ DoVisualEffect:					  ; CODE XREF: sub_620A+ECp
 ; End of function DoVisualEffect
 
 ; ---------------------------------------------------------------------------
-off_E128:	dc.l sub_E154			  ; DATA XREF: DoVisualEffect+4t
-		dc.l sub_E154
-		dc.l sub_E30E
-		dc.l sub_E30E
-		dc.l sub_E4EC
-		dc.l loc_E4F0
-		dc.l sub_E538
-		dc.l sub_E56A
-		dc.l sub_E56A
-		dc.l sub_E56A
-		dc.l sub_E56A
+VisualFXTable:	dc.l WarpPadFx			  ; DATA XREF: DoVisualEffect+4t
+		dc.l WarpPadFx
+		dc.l TreeWarpFx
+		dc.l TreeWarpFx
+		dc.l BlackFlash
+		dc.l WhiteFlash
+		dc.l RedFlash
+		dc.l NoleWarp
+		dc.l NoleWarp
+		dc.l NoleWarp
+		dc.l NoleWarp
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E154:					  ; CODE XREF: sub_620A+114p
+WarpPadFx:					  ; CODE XREF: sub_620A+114p
 						  ; DATA XREF: sub_44Ct ...
 		lea	(g_Buffer).l,a5
 		movea.l	a5,a1
 		lea	(g_Pal0Base).l,a0
 		moveq	#$00000037,d7
 
-loc_E164:					  ; CODE XREF: sub_E154+12j
+loc_E164:					  ; CODE XREF: WarpPadFx+12j
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_E164
 		movea.l	a5,a0
 		lea	$00000070(a0),a1
 		move.w	#$0187,d7
 
-loc_E174:					  ; CODE XREF: sub_E154+50j
+loc_E174:					  ; CODE XREF: WarpPadFx+50j
 		move.w	(a0)+,d0
 		move.w	d0,d1
 		move.w	d0,d2
@@ -60,33 +60,33 @@ loc_E174:					  ; CODE XREF: sub_E154+50j
 		bpl.s	loc_E186
 		clr.w	d0
 
-loc_E186:					  ; CODE XREF: sub_E154+2Ej
+loc_E186:					  ; CODE XREF: WarpPadFx+2Ej
 		andi.w	#$00E0,d1
 		subi.w	#$0020,d1
 		bpl.s	loc_E192
 		clr.w	d1
 
-loc_E192:					  ; CODE XREF: sub_E154+3Aj
+loc_E192:					  ; CODE XREF: WarpPadFx+3Aj
 		andi.w	#$000E,d2
 		subi.w	#$0002,d2
 		bpl.s	loc_E19E
 		clr.w	d2
 
-loc_E19E:					  ; CODE XREF: sub_E154+46j
+loc_E19E:					  ; CODE XREF: WarpPadFx+46j
 		or.w	d1,d0
 		or.w	d2,d0
 		move.w	d0,(a1)+
 		dbf	d7,loc_E174
 		move.w	#$0000,d7
 
-loc_E1AC:					  ; CODE XREF: sub_E154+7Aj
+loc_E1AC:					  ; CODE XREF: WarpPadFx+7Aj
 		move.w	#$FFE8,d0
 		move.w	#$0050,d5
 
-loc_E1B4:					  ; CODE XREF: sub_E154+76j
+loc_E1B4:					  ; CODE XREF: WarpPadFx+76j
 		move.w	#$0000,d6
 
-loc_E1B8:					  ; CODE XREF: sub_E154+70j
+loc_E1B8:					  ; CODE XREF: WarpPadFx+70j
 		movem.w	d0/d5-d7,-(sp)
 		bsr.w	sub_E1DE
 		movem.w	(sp)+,d0/d5-d7
@@ -97,13 +97,13 @@ loc_E1B8:					  ; CODE XREF: sub_E154+70j
 		move.w	#$8F02,d0
 		jsr	(SetVDPReg).l
 		rts
-; End of function sub_E154
+; End of function WarpPadFx
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E1DE:					  ; CODE XREF: sub_E154+68p
+sub_E1DE:					  ; CODE XREF: WarpPadFx+68p
 		lea	$00000380(a5),a0
 		moveq	#$00000007,d7
 		move.w	d0,d1
@@ -242,7 +242,7 @@ loc_E2F2:					  ; CODE XREF: sub_E24E+9Cj
 
 ; Attributes: bp-based frame
 
-sub_E30E:					  ; DATA XREF: ROM:0000E130o
+TreeWarpFx:					  ; DATA XREF: ROM:0000E130o
 						  ; ROM:0000E134o
 
 var_8E		= -$8E
@@ -275,10 +275,10 @@ var_82		= -$82
 		bra.s	loc_E376
 ; ---------------------------------------------------------------------------
 
-loc_E372:					  ; CODE XREF: sub_E30E+5Cj
+loc_E372:					  ; CODE XREF: TreeWarpFx+5Cj
 		bsr.w	sub_E3C0
 
-loc_E376:					  ; CODE XREF: sub_E30E+62j
+loc_E376:					  ; CODE XREF: TreeWarpFx+62j
 		moveq	#$0000000B,d0
 		moveq	#$0000000C,d1
 		jsr	(MaskVDPReg).l
@@ -287,13 +287,13 @@ loc_E376:					  ; CODE XREF: sub_E30E+62j
 		bsr.w	sub_E40C
 		unlk	a6
 		rts
-; End of function sub_E30E
+; End of function TreeWarpFx
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E398:					  ; CODE XREF: sub_E30E+5Ep
+sub_E398:					  ; CODE XREF: TreeWarpFx+5Ep
 		move.w	#$00FF,d7
 
 loc_E39C:					  ; CODE XREF: sub_E398+24j
@@ -314,7 +314,7 @@ loc_E39C:					  ; CODE XREF: sub_E398+24j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E3C0:					  ; CODE XREF: sub_E30E:loc_E372p
+sub_E3C0:					  ; CODE XREF: TreeWarpFx:loc_E372p
 		lea	(g_Pal0Active).l,a0
 		moveq	#$00000037,d7
 
@@ -340,7 +340,7 @@ loc_E3D8:					  ; CODE XREF: sub_E3C0+32j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E3F8:					  ; CODE XREF: sub_E30E+30p
+sub_E3F8:					  ; CODE XREF: TreeWarpFx+30p
 		lea	(g_Pal0Base).l,a0
 		lea	-$00000080(a6),a1
 		moveq	#$0000001F,d7
@@ -355,7 +355,7 @@ loc_E404:					  ; CODE XREF: sub_E3F8+Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E40C:					  ; CODE XREF: sub_E30E+82p
+sub_E40C:					  ; CODE XREF: TreeWarpFx+82p
 		lea	(g_Pal0Base).l,a1
 		lea	-$00000080(a6),a0
 		moveq	#$0000001F,d7
@@ -504,23 +504,23 @@ loc_E4D6:					  ; CODE XREF: sub_E4C0+12j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E4EC:					  ; DATA XREF: ROM:0000E138o
+BlackFlash:					  ; DATA XREF: ROM:0000E138o
 		clr.l	d2
 		bra.s	loc_E4F2
 ; ---------------------------------------------------------------------------
 
-loc_E4F0:					  ; CODE XREF: sub_E832+16j
+WhiteFlash:					  ; CODE XREF: sub_E832+16j
 						  ; DATA XREF: ROM:0000E13Co
 		moveq	#$FFFFFFFF,d2
 
-loc_E4F2:					  ; CODE XREF: sub_E4EC+2j
+loc_E4F2:					  ; CODE XREF: BlackFlash+2j
 		jsr	(CopyBasePalleteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		movea.l	a0,a1
 		moveq	#$00000039,d7
 		moveq	#$0000000E,d6
 
-loc_E504:					  ; CODE XREF: sub_E4EC+40j
+loc_E504:					  ; CODE XREF: BlackFlash+40j
 		move.b	(a0)+,d0
 		and.l	d6,d0
 		move.b	(a0),d1
@@ -535,7 +535,7 @@ loc_E504:					  ; CODE XREF: sub_E4EC+40j
 		beq.s	loc_E520
 		not.w	d0
 
-loc_E520:					  ; CODE XREF: sub_E4EC+30j
+loc_E520:					  ; CODE XREF: BlackFlash+30j
 		and.w	d6,d0
 		move.b	d0,(a1)+
 		move.b	d0,d1
@@ -545,18 +545,18 @@ loc_E520:					  ; CODE XREF: sub_E4EC+30j
 		dbf	d7,loc_E504
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function sub_E4EC
+; End of function BlackFlash
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E538:					  ; DATA XREF: ROM:0000E140o
+RedFlash:					  ; DATA XREF: ROM:0000E140o
 		jsr	(CopyBasePalleteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		moveq	#$00000039,d7
 
-loc_E546:					  ; CODE XREF: sub_E538+26j
+loc_E546:					  ; CODE XREF: RedFlash+26j
 		move.b	(a0),d0
 		lsr.b	#$03,d0
 		move.b	d0,(a0)+
@@ -570,14 +570,14 @@ loc_E546:					  ; CODE XREF: sub_E538+26j
 		dbf	d7,loc_E546
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function sub_E538
+; End of function RedFlash
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: bp-based frame
 
-sub_E56A:					  ; DATA XREF: ROM:0000E144o
+NoleWarp:					  ; DATA XREF: ROM:0000E144o
 						  ; ROM:0000E148o ...
 
 var_134		= -$134
@@ -599,19 +599,19 @@ var_80		= -$80
 		bra.s	loc_E596
 ; ---------------------------------------------------------------------------
 
-loc_E586:					  ; CODE XREF: sub_E56A+Cj
+loc_E586:					  ; CODE XREF: NoleWarp+Cj
 		move.w	#$0130,var_122(a6)
 		move.w	#$00C8,var_124(a6)
 		subq.w	#$02,var_126(a6)
 
-loc_E596:					  ; CODE XREF: sub_E56A+1Aj
+loc_E596:					  ; CODE XREF: NoleWarp+1Aj
 		lea	(g_Pal0Base).l,a0
 		lea	var_80(a6),a1
 		bsr.w	sub_E780
 		lea	var_120(a6),a0
 		moveq	#$00000027,d7
 
-loc_E5AA:					  ; CODE XREF: sub_E56A+48j
+loc_E5AA:					  ; CODE XREF: NoleWarp+48j
 		clr.w	(a0)+
 		move.b	#$FF,(a0)+
 		clr.b	(a0)+
@@ -637,7 +637,7 @@ loc_E5AA:					  ; CODE XREF: sub_E56A+48j
 		bra.s	loc_E66C
 ; ---------------------------------------------------------------------------
 
-loc_E608:					  ; CODE XREF: sub_E56A+52j
+loc_E608:					  ; CODE XREF: NoleWarp+52j
 		move.w	#$0168,var_128(a6)
 		move.w	(0000000300).w,var_134(a6)
 		clr.w	var_132(a6)
@@ -654,27 +654,27 @@ loc_E608:					  ; CODE XREF: sub_E56A+52j
 		move.w	#$0EEE,d0
 		moveq	#$0000003F,d7
 
-loc_E64C:					  ; CODE XREF: sub_E56A+E4j
+loc_E64C:					  ; CODE XREF: NoleWarp+E4j
 		move.w	d0,(a0)+
 		dbf	d7,loc_E64C
 		jsr	(QueueFullPaletteDMA).l
 		jsr	(FlushDMACopyQueue).l
 		moveq	#$0000003B,d7
 
-loc_E660:					  ; CODE XREF: sub_E56A+FEj
+loc_E660:					  ; CODE XREF: NoleWarp+FEj
 		move.l	d7,-(sp)
 		bsr.w	sub_E8F8
 		move.l	(sp)+,d7
 		dbf	d7,loc_E660
 
-loc_E66C:					  ; CODE XREF: sub_E56A+9Cj
+loc_E66C:					  ; CODE XREF: NoleWarp+9Cj
 		lea	(g_Buffer).l,a0
 		move.l	#$0DDD0000,(a0)+
 		move.l	#$DEEED000,(a0)+
 		move.l	#$0DDD0000,(a0)+
 		moveq	#$00000004,d7
 
-loc_E686:					  ; CODE XREF: sub_E56A+11Ej
+loc_E686:					  ; CODE XREF: NoleWarp+11Ej
 		clr.l	(a0)+
 		dbf	d7,loc_E686
 		lea	(g_Buffer).l,a0
@@ -691,11 +691,11 @@ loc_E686:					  ; CODE XREF: sub_E56A+11Ej
 		bra.s	loc_E6B8
 ; ---------------------------------------------------------------------------
 
-loc_E6B4:					  ; CODE XREF: sub_E56A+142j
+loc_E6B4:					  ; CODE XREF: NoleWarp+142j
 		move.w	#$0168,d7
 
-loc_E6B8:					  ; CODE XREF: sub_E56A+148j
-						  ; sub_E56A+1ACj
+loc_E6B8:					  ; CODE XREF: NoleWarp+148j
+						  ; NoleWarp+1ACj
 		movem.w	d7,-(sp)
 		jsr	(UpdateControllerInputs).l
 		bsr.w	sub_E8F8
@@ -715,18 +715,18 @@ loc_E6B8:					  ; CODE XREF: sub_E56A+148j
 		bcs.s	loc_E702
 		addq.w	#$01,d0
 
-loc_E702:					  ; CODE XREF: sub_E56A+194j
+loc_E702:					  ; CODE XREF: NoleWarp+194j
 		move.w	d0,var_128(a6)
 		bra.s	loc_E712
 ; ---------------------------------------------------------------------------
 
-loc_E708:					  ; CODE XREF: sub_E56A+188j
+loc_E708:					  ; CODE XREF: NoleWarp+188j
 		subq.w	#$01,var_128(a6)
 		bpl.s	loc_E712
 		clr.w	var_128(a6)
 
-loc_E712:					  ; CODE XREF: sub_E56A+19Cj
-						  ; sub_E56A+1A2j
+loc_E712:					  ; CODE XREF: NoleWarp+19Cj
+						  ; NoleWarp+1A2j
 		movem.w	(sp)+,d7
 		dbf	d7,loc_E6B8
 		lea	var_80(a6),a0
@@ -740,7 +740,7 @@ loc_E712:					  ; CODE XREF: sub_E56A+19Cj
 		bra.s	loc_E768
 ; ---------------------------------------------------------------------------
 
-loc_E742:					  ; CODE XREF: sub_E56A+1C4j
+loc_E742:					  ; CODE XREF: NoleWarp+1C4j
 		moveq	#$0000001E,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		jsr	(InitFadeFromBlackParams).l
@@ -751,21 +751,21 @@ loc_E742:					  ; CODE XREF: sub_E56A+1C4j
 		bsr.w	sub_E78A
 		bsr.w	sub_E78A
 
-loc_E768:					  ; CODE XREF: sub_E56A+1D6j
+loc_E768:					  ; CODE XREF: NoleWarp+1D6j
 		lea	var_80(a6),a0
 		lea	(g_Pal0Base).l,a1
 		bsr.w	sub_E780
 		clr.w	(g_Pal0Active).l
 		unlk	a6
 		rts
-; End of function sub_E56A
+; End of function NoleWarp
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E780:					  ; CODE XREF: sub_E56A+36p
-						  ; sub_E56A+98p ...
+sub_E780:					  ; CODE XREF: NoleWarp+36p
+						  ; NoleWarp+98p ...
 		moveq	#$0000003F,d7
 ; End of function sub_E780
 
@@ -773,7 +773,7 @@ sub_E780:					  ; CODE XREF: sub_E56A+36p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E782:					  ; CODE XREF: sub_E56A+D2p
+sub_E782:					  ; CODE XREF: NoleWarp+D2p
 						  ; sub_E782+2j
 		move.w	(a0)+,(a1)+
 		dbf	d7,sub_E782
@@ -784,11 +784,11 @@ sub_E782:					  ; CODE XREF: sub_E56A+D2p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E78A:					  ; CODE XREF: sub_E56A+78p
-						  ; sub_E56A+7Cp ...
+sub_E78A:					  ; CODE XREF: NoleWarp+78p
+						  ; NoleWarp+7Cp ...
 		clr.w	d7
 		bsr.w	sub_E79A
-		moveq	#$00000013,d0
+		moveq	#0000000019,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		rts
 ; End of function sub_E78A
@@ -797,7 +797,7 @@ sub_E78A:					  ; CODE XREF: sub_E56A+78p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E79A:					  ; CODE XREF: sub_E56A+1E8p
+sub_E79A:					  ; CODE XREF: NoleWarp+1E8p
 						  ; sub_E78A+2p
 		bsr.w	sub_E7AA
 		jsr	(QueueFullPaletteDMA).l
@@ -808,7 +808,7 @@ sub_E79A:					  ; CODE XREF: sub_E56A+1E8p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E7AA:					  ; CODE XREF: sub_E56A+C0p
+sub_E7AA:					  ; CODE XREF: NoleWarp+C0p
 						  ; sub_E79Ap ...
 		move.l	d7,-(sp)
 		lea	(g_Pal0Base).l,a0

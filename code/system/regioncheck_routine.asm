@@ -18,29 +18,29 @@ loc_11EA6C:					  ; CODE XREF: CheckRegion+4j
 
 loc_11EA7C:					  ; CODE XREF: CheckRegion+14j
 		jsr	(j_DisableDisplayAndInts).l
-		lea	RegionErrorLine1(pc),a0	  ; "  DEVELOPED FOR USE ONLY WITH"
-		lea	((g_BackgroundBlocks+$886)).l,a1
+		lea	RegionErrorLine1(pc),a0
+		lea	((g_ForegroundBlocks+$886)).l,a1
 		bsr.w	sub_11EB40
 		move.b	#$80,d1
 		cmpi.b	#$80,d1
 		bne.s	loc_11EAAA
-		lea	RegionErrorNTSC(pc),a0	  ; "	      NTSC GENESIS"
-		lea	((g_BackgroundBlocks+$A06)).l,a1
+		lea	RegionErrorNTSC(pc),a0
+		lea	((g_ForegroundBlocks+$A06)).l,a1
 		bsr.w	sub_11EB40
 		bra.s	loc_11EAB8
 ; ---------------------------------------------------------------------------
 
 loc_11EAAA:					  ; CODE XREF: CheckRegion+34j
-		lea	RegionErrorPAL(pc),a0	  ; "PAL AND FRENCH SECAM MEGA DRIVE"
-		lea	((g_BackgroundBlocks+$A06)).l,a1
+		lea	RegionErrorPAL(pc),a0
+		lea	((g_ForegroundBlocks+$A06)).l,a1
 		bsr.w	sub_11EB40
 
 loc_11EAB8:					  ; CODE XREF: CheckRegion+44j
-		lea	RegionErrorLine3(pc),a0	  ; "		SYSTEMS."
-		lea	((g_BackgroundBlocks+$B86)).l,a1
+		lea	RegionErrorLine3(pc),a0
+		lea	((g_ForegroundBlocks+$B86)).l,a1
 		bsr.w	sub_11EB40
 		jsr	(j_EnableDisplayAndInts).l
-		lea	((g_BackgroundBlocks+$3FE)).l,a0
+		lea	((g_ForegroundBlocks+$3FE)).l,a0
 		lea	($0000C000).l,a1
 		move.w	#$0800,d0
 		moveq	#$00000002,d1

@@ -1,4 +1,4 @@
-		dc.l Map187			  ; TilemapPtr ; DATA XREF: ROM:RoomDataPtro
+			dc.l Map187			  ; TilemapPtr ; DATA XREF: ROM:RoomDataPtro
 		dc.b $09			  ; Tileset
 		dc.b $1D			  ; Palette
 		dc.b $22			  ; RoomHeight

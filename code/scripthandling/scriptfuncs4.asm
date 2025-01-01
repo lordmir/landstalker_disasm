@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckFlagAndDisplayMessage:			  ; CODE XREF: ROM:loc_25E82p
+CheckFlagAndDisplayMessage:			  ; CODE XREF: ROM:ShopPrice_06_1p
 						  ; ROM:ShopEnter_07p ...
 		movem.l	d0/a0,-(sp)
 		movea.l	$00000008(sp),a0
@@ -27,8 +27,8 @@ loc_25DB0:					  ; CODE XREF: CheckFlagAndDisplayMessage+14j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-SetFlagBitOnTalking:				  ; CODE XREF: ROM:loc_26090p
-						  ; ROM:loc_2609Cp ...
+SetFlagBitOnTalking:				  ; CODE XREF: ROM:CS_0003_2p
+						  ; ROM:CS_0003_3p ...
 		movem.l	d0/a0,-(sp)
 		movea.l	$00000008(sp),a0
 		move.w	(a0),d0
@@ -54,7 +54,7 @@ loc_25DDC:					  ; CODE XREF: SetFlagBitOnTalking+18j
 
 
 HandleYesNoPrompt:				  ; CODE XREF: ROM:CS_0143p
-						  ; ROM:loc_26006p ...
+						  ; ROM:CS_0002_1p ...
 		movem.l	d0/a0,-(sp)
 		movea.l	$00000008(sp),a0
 		move.w	(a0),d0

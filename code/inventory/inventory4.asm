@@ -52,7 +52,7 @@ loc_D5D2:					  ; CODE XREF: sub_D5C8+2j
 		move.w	#$C000,d0
 
 loc_D5D6:					  ; CODE XREF: sub_D5C8+8j
-		move.b	#$55,d0
+		move.b	#CHR_MULT,d0
 		move.w	d0,(a0)+
 		move.b	d1,d0
 		addq.b	#$01,d0
@@ -82,23 +82,23 @@ loc_D5FC:					  ; CODE XREF: sub_D5E4+10j
 loc_D600:					  ; CODE XREF: sub_D5E4+16j
 						  ; sub_D5E4:loc_D634j
 		move.b	(a2)+,d0
-		cmpi.b	#$69,d0
+		cmpi.b	#CHR_HYPHENATION_POINT,d0
 		bne.s	loc_D616
-		move.b	#$48,d0
+		move.b	#CHR_Dash,d0
 		move.w	d0,(a0)
 		lea	$00000048(a1),a0
 		bra.w	loc_D634
 ; ---------------------------------------------------------------------------
 
 loc_D616:					  ; CODE XREF: sub_D5E4+22j
-		cmpi.b	#$6A,d0
+		cmpi.b	#CHR_BREAKING_SPACE,d0
 		bne.s	loc_D624
 		lea	$00000048(a1),a0
 		bra.w	loc_D634
 ; ---------------------------------------------------------------------------
 
 loc_D624:					  ; CODE XREF: sub_D5E4+36j
-		cmpi.b	#$6B,d0
+		cmpi.b	#CHR_BREAK_POINT,d0
 		bne.s	loc_D632
 		lea	$00000048(a1),a0
 		bra.w	loc_D634
@@ -205,7 +205,7 @@ loc_D6C8:					  ; CODE XREF: ROM:0000D4A6p
 		dc.w SND_CursorMove
 ; ---------------------------------------------------------------------------
 		bsr.w	sub_D730
-		lea	($00FF2C0A).l,a0
+		lea	((g_Buffer+$A)).l,a0
 		subq.w	#$01,(a0)
 		moveq	#$0000000B,d7
 
@@ -284,7 +284,7 @@ sub_D756:					  ; CODE XREF: sub_D714+Cp
 		clr.w	d2
 		lea	(g_VDPSpr01_Y).l,a0
 		lea	(g_Buffer).l,a1
-		move.w	g_Buffer+4-g_Buffer(a1),d3
+		move.w	0000000004(a1),d3
 		move.w	(unk_FF0F9C).l,d4
 		sub.w	d3,d4
 		andi.b	#$3F,d4
@@ -339,7 +339,7 @@ loc_D7C4:					  ; CODE XREF: sub_D756+6Aj
 sub_D7DE:					  ; CODE XREF: ROM:0000D436p
 						  ; ROM:loc_D440p ...
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+6-g_Buffer(a1),a0
+		lea	0000000006(a1),a0
 		subq.w	#$01,(a0)
 		bpl.s	loc_D7F2
 		clr.w	(a0)
@@ -383,7 +383,7 @@ loc_D814:					  ; CODE XREF: sub_D7DE:loc_D7F2j
 sub_D828:					  ; CODE XREF: sub_D50C+40p
 						  ; sub_D7DE:loc_D814p	...
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+6-g_Buffer(a1),a0
+		lea	0000000006(a1),a0
 		move.w	(a0),d0
 		lea	$00000084(a1),a0
 		mulu.w	#$0048,d0
@@ -414,7 +414,7 @@ sub_D86C:					  ; CODE XREF: sub_D50C+1Ap
 						  ; sub_EC60+14p ...
 		movem.w	d0-d1,-(sp)
 		lea	(g_Buffer).l,a1
-		lea	g_Buffer+$84-g_Buffer(a1),a0
+		lea	$00000084(a1),a0
 		mulu.w	#$0048,d1
 		add.w	d0,d1
 		add.w	d0,d1
@@ -502,7 +502,7 @@ loc_D90A:					  ; CODE XREF: sub_D902+4j
 loc_D92C:					  ; CODE XREF: sub_D902+Aj
 						  ; sub_D902+26j
 		lea	(g_VDPSpr00_Y).l,a0
-		move.w	d0,g_VDPSpr00_X-g_VDPSpr00_Y(a0)
+		move.w	d0,0000000006(a0)
 		move.w	d1,(a0)
 		move.b	#$0F,$00000002(a0)
 		move.w	#$A0A8,d2

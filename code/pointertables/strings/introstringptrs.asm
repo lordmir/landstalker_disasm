@@ -1,4 +1,4 @@
-        dc.l IntroString1		  ; DATA XREF: CheckAndDisplayIntroString+18t
+		dc.l IntroString1		  ; DATA XREF: CheckAndDisplayIntroString+18t
 		dc.l IntroString2
 		dc.l IntroString3
 		dc.l IntroString4

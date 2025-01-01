@@ -74,32 +74,32 @@ locret_26E6:					  ; CODE XREF: sub_2686+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_26E8:					  ; CODE XREF: ROM:loc_16CAp
+LoadGame:					  ; CODE XREF: ROM:loc_16CAp
 		bsr.s	sub_2726
 		jsr	(sub_22EC0).l
 		bsr.w	LoadGameSelectScreen
 		bsr.w	ClearAndRefreshVDPSpriteTableDMA
 		tst.w	(Player_X).l
 		bne.s	loc_271A
-		bset	#$03,(g_Vars+7).l
-		move.b	#$03,(g_Vars+$1B).l
-		bsr.w	InitIntro
+		bset	#$03,(g_AdditionalFlags+7).l
+		move.b	#$03,(g_AdditionalFlags+$1B).l
+		bsr.w	ClearGameData
 		clr.b	d0
 		bra.w	LoadRoom_0
 ; ---------------------------------------------------------------------------
 
-loc_271A:					  ; CODE XREF: sub_26E8+16j
+loc_271A:					  ; CODE XREF: LoadGame+16j
 		clr.b	d0
 		bsr.w	LoadRoom_0
 		bsr.w	LoadMagicSwordGfx
 		rts
-; End of function sub_26E8
+; End of function LoadGame
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2726:					  ; CODE XREF: sub_26E8p
+sub_2726:					  ; CODE XREF: LoadGamep
 		move.w	#$0000,d0
 		move.b	#$EF,d1
 		bsr.w	MaskVDPReg
@@ -132,7 +132,7 @@ loc_2744:					  ; CODE XREF: sub_2726+20j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-InitIntro:					  ; CODE XREF: sub_26E8+28p
+ClearGameData:					  ; CODE XREF: LoadGame+28p
 		move.w	#$03FF,(Player_CurrentHealth).l
 		move.w	#$03FF,(Player_MaxHealth).l
 		move.w	#$0100,(Player_Defence).l
@@ -143,7 +143,7 @@ InitIntro:					  ; CODE XREF: sub_26E8+28p
 		lea	(g_ChestOpenFlags).l,a0
 		move.w	#$003F,d7
 
-loc_27EC:					  ; CODE XREF: InitIntro+3Cj
+loc_27EC:					  ; CODE XREF: ClearGameData+3Cj
 		clr.b	(a0)+
 		dbf	d7,loc_27EC
 		move.w	#$008B,(g_RmNum1).l	  ; Intro sequence start
@@ -153,14 +153,14 @@ loc_27EC:					  ; CODE XREF: InitIntro+3Cj
 		move.w	#$0090,(Player_Z).l
 		move.w	#$00FE,(g_ControllerPlayback).l
 		rts
-; End of function InitIntro
+; End of function ClearGameData
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
 LoadRoom_0:					  ; CODE XREF: j_LoadRoom_0j
-						  ; sub_26E8+2Ej ...
+						  ; LoadGame+2Ej ...
 		clr.w	d1
 		move.b	(g_RoomMaxHeight).l,d1
 		movem.w	d0-d1,-(sp)
@@ -176,13 +176,13 @@ LoadRoom_0:					  ; CODE XREF: j_LoadRoom_0j
 		bsr.s	sub_2896
 		jsr	(sub_10388).l
 		bsr.w	sub_2DCE
-		bsr.w	sub_9EF8
+		bsr.w	LoadAllWarps
 		bsr.w	sub_A114
 		bsr.w	sub_7274
 		bsr.w	FlushDMACopyQueue
 		bsr.w	sub_4042
 		bsr.w	FlushDMACopyQueue
-		bsr.w	sub_401C
+		bsr.w	LoadSprites
 		bsr.w	LoadAnimTiles
 		bsr.w	LoadRoomMusic
 		bsr.w	FlushDMACopyQueue
@@ -278,7 +278,7 @@ sub_295E:					  ; CODE XREF: LoadRoom_0+12p
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu
 		move.w	(Player_TempHealth).l,(Player_CurrentHealth).l
-		jsr	(j_RefreshMaxHealthHUD).l
+		jsr	(j_RefreshCurrentHealthHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 
@@ -304,14 +304,14 @@ LoadRoom:					  ; CODE XREF: j_LoadRoomj
 		bsr.w	ClearVDPSpriteTable
 		bsr.w	LoadHUDSprites
 		bsr.w	sub_4042
-		bsr.w	sub_401C
+		bsr.w	LoadSprites
 		bra.w	EnableDMAQueueProcessing
 ; End of function LoadRoom
 
 ; ---------------------------------------------------------------------------
 
 LoadRoomMusic:					  ; CODE XREF: LoadRoom_0+64p
-		btst	#$03,(g_Vars+7).l
+		btst	#$03,(g_AdditionalFlags+7).l
 		bne.s	locret_2A30
 		move.b	(g_RoomBGM).l,d0
 		ext.w	d0
@@ -326,7 +326,7 @@ loc_2A12:					  ; CODE XREF: ROM:00002A02j
 						  ; ROM:00002A0Cj
 		cmpi.b	#SND_MusicOverworld1,d0
 		bne.s	loc_2A26
-		btst	#$04,(g_Vars+8).l
+		btst	#$04,(g_AdditionalFlags+8).l
 		beq.s	loc_2A26
 		move.b	#SND_MusicOverworld2,d0
 
@@ -368,7 +368,7 @@ RoomMusicLUT:	dc.b SND_MusicPalace1
 sub_2A46:					  ; CODE XREF: LoadRoom_0+24p
 		bsr.w	sub_2AF2
 		clr.b	(byte_FF1133).l
-		clr.w	(word_FF120C).l
+		clr.w	(g_CarriedEntity).l
 		clr.b	(byte_FF1147).l
 		clr.b	(byte_FF1148).l
 		lea	(Player_X).l,a1
@@ -379,9 +379,10 @@ sub_2A46:					  ; CODE XREF: LoadRoom_0+24p
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		and.w	d1,d0
 		beq.s	loc_2A80
 		eori.w	#$FFFF,d1
@@ -391,9 +392,10 @@ sub_2A46:					  ; CODE XREF: LoadRoom_0+24p
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 
 loc_2A80:					  ; CODE XREF: sub_2A46+2Ej
 		lea	(g_PlayerXFlattened).l,a0
@@ -519,10 +521,10 @@ loc_2BD2:					  ; CODE XREF: GetTilemap+10j
 		move.l	#$40004000,(a1)+
 		dbf	d7,loc_2BD2
 		movea.l	a2,a0
-		lea	(g_BackgroundBlocks).l,a1
+		lea	(g_ForegroundBlocks).l,a1
 		jsr	(DecompressMap1).l
 		movem.w	d0-d4,-(sp)
-		lea	(g_BackgroundBlocks).l,a0
+		lea	(g_ForegroundBlocks).l,a0
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		move.b	(a0)+,d2
@@ -549,7 +551,7 @@ loc_2BD2:					  ; CODE XREF: GetTilemap+10j
 		movem.w	d0-d3/d5/d7,-(sp)
 		bsr.s	ExtractMap
 		movem.w	(sp)+,d0-d3/d5/d7
-		lea	(g_ForegroundBlocks).l,a1
+		lea	(g_BackgroundBlocks).l,a1
 		bsr.s	ExtractMap
 		movem.w	(sp)+,d0-d4
 		rts
@@ -665,7 +667,7 @@ GetTileset:					  ; CODE XREF: ROM:00002BA8p
 		lsl.w	#$02,d3
 		movea.l	(a0,d3.w),a0
 		movem.w	d2-d4,-(sp)
-		lea	(g_BackgroundBlocks).l,a1
+		lea	(g_ForegroundBlocks).l,a1
 		lea	(0000000000).w,a2
 		movem.l	a2,-(sp)
 		movea.l	a1,a2
@@ -675,7 +677,7 @@ GetTileset:					  ; CODE XREF: ROM:00002BA8p
 		lsr.w	#$02,d0
 		movea.l	a2,a0
 		movem.l	(sp)+,a1
-		lea	(g_BackgroundBlocks).l,a0
+		lea	(g_ForegroundBlocks).l,a0
 		lea	(0000000000).w,a1
 		move.w	#$3A80,d0
 		bsr.w	FlushDMACopyQueue

@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-PlayerTalk:					  ; DATA XREF: sub_22EB8t
+PlayerTalk:					  ; DATA XREF: j_PlayerTalkt
 		movem.l	d0-a6,-(sp)
 		move.w	#$FFFF,(g_Character).l
 		btst	#CTRL_DOWN,(g_Controller2State).l
@@ -218,9 +218,7 @@ loc_25304:					  ; CODE XREF: HandleProgressDependentDialogue:loc_25316j
 loc_2530C:					  ; CODE XREF: HandleProgressDependentDialogue+3Ej
 		tst.w	(DebugModeEnable).w
 		bne.s	loc_25316
-
-loc_25312:					  ; Trap01Handler
-		trap	#$01
+		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
 						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"

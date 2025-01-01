@@ -3,7 +3,7 @@
 
 
 DisplayLithograph:				  ; DATA XREF: j_DisplayLithographt
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		move.w	#$0000,d0
 		move.b	#$10,d1
 		jsr	(j_OrVDPReg).l		  ; Enable HInt

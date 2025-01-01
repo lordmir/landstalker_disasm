@@ -74,7 +74,7 @@ loc_9ECBC:					  ; CODE XREF: ROM:0009ECA6j
 loc_9ECC2:					  ; CODE XREF: ROM:0009ECB0j
 		move.w	#10799,d0
 		jsr	(j_Sleep).l
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
 		unlk	a6
 		rts

@@ -21,8 +21,8 @@ HUDSprites:	dc.w $0080, $0201, $86B4, $0001	  ; DATA XREF: LoadHUDSpritest
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_906C:					  ; CODE XREF: ROM:00008DD2p
-						  ; sub_8EA0+Ap
+InitScrollRegs:					  ; CODE XREF: ROM:00008DD2p
+						  ; InitVDP+Ap
 		move.w	#$0001,(word_FF1180).l
 		andi.w	#$FEFE,(word_FF1126).l
 		clr.w	d6
@@ -31,7 +31,7 @@ sub_906C:					  ; CODE XREF: ROM:00008DD2p
 		bpl.s	loc_908E
 		ext.w	d6
 
-loc_908E:					  ; CODE XREF: sub_906C+1Ej
+loc_908E:					  ; CODE XREF: InitScrollRegs+1Ej
 		addi.w	#$0090,d6
 		jsr	(FillHScrollData).l
 		jsr	(FillHScrollDataOffset1).l
@@ -43,21 +43,21 @@ loc_908E:					  ; CODE XREF: sub_906C+1Ej
 		jsr	(FillVSRAM).l
 		jsr	(FillVSRAMOffset1).l
 		jmp	(EnableDMAQueueProcessing).l
-; End of function sub_906C
+; End of function InitScrollRegs
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_90C4:					  ; CODE XREF: ROM:00008DD6p
-						  ; sub_8EA0+Ep
+InitBlocks:					  ; CODE XREF: ROM:00008DD6p
+						  ; InitVDP+Ep
 		jsr	(FlushDMACopyQueue).l
 		addi.b	#$0C,(g_PlayerXFlattened).l
 		addi.b	#$0C,(g_PlayerYFlattened).l
 		move.w	#$018C,(g_BlockTableIndex).l
 		move.w	#$000B,d7
 
-loc_90E6:					  ; CODE XREF: sub_90C4+88j
+loc_90E6:					  ; CODE XREF: InitBlocks+88j
 		movem.w	d7,-(sp)
 		subq.b	#$01,(g_PlayerXFlattened).l
 		move.w	(g_BlockTableIndex).l,d0
@@ -68,7 +68,7 @@ loc_90E6:					  ; CODE XREF: sub_90C4+88j
 		bne.s	loc_9110
 		addi.w	#$0020,(g_BlockTableIndex).l
 
-loc_9110:					  ; CODE XREF: sub_90C4+42j
+loc_9110:					  ; CODE XREF: InitBlocks+42j
 		bsr.w	LoadTopTiles
 		subq.b	#$01,(g_PlayerYFlattened).l
 		subi.w	#$0020,(g_BlockTableIndex).l
@@ -78,13 +78,13 @@ loc_9110:					  ; CODE XREF: sub_90C4+42j
 		bcs.s	loc_913E
 		subi.w	#$0020,(g_BlockTableIndex).l
 
-loc_913E:					  ; CODE XREF: sub_90C4+5Ej
-						  ; sub_90C4+70j
+loc_913E:					  ; CODE XREF: InitBlocks+5Ej
+						  ; InitBlocks+70j
 		bsr.w	LoadTopTiles
 		jsr	(WaitUntilVBlank).l
 		movem.w	(sp)+,d7
 		dbf	d7,loc_90E6
 		rts
-; End of function sub_90C4
+; End of function InitBlocks
 
 ; ---------------------------------------------------------------------------
