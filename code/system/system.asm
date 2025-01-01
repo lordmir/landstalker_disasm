@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 
-loc_4B8:					  ; CODE XREF: ROM:000016C6j
+ResetAll:					  ; CODE XREF: ROM:000016C6j
 		lea	(ResetSP).w,sp
 		bra.s	loc_4CE
 ; ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ loc_4CE:					  ; CODE XREF: ROM:000004BCj
 		jmp	(ResetGame).l
 ; ---------------------------------------------------------------------------
 
-loc_4DC:					  ; CODE XREF: ROM:000016D8j
+GameOver:					  ; CODE XREF: ROM:000016D8j
 		lea	(ResetSP).w,sp
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ loc_618:					  ; CODE XREF: ROM:0000060Ej
 		move.w	(a4),d0
 		moveq	#$00000000,d0
 		movea.l	d0,a6
-		move.l	  a6,usp
+		move.l	a6,usp
 		moveq	#$00000017,d1
 
 loc_622:					  ; CODE XREF: ROM:00000628j
@@ -440,8 +440,8 @@ loc_830:					  ; CODE XREF: WaitUntilZ80Ready+18j
 
 ; ---------------------------------------------------------------------------
 
-RestoreBGM:					  ; CODE XREF: sub_7052+BEp
-						  ; sub_7052+F8p
+RestoreBGM:					  ; CODE XREF: CheckOpenChest+BEp
+						  ; CheckOpenChest+F8p
 						  ; DATA XREF: ...
 		movem.w	d0,-(sp)
 		bsr.s	WaitUntilZ80Ready
@@ -499,7 +499,7 @@ OrVDPReg:					  ; CODE XREF: j_OrVDPRegj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-MaskVDPReg:					  ; CODE XREF: j_AndVDPRegj
+MaskVDPReg:					  ; CODE XREF: j_MaskVDPRegj
 						  ; DisableDisplayAndInts-12j ...
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_VDPReg00_ModeSet1).l,a0
@@ -677,7 +677,7 @@ InitFadeFromBlackParams:			  ; CODE XREF: j_InitFadeFromBlackParamsj
 FadeFromBlack:					  ; CODE XREF: j_FadeFromBlackj
 						  ; ROM:00008DF0j
 		bsr.s	InitFadeFromBlackParams
-		bra.w	loc_9AA
+		bra.w	DoChangePaletteBrightness
 ; End of function FadeFromBlack
 
 
@@ -700,7 +700,7 @@ FadeToBlack:					  ; CODE XREF: j_FadeToBlackj
 						  ; ROM:000004E4p
 		bsr.s	InitFadeToBlackParams
 
-loc_9AA:					  ; CODE XREF: FadeFromBlack+2j
+DoChangePaletteBrightness:			  ; CODE XREF: FadeFromBlack+2j
 		move.w	#$0006,d6
 
 loc_9AE:					  ; CODE XREF: FadeToBlack+10j
@@ -792,7 +792,7 @@ FadeFromWhite:					  ; CODE XREF: j_FadeFromWhitej
 		move.w	#$0C00,d3
 		move.w	#-$0200,d4
 		move.w	#$0E00,d7
-		bra.w	loc_A5E
+		bra.w	DoWhiteFade
 ; ---------------------------------------------------------------------------
 
 FadeToWhite:					  ; CODE XREF: j_FadeToWhitej
@@ -800,7 +800,7 @@ FadeToWhite:					  ; CODE XREF: j_FadeToWhitej
 		move.w	#$0200,d4
 		move.w	#$0E00,d7
 
-loc_A5E:					  ; CODE XREF: FadeFromWhite+Cj
+DoWhiteFade:					  ; CODE XREF: FadeFromWhite+Cj
 		move.w	#$0006,d6
 
 loc_A62:					  ; CODE XREF: FadeFromWhite+4Cj
@@ -870,7 +870,7 @@ loc_AD6:					  ; CODE XREF: BrightenColour+3Ej
 
 
 ClearAndRefreshVDPSpriteTableDMA:		  ; CODE XREF: j_CopyVDPSpriteTableDMAj
-						  ; sub_26E8+Cp ...
+						  ; LoadGame+Cp ...
 		bsr.s	ClearScrollPlanes
 		bsr.s	ClearVDPSpriteTable
 
@@ -1333,7 +1333,7 @@ QueueHScrollDMAUpdate:				  ; CODE XREF: j_QueueHScrollDMAUpdatej
 
 
 FillHScrollData:				  ; CODE XREF: j_FillHScrollDataj
-						  ; sub_906C+26p ...
+						  ; InitScrollRegs+26p	...
 		movem.l	d7/a6,-(sp)
 		lea	(g_HorizontalScrollData).l,a6
 
@@ -1384,7 +1384,7 @@ QueueVSRAMUpdate:				  ; CODE XREF: j_QueueVSRAMUpdatej
 
 
 FillVSRAM:					  ; CODE XREF: j_FillVSRAMj
-						  ; sub_906C+46p
+						  ; InitScrollRegs+46p
 		movem.l	d7/a6,-(sp)
 		lea	(g_VSRAMData).l,a6
 
@@ -1505,7 +1505,7 @@ PowersOf10:	dc.l 1000000000			  ; DATA XREF: ConvertToBase10+4t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-UpdateControllerInputs:				  ; CODE XREF: j_WaitForZ80j
+UpdateControllerInputs:				  ; CODE XREF: j_UpdateControllerInputsj
 						  ; ROM:WaitForButtonPushp ...
 		movem.l	d5-d7/a5-a6,-(sp)
 		move	sr,d5

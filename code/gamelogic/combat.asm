@@ -18,21 +18,21 @@ loc_15C1C:					  ; DATA XREF: sub_10348t
 		and.w	d0,$000006AC(a0)
 		and.w	d0,$0000072C(a0)
 		and.w	d0,$000007AC(a0)
-		lea	$00000080(a0),a5
+		lea	SPRITE_SIZE(a0),a5
 		moveq	#$0000000E,d7
 		bclr	#$00,(byte_FF1157).l
 		bne.w	loc_15CB4
-		move.w	$0000002C(a0),d0
+		move.w	QueuedAction(a0),d0
 		andi.w	#$0700,d0
 		cmpi.w	#$0200,d0
 		bcs.w	locret_16378
-		lea	byte_15D0C(pc),a1
+		lea	word_15D0C(pc),a1
 		cmpi.w	#$0200,d0
 		beq.s	loc_15CC0
-		lea	byte_15D1C(pc),a1
+		lea	word_15D1C(pc),a1
 		cmpi.w	#$0300,d0
 		bne.s	loc_15CC0
-		lea	byte_15D14(pc),a1
+		lea	word_15D14(pc),a1
 		cmpi.b	#$02,(g_SwordCharge).l
 		bne.s	loc_15CC0
 		cmpi.b	#$0B,(byte_FF113F).l
@@ -47,7 +47,7 @@ loc_15CB4:					  ; CODE XREF: ROM:00015C70j
 
 loc_15CC0:					  ; CODE XREF: ROM:00015C8Cj
 						  ; ROM:00015C96j ...
-		lea	byte_15D14(pc),a1
+		lea	word_15D14(pc),a1
 		cmpi.b	#$04,(g_SwordCharge).l
 		bne.s	loc_15CDC
 		cmpi.b	#$0B,(byte_FF113F).l
@@ -57,14 +57,14 @@ loc_15CC0:					  ; CODE XREF: ROM:00015C8Cj
 
 loc_15CDC:					  ; CODE XREF: ROM:00015CCCj
 						  ; ROM:00015CD6j
-		move.w	$00000016(a0),d1
+		move.w	CentreY(a0),d1
 		move.w	d1,d2
-		move.w	$00000014(a0),d3
+		move.w	CentreX(a0),d3
 		move.w	d3,d4
-		move.w	$00000012(a0),d6
-		lea	$00000080(a0),a5
+		move.w	Z(a0),d6
+		lea	SPRITE_SIZE(a0),a5
 		moveq	#$0000000E,d7
-		move.b	$00000004(a0),d5
+		move.b	RotationAndSize(a0),d5
 		andi.b	#$C0,d5
 		beq.w	loc_15DE6
 		cmpi.b	#$80,d5
@@ -72,10 +72,10 @@ loc_15CDC:					  ; CODE XREF: ROM:00015CCCj
 		bcs.w	loc_15F6A
 		bra.s	loc_15D24
 ; ---------------------------------------------------------------------------
-byte_15D0C:	dc.b $00,$18,$00,$10,$00,$00,$00,$00 ; DATA XREF: ROM:00015C84t
-byte_15D14:	dc.b $00,$20,$00,$10,$00,$10,$FF,$F8 ; DATA XREF: ROM:00015C98t
+word_15D0C:	dc.w $0018,$0010,$0000,$0000	  ; DATA XREF: ROM:00015C84t
+word_15D14:	dc.w $0020,$0010,$0010,$FFF8	  ; DATA XREF: ROM:00015C98t
 						  ; ROM:loc_15CC0t
-byte_15D1C:	dc.b $00,$18,$00,$00,$00,$10,$00,$00 ; DATA XREF: ROM:00015C8Et
+word_15D1C:	dc.w $0018,$0000,$0010,$0000	  ; DATA XREF: ROM:00015C8Et
 ; ---------------------------------------------------------------------------
 
 loc_15D24:					  ; CODE XREF: ROM:00015D0Aj
@@ -89,23 +89,23 @@ loc_15D32:					  ; CODE XREF: ROM:00015DE0j
 		bmi.w	locret_15DE4
 		cmpi.b	#$7F,d5
 		beq.w	loc_15DDC
-		move.b	$0000000C(a5),d0
+		move.b	Flags2(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
 		bne.w	loc_15DDC
-		cmp.w	$0000001C(a5),d2
+		cmp.w	HitBoxYStart(a5),d2
 		bcs.w	loc_15DDC
-		cmp.w	$0000001E(a5),d1
+		cmp.w	HitBoxYEnd(a5),d1
 		bhi.s	loc_15DDC
-		cmp.w	$00000018(a5),d3
+		cmp.w	HitBoxXStart(a5),d3
 		bcs.s	loc_15DDC
-		cmp.w	$0000001A(a5),d4
+		cmp.w	HitBoxXEnd(a5),d4
 		bhi.s	loc_15DDC
-		cmp.w	$00000054(a5),d6
+		cmp.w	HitBoxZEnd(a5),d6
 		bcc.s	loc_15DDC
 		addi.w	#$001F,d6
-		cmp.w	$00000012(a5),d6
-		bcc.s	loc_15D80
+		cmp.w	Z(a5),d6
+		bcc.s	loc_15D80		  ; Invincible / Solid
 
 loc_15D7A:					  ; CODE XREF: ROM:00015D94j
 		subi.w	#$001F,d6
@@ -113,9 +113,9 @@ loc_15D7A:					  ; CODE XREF: ROM:00015D94j
 ; ---------------------------------------------------------------------------
 
 loc_15D80:					  ; CODE XREF: ROM:00015D78j
-		btst	#$00,$00000038(a5)
+		btst	#$00,Flags4(a5)		  ; Invincible / Solid
 		beq.s	loc_15D96
-		bset	#$03,(g_Vars+8).l
+		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
@@ -124,9 +124,9 @@ loc_15D80:					  ; CODE XREF: ROM:00015D78j
 ; ---------------------------------------------------------------------------
 
 loc_15D96:					  ; CODE XREF: ROM:00015D86j
-		move.w	$0000007C(a5),d0
-		bsr.w	sub_1657E
-		sub.w	d0,$0000003E(a5)
+		move.w	Defence(a5),d0
+		bsr.w	CalculatePlayerDamageOutput
+		sub.w	d0,CurrentHealth(a5)
 		bhi.s	loc_15DAA
 		bsr.w	sub_16134
 		bra.s	loc_15DDC
@@ -156,7 +156,7 @@ loc_15DD2:					  ; CODE XREF: ROM:00015DC2j
 
 loc_15DDC:					  ; CODE XREF: ROM:00015D3Cj
 						  ; ROM:00015D4Cj ...
-		lea	$00000080(a5),a5
+		lea	SPRITE_SIZE(a5),a5
 		dbf	d7,loc_15D32
 
 locret_15DE4:					  ; CODE XREF: ROM:00015D34j
@@ -200,7 +200,7 @@ loc_15E3C:					  ; CODE XREF: ROM:00015E56j
 loc_15E42:					  ; CODE XREF: ROM:00015E3Aj
 		btst	#$00,$00000038(a5)
 		beq.s	loc_15E58
-		bset	#$03,(g_Vars+8).l
+		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
@@ -210,7 +210,7 @@ loc_15E42:					  ; CODE XREF: ROM:00015E3Aj
 
 loc_15E58:					  ; CODE XREF: ROM:00015E48j
 		move.w	$0000007C(a5),d0
-		bsr.w	sub_1657E
+		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,$0000003E(a5)
 		bhi.s	loc_15E6C
 		bsr.w	sub_16134
@@ -285,7 +285,7 @@ loc_15EFE:					  ; CODE XREF: ROM:00015F18j
 loc_15F04:					  ; CODE XREF: ROM:00015EFCj
 		btst	#$00,$00000038(a5)
 		beq.s	loc_15F1A
-		bset	#$03,(g_Vars+8).l
+		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
@@ -295,7 +295,7 @@ loc_15F04:					  ; CODE XREF: ROM:00015EFCj
 
 loc_15F1A:					  ; CODE XREF: ROM:00015F0Aj
 		move.w	$0000007C(a5),d0
-		bsr.w	sub_1657E
+		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,$0000003E(a5)
 		bhi.s	loc_15F2E
 		bsr.w	sub_16134
@@ -370,7 +370,7 @@ loc_15FC0:					  ; CODE XREF: ROM:00015FDAj
 loc_15FC6:					  ; CODE XREF: ROM:00015FBEj
 		btst	#$00,$00000038(a5)
 		beq.s	loc_15FDC
-		bset	#$03,(g_Vars+8).l
+		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
@@ -380,7 +380,7 @@ loc_15FC6:					  ; CODE XREF: ROM:00015FBEj
 
 loc_15FDC:					  ; CODE XREF: ROM:00015FCCj
 		move.w	$0000007C(a5),d0
-		bsr.w	sub_1657E
+		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,$0000003E(a5)
 		bhi.s	loc_15FF0
 		bsr.w	sub_16134
@@ -422,29 +422,29 @@ locret_16028:					  ; CODE XREF: ROM:00015F7Aj
 
 sub_1602A:					  ; CODE XREF: ROM:loc_15DAAp
 						  ; ROM:loc_15E6Cp ...
-		bset	#$05,$0000002C(a5)
-		clr.b	$00000037(a5)
-		bset	#$01,$0000000C(a5)
-		andi.b	#$F8,$00000048(a5)
+		bset	#$05,QueuedAction(a5)
+		clr.b	ChestIndex(a5)
+		bset	#$01,Flags2(a5)
+		andi.b	#$F8,Unk48(a5)
 		move.b	(g_SwordCharge).l,d0
 		beq.s	locret_16074
 		cmpi.b	#$01,d0
 		bne.s	loc_16056
-		bset	#$00,$00000048(a5)
+		bset	#$00,Unk48(a5)
 		bra.s	locret_16074
 ; ---------------------------------------------------------------------------
 
 loc_16056:					  ; CODE XREF: sub_1602A+22j
 		cmpi.b	#$03,d0
 		bne.s	loc_16064
-		bset	#$02,$00000048(a5)
+		bset	#$02,Unk48(a5)
 		bra.s	locret_16074
 ; ---------------------------------------------------------------------------
 
 loc_16064:					  ; CODE XREF: sub_1602A+30j
 		cmpi.b	#$02,d0
 		bne.s	loc_16072
-		bset	#$01,$00000048(a5)
+		bset	#$01,Unk48(a5)
 		bra.s	locret_16074
 ; ---------------------------------------------------------------------------
 
@@ -473,7 +473,7 @@ loc_1607E:					  ; CODE XREF: sub_16076+32j
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
 		bne.s	loc_160A4
-		cmpi.w	#$0001,InitFlags4(a5)
+		cmpi.w	#$0001,InitFlags4_DropProbability(a5)
 		bne.s	loc_160B0
 		tst.b	GoldOrChestContents(a5)
 		bne.s	loc_160B0
@@ -520,7 +520,7 @@ loc_160E0:					  ; CODE XREF: ROM:000160D8j
 		btst	#$00,$00000038(a5)
 		bne.s	loc_16112
 		move.w	$0000007C(a5),d0
-		bsr.w	sub_1657E
+		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,$0000003E(a5)
 		bhi.s	loc_16102
 		bsr.w	sub_16134
@@ -560,18 +560,18 @@ locret_16132:					  ; CODE XREF: ROM:0001612Aj
 
 sub_16134:					  ; CODE XREF: ROM:00015DA4p
 						  ; ROM:00015E66p ...
-		andi.b	#$7F,$0000000C(a5)
-		clr.w	$0000002A(a5)
-		bset	#$02,$00000038(a5)
-		clr.b	$0000004D(a5)
-		cmpi.b	#$25,$0000003B(a5)
+		andi.b	#$7F,Flags2(a5)
+		clr.w	BehavParam(a5)
+		bset	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		clr.b	Unk4D(a5)
+		cmpi.b	#SPR_MUMMY3,SpriteType(a5)
 		bne.s	locret_1616C
-		move.w	#$0064,d6
+		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.w	#$0032,d7
+		cmpi.w	#00050,d7
 		bcs.s	locret_1616C
-		move.b	#$01,$0000004D(a5)
-		andi.b	#$7F,$0000004C(a5)
+		move.b	#$01,Unk4D(a5)
+		andi.b	#$7F,InitFlags2(a5)
 
 locret_1616C:					  ; CODE XREF: sub_16134+1Aj
 						  ; sub_16134+2Aj
@@ -639,13 +639,13 @@ loc_161EA:					  ; CODE XREF: sub_161E8+32j
 		bmi.w	locret_1621E
 		cmpi.b	#$7F,d5
 		beq.s	loc_16216
-		move.b	$0000000C(a5),d0
+		move.b	Flags2(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
 		bne.s	loc_16216
-		cmpi.w	#$0001,$00000078(a5)
+		cmpi.w	#$0001,InitFlags4_DropProbability(a5)
 		bne.s	loc_16212
-		tst.b	$00000036(a5)
+		tst.b	GoldOrChestContents(a5)
 		beq.s	loc_16216
 
 loc_16212:					  ; CODE XREF: sub_161E8+22j
@@ -653,7 +653,7 @@ loc_16212:					  ; CODE XREF: sub_161E8+22j
 
 loc_16216:					  ; CODE XREF: sub_161E8+Cj
 						  ; sub_161E8+1Aj ...
-		lea	$00000080(a5),a5
+		lea	SPRITE_SIZE(a5),a5
 		dbf	d7,loc_161EA
 
 locret_1621E:					  ; CODE XREF: sub_161E8+4j
@@ -674,15 +674,15 @@ sub_16220:					  ; DATA XREF: sub_10358t
 loc_16228:					  ; CODE XREF: sub_16220+22j
 		tst.w	(a5)
 		bmi.s	locret_16246
-		bclr	#$02,$00000038(a5)
+		bclr	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
 		beq.s	loc_1623E
-		tst.b	$0000004D(a5)
+		tst.b	Unk4D(a5)
 		bne.w	loc_1638E
 		bsr.s	loc_16248
 
 loc_1623E:					  ; CODE XREF: sub_16220+12j
 						  ; sub_16220+1F2j ...
-		lea	$00000080(a5),a5
+		lea	SPRITE_SIZE(a5),a5
 		dbf	d7,loc_16228
 
 locret_16246:					  ; CODE XREF: sub_16220+Aj
@@ -694,10 +694,10 @@ locret_16246:					  ; CODE XREF: sub_16220+Aj
 loc_16248:					  ; CODE XREF: sub_16220+1Cp
 		tst.b	(g_Flags+5).l
 		bmi.w	loc_1637A
-		move.w	$00000078(a5),d6
+		move.w	InitFlags4_DropProbability(a5),d6
 		cmpi.w	#$0001,d6
 		bne.s	loc_16284
-		tst.b	$00000036(a5)
+		tst.b	GoldOrChestContents(a5)
 		bne.s	loc_16284
 		btst	#$00,(g_Flags+3).l
 		beq.s	loc_16276
@@ -758,7 +758,7 @@ loc_162D8:					  ; CODE XREF: ROM:0001628Aj
 		move.b	#SpriteB_Moneybag,SpriteGraphic(a5)
 
 loc_162EC:					  ; CODE XREF: ROM:000162D6j
-		move.w	#$002D,Unk2A(a5)
+		move.w	#$002D,BehavParam(a5)
 		cmpi.b	#$10,Height(a5)
 		bcc.s	loc_16308
 
@@ -781,7 +781,7 @@ loc_1631A:					  ; CODE XREF: ROM:00016306j
 		move.b	#$10,Height(a5)
 		clr.l	BehaviourLUTPtr(a5)
 		clr.w	CurrentHealth(a5)
-		clr.b	Flags4(a5)
+		clr.b	Flags4(a5)		  ; Bit	0 = Invincible / Solid
 		clr.w	FallRate(a5)
 		andi.b	#$7F,Flags2(a5)
 		andi.b	#$3F,RotationAndSize(a5)
@@ -794,7 +794,7 @@ loc_1631A:					  ; CODE XREF: ROM:00016306j
 		bset	#$00,Flags2(a5)
 		bclr	#$06,Flags2(a5)
 		movea.l	a5,a1
-		bsr.w	LookupSpriteUnknownVal6F
+		bsr.w	LookupSpriteAnimFlags
 		bsr.w	sub_19AC8
 
 locret_16378:					  ; CODE XREF: ROM:00015C80j
@@ -813,23 +813,23 @@ loc_1637A:					  ; CODE XREF: ROM:0001624Ej
 ; START	OF FUNCTION CHUNK FOR sub_16220
 
 loc_1638E:					  ; CODE XREF: sub_16220+18j
-		move.w	#$0300,Action(a5)
+		move.w	#$0300,QueuedAction(a5)
 		addq.b	#$01,Unk4D(a5)
 		cmpi.b	#$08,Unk4D(a5)
 		bcs.w	loc_16416
-		move.w	#$0400,Action(a5)
+		move.w	#$0400,QueuedAction(a5)
 		cmpi.b	#$10,Unk4D(a5)
 		bcs.w	loc_16416
-		move.w	#$0500,Action(a5)
+		move.w	#$0500,QueuedAction(a5)
 		cmpi.b	#$20,Unk4D(a5)
 		bcs.w	loc_16416
-		move.w	#$0400,Action(a5)
+		move.w	#$0400,QueuedAction(a5)
 		cmpi.b	#$28,Unk4D(a5)
 		bcs.w	loc_16416
-		move.w	#$0300,Action(a5)
+		move.w	#$0300,QueuedAction(a5)
 		cmpi.b	#$30,Unk4D(a5)
 		bcs.w	loc_16416
-		move.w	#$0200,Action(a5)
+		move.w	#$0200,QueuedAction(a5)
 		cmpi.b	#$38,Unk4D(a5)
 		bcs.w	loc_16416
 		ori.b	#$80,Flags2(a5)
@@ -843,7 +843,7 @@ loc_1638E:					  ; CODE XREF: sub_16220+18j
 
 loc_16416:					  ; CODE XREF: sub_16220+17Ej
 						  ; sub_16220+18Ej ...
-		bset	#$02,$00000038(a5)
+		bset	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
 		bra.w	loc_1623E
 ; END OF FUNCTION CHUNK	FOR sub_16220
 
@@ -862,17 +862,17 @@ sub_16420:					  ; DATA XREF: sub_1034Ct
 		beq.w	locret_164E4
 		movem.w	d1,-(sp)
 		lea	(Player_X).l,a5
-		bsr.w	sub_165D0
+		bsr.w	CalculateEnemyDamageOutput
 		bsr.w	RemoveHealth
 		movem.w	(sp)+,d1
-		tst.w	$0000003E(a5)
-		beq.w	loc_164EA
+		tst.w	CurrentHealth(a5)
+		beq.w	PlayerDeath
 		btst	#STATUS_PARALYSIS,(g_PlayerStatus).l
 		beq.s	loc_1648A
-		move.b	(byte_FF114A).l,d0
-		addq.b	#$02,(byte_FF114A).l
+		move.b	(g_ParalysisCheckCount).l,d0
+		addq.b	#$02,(g_ParalysisCheckCount).l
 		ext.w	d0
-		move.w	word_164AA(pc,d0.w),d6
+		move.w	ParalysisClearChance(pc,d0.w),d6
 		jsr	(j_GenerateRandomNumber).l
 		tst.w	d7
 		bne.s	loc_1648A
@@ -891,7 +891,8 @@ loc_1648A:					  ; CODE XREF: sub_16420+44j
 		or.b	d0,(Player_RotationAndSize).l
 		bra.s	loc_164B8
 ; ---------------------------------------------------------------------------
-word_164AA:	dc.w $0003			  ; DATA XREF: sub_16420+54r
+ParalysisClearChance:				  ; DATA XREF: sub_16420+54r
+		dc.w $0003
 		dc.w $0002
 		dc.w $0001
 ; ---------------------------------------------------------------------------
@@ -911,9 +912,10 @@ loc_164B8:					  ; CODE XREF: sub_16420+88j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_NigelHit1
@@ -931,7 +933,7 @@ DamageRecoilCmd:dc.b $07, $05, $06, $04		  ; DATA XREF: sub_16420+9Ar
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR sub_16602
 
-loc_164EA:					  ; CODE XREF: sub_16420+38j
+PlayerDeath:					  ; CODE XREF: sub_16420+38j
 						  ; sub_16602+58j
 						  ; DATA XREF: ...
 		clr.b	(byte_FF1142).l
@@ -987,7 +989,7 @@ locret_1657C:					  ; CODE XREF: sub_16420+11Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1657E:					  ; CODE XREF: ROM:00015D9Ap
+CalculatePlayerDamageOutput:			  ; CODE XREF: ROM:00015D9Ap
 						  ; ROM:00015E5Cp ...
 		movem.w	d1/d6-d7,-(sp)
 		move.w	d0,d1
@@ -998,10 +1000,10 @@ sub_1657E:					  ; CODE XREF: ROM:00015D9Ap
 		cmpi.w	#$0100,d0
 		bcc.s	loc_1659A
 
-loc_16596:					  ; CODE XREF: sub_1657E+10j
+loc_16596:					  ; CODE XREF: CalculatePlayerDamageOutput+10j
 		move.w	#$0100,d0
 
-loc_1659A:					  ; CODE XREF: sub_1657E+16j
+loc_1659A:					  ; CODE XREF: CalculatePlayerDamageOutput+16j
 		move.w	d0,d1
 		lsr.w	#$08,d0
 		move.w	#$0060,d6
@@ -1012,24 +1014,22 @@ loc_1659A:					  ; CODE XREF: sub_1657E+16j
 		beq.s	loc_165C2
 		ext.w	d1
 		add.b	d1,d1
-		move.w	locret_165C6(pc,d1.w),d1
+		move.w	(MagicSwordBoost-2)(pc,d1.w),d1
 		mulu.w	d1,d0
 		divu.w	#$0100,d0
 
-loc_165C2:					  ; CODE XREF: sub_1657E+34j
+loc_165C2:					  ; CODE XREF: CalculatePlayerDamageOutput+34j
 		movem.w	(sp)+,d1/d6-d7
-
-locret_165C6:					  ; DATA XREF: sub_1657E+3Ar
 		rts
-; End of function sub_1657E
+; End of function CalculatePlayerDamageOutput
 
 ; ---------------------------------------------------------------------------
-MagicSwordBoost:dc.w $01C0, $0180, $0200, $0140
+MagicSwordBoost:dc.w $01C0, $0180, $0200, $0140	  ; DATA XREF: CalculatePlayerDamageOutput+3At
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_165D0:					  ; CODE XREF: sub_16420+28p
+CalculateEnemyDamageOutput:			  ; CODE XREF: sub_16420+28p
 		movem.w	d1/d6-d7,-(sp)
 		moveq	#$00000000,d0
 		move.w	(Player_AttackStrength).l,d0
@@ -1044,10 +1044,10 @@ sub_165D0:					  ; CODE XREF: sub_16420+28p
 		mulu.w	d7,d0
 		add.w	d1,d0
 
-loc_165FC:					  ; CODE XREF: sub_165D0+Cj
+loc_165FC:					  ; CODE XREF: CalculateEnemyDamageOutput+Cj
 		movem.w	(sp)+,d1/d6-d7
 		rts
-; End of function sub_165D0
+; End of function CalculateEnemyDamageOutput
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1069,9 +1069,10 @@ sub_16602:					  ; DATA XREF: sub_10380t
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.b	#$0F,d0
 		beq.s	loc_1667C
 		cmpi.b	#$01,(g_PlayerSpeed+1).l
@@ -1084,7 +1085,7 @@ sub_16602:					  ; DATA XREF: sub_10380t
 		lea	(Player_X).l,a5
 		bsr.w	RemoveHealth
 		tst.w	(Player_CurrentHealth).l
-		beq.w	loc_164EA
+		beq.w	PlayerDeath
 		lea	(g_Pal0Active).l,a0
 		moveq	#$0000000F,d7
 
@@ -1117,9 +1118,10 @@ loc_16696:					  ; CODE XREF: sub_16602+82j
 						  ; Bit3 - Walk	SE (+X)
 						  ; Bit4 - Fall
 						  ; Bit5 - Jump
-						  ; Bit6, Bit7 - Pick up / Put down
-						  ; Bit8-Bit10 - Sword swing
+						  ; Bit6-Bit7 -	Pick up	/ Put down
+						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
+						  ; Bit13 - Receive Damage
 		andi.b	#$0F,d0
 		beq.s	locret_166DE
 		cmpi.b	#$01,(g_PlayerSpeed+1).l

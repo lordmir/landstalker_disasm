@@ -171,7 +171,7 @@ loc_F824:					  ; CODE XREF: sub_F81A+Cj
 
 loc_F852:					  ; CODE XREF: ROM:0000F848j
 		lea	(g_Pal0Base).l,a0
-		lea	g_Pal1Base-g_Pal0Base(a0),a1
+		lea	$00000020(a0),a1
 		moveq	#$0000000F,d7
 		move.w	#$0EEE,d1
 
@@ -188,7 +188,7 @@ loc_F862:					  ; CODE XREF: ROM:0000F86Aj
 
 loc_F87C:					  ; CODE XREF: ROM:0000F84Ej
 		lea	(g_Pal0Base).l,a0
-		lea	g_Pal1Base-g_Pal0Base(a0),a1
+		lea	$00000020(a0),a1
 		moveq	#$0000000F,d7
 
 loc_F888:					  ; CODE XREF: ROM:0000F88Aj

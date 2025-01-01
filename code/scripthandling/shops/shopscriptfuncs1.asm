@@ -158,7 +158,7 @@ loc_24B36:					  ; CODE XREF: ROM:00024B14j
 		move.b	#$FF,(byte_FF1903).l
 
 loc_24B3E:					  ; CODE XREF: ROM:00024AF2j
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		movem.l	(sp)+,d0-d2/a1
 		rts
 

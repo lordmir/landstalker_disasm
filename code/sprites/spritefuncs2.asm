@@ -60,20 +60,20 @@ loc_10BA6:					  ; CODE XREF: sub_10ACE+A4j
 		cmpi.b	#$96,(byte_FF1145).l
 		bne.w	locret_10C84
 		btst	#$07,(g_Flags+5).l
-		beq.s	loc_10BC4
+		beq.s	OnFaint
 		move.b	#$33,d0
 		bra.w	ProcessDialogueScriptAction
 ; ---------------------------------------------------------------------------
 
-loc_10BC4:					  ; CODE XREF: sub_10ACE+ECj
+OnFaint:					  ; CODE XREF: sub_10ACE+ECj
 		bclr	#$00,(Player_Flags2).l
 		cmpi.w	#$01AA,(g_RmNum1).l	  ; Waterfall Shrine Entrance
-		bne.s	loc_10BE2
+		bne.s	EkeEkeRecover
 		btst	#$04,(g_Flags).l
 		beq.w	loc_10C8E
 
-loc_10BE2:					  ; CODE XREF: sub_10ACE+106j
-		btst	#$00,(g_Vars+$19).l
+EkeEkeRecover:					  ; CODE XREF: sub_10ACE+106j
+		btst	#$00,(g_AdditionalFlags+$19).l
 		bne.w	loc_10C86
 		move.b	#ITM_EKEEKE,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
@@ -84,7 +84,7 @@ loc_10BE2:					  ; CODE XREF: sub_10ACE+106j
 		jsr	(j_CheckAndConsumeItem).l
 		move.b	#$01,(g_FridayAnimation1).l
 		move.b	#$11,(g_FridayAnimation2).l
-		move.w	#$003C,d0
+		move.w	#00060,d0
 		jsr	(j_Sleep).l
 		move.b	#$41,(g_FridayAnimation2).l
 
@@ -97,7 +97,7 @@ loc_10C2C:					  ; CODE XREF: sub_10ACE+16Cj
 		bset	#$07,Unk0A(a0)
 		bset	#$07,Unk48(a0)
 		jsr	(sub_3FE).l
-		jsr	(sub_3F8).l
+		jsr	(j_LoadSprites).l
 		bsr.w	UpdateEkeEkeHUD
 		jsr	(j_EkeEkeHealthRecover).l
 		clr.b	(byte_FF1145).l
@@ -121,7 +121,7 @@ loc_10C86:					  ; CODE XREF: sub_10ACE+11Cj
 ; ---------------------------------------------------------------------------
 
 loc_10C8E:					  ; CODE XREF: sub_10ACE+110j
-		jsr	(sub_3E6).l
+		jsr	(j_FadeOutToDarkness).l
 		clr.b	(byte_FF1145).l
 		move.w	#$0251,(g_RmNum1).l	  ; Massan mayor's house
 		move.w	#$0251,(RmNum2).l
@@ -132,7 +132,7 @@ loc_10C8E:					  ; CODE XREF: sub_10ACE+110j
 		ori.b	#$80,(Player_RotationAndSize).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(sub_410).l
+		jsr	(j_InitVDP).l
 		move.b	#$21,(g_FridayAnimation1).l
 		move.b	#$11,(g_FridayAnimation2).l
 		move.b	#$09,d0

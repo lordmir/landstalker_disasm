@@ -1,3 +1,4 @@
+
 ; =============== S U B	R O U T	I N E =======================================
 
 
@@ -33,6 +34,8 @@ loc_253EE:					  ; CODE XREF: PickValueBasedOnFlags+Cj
 		movem.l	(sp)+,d0/a1
 		rts
 ; End of function PickValueBasedOnFlags
+
+
 ; =============== S U B	R O U T	I N E =======================================
 
 

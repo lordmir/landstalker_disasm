@@ -13,7 +13,7 @@ DisplaySegaLogo:				  ; DATA XREF: j_DisplaySegaLogot
 
 loc_38634:					  ; CODE XREF: DisplaySegaLogo+36j
 		jsr	(j_WaitUntilVBlank).l
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		andi.b	#CTRLBF_BUTTONS,d0
 		dbne	d7,loc_38634

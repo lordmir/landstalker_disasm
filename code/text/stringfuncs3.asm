@@ -3,7 +3,7 @@
 
 
 InitHuffmanDecomp:				  ; CODE XREF: PrintString+1Ap
-		move.b	#CHR_55,(g_curDecomprChar).l ; 1st char	is always 55
+		move.b	#CHR_STR_BEGIN,(g_curDecomprChar).l ; 1st char is always 55
 		clr.w	(word_FF1922).l
 		clr.w	(word_FF1920).l
 		rts
@@ -105,7 +105,7 @@ loc_24778:					  ; CODE XREF: YesNoPrompt+AEj
 
 loc_2478C:					  ; CODE XREF: YesNoPrompt+60j
 		jsr	(j_WaitUntilVBlank).l
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		and.b	d2,d0
 		andi.b	#$70,d0
@@ -167,7 +167,7 @@ loc_24822:					  ; CODE XREF: YesNoPrompt+86j
 
 sub_2482C:					  ; DATA XREF: sub_22E88t
 		bsr.w	sub_24998
-		bsr.w	ClearTextbox
+		bsr.w	ReloadTextbox
 		move.w	#$0050,(word_FF1194).l
 		move.w	#$0002,d0
 		jsr	(sub_22EC8).l
@@ -203,7 +203,7 @@ loc_24898:					  ; CODE XREF: sub_2488A+6Aj
 
 loc_248AC:					  ; CODE XREF: sub_2488A+1Aj
 		jsr	(j_WaitUntilVBlank).l
-		jsr	(j_WaitForZ80).l
+		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		and.b	d2,d0
 		andi.b	#$70,d0

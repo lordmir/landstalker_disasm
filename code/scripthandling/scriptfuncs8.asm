@@ -70,7 +70,7 @@ loc_291B2:					  ; CODE XREF: GetItemQtyAndMaxQty+1Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-AddItem:					  ; CODE XREF: GetItem+36p
+SetItemQuantity:				  ; CODE XREF: GetItem+36p
 						  ; CheckAndConsumeItem:loc_2922Cp ...
 		movem.l	d1-d2/a0,-(sp)
 		move.b	d1,d2
@@ -80,13 +80,13 @@ AddItem:					  ; CODE XREF: GetItem+36p
 		ble.s	loc_291C8
 		move.w	d1,d2
 
-loc_291C8:					  ; CODE XREF: AddItem+Ej
+loc_291C8:					  ; CODE XREF: SetItemQuantity+Ej
 		addq.w	#$01,d2
 		move.w	d2,d1
 		bsr.w	UpdateItemQtyInInventory
 		movem.l	(sp)+,d1-d2/a0
 		rts
-; End of function AddItem
+; End of function SetItemQuantity
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -114,7 +114,7 @@ loc_29202:					  ; CODE XREF: GetItem+8j
 
 loc_2920A:					  ; CODE XREF: GetItem+30j
 		addq.w	#$01,d1
-		bsr.s	AddItem
+		bsr.s	SetItemQuantity
 		tst.b	d0
 		bne.s	loc_29216
 
@@ -143,7 +143,7 @@ loc_29228:					  ; CODE XREF: CheckAndConsumeItem+8j
 		subq.w	#$01,d1
 
 loc_2922C:					  ; CODE XREF: CheckAndConsumeItem:loc_29228j
-		bsr.s	AddItem
+		bsr.s	SetItemQuantity
 		move.l	(sp)+,d1
 		rts
 ; End of function CheckAndConsumeItem
@@ -213,7 +213,7 @@ loc_2927E:					  ; CODE XREF: GetItemInventoryQty+18j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-UpdateItemQtyInInventory:			  ; CODE XREF: AddItem+16p
+UpdateItemQtyInInventory:			  ; CODE XREF: SetItemQuantity+16p
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_Inventory).l,a0
 		andi.w	#$003F,d0
@@ -238,7 +238,7 @@ loc_292AE:					  ; CODE XREF: UpdateItemQtyInInventory+1Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-GetItemMaxQty:					  ; CODE XREF: AddItem+8p
+GetItemMaxQty:					  ; CODE XREF: SetItemQuantity+8p
 						  ; GetRemainingItemAllowedCount:loc_29240p ...
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
@@ -280,14 +280,14 @@ GetItemEquipSlot:				  ; DATA XREF: ROM:00022ED8t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-GetItemRSP:					  ; CODE XREF: GetItemShopSellPrice+10p
+GetItemBuyPrice:				  ; CODE XREF: GetItemShopSellPrice+10p
 						  ; DATA XREF: ROM:00022EDCt
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
 		move.w	$00000002(a0),d1
 		movea.l	(sp)+,a0
 		rts
-; End of function GetItemRSP
+; End of function GetItemBuyPrice
 
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ProcessTriggerAction:				  ; DATA XREF: sub_178FE+1256t
+ProcessTriggerAction:				  ; DATA XREF: OnTick+1256t
 
 ; FUNCTION CHUNK AT 00010F4C SIZE 00000068 BYTES
 

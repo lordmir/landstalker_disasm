@@ -55,18 +55,18 @@ loc_1956C:					  ; CODE XREF: InitialiseSprites+4FCj
 		beq.w	loc_19A3A		  ; End	of table for room
 		move.b	d0,d1
 		andi.b	#$3F,d0
-		move.b	d0,(a1)
+		move.b	d0,X(a1)
 		move.b	(a2)+,d2		  ; d2 = data[1]
 						  ; a2 = &data[2]
 		move.b	d2,d3
 		andi.b	#$3F,d2
-		move.b	d2,$00000001(a1)
-		move.w	#$0808,$00000002(a1)
+		move.b	d2,Y(a1)
+		move.w	#$0808,SubX(a1)
 		andi.b	#$C0,d1
-		move.b	d1,$00000004(a1)
+		move.b	d1,RotationAndSize(a1)
 		andi.w	#$00C0,d3
 		lsl.w	#$07,d3
-		move.w	d3,$00000006(a1)
+		move.w	d3,TileSource(a1)
 		move.b	(a2)+,d0		  ; d0 = data[2]
 						  ; a2 = &data[3]
 		move.b	d0,d3
@@ -214,7 +214,7 @@ loc_196D6:					  ; CODE XREF: InitialiseSprites+196j
 		ext.w	d2
 		move.w	d2,AnimationIndex(a1)
 		move.b	#SpriteB_Item,SpriteGraphic(a1)
-		jsr	(LookupSpriteUnknownVal6F).l
+		jsr	(LookupSpriteAnimFlags).l
 		move.b	-$00000006(a2),d0	  ; a2 = &data[6]
 						  ; d0 = data[0]
 		andi.b	#$40,d0
@@ -250,7 +250,7 @@ loc_19724:					  ; CODE XREF: LookupSpriteGfxIndex+8j
 loc_1972A:					  ; CODE XREF: InitialiseSprites+FAj
 		bsr.s	LookupSpriteGfxIndex
 		movem.w	d1,-(sp)
-		jsr	(LookupSpriteUnknownVal6F).l
+		jsr	(LookupSpriteAnimFlags).l
 		movem.w	(sp)+,d1		  ; d1 = rotation ?
 		bsr.s	SetSpriteRotationAnimFlags
 
@@ -298,7 +298,7 @@ SetSpriteRotationAnimFlags:			  ; CODE XREF: sub_12CAE+Cp
 
 loc_197B6:					  ; CODE XREF: SetSpriteRotationAnimFlags+Cj
 						  ; SetSpriteRotationAnimFlags+14j
-		cmpi.b	#$03,Unk6F(a1)		  ; Only true for Zak
+		cmpi.b	#$03,AnimFlags(a1)	  ; Only true for Zak
 		bne.s	loc_197C0
 		addq.b	#$08,d2
 
@@ -310,12 +310,12 @@ loc_197C0:					  ; CODE XREF: SetSpriteRotationAnimFlags+20j
 loc_197CC:					  ; CODE XREF: SetSpriteRotationAnimFlags+52j
 		move.w	#$0018,AnimationIndex(a1)
 		move.b	#$10,ChestIndex(a1)
-		move.b	#$40,Flags4(a1)
+		move.b	#$40,Flags4(a1)		  ; Bit	0 = Invincible / Solid
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_197E0:					  ; CODE XREF: SetSpriteRotationAnimFlags+2Aj
-		cmpi.b	#SpriteB_Mushroom,$0000000B(a1)
+		cmpi.b	#SpriteB_Mushroom,SpriteGraphic(a1)
 		bne.s	loc_197F0
 		move.w	#$000C,AnimationFrame(a1)
 		bra.s	loc_197CC
@@ -325,7 +325,7 @@ loc_197F0:					  ; CODE XREF: SetSpriteRotationAnimFlags+4Aj
 		ext.w	d2
 		move.w	d2,AnimationIndex(a1)
 		clr.w	AnimationFrame(a1)
-		btst	#$04,Unk6F(a1)
+		btst	#$04,AnimFlags(a1)
 		bne.s	locret_19812
 		andi.b	#$40,d0
 		lsr.b	#$03,d0
@@ -410,10 +410,10 @@ loc_19874:					  ; CODE XREF: InitialiseSprites+30Ej
 loc_19894:					  ; CODE XREF: InitialiseSprites+354j
 		move.b	d1,d0
 		andi.b	#$10,d1
-		move.b	d1,$00000008(a1)
+		move.b	d1,Flags1(a1)
 		andi.b	#$20,d0
 		lsr.b	#$05,d0
-		or.b	d0,$00000008(a1)
+		or.b	d0,Flags1(a1)
 		clr.w	d0
 		move.b	-$00000003(a2),d0	  ; a2 = &bytes[7]
 						  ; d0 = byte[4]
@@ -421,58 +421,58 @@ loc_19894:					  ; CODE XREF: InitialiseSprites+354j
 		lsl.w	#$08,d0
 		move.b	(a2)+,d0		  ; a2 = &bytes[8]
 						  ; d0 = bytes[7]
-		tst.w	$00000034(a1)
+		tst.w	BehaviourLUTIndex(a1)
 		bne.s	loc_198C0
-		move.w	d0,$00000034(a1)
+		move.w	d0,BehaviourLUTIndex(a1)
 
 loc_198C0:					  ; CODE XREF: InitialiseSprites+380j
-		clr.w	$0000002C(a1)
-		clr.w	$0000002E(a1)
-		move.b	#$FF,$0000006D(a1)
-		cmpi.b	#SpriteB_Ghost,$0000000B(a1)
+		clr.w	QueuedAction(a1)
+		clr.w	PrevAction(a1)
+		move.b	#$FF,Unk6D(a1)
+		cmpi.b	#SpriteB_Ghost,SpriteGraphic(a1)
 		bne.s	loc_198E0
-		move.w	#$0008,$00000024(a1)
-		clr.w	$0000002E(a1)
+		move.w	#$0008,AnimationIndex(a1)
+		clr.w	PrevAction(a1)
 
 loc_198E0:					  ; CODE XREF: InitialiseSprites+39Aj
-		tst.b	$00000009(a1)
+		tst.b	Speed(a1)
 		bne.s	loc_198FA
-		tst.w	$0000002A(a1)
+		tst.w	BehavParam(a1)
 		bne.s	loc_198FA
-		btst	#$05,$0000000C(a1)
+		btst	#$05,Flags2(a1)
 		bne.s	loc_198FA
-		bset	#$07,$00000020(a1)
+		bset	#$07,FallRate(a1)
 
 loc_198FA:					  ; CODE XREF: InitialiseSprites+3AAj
 						  ; InitialiseSprites+3B0j ...
-		move.w	#$FFFF,$00000030(a1)
+		move.w	#$FFFF,SpriteUnderneath(a1)
 		movea.l	a1,a5
-		move.w	$00000034(a1),d0
+		move.w	BehaviourLUTIndex(a1),d0
 		movem.l	d0/a1,-(sp)
 		jsr	(j_LoadSpriteBehaviour).l
 		movem.l	(sp)+,d0/a1
 		cmpi.w	#$0001,d0
 		bne.s	loc_19932
 		move.b	(byte_FF1838).l,d0
-		sub.b	d0,$0000002A(a1)
+		sub.b	d0,BehavParam(a1)
 		addq.b	#$03,(byte_FF1838).l
 		andi.b	#$0F,(byte_FF1838).l
 
 loc_19932:					  ; CODE XREF: InitialiseSprites+3DEj
-		cmpi.b	#SpriteB_Chest,$0000000B(a1)
+		cmpi.b	#SpriteB_Chest,SpriteGraphic(a1)
 		beq.s	loc_1994E
-		cmpi.b	#SpriteB_Mimic,$0000000B(a1)
+		cmpi.b	#SpriteB_Mimic,SpriteGraphic(a1)
 		beq.s	loc_19952
-		cmpi.b	#SpriteB_Mushroom,$0000000B(a1)
+		cmpi.b	#SpriteB_Mushroom,SpriteGraphic(a1)
 		beq.s	loc_19952
-		clr.b	$00000037(a1)
+		clr.b	ChestIndex(a1)
 
 loc_1994E:					  ; CODE XREF: InitialiseSprites+3FEj
-		clr.b	$00000038(a1)
+		clr.b	Flags4(a1)		  ; Bit	0 = Invincible / Solid
 
 loc_19952:					  ; CODE XREF: InitialiseSprites+406j
 						  ; InitialiseSprites+40Ej
-		tst.b	$0000000C(a1)
+		tst.b	Flags2(a1)
 		bpl.w	loc_199E6
 		bsr.s	GetEnemyStats		  ; sprite type
 		bra.w	loc_199E6
@@ -483,8 +483,8 @@ loc_19952:					  ; CODE XREF: InitialiseSprites+406j
 ; sprite type
 
 GetEnemyStats:					  ; CODE XREF: ROM:00012C8Cp
-						  ; sub_178FE+1456p ...
-		move.b	$0000003B(a1),d0
+						  ; OnTick+1456p ...
+		move.b	SpriteType(a1),d0
 		lea	EnemyStats(pc),a0
 
 loc_19968:					  ; CODE XREF: GetEnemyStats+74j
@@ -492,23 +492,23 @@ loc_19968:					  ; CODE XREF: GetEnemyStats+74j
 		beq.s	locret_199D0
 		cmp.b	(a0),d0
 		bne.s	loc_199D2
-		move.b	$00000001(a0),$0000003E(a1) ; Health
-		cmpi.b	#$FF,$0000003E(a1)	  ; 0xFF - indestructable
+		move.b	$00000001(a0),CurrentHealth(a1)	; Health
+		cmpi.b	#$FF,CurrentHealth(a1)	  ; 0xFF - indestructable
 		bne.s	loc_19986
-		bset	#$00,$00000038(a1)
+		bset	#$00,Flags4(a1)		  ; Bit	0 = Invincible / Solid
 
 loc_19986:					  ; CODE XREF: GetEnemyStats+1Ej
-		clr.b	$0000003F(a1)
+		clr.b	CurrentSubHealth(a1)
 		clr.w	d0
 		move.b	$00000002(a0),d0	  ; Defence
 		lsl.w	#$07,d0
-		move.w	d0,$0000007C(a1)
-		move.b	$00000003(a0),$00000036(a1) ; Gold Drop
+		move.w	d0,Defence(a1)
+		move.b	$00000003(a0),GoldOrChestContents(a1) ;	Gold Drop
 		move.b	$00000004(a0),d0	  ; Attack
 		move.b	d0,d1
 		andi.b	#$7F,d0
 		lsl.w	#$08,d0
-		move.w	d0,$0000003C(a1)
+		move.w	d0,AttackStrength(a1)
 		andi.b	#$80,d1
 		lsr.b	#$04,d1			  ; High bit of	attack is used in item drop chance
 		move.b	$00000005(a0),d0
@@ -518,9 +518,9 @@ loc_19986:					  ; CODE XREF: GetEnemyStats+1Ej
 		lsr.b	#$05,d0
 		or.b	d1,d0
 		ext.w	d0
-		move.w	ItemDropProbabilityLookup(pc,d0.w),$00000078(a1) ; 1/64
+		move.w	ItemDropProbabilityLookup(pc,d0.w),InitFlags4_DropProbability(a1) ; 1/64
 		andi.b	#$3F,d2
-		move.b	d2,$00000077(a1)
+		move.b	d2,ItemDrop(a1)
 
 locret_199D0:					  ; CODE XREF: GetEnemyStats+Cj
 		rts
@@ -546,20 +546,20 @@ ItemDropProbabilityLookup:dc.w $0040		  ; DATA XREF: GetEnemyStats+62r
 
 loc_199E6:					  ; CODE XREF: InitialiseSprites+41Cj
 						  ; InitialiseSprites+422j
-		move.w	(a1),$00000040(a1)
-		move.w	$00000002(a1),$00000042(a1)
-		move.w	$00000004(a1),$00000044(a1)
-		move.b	$00000006(a1),$00000046(a1)
-		move.w	$0000000A(a1),$0000004A(a1)
-		move.b	$0000000C(a1),$0000004C(a1)
-		move.w	$00000012(a1),$00000052(a1)
-		move.w	$0000002A(a1),$0000006A(a1)
-		move.l	$00000032(a1),$00000072(a1)
-		move.b	$00000036(a1),$00000076(a1)
-		move.b	$00000038(a1),$00000068(a1)
-		move.w	$0000003A(a1),$0000007A(a1)
-		move.w	$0000003E(a1),$0000007E(a1)
-		lea	$00000080(a1),a1
+		move.w	X(a1),InitX(a1)
+		move.w	SubX(a1),InitSubX(a1)
+		move.w	RotationAndSize(a1),InitRotAndSize(a1)
+		move.b	TileSource(a1),InitTileSource(a1)
+		move.w	Unk0A(a1),InitUnk0A(a1)
+		move.b	Flags2(a1),InitFlags2(a1)
+		move.w	Z(a1),InitZ(a1)
+		move.w	BehavParam(a1),Unk6A(a1)
+		move.l	BehaviourLUTPtr(a1),InitBehaviourLUTPtr(a1)
+		move.b	GoldOrChestContents(a1),InitGoldOrChestCont(a1)
+		move.b	Flags4(a1),Unk68(a1)	  ; Bit	0 = Invincible / Solid
+		move.w	Dialogue(a1),InitDialogue(a1)
+		move.w	CurrentHealth(a1),MaxHealth(a1)
+		lea	SPRITE_SIZE(a1),a1
 		bra.w	loc_1956C		  ; d0 = data[0]
 						  ; A2 = &data[1]
 ; ---------------------------------------------------------------------------
@@ -589,7 +589,7 @@ loc_19A4A:					  ; CODE XREF: sub_19A40+82j
 		movem.l	(sp)+,a1
 		cmpa.l	#Player_X,a1
 		beq.s	loc_19AB6
-		btst	#$00,$00000008(a1)
+		btst	#$00,Flags1(a1)
 		bne.s	loc_19AB6
 		movea.l	a1,a5
 		jsr	(sub_3BC).l
@@ -597,7 +597,7 @@ loc_19A4A:					  ; CODE XREF: sub_19A40+82j
 		cmpa.l	#Player_X,a1
 		bne.s	loc_19AA8
 		movem.l	(sp)+,a1
-		move.w	$00000054(a1),d1
+		move.w	HitBoxZEnd(a1),d1
 		addq.w	#$01,d1
 		move.w	d1,(Player_Z).l
 		add.b	(Player_Height).l,d1
@@ -607,7 +607,7 @@ loc_19A4A:					  ; CODE XREF: sub_19A40+82j
 ; ---------------------------------------------------------------------------
 
 loc_19AA8:					  ; CODE XREF: sub_19A40+46j
-		cmpi.b	#$18,$0000004B(a1)
+		cmpi.b	#SpriteB_Ghost,InitSpriteGraphic(a1)
 		bne.s	loc_19AB6
 		jsr	(j_MoveSpriteOffscreen).l
 
@@ -618,7 +618,7 @@ loc_19AB6:					  ; CODE XREF: sub_19A40+2Cj
 loc_19ABA:					  ; CODE XREF: sub_19A40+16j
 						  ; sub_19A40+66j
 		movem.w	(sp)+,d7
-		lea	$00000080(a1),a1
+		lea	SPRITE_SIZE(a1),a1
 		dbf	d7,loc_19A4A
 
 locret_19AC6:					  ; CODE XREF: sub_19A40+Cj
@@ -630,53 +630,53 @@ locret_19AC6:					  ; CODE XREF: sub_19A40+Cj
 
 
 sub_19AC8:					  ; CODE XREF: ROM:00016374p
-						  ; sub_178FE+1366p ...
-		move.b	(a1),d0
+						  ; OnTick+1366p ...
+		move.b	X(a1),d0
 		ext.w	d0
 		move.w	d0,d2
 		lsl.w	#$04,d0
-		add.b	$00000002(a1),d0
-		move.b	$00000001(a1),d1
+		add.b	SubX(a1),d0
+		move.b	Y(a1),d1
 		ext.w	d1
 		move.w	d1,d3
 		lsl.w	#$04,d1
-		add.b	$00000003(a1),d1
+		add.b	SubY(a1),d1
 		jsr	(j_MultiplyD3By148).l
 		add.w	d2,d3
 		add.w	d2,d3
 		addi.l	#g_HeightMap,d3
-		move.w	d3,$00000028(a1)
+		move.w	d3,HeightmapOffset(a1)
 		movea.l	d3,a0
-		move.w	(a0),$00000022(a1)
-		move.b	$00000004(a1),d2
+		move.w	(a0),GroundHeight(a1)
+		move.b	RotationAndSize(a1),d2
 		andi.w	#$003E,d2
 		clr.w	d3
-		move.b	$00000005(a1),d3
+		move.b	Height(a1),d3
 		adda.w	#$0012,a1
 		add.w	(a1)+,d3
 		subq.w	#$01,d3
-		cmpi.b	#$1C,-$00000009(a1)
-		bne.s	loc_19B1E
-		move.w	-$00000002(a1),d3
+		cmpi.b	#SpriteB_Mushroom,(SpriteGraphic-CentreX)(a1)
+		bne.s	loc_19B1E		  ; 0052
+		move.w	(Z-CentreX)(a1),d3	  ; 10
 
 loc_19B1E:					  ; CODE XREF: sub_19AC8+50j
-		move.w	d3,$00000040(a1)
-		move.w	d0,(a1)+
-		move.w	d1,(a1)+
+		move.w	d3,(HitBoxZEnd-CentreX)(a1) ; 0052
+		move.w	d0,(a1)+		  ; CentreX
+		move.w	d1,(a1)+		  ; CentreY
 		sub.w	d2,d0
 		addq.w	#$01,d0
-		move.w	d0,(a1)+
+		move.w	d0,(a1)+		  ; HitBoxXStart
 		add.w	d2,d0
 		add.w	d2,d0
 		subq.w	#$02,d0
-		move.w	d0,(a1)+
+		move.w	d0,(a1)+		  ; HitBoxXEnd
 		sub.w	d2,d1
 		addq.w	#$01,d1
-		move.w	d1,(a1)+
+		move.w	d1,(a1)+		  ; HitBoxYStart
 		add.w	d2,d1
 		add.w	d2,d1
 		subq.w	#$02,d1
-		move.w	d1,(a1)+
+		move.w	d1,(a1)+		  ; HitBoxYEnd
 		rts
 ; End of function sub_19AC8
 

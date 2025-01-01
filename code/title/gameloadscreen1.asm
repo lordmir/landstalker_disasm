@@ -5,7 +5,7 @@
 sub_F346:					  ; CODE XREF: sub_F78E+50p
 		moveq	#$00000000,d7
 		move.w	(g_HourCount).l,d7
-		mulu.w	#$0064,d7
+		mulu.w	#00100,d7
 		add.w	(g_MinuteCount).l,d7
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF0F96).l,a0
@@ -463,7 +463,7 @@ LoadGameStartPalette:				  ; CODE XREF: ROM:0000EECCp
 		lea	(g_Pal0Base).l,a1
 		bsr.s	CopyPalette_0
 		lea	(g_Pal0Base).l,a0
-		lea	g_Pal1Base-g_Pal0Base(a0),a1
+		lea	$00000020(a0),a1
 		bsr.w	CopyPalette_0
 		lea	$00000040(a0),a1
 ; End of function LoadGameStartPalette

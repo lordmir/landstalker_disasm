@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 
-loc_8D84:					  ; CODE XREF: ROM:000016CEp
-						  ; DATA XREF: sub_4A6t
+StartGame:					  ; CODE XREF: ROM:000016CEp
+						  ; DATA XREF: j_StartGamet
 		jsr	(DisableDisplayAndInts).l
 		move.l	#$C0760000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
@@ -15,11 +15,11 @@ loc_8D84:					  ; CODE XREF: ROM:000016CEp
 		jsr	(DisableVDPSpriteUpdate).l
 		jsr	(FlushDMACopyQueue).l
 		bsr.w	LoadHUDSprites
-		bsr.w	sub_906C
-		bsr.w	sub_90C4
+		bsr.w	InitScrollRegs
+		bsr.w	InitBlocks
 		cmpi.w	#$008B,(g_RmNum1).l
 		beq.s	Intro
-		jsr	(sub_10344).l
+		jsr	(j_RefreshAllHUD).l
 		jsr	(j_RefreshHUD).l
 		jmp	(FadeFromBlack).l
 ; ---------------------------------------------------------------------------
@@ -66,7 +66,7 @@ loc_8E10:					  ; CODE XREF: ROM:00008E3Aj
 
 sub_8E9C:					  ; CODE XREF: ROM:00002EB4j
 						  ; sub_620A+12p ...
-		bsr.s	sub_8EA0
+		bsr.s	InitVDP
 		bra.s	FadeInFromDarkness
 ; End of function sub_8E9C
 
@@ -74,14 +74,14 @@ sub_8E9C:					  ; CODE XREF: ROM:00002EB4j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_8EA0:					  ; CODE XREF: sub_620A+FAp
+InitVDP:					  ; CODE XREF: sub_620A+FAp
 						  ; sub_620A+136p ...
 		jsr	(j_RefreshAndClearTextbox).l
 		bsr.w	LoadHUDSprites
-		bsr.w	sub_906C
-		bsr.w	sub_90C4
+		bsr.w	InitScrollRegs
+		bsr.w	InitBlocks
 		rts
-; End of function sub_8EA0
+; End of function InitVDP
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -111,7 +111,7 @@ loc_8ECE:					  ; CODE XREF: FadeInFromDarkness+3Aj
 
 
 FadeOutToDarkness:				  ; CODE XREF: ROM:00002E56p
-						  ; sub_620A:loc_620Ep	...
+						  ; sub_620A:WarpToRoomp ...
 		jsr	(InitFadeToBlackParams).l
 		move.w	#$0006,d6
 

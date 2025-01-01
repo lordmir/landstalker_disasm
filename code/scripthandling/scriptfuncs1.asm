@@ -41,8 +41,6 @@ DisplayItemPriceMessage:			  ; CODE XREF: ROM:ShopPrice_01p
 		move.w	(a0),d0
 		bsr.w	RunTextCmd
 		movem.l	(sp)+,d0-d1/a0
-
-loc_24F06:
 		addq.l	#$04,sp
 		rts
 ; End of function DisplayItemPriceMessage

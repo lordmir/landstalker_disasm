@@ -32,8 +32,8 @@ j_LookupChestContents:				  ; DATA XREF: InitialiseSprites+214t
 
 ; Attributes: thunk
 
-sub_9B00C:					  ; DATA XREF: sub_7052+AAt
-						  ; sub_7052+E4t ...
+sub_9B00C:					  ; DATA XREF: CheckOpenChest+AAt
+						  ; CheckOpenChest+E4t	...
 		jmp	sub_9EB9C(pc)		  ; Church in cave
 ; End of function sub_9B00C
 
@@ -83,8 +83,8 @@ loc_9B044:					  ; CODE XREF: LoadSpriteBehaviour+Aj
 		lea	SpriteBehaviourTable(pc),a1
 		adda.l	d1,a1
 		move.l	a1,BehaviourLUTPtr(a5)
-		move.b	(a1)+,Unk2B(a5)
-		move.b	(a1),Unk2A(a5)
+		move.b	(a1)+,BehavCmd(a5)
+		move.b	(a1),BehavParam(a5)
 		rts
 ; End of function LoadSpriteBehaviour
 

@@ -27,7 +27,7 @@ loc_28D74:					  ; CODE XREF: ProcessScriptWord+Aj
 loc_28D86:					  ; CODE XREF: ProcessScriptWord+Ej
 		btst	#$0E,d0			  ; Bit	14 - Clear textbox
 		beq.s	loc_28D90		  ; Bit	13 - Don't process any more words
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 
 loc_28D90:					  ; CODE XREF: ProcessScriptWord+26j
 		btst	#$0D,d0			  ; Bit	13 - Don't process any more words
@@ -37,11 +37,11 @@ loc_28D90:					  ; CODE XREF: ProcessScriptWord+26j
 ; End of function ProcessScriptWord
 
 ; ---------------------------------------------------------------------------
-ActionTable:	dc.w LoadValueIntoFF1196-ActionTable ; DATA XREF: ProcessScriptWord+18t
+ActionTable:	dc.w LoadItemIntoSlot0-ActionTable ; DATA XREF:	ProcessScriptWord+18t
 						  ; ROM:ActionTableo ...
-		dc.w LoadValueIntoFF1198-ActionTable
-		dc.w LoadValueIntoFF119A-ActionTable
-		dc.w LoadValueIntoFF119C-ActionTable
+		dc.w LoadItemIntoSlot1-ActionTable
+		dc.w LoadItemIntoSlot2-ActionTable
+		dc.w LoadItemIntoSlot3-ActionTable
 		dc.w GetNumericValue-ActionTable
 		dc.w DoSpecialAction-ActionTable
 		dc.w SwitchCharacter-ActionTable
@@ -53,7 +53,7 @@ ActionTable:	dc.w LoadValueIntoFF1196-ActionTable ; DATA XREF: ProcessScriptWord
 DisplayTextFromScriptWord:			  ; CODE XREF: ProcessScriptWord+Cp
 		move.l	d0,-(sp)
 		andi.w	#$1FFF,d0
-		addi.w	#$004D,d0
+		addi.w	#SCRIPT_STRINGS_BEGIN,d0
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		move.l	(sp)+,d0
 		rts
@@ -63,7 +63,7 @@ DisplayTextFromScriptWord:			  ; CODE XREF: ProcessScriptWord+Cp
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadValueIntoFF1196:				  ; DATA XREF: ROM:ActionTableo
+LoadItemIntoSlot0:				  ; DATA XREF: ROM:ActionTableo
 		movem.l	d0/a1,-(sp)
 		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
 		cmpi.w	#$03FF,d0
@@ -73,19 +73,19 @@ LoadValueIntoFF1196:				  ; DATA XREF: ROM:ActionTableo
 		bra.s	loc_28DDE
 ; ---------------------------------------------------------------------------
 
-loc_28DD8:					  ; CODE XREF: LoadValueIntoFF1196+Ej
+loc_28DD8:					  ; CODE XREF: LoadItemIntoSlot0+Ej
 		move.w	d0,(word_FF1196).l
 
-loc_28DDE:					  ; CODE XREF: LoadValueIntoFF1196+18j
+loc_28DDE:					  ; CODE XREF: LoadItemIntoSlot0+18j
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function LoadValueIntoFF1196
+; End of function LoadItemIntoSlot0
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadValueIntoFF1198:				  ; DATA XREF: ROM:ActionTableo
+LoadItemIntoSlot1:				  ; DATA XREF: ROM:ActionTableo
 		movem.l	d0/a1,-(sp)
 		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
 		cmpi.w	#$03FF,d0
@@ -95,19 +95,19 @@ LoadValueIntoFF1198:				  ; DATA XREF: ROM:ActionTableo
 		bra.s	loc_28E04
 ; ---------------------------------------------------------------------------
 
-loc_28DFE:					  ; CODE XREF: LoadValueIntoFF1198+Ej
+loc_28DFE:					  ; CODE XREF: LoadItemIntoSlot1+Ej
 		move.w	d0,(word_FF1198).l
 
-loc_28E04:					  ; CODE XREF: LoadValueIntoFF1198+18j
+loc_28E04:					  ; CODE XREF: LoadItemIntoSlot1+18j
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function LoadValueIntoFF1198
+; End of function LoadItemIntoSlot1
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadValueIntoFF119A:				  ; DATA XREF: ROM:ActionTableo
+LoadItemIntoSlot2:				  ; DATA XREF: ROM:ActionTableo
 		movem.l	d0/a1,-(sp)
 		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
 		cmpi.w	#$03FF,d0
@@ -117,19 +117,19 @@ LoadValueIntoFF119A:				  ; DATA XREF: ROM:ActionTableo
 		bra.s	loc_28E2A
 ; ---------------------------------------------------------------------------
 
-loc_28E24:					  ; CODE XREF: LoadValueIntoFF119A+Ej
+loc_28E24:					  ; CODE XREF: LoadItemIntoSlot2+Ej
 		move.w	d0,(word_FF119A).l
 
-loc_28E2A:					  ; CODE XREF: LoadValueIntoFF119A+18j
+loc_28E2A:					  ; CODE XREF: LoadItemIntoSlot2+18j
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function LoadValueIntoFF119A
+; End of function LoadItemIntoSlot2
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadValueIntoFF119C:				  ; DATA XREF: ROM:ActionTableo
+LoadItemIntoSlot3:				  ; DATA XREF: ROM:ActionTableo
 		movem.l	d0/a1,-(sp)
 		andi.l	#$000003FF,d0
 		cmpi.w	#$03FF,d0		  ; 0x03FF - special value means next operand is an address
@@ -139,13 +139,13 @@ LoadValueIntoFF119C:				  ; DATA XREF: ROM:ActionTableo
 		bra.s	loc_28E50
 ; ---------------------------------------------------------------------------
 
-loc_28E4A:					  ; CODE XREF: LoadValueIntoFF119C+Ej
+loc_28E4A:					  ; CODE XREF: LoadItemIntoSlot3+Ej
 		move.w	d0,(word_FF119C).l
 
-loc_28E50:					  ; CODE XREF: LoadValueIntoFF119C+18j
+loc_28E50:					  ; CODE XREF: LoadItemIntoSlot3+18j
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function LoadValueIntoFF119C
+; End of function LoadItemIntoSlot3
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -321,7 +321,7 @@ loc_28F98:					  ; CODE XREF: LoadTextboxGraphics+Cj
 OpenTextbox:					  ; CODE XREF: ROM:00028EBCp
 						  ; ROM:00028EE2p ...
 		movem.l	d0-a6,-(sp)
-		bsr.w	j_ClearTextbox
+		bsr.w	j_ReloadTextbox
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		movem.l	(sp)+,d0-a6
@@ -332,7 +332,7 @@ OpenTextbox:					  ; CODE XREF: ROM:00028EBCp
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ClearTextbox_0:					  ; CODE XREF: ROM:loc_24B3Ep
+ClearTextbox:					  ; CODE XREF: ROM:loc_24B3Ep
 						  ; ROM:000250C4p ...
 		movem.l	d0-a6,-(sp)
 		btst	#$00,(byte_FF1902).l
@@ -340,10 +340,10 @@ ClearTextbox_0:					  ; CODE XREF: ROM:loc_24B3Ep
 		bsr.w	j_SetUpTextDisplay
 		bclr	#$00,(byte_FF1902).l
 
-loc_28FD2:					  ; CODE XREF: ClearTextbox_0+Cj
+loc_28FD2:					  ; CODE XREF: ClearTextbox+Cj
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function ClearTextbox_0
+; End of function ClearTextbox
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -467,7 +467,7 @@ GetSpeakerSfx:					  ; CODE XREF: ROM:000251E2p
 		move.b	d1,d0			  ; d0 - current talker	script num
 		jsr	(j_GetSpeakerSpriteId).l  ; d1 - current talker	sprite ID
 		bcs.s	loc_290C2
-		move.w	d1,(g_speakerSpriteId).l
+		move.w	d1,(g_SpeakerSpriteId).l
 		lea	SpriteIdToTalkSfx(pc),a0
 
 loc_290AC:					  ; CODE XREF: GetSpeakerSfx+2Cj

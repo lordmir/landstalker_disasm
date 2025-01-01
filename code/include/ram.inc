@@ -544,7 +544,7 @@ g_FrameCount:        equ $00FF0FDE
 g_MinuteCount:       equ $00FF0FE0
 g_HourCount:         equ $00FF0FE2
 g_Flags:             equ $00FF1000
-g_Vars:              equ $00FF1020
+g_AdditionalFlags:   equ $00FF1020
 g_Inventory:         equ $00FF1040
 g_ChestOpenFlags:    equ $00FF1080
 g_RoomVisitedFlags:  equ $00FF10C0
@@ -563,7 +563,7 @@ g_RoomMinHeight:     equ $00FF1130
 g_RoomMaxHeight:     equ $00FF1131
 g_UpdateHUDFlag:     equ $00FF1132
 byte_FF1133:         equ $00FF1133
-unk_FF1134:          equ $00FF1134
+byte_FF1134:         equ $00FF1134
 g_PlayerMoving:      equ $00FF113C
 g_SwordButtonMask:   equ $00FF113D
 g_LadderClimbJumpState: equ $00FF113E
@@ -578,7 +578,7 @@ g_PlayerStatus:      equ $00FF1146
 byte_FF1147:         equ $00FF1147
 byte_FF1148:         equ $00FF1148
 byte_FF1149:         equ $00FF1149
-byte_FF114A:         equ $00FF114A
+g_ParalysisCheckCount: equ $00FF114A
 g_FridayAnimation1:  equ $00FF114B
 g_FridayAnimFramecount: equ $00FF114C
 g_FridayAnimation2:  equ $00FF114D
@@ -613,10 +613,10 @@ g_RmNum1:            equ $00FF1204
 RmNum2:              equ $00FF1206
 word_FF1208:         equ $00FF1208
 g_SwordCharge_0:     equ $00FF120A
-word_FF120C:         equ $00FF120C
+g_CarriedEntity:     equ $00FF120C
 g_Gold:              equ $00FF120E
-unk_FF1210:          equ $00FF1210
-unk_FF1218:          equ $00FF1218
+word_FF1210:         equ $00FF1210
+WarpTbl:             equ $00FF1218
 g_RoomFallDest:      equ $00FF12DA
 g_RoomClimbDest:     equ $00FF12DC
 g_ControllerPlayback: equ $00FF12DE
@@ -666,7 +666,7 @@ word_FF1920:         equ $00FF1920
 word_FF1922:         equ $00FF1922
 word_FF1924:         equ $00FF1924
 g_Character:         equ $00FF1926
-g_speakerSpriteId:   equ $00FF1928
+g_SpeakerSpriteId:   equ $00FF1928
 unk_FF192A:          equ $00FF192A
 unk_FF193E:          equ $00FF193E
 word_FF1A7E:         equ $00FF1A7E
@@ -2315,8 +2315,8 @@ Sprite15_Defence:    equ $00FF5BFC
 Sprite15_MaxHealth:  equ $00FF5BFE
 EndOfSpriteTable:    equ $00FF5C00
 g_Blockset:          equ $00FF5C02
-g_BackgroundBlocks:  equ $00FF7C02
-g_ForegroundBlocks:  equ $00FFA6CA
+g_ForegroundBlocks:  equ $00FF7C02
+g_BackgroundBlocks:  equ $00FFA6CA
 g_HeightMap:         equ $00FFD192
 Stack:               equ $00FFFC5A
 ExceptType:          equ $00FFFFF8

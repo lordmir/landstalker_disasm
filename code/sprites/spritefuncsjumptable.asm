@@ -3,7 +3,7 @@
 
 ; Attributes: thunk
 
-sub_10300:					  ; DATA XREF: sub_16DC+3Ct
+sub_10300:					  ; DATA XREF: GameLoop+3Ct
 		jmp	sub_178C8(pc)
 ; End of function sub_10300
 
@@ -17,18 +17,18 @@ sub_10300:					  ; DATA XREF: sub_16DC+3Ct
 
 ; Attributes: thunk
 
-sub_10310:					  ; DATA XREF: sub_16DC+5Et
-		jmp	sub_103DE(pc)
-; End of function sub_10310
+j_UpdateFrames:					  ; DATA XREF: GameLoop+5Et
+		jmp	UpdateFrames(pc)
+; End of function j_UpdateFrames
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_10314:					  ; DATA XREF: sub_7274+Et
-		jmp	sub_10404(pc)
-; End of function sub_10314
+j_UpdateSpriteFrame:				  ; DATA XREF: sub_7274+Et
+		jmp	UpdateSpriteFrame(pc)
+; End of function j_UpdateSpriteFrame
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -65,7 +65,7 @@ j_GetGold:					  ; DATA XREF: ROM:000273C8t
 
 ; Attributes: thunk
 
-j_AddGold:					  ; DATA XREF: sub_7052+A4t
+j_AddGold:					  ; DATA XREF: CheckOpenChest+A4t
 						  ; ROM:000088FCt ...
 		jmp	AddGold(pc)
 ; End of function j_AddGold
@@ -94,7 +94,7 @@ j_IncrementSwordCharge:				  ; DATA XREF: UpdateSwordCharge+8t
 
 ; Attributes: thunk
 
-j_DecreaseSwordCharge:				  ; DATA XREF: sub_66AC+8At
+j_DecreaseSwordCharge:				  ; DATA XREF: ProcessActionButton+8At
 		jmp	DecreaseSwordCharge(pc)
 ; End of function j_DecreaseSwordCharge
 
@@ -104,7 +104,7 @@ j_DecreaseSwordCharge:				  ; DATA XREF: sub_66AC+8At
 ; Attributes: thunk
 
 j_AddHealth:					  ; DATA XREF: sub_620A+45At
-						  ; sub_7052+138t ...
+						  ; CheckOpenChest+138t ...
 		jmp	AddHealth(pc)
 ; End of function j_AddHealth
 
@@ -121,7 +121,7 @@ j_RemoveHealth:					  ; DATA XREF: j_j_RemoveHealtht
 
 ; Attributes: thunk
 
-j_RefreshHUD:					  ; DATA XREF: sub_16DC+88t
+j_RefreshHUD:					  ; DATA XREF: GameLoop+88t
 						  ; sub_295E+30t ...
 		jmp	RefreshHUD(pc)
 ; End of function j_RefreshHUD
@@ -131,16 +131,16 @@ j_RefreshHUD:					  ; DATA XREF: sub_16DC+88t
 
 ; Attributes: thunk
 
-sub_10344:					  ; DATA XREF: ROM:00008DE4t
-		jmp	sub_1690A(pc)
-; End of function sub_10344
+j_RefreshAllHUD:				  ; DATA XREF: ROM:00008DE4t
+		jmp	RefreshAllHUD(pc)
+; End of function j_RefreshAllHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_10348:					  ; DATA XREF: sub_16DC+28t
+sub_10348:					  ; DATA XREF: GameLoop+28t
 		jmp	loc_15C1C(pc)
 ; End of function sub_10348
 
@@ -149,7 +149,7 @@ sub_10348:					  ; DATA XREF: sub_16DC+28t
 
 ; Attributes: thunk
 
-sub_1034C:					  ; DATA XREF: sub_16DC+54t
+sub_1034C:					  ; DATA XREF: GameLoop+54t
 		jmp	sub_16420(pc)
 ; End of function sub_1034C
 
@@ -158,7 +158,7 @@ sub_1034C:					  ; DATA XREF: sub_16DC+54t
 
 ; Attributes: thunk
 
-sub_10350:					  ; DATA XREF: sub_16DC+64t
+sub_10350:					  ; DATA XREF: GameLoop+64t
 		jmp	sub_10ACE(pc)
 ; End of function sub_10350
 
@@ -167,16 +167,16 @@ sub_10350:					  ; DATA XREF: sub_16DC+64t
 
 ; Attributes: thunk
 
-sub_10354:					  ; DATA XREF: sub_4374+7Ct
+j_LoadStatusGfx:				  ; DATA XREF: sub_4374+7Ct
 		jmp	LoadStatusGfx(pc)
-; End of function sub_10354
+; End of function j_LoadStatusGfx
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_10358:					  ; DATA XREF: sub_16DC+2Et
+sub_10358:					  ; DATA XREF: GameLoop+2Et
 		jmp	sub_16220(pc)
 ; End of function sub_10358
 
@@ -187,7 +187,7 @@ sub_10358:					  ; DATA XREF: sub_16DC+2Et
 
 ; Attributes: thunk
 
-j_UpdateEkeEkeHUD:				  ; DATA XREF: sub_7052+110t
+j_UpdateEkeEkeHUD:				  ; DATA XREF: CheckOpenChest+110t
 						  ; ROM:000086E0t ...
 		jmp	UpdateEkeEkeHUD(pc)
 ; End of function j_UpdateEkeEkeHUD
@@ -207,7 +207,7 @@ j_MarkHUDForUpdate:				  ; DATA XREF: sub_295E+2At
 
 ; Attributes: thunk
 
-j_AddToMaxHealth:				  ; DATA XREF: sub_7052+12Et
+j_AddToMaxHealth:				  ; DATA XREF: CheckOpenChest+12Et
 						  ; GetItem+14t
 		jmp	AddToMaxHealth(pc)
 ; End of function j_AddToMaxHealth
@@ -239,7 +239,7 @@ j_GetPlayerStatus:				  ; DATA XREF: ROM:ItemUseDetoxGrasst
 
 ; Attributes: thunk
 
-sub_10380:					  ; DATA XREF: sub_16DC+76t
+sub_10380:					  ; DATA XREF: GameLoop+76t
 		jmp	sub_16602(pc)
 ; End of function sub_10380
 
@@ -248,7 +248,7 @@ sub_10380:					  ; DATA XREF: sub_16DC+76t
 
 ; Attributes: thunk
 
-sub_10384:					  ; DATA XREF: sub_16DC+A2t
+sub_10384:					  ; DATA XREF: GameLoop+A2t
 		jmp	sub_166E8(pc)
 ; End of function sub_10384
 
@@ -273,8 +273,8 @@ sub_1038E:					  ; DATA XREF: LoadRoom_0+2Et
 
 ; ---------------------------------------------------------------------------
 
-loc_10394:					  ; DATA XREF: ROM:loc_1A8AECt
-		jmp	loc_164EA(pc)
+j_PlayerDeath:					  ; DATA XREF: ROM:loc_1A8AECt
+		jmp	PlayerDeath(pc)
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -290,46 +290,46 @@ j_AddStatusEffect:				  ; DATA XREF: ROM:000089A0t
 
 ; Attributes: thunk
 
-sub_1039C:					  ; DATA XREF: LoadSpecialAIt
-		jmp	sub_178FE(pc)
-; End of function sub_1039C
+j_OnTick:					  ; DATA XREF: j_j_OnTickt
+		jmp	OnTick(pc)
+; End of function j_OnTick
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-j_LookupSpriteUnknownVal6F:			  ; DATA XREF: sub_1A83E6+3AEt
-		jmp	LookupSpriteUnknownVal6F(pc)
-; End of function j_LookupSpriteUnknownVal6F
+j_LookupSpriteAnimFlags:			  ; DATA XREF: sub_1A83E6+3AEt
+		jmp	LookupSpriteAnimFlags(pc)
+; End of function j_LookupSpriteAnimFlags
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_103A4:					  ; DATA XREF: ROM:loc_8CEEt
-		jmp	(sub_1A4BC).l
-; End of function sub_103A4
+j_UnlockDoor:					  ; DATA XREF: ROM:loc_8CEEt
+		jmp	(UnlockDoor).l
+; End of function j_UnlockDoor
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-j_RefreshMaxHealthHUD:				  ; DATA XREF: sub_295E+24t
+j_RefreshCurrentHealthHUD:			  ; DATA XREF: sub_295E+24t
 						  ; ROM:00008902t ...
 		jmp	RefreshCurrentHealthHUD(pc)
-; End of function j_RefreshMaxHealthHUD
+; End of function j_RefreshCurrentHealthHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_103AE:					  ; DATA XREF: sub_7718+16t
-		jmp	sub_16CC6(pc)
-; End of function sub_103AE
+j_RefreshSwordChargeHUD:			  ; DATA XREF: sub_7718+16t
+		jmp	RefreshSwordChargeHUD(pc)
+; End of function j_RefreshSwordChargeHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -356,9 +356,9 @@ sub_103B8:					  ; DATA XREF: ROM:001A95CEt
 
 ; Attributes: thunk
 
-sub_103BE:					  ; DATA XREF: ROM:loc_8B2At
-		jmp	(sub_1A4A4).l
-; End of function sub_103BE
+j_CheckUnlockDoor:				  ; DATA XREF: ROM:loc_8B2At
+		jmp	(CheckUnlockDoor).l
+; End of function j_CheckUnlockDoor
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -401,7 +401,7 @@ sub_103D2:					  ; DATA XREF: sub_223At
 
 ; Attributes: thunk
 
-sub_103D8:					  ; DATA XREF: sub_16DC+4Et
+sub_103D8:					  ; DATA XREF: GameLoop+4Et
 		jmp	(sub_190D4).l
 ; End of function sub_103D8
 

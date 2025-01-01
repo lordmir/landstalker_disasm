@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckAndDoLavaPaletteFx:			  ; DATA XREF: sub_16DC+7Ct
+CheckAndDoLavaPaletteFx:			  ; DATA XREF: GameLoop+7Ct
 		cmpi.w	#$020C,(g_RmNum1).l	  ; Lake shrine	exterior with lava
 		bne.s	locret_260C
 		move.b	(byte_FF0F9D).l,d0

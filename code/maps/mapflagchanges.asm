@@ -60,7 +60,7 @@ locret_4E44:					  ; CODE XREF: CheckForGraphicSwapFlags+2j
 
 CheckTreeWarpFlags:				  ; CODE XREF: CheckRoomGfxFlags+2p
 		lea	TreeWarpGfxSwapFlags(pc),a0
-		btst	#$07,(g_Vars+4).l
+		btst	#$07,(g_AdditionalFlags+4).l
 		beq.s	locret_4E8E
 
 loc_4E54:					  ; CODE XREF: CheckTreeWarpFlags+46j
@@ -99,56 +99,56 @@ locret_4E8E:					  ; CODE XREF: CheckTreeWarpFlags+Cj
 
 sub_4E90:					  ; CODE XREF: CheckForGraphicSwapFlags+2Ep
 						  ; CheckTreeWarpFlags+3Ep
-		bsr.s	sub_4E94
-		bra.s	sub_4EAE
+		bsr.s	MapTileSwap
+		bra.s	HMTileSwap
 ; End of function sub_4E90
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4E94:					  ; CODE XREF: sub_4B52+3Ep
+MapTileSwap:					  ; CODE XREF: DoTileSwap+3Ep
 						  ; sub_4E90p
-		bsr.s	sub_4EC6
-		bsr.w	sub_4DBC
+		bsr.s	LoadTileSwap
+		bsr.w	GetMapOffsets
 		movea.l	a1,a3
 		movea.l	a2,a4
-		bsr.w	sub_4DBC
+		bsr.w	GetMapOffsets
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		ext.w	d0
 		ext.w	d1
-		bsr.s	sub_4EF4
+		bsr.s	DoMapTileSwap
 		rts
-; End of function sub_4E94
+; End of function MapTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4EAE:					  ; CODE XREF: sub_4B52+36p
+HMTileSwap:					  ; CODE XREF: DoTileSwap+36p
 						  ; sub_4E90+2j
-		bsr.w	sub_4DD8
+		bsr.w	GetHeightmapCoordOffset
 		movea.l	a1,a2
-		bsr.w	sub_4DD8
+		bsr.w	GetHeightmapCoordOffset
 		move.b	(a0)+,d0
 		move.b	(a0)+,d1
 		ext.w	d0
 		ext.w	d1
-		bsr.w	sub_4F8C
+		bsr.w	SwapHMTiles
 		rts
-; End of function sub_4EAE
+; End of function HMTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4EC6:					  ; CODE XREF: sub_4B52+14p
-						  ; sub_4E94p
+LoadTileSwap:					  ; CODE XREF: DoTileSwap+14p
+						  ; MapTileSwapp
 		subi.b	#$08,d0
 		lea	TileSwaps(pc),a0
 
-loc_4ECE:					  ; CODE XREF: sub_4EC6+20j
+loc_4ECE:					  ; CODE XREF: LoadTileSwap+20j
 		move.w	$0000000C(a0),d1
 		bmi.s	loc_4EE8
 		cmp.w	(g_RmNum1).l,d1
@@ -156,13 +156,13 @@ loc_4ECE:					  ; CODE XREF: sub_4EC6+20j
 		cmp.b	$0000000E(a0),d0
 		beq.s	locret_4EF2
 
-loc_4EE2:					  ; CODE XREF: sub_4EC6+14j
+loc_4EE2:					  ; CODE XREF: LoadTileSwap+14j
 		lea	$00000010(a0),a0
 		bra.s	loc_4ECE
 ; ---------------------------------------------------------------------------
 
-loc_4EE8:					  ; CODE XREF: sub_4EC6+Cj
-						  ; sub_4EC6+2Aj
+loc_4EE8:					  ; CODE XREF: LoadTileSwap+Cj
+						  ; LoadTileSwap+2Aj
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_NigelDropObj2
@@ -172,23 +172,23 @@ loc_4EE8:					  ; CODE XREF: sub_4EC6+Cj
 		bra.s	loc_4EE8
 ; ---------------------------------------------------------------------------
 
-locret_4EF2:					  ; CODE XREF: sub_4EC6+1Aj
+locret_4EF2:					  ; CODE XREF: LoadTileSwap+1Aj
 		rts
-; End of function sub_4EC6
+; End of function LoadTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4EF4:					  ; CODE XREF: sub_4E94+16p
+DoMapTileSwap:					  ; CODE XREF: MapTileSwap+16p
 		cmpi.b	#$01,$00000009(a0)
 		beq.s	loc_4F24
 		bhi.s	loc_4F4E
 
-loc_4EFE:					  ; CODE XREF: sub_4EF4+2Aj
+loc_4EFE:					  ; CODE XREF: DoMapTileSwap+2Aj
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F02:					  ; CODE XREF: sub_4EF4+12j
+loc_4F02:					  ; CODE XREF: DoMapTileSwap+12j
 		move.w	(a3)+,(a1)+
 		move.w	(a4)+,(a2)+
 		dbf	d0,loc_4F02
@@ -201,14 +201,14 @@ loc_4F02:					  ; CODE XREF: sub_4EF4+12j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_4F24:					  ; CODE XREF: sub_4EF4+6j
+loc_4F24:					  ; CODE XREF: DoMapTileSwap+6j
 		addq.w	#$02,a1
 		addq.w	#$02,a3
 
-loc_4F28:					  ; CODE XREF: sub_4EF4+54j
+loc_4F28:					  ; CODE XREF: DoMapTileSwap+54j
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F2C:					  ; CODE XREF: sub_4EF4+3Cj
+loc_4F2C:					  ; CODE XREF: DoMapTileSwap+3Cj
 		move.w	(a3)+,(a1)+
 		move.w	(a4)+,(a2)+
 		dbf	d0,loc_4F2C
@@ -221,14 +221,14 @@ loc_4F2C:					  ; CODE XREF: sub_4EF4+3Cj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_4F4E:					  ; CODE XREF: sub_4EF4+8j
+loc_4F4E:					  ; CODE XREF: DoMapTileSwap+8j
 		lea	$00000094(a2),a2
 		lea	$00000094(a4),a4
 
-loc_4F56:					  ; CODE XREF: sub_4EF4+92j
+loc_4F56:					  ; CODE XREF: DoMapTileSwap+92j
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F5A:					  ; CODE XREF: sub_4EF4+7Aj
+loc_4F5A:					  ; CODE XREF: DoMapTileSwap+7Aj
 		move.w	(a3),(a1)
 		move.w	(a4),(a2)
 		lea	$00000094(a1),a1
@@ -243,25 +243,25 @@ loc_4F5A:					  ; CODE XREF: sub_4EF4+7Aj
 		lea	$00000096(a4),a4
 		dbf	d1,loc_4F56
 		rts
-; End of function sub_4EF4
+; End of function DoMapTileSwap
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4F8C:					  ; CODE XREF: sub_4EAE+12p
-						  ; sub_4F8C+16j
+SwapHMTiles:					  ; CODE XREF: HMTileSwap+12p
+						  ; SwapHMTiles+16j
 		movem.l	d0/a1-a2,-(sp)
 
-loc_4F90:					  ; CODE XREF: sub_4F8C+6j
+loc_4F90:					  ; CODE XREF: SwapHMTiles+6j
 		move.w	(a2)+,(a1)+
 		dbf	d0,loc_4F90
 		movem.l	(sp)+,d0/a1-a2
 		lea	$00000094(a1),a1
 		lea	$00000094(a2),a2
-		dbf	d1,sub_4F8C
+		dbf	d1,SwapHMTiles
 		rts
-; End of function sub_4F8C
+; End of function SwapHMTiles
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -287,7 +287,7 @@ loc_4FB6:					  ; CODE XREF: sub_4FA8+40j
 		move.b	$00000003(a0),d1
 		andi.b	#$07,d1
 		bset	d1,(a1,d3.w)
-		bsr.w	sub_4B52
+		bsr.w	DoTileSwap
 
 locret_4FE4:					  ; CODE XREF: sub_4FA8+10j
 		rts

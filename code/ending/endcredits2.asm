@@ -12,7 +12,7 @@ UpdateCreditScroll:				  ; CODE XREF: sub_9ECDC:loc_9ECF8p
 
 ScrollCredits1Tile:				  ; CODE XREF: UpdateCreditScroll+Cj
 		lea	(g_HUD_Row1).l,a0
-		lea	g_HUD_Row2-g_HUD_Row1(a0),a1
+		lea	$00000080(a0),a1
 		move.w	#$013F,d7
 
 loc_9F662:					  ; CODE XREF: UpdateCreditScroll+20j

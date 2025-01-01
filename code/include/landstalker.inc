@@ -617,6 +617,7 @@ CHR_Slash:	 equ $00000044
 CHR_LessThan:	 equ $00000045
 CHR_GreaterThan: equ $00000046
 CHR_Colon:	 equ $00000047
+CHR_BEGIN_TALK:	 equ $00000047
 CHR_Dash:	 equ $00000048
 CHR_Apostrophe:	 equ $00000049
 CHR_DoubleQuote: equ $0000004A
@@ -630,8 +631,9 @@ CHR_NWArrow:	 equ $00000051
 CHR_NEArrow:	 equ $00000052
 CHR_SEArrow:	 equ $00000053
 CHR_SWArrow:	 equ $00000054
-CHR_55:		 equ $00000055			  ; String begin
-CHR_56:		 equ $00000056			  ; Down arrow prompt
+CHR_STR_BEGIN:	 equ $00000055			  ; String begin
+CHR_MULT:	 equ $00000055
+CHR_ARROW_PROMPT: equ $00000056			  ; Down arrow prompt
 CHR_57:		 equ $00000057			  ; Newline
 CHR_58:		 equ $00000058			  ; Yes/No prompt
 CHR_59:		 equ $00000059			  ; Pause
@@ -650,13 +652,19 @@ CHR_65:		 equ $00000065
 CHR_66:		 equ $00000066
 CHR_67:		 equ $00000067
 CHR_68:		 equ $00000068
-CHR_69:		 equ $00000069
-CHR_6A:		 equ $0000006A
-CHR_6B:		 equ $0000006B
+CHR_HYPHENATION_POINT: equ $00000069
+CHR_BREAKING_SPACE: equ	$0000006A
+CHR_BREAK_POINT: equ $0000006B
 CHR_6C:		 equ $0000006C
 CHR_6D:		 equ $0000006D
 CHR_6E:		 equ $0000006E
 CHR_6F:		 equ $0000006F
+
+; ---------------------------------------------------------------------------
+
+; enum Constants
+NUM_CHAR_NAMES:	 equ $0000003D
+SCRIPT_STRINGS_BEGIN: equ $0000004D
 
 ; ---------------------------------------------------------------------------
 
@@ -782,23 +790,24 @@ AnimationIndex1: equ $00000025
 AnimationFrame:	 equ $00000026
 AnimationFrame1: equ $00000027
 HeightmapOffset: equ $00000028
-Unk2A:		 equ $0000002A
-Unk2B:		 equ $0000002B
-Action:		 equ $0000002C
+BehavParam:	 equ $0000002A
+BehavCmd:	 equ $0000002B
+QueuedAction:	 equ $0000002C
 Action1:	 equ $0000002D
-AnimAction:	 equ $0000002E
+PrevAction:	 equ $0000002E
 AnimAction1:	 equ $0000002F
 SpriteUnderneath: equ $00000030
 BehaviourLUTPtr: equ $00000032
 BehaviourLUTIndex: equ $00000034
 GoldOrChestContents: equ $00000036
 ChestIndex:	 equ $00000037
-Flags4:		 equ $00000038
+Flags4:		 equ $00000038			  ; Bit	0 = Invincible / Solid
 FloorHeight:	 equ $00000039
 Dialogue:	 equ $0000003A
 SpriteType:	 equ $0000003B
 AttackStrength:	 equ $0000003C
 CurrentHealth:	 equ $0000003E
+CurrentSubHealth: equ $0000003F
 InitX:		 equ $00000040
 InitY:		 equ $00000041
 InitSubX:	 equ $00000042
@@ -818,22 +827,20 @@ Unk50:		 equ $00000050
 Unk51:		 equ $00000051
 InitZ:		 equ $00000052
 HitBoxZEnd:	 equ $00000054
+HitBoxSubZEnd:	 equ $00000055
 Unk56:		 equ $00000056
 Unk57:		 equ $00000057
 TempHealth:	 equ $00000058
-Unk5A:		 equ $0000005A
-Unk5B:		 equ $0000005B
-Unk5C:		 equ $0000005C
-Unk5D:		 equ $0000005D
+TargetX:	 equ $0000005A
+TargetY:	 equ $0000005B
+TargetSubX:	 equ $0000005C
+TargetSubY:	 equ $0000005D
 Unk5E:		 equ $0000005E
 Unk5F:		 equ $0000005F
 Unk60:		 equ $00000060
 Unk61:		 equ $00000061
-Unk62:		 equ $00000062
-Unk63:		 equ $00000063
-Unk64:		 equ $00000064
-Unk65:		 equ $00000065
-Unk66:		 equ $00000066
+RepeatPtr:	 equ $00000062
+RepeatCount:	 equ $00000066
 Unk67:		 equ $00000067
 Unk68:		 equ $00000068
 Unk69:		 equ $00000069
@@ -842,18 +849,19 @@ Unk6B:		 equ $0000006B
 Unk6C:		 equ $0000006C
 Unk6D:		 equ $0000006D
 Unk6E:		 equ $0000006E
-Unk6F:		 equ $0000006F
+AnimFlags:	 equ $0000006F
 Unk70:		 equ $00000070
 TileCopySource:	 equ $00000071
 InitBehaviourLUTPtr: equ $00000072
 InitGoldOrChestCont: equ $00000076
 ItemDrop:	 equ $00000077
-InitFlags4:	 equ $00000078
+InitFlags4_DropProbability: equ	$00000078
 ItemDropProbability: equ $00000079
 InitDialogue:	 equ $0000007A
 InitSpriteType:	 equ $0000007B
 Defence:	 equ $0000007C
 MaxHealth:	 equ $0000007E
 SPRITE_SIZE:	 equ $00000080
+ALL_SPRITES_SIZE: equ $00000800
 
 ;

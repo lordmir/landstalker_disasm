@@ -25,7 +25,7 @@ locret_9EBC4:					  ; CODE XREF: sub_9EB9C+8j
 
 CheckIfChestOpened:				  ; DATA XREF: j_CheckIfChestOpenedt
 		clr.w	d0
-		move.b	$00000037(a1),d0
+		move.b	ChestIndex(a1),d0
 		move.b	d0,d1
 		andi.b	#$07,d1
 		lsr.b	#$03,d0

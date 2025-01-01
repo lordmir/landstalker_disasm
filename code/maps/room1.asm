@@ -2,25 +2,25 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_9EF8:					  ; CODE XREF: LoadRoom_0+44p
-		lea	(unk_FF1218).l,a1
+LoadAllWarps:					  ; CODE XREF: LoadRoom_0+44p
+		lea	(WarpTbl).l,a1
 		clr.b	d7
 		move.w	(g_RmNum1).l,d0
-		bsr.s	sub_9F1C
+		bsr.s	LoadWarps
 		move.w	(g_RmNum1).l,d0
 		bsr.w	GetOriginalRoomNum
 		cmp.w	(g_RmNum1).l,d0
 		beq.w	locret_A0A0
-; End of function sub_9EF8
+; End of function LoadAllWarps
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_9F1C:					  ; CODE XREF: sub_9EF8+Ep
+LoadWarps:					  ; CODE XREF: LoadAllWarps+Ep
 		movea.l	(RoomExitsPtr).l,a0
 
-loc_9F22:					  ; CODE XREF: sub_9F1C+17Cj
+loc_9F22:					  ; CODE XREF: LoadWarps+17Cj
 		move.w	(a0),d1
 		bmi.w	loc_A09C
 		andi.w	#$03FF,d1
@@ -47,13 +47,13 @@ loc_9F22:					  ; CODE XREF: sub_9F1C+17Cj
 		bra.s	loc_9F74
 ; ---------------------------------------------------------------------------
 
-loc_9F6A:					  ; CODE XREF: sub_9F1C+48j
+loc_9F6A:					  ; CODE XREF: LoadWarps+48j
 		cmpi.b	#$20,d1
 		bne.s	loc_9F74
 		subi.w	#$0100,d5
 
-loc_9F74:					  ; CODE XREF: sub_9F1C+42j
-						  ; sub_9F1C+4Cj ...
+loc_9F74:					  ; CODE XREF: LoadWarps+42j
+						  ; LoadWarps+4Cj ...
 		move.w	d5,(a1)+
 		move.b	d6,d1
 		andi.b	#$0C,d6
@@ -65,13 +65,13 @@ loc_9F74:					  ; CODE XREF: sub_9F1C+42j
 		bra.s	loc_9F9C
 ; ---------------------------------------------------------------------------
 
-loc_9F90:					  ; CODE XREF: sub_9F1C+68j
+loc_9F90:					  ; CODE XREF: LoadWarps+68j
 		cmpi.b	#$08,d6
 		bne.w	loc_A096
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_9F9C:					  ; CODE XREF: sub_9F1C+72j
+loc_9F9C:					  ; CODE XREF: LoadWarps+72j
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
 		bhi.w	loc_A0A2
@@ -87,13 +87,13 @@ loc_9F9C:					  ; CODE XREF: sub_9F1C+72j
 		bra.s	loc_9FD0
 ; ---------------------------------------------------------------------------
 
-loc_9FC4:					  ; CODE XREF: sub_9F1C+9Cj
+loc_9FC4:					  ; CODE XREF: LoadWarps+9Cj
 		cmpi.b	#$08,d6
 		bne.w	loc_A096
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_9FD0:					  ; CODE XREF: sub_9F1C+A6j
+loc_9FD0:					  ; CODE XREF: LoadWarps+A6j
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
 		bhi.w	loc_A0A2
@@ -103,7 +103,7 @@ loc_9FD0:					  ; CODE XREF: sub_9F1C+A6j
 		bra.w	loc_A096
 ; ---------------------------------------------------------------------------
 
-loc_9FE4:					  ; CODE XREF: sub_9F1C+12j
+loc_9FE4:					  ; CODE XREF: LoadWarps+12j
 		move.w	$00000004(a0),d1
 		andi.w	#$03FF,d1
 		cmp.w	d1,d0
@@ -129,13 +129,13 @@ loc_9FE4:					  ; CODE XREF: sub_9F1C+12j
 		bra.s	loc_A032
 ; ---------------------------------------------------------------------------
 
-loc_A028:					  ; CODE XREF: sub_9F1C+106j
+loc_A028:					  ; CODE XREF: LoadWarps+106j
 		cmpi.b	#$20,d1
 		bne.s	loc_A032
 		addi.w	#$0100,d5
 
-loc_A032:					  ; CODE XREF: sub_9F1C+100j
-						  ; sub_9F1C+10Aj ...
+loc_A032:					  ; CODE XREF: LoadWarps+100j
+						  ; LoadWarps+10Aj ...
 		move.w	d5,(a1)+
 		move.b	d6,d1
 		andi.b	#$0C,d6
@@ -147,13 +147,13 @@ loc_A032:					  ; CODE XREF: sub_9F1C+100j
 		bra.s	loc_A056
 ; ---------------------------------------------------------------------------
 
-loc_A04C:					  ; CODE XREF: sub_9F1C+124j
+loc_A04C:					  ; CODE XREF: LoadWarps+124j
 		cmpi.b	#$08,d6
 		bne.s	loc_A096
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_A056:					  ; CODE XREF: sub_9F1C+12Ej
+loc_A056:					  ; CODE XREF: LoadWarps+12Ej
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
 		bhi.w	loc_A0A2
@@ -169,13 +169,13 @@ loc_A056:					  ; CODE XREF: sub_9F1C+12Ej
 		bra.s	loc_A086
 ; ---------------------------------------------------------------------------
 
-loc_A07C:					  ; CODE XREF: sub_9F1C+154j
+loc_A07C:					  ; CODE XREF: LoadWarps+154j
 		cmpi.b	#$08,d6
 		bne.s	loc_A096
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_A086:					  ; CODE XREF: sub_9F1C+15Ej
+loc_A086:					  ; CODE XREF: LoadWarps+15Ej
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
 		bhi.w	loc_A0A2
@@ -183,27 +183,27 @@ loc_A086:					  ; CODE XREF: sub_9F1C+15Ej
 		move.w	d4,(a1)+
 		move.w	d5,(a1)+
 
-loc_A096:					  ; CODE XREF: sub_9F1C+60j
-						  ; sub_9F1C+78j ...
+loc_A096:					  ; CODE XREF: LoadWarps+60j
+						  ; LoadWarps+78j ...
 		addq.l	#$08,a0
 		bra.w	loc_9F22
 ; ---------------------------------------------------------------------------
 
-loc_A09C:					  ; CODE XREF: sub_9F1C+8j
-						  ; sub_9F1C+18Aj ...
+loc_A09C:					  ; CODE XREF: LoadWarps+8j
+						  ; LoadWarps+18Aj ...
 		move.w	#$FFFF,(a1)
 
-locret_A0A0:					  ; CODE XREF: sub_9EF8+20j
+locret_A0A0:					  ; CODE XREF: LoadAllWarps+20j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_A0A2:					  ; CODE XREF: sub_9F1C+1Cj
-						  ; sub_9F1C+86j ...
+loc_A0A2:					  ; CODE XREF: LoadWarps+1Cj
+						  ; LoadWarps+86j ...
 		tst.w	(DebugModeEnable).w
 		bmi.w	loc_A09C
-		move.w	#$001D,d7
+		move.w	#00029,d7
 
-loc_A0AE:					  ; CODE XREF: sub_9F1C+1A0j
+loc_A0AE:					  ; CODE XREF: LoadWarps+1A0j
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_NigelDropObj2
@@ -212,7 +212,7 @@ loc_A0AE:					  ; CODE XREF: sub_9F1C+1A0j
 		jsr	(j_Sleep).l
 		dbf	d7,loc_A0AE
 		bra.s	loc_A09C
-; End of function sub_9F1C
+; End of function LoadWarps
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -220,7 +220,7 @@ loc_A0AE:					  ; CODE XREF: sub_9F1C+1A0j
 
 sub_A0C2:					  ; CODE XREF: sub_620A:loc_6212p
 						  ; sub_620A+F0p ...
-		lea	(unk_FF1218).l,a0
+		lea	(WarpTbl).l,a0
 		move.b	(Player_X).l,d0
 		move.b	(Player_Y).l,d1
 
@@ -329,7 +329,7 @@ loc_A17A:					  ; CODE XREF: CheckForRoomTransition+10j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-GetOriginalRoomNum:				  ; CODE XREF: sub_9EF8+16p
+GetOriginalRoomNum:				  ; CODE XREF: LoadAllWarps+16p
 						  ; sub_A12E+6p
 						  ; DATA XREF: ...
 		movem.l	d1-d3/a0-a1,-(sp)

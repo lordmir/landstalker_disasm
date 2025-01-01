@@ -216,12 +216,12 @@ HandleMap:
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
 		bcs.s	loc_250CA
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		bra.s	loc_250FA
 ; ---------------------------------------------------------------------------
 
 loc_250CA:					  ; CODE XREF: ROM:000250C2j
-		bsr.w	ClearTextbox_0
+		bsr.w	ClearTextbox
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicMap

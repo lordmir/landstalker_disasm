@@ -42,7 +42,7 @@ loc_177A4:					  ; CODE XREF: AddStatusEffect+2Ej
 
 loc_177B4:					  ; CODE XREF: AddStatusEffect+34j
 		move.w	#$04B0,(word_FF12E2).l
-		clr.b	(byte_FF114A).l
+		clr.b	(g_ParalysisCheckCount).l
 		rts
 ; End of function AddStatusEffect
 
@@ -85,7 +85,7 @@ AddGold:					  ; CODE XREF: ROM:00012F0Cp
 		move.w	#$FFFF,(g_Gold).l
 
 loc_177EC:					  ; CODE XREF: AddGold+6j
-		bsr.w	UpdateGoldHUD
+		bsr.w	RefreshGoldHUD
 		rts
 ; End of function AddGold
 
@@ -98,7 +98,7 @@ RemoveGold:					  ; CODE XREF: ROM:00012F56p
 		cmp.w	(g_Gold).l,d0
 		bhi.s	loc_17808
 		sub.w	d0,(g_Gold).l
-		bsr.w	UpdateGoldHUD
+		bsr.w	RefreshGoldHUD
 		tst.b	d0
 		rts
 ; ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ loc_1788C:					  ; CODE XREF: IncrementSwordCharge+12j
 		move.w	#$3200,(g_SwordCharge_0).l
 
 loc_178AE:					  ; CODE XREF: IncrementSwordCharge+4Cj
-		bsr.w	sub_16CC6
+		bsr.w	RefreshSwordChargeHUD
 
 locret_178B2:					  ; CODE XREF: IncrementSwordCharge+3Cj
 		rts
@@ -216,7 +216,7 @@ DecreaseSwordCharge:				  ; DATA XREF: j_DecreaseSwordCharget
 		sub.w	d0,(g_SwordCharge_0).l
 		bpl.s	locret_178C6
 		clr.w	(g_SwordCharge_0).l
-		bsr.w	sub_16CC6
+		bsr.w	RefreshSwordChargeHUD
 
 locret_178C6:					  ; CODE XREF: DecreaseSwordCharge+6j
 		rts
@@ -234,16 +234,16 @@ loc_178D0:					  ; CODE XREF: sub_178C8+28j
 		move.b	(a5),d0
 		bmi.s	locret_178F4
 		movem.l	d7/a5,-(sp)
-		tst.b	$0000004C(a5)
+		tst.b	InitFlags2(a5)
 		bmi.s	loc_178F6
 		cmpi.b	#$7F,d0
 		beq.s	loc_178E8
-		bsr.w	sub_178FE
+		bsr.w	OnTick
 
 loc_178E8:					  ; CODE XREF: sub_178C8+1Aj
 						  ; sub_178C8+34j
 		movem.l	(sp)+,d7/a5
-		lea	$00000080(a5),a5
+		lea	SPRITE_SIZE(a5),a5
 		dbf	d7,loc_178D0
 
 locret_178F4:					  ; CODE XREF: sub_178C8+Aj

@@ -13,7 +13,7 @@ loc_E83E:					  ; CODE XREF: sub_E832+8j
 		lsr.w	#$02,d0
 		andi.b	#$03,d0
 		cmpi.b	#$01,d0
-		bcs.w	loc_E4F0
+		bcs.w	WhiteFlash
 		jmp	(CopyBasePalleteToActivePalette).l
 ; End of function sub_E832
 
@@ -21,7 +21,7 @@ loc_E83E:					  ; CODE XREF: sub_E832+8j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E852:					  ; CODE XREF: sub_E56A+B4p
+sub_E852:					  ; CODE XREF: NoleWarp+B4p
 		move.w	#$0C00,-$0000012A(a6)
 		move.w	#$FE00,-$0000012C(a6)
 		move.w	#$0E00,-$0000012E(a6)
@@ -32,7 +32,7 @@ sub_E852:					  ; CODE XREF: sub_E56A+B4p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E866:					  ; CODE XREF: sub_E56A+66p
+sub_E866:					  ; CODE XREF: NoleWarp+66p
 		move.w	#$0200,-$0000012A(a6)
 		move.w	#$0200,-$0000012C(a6)
 		move.w	#$0E00,-$0000012E(a6)
@@ -43,7 +43,7 @@ sub_E866:					  ; CODE XREF: sub_E56A+66p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E87A:					  ; CODE XREF: sub_E56A+164p
+sub_E87A:					  ; CODE XREF: NoleWarp+164p
 
 ; FUNCTION CHUNK AT 0000E7EA SIZE 00000024 BYTES
 
@@ -79,7 +79,7 @@ loc_E898:					  ; CODE XREF: sub_E87A+18j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E8A8:					  ; CODE XREF: sub_E56A+15Cp
+sub_E8A8:					  ; CODE XREF: NoleWarp+15Cp
 		move.w	-$00000130(a6),d0
 		bne.s	loc_E8B0
 		rts
@@ -118,8 +118,8 @@ loc_E8DA:					  ; CODE XREF: sub_E8A8+3Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E8F8:					  ; CODE XREF: sub_E56A+F8p
-						  ; sub_E56A+158p
+sub_E8F8:					  ; CODE XREF: NoleWarp+F8p
+						  ; NoleWarp+158p
 		lea	(g_VDPSpr30_Y).l,a0
 		moveq	#$00000027,d7
 

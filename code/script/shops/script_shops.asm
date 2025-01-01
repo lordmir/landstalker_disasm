@@ -103,7 +103,7 @@ Shop_05:
 ShopPrice_06:
 		bsr.w	DisplayItemPriceMessage
 ; ---------------------------------------------------------------------------
-		ScriptJump  loc_25E82,$0	  ; Jump to address 0x025E82
+		ScriptJump  ShopPrice_06_1,$0	  ; Jump to address 0x025E82
 ; ---------------------------------------------------------------------------
 
 Shop_06:
@@ -119,7 +119,7 @@ Shop_06:
 						  ; 0xE072: PRINT MSG 0x00BF, MSGBOX CLEARED, END: "{5B}I'm so sorry....{5E}"
 ; ---------------------------------------------------------------------------
 
-loc_25E82:
+ShopPrice_06_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0153			  ; Bit	3 of flag 0x02A
@@ -134,7 +134,7 @@ loc_25E82:
 ShopPrice_07:
 		bsr.w	DisplayItemPriceMessage
 ; ---------------------------------------------------------------------------
-		ScriptJump  loc_25EC4,$0	  ; Jump to address 0x025EC4
+		ScriptJump  ShopPrice_07_1,$0	  ; Jump to address 0x025EC4
 ; ---------------------------------------------------------------------------
 
 Shop_07:
@@ -184,7 +184,7 @@ ShopSteal_07:					  ; ID 0xC, Script 0x1,	Speaker	SpriteB_Nigel (0x00)
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_25EC4:
+ShopPrice_07_1:
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------
 		dc.w $0140			  ; Bit	0 of flag 0x028
@@ -324,7 +324,7 @@ GameSaveRefusedMsg:
 		rts
 ; ---------------------------------------------------------------------------
 
-RequestGameContineMsg:
+RequestGameContinueMsg:
 		bsr.s	HandleChurchInterraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $28,$0		  ; Normal priest:   Run text script at	offset 0x027846

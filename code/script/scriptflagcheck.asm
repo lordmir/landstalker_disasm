@@ -55,5 +55,3 @@ GetFlagProgress:				  ; CODE XREF: HandleProgressDependentDialogue+4p
 ; ---------------------------------------------------------------------------
 		movea.l	(sp)+,a0
 		rts
-
-

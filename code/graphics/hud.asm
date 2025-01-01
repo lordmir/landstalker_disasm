@@ -2,13 +2,13 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1690A:					  ; DATA XREF: sub_10344t
+RefreshAllHUD:					  ; DATA XREF: j_RefreshAllHUDt
 		bsr.w	RefreshCurrentHealthHUD
 		bsr.w	RefreshMaxHealthHUD
-		bsr.w	UpdateGoldHUD
-		bsr.w	sub_16CC6
+		bsr.w	RefreshGoldHUD
+		bsr.w	RefreshSwordChargeHUD
 		bsr.w	UpdateEkeEkeHUD
-; End of function sub_1690A
+; End of function RefreshAllHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -70,7 +70,7 @@ locret_16966:					  ; CODE XREF: sub_1694C+Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-RefreshMaxHealthHUD:				  ; CODE XREF: sub_1690A+4p
+RefreshMaxHealthHUD:				  ; CODE XREF: RefreshAllHUD+4p
 						  ; AddToMaxHealth+4p
 						  ; DATA XREF: ...
 		movem.l	d0-d3/d7-a1,-(sp)
@@ -410,7 +410,7 @@ SmallHeartTiles:dc.b $30,$08,$08,$08,$08,$06,$06,$06,$06,$06
 
 
 UpdateEkeEkeHUD:				  ; CODE XREF: sub_10ACE+194p
-						  ; sub_1690A+10p ...
+						  ; RefreshAllHUD+10p ...
 		moveq	#$00000000,d7
 		move.b	#ITM_EKEEKE,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
@@ -435,7 +435,7 @@ loc_16C68:					  ; CODE XREF: UpdateEkeEkeHUD+26j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-UpdateGoldHUD:					  ; CODE XREF: sub_1690A+8p
+RefreshGoldHUD:					  ; CODE XREF: RefreshAllHUD+8p
 						  ; AddGold:loc_177ECp	...
 		movem.l	d0-d2/d7-a1,-(sp)
 		moveq	#$00000000,d7
@@ -450,7 +450,7 @@ UpdateGoldHUD:					  ; CODE XREF: sub_1690A+8p
 		move.b	#$0A,$00000002(a0)
 		move.b	#$0A,$00000003(a0)
 
-loc_16CA6:					  ; CODE XREF: UpdateGoldHUD+20j
+loc_16CA6:					  ; CODE XREF: RefreshGoldHUD+20j
 		bsr.s	UpdateHUDDigits
 		bsr.s	UpdateHUDDigits
 		bsr.s	UpdateHUDDigits
@@ -458,7 +458,7 @@ loc_16CA6:					  ; CODE XREF: UpdateGoldHUD+20j
 		bsr.w	MarkHUDForUpdate
 		movem.l	(sp)+,d0-d2/d7-a1
 		rts
-; End of function UpdateGoldHUD
+; End of function RefreshGoldHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -477,7 +477,7 @@ UpdateHUDDigits:				  ; CODE XREF: UpdateMaxHealthHUD:loc_169A8p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_16CC6:					  ; CODE XREF: sub_1690A+Cp
+RefreshSwordChargeHUD:				  ; CODE XREF: RefreshAllHUD+Cp
 						  ; IncrementSwordCharge:loc_178AEp ...
 		clr.w	d0
 		move.b	(g_SwordCharge_0).l,d0
@@ -485,7 +485,7 @@ sub_16CC6:					  ; CODE XREF: sub_1690A+Cp
 		moveq	#$00000006,d7
 		lea	((g_HUD_Row2+8)).l,a0
 		lea	SwordChargeTiles(pc),a1
-; End of function sub_16CC6
+; End of function RefreshSwordChargeHUD
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -503,7 +503,7 @@ sub_16CDE:					  ; CODE XREF: UpdateSmallHeartHUD+1Ep
 ; End of function sub_16CDE
 
 ; ---------------------------------------------------------------------------
-SwordChargeTiles:dc.b $40,$40,$40,$40,$40,$40,$36 ; DATA XREF: sub_16CC6+14t
+SwordChargeTiles:dc.b $40,$40,$40,$40,$40,$40,$36 ; DATA XREF: RefreshSwordChargeHUD+14t
 		dc.b $41,$40,$40,$40,$40,$40,$36
 		dc.b $42,$40,$40,$40,$40,$40,$36
 		dc.b $43,$40,$40,$40,$40,$40,$36

@@ -127,7 +127,7 @@ loc_9670:					  ; CODE XREF: CheckForDoorNE+84j
 		move.w	d2,d3
 		add.b	d2,d2
 		add.w	d2,d0
-		lea	(g_BackgroundBlocks).l,a0
+		lea	(g_ForegroundBlocks).l,a0
 		adda.w	d0,a0
 		move.w	d3,d0
 		move.w	d5,d4
