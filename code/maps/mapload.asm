@@ -2,9 +2,9 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-nullsub_1:					  ; CODE XREF: WaitUntilVBlankp
+Return:						  ; CODE XREF: WaitUntilVBlankp
 		rts
-; End of function nullsub_1
+; End of function Return
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -76,7 +76,7 @@ locret_26E6:					  ; CODE XREF: sub_2686+6j
 
 LoadGame:					  ; CODE XREF: ROM:loc_16CAp
 		bsr.s	sub_2726
-		jsr	(sub_22EC0).l
+		jsr	(j_HideRightArrow).l
 		bsr.w	LoadGameSelectScreen
 		bsr.w	ClearAndRefreshVDPSpriteTableDMA
 		tst.w	(Player_X).l
@@ -113,7 +113,7 @@ loc_2744:					  ; CODE XREF: sub_2726+20j
 		dbf	d7,loc_2744
 		clr.b	(byte_FF1143).l
 		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1145).l
+		clr.b	(g_PlayerAnimation).l
 		clr.b	(byte_FF1128).l
 		clr.b	(g_ControllerPlayback).l
 		clr.b	(g_ControllerPlaybackTimer).l
@@ -175,7 +175,7 @@ LoadRoom_0:					  ; CODE XREF: j_LoadRoom_0j
 		movem.w	(sp)+,d0/d3
 		bsr.s	sub_2896
 		jsr	(sub_10388).l
-		bsr.w	sub_2DCE
+		bsr.w	CalcPlayerFlattenedCoords
 		bsr.w	LoadAllWarps
 		bsr.w	sub_A114
 		bsr.w	sub_7274

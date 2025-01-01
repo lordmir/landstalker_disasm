@@ -349,9 +349,9 @@ loc_399E4:					  ; CODE XREF: ROM:00039A52j
 		move.w	#$012C,d0
 		bsr.w	sub_39CA4
 		move.w	#$0118,d0
-		bsr.w	sub_39C46
+		bsr.w	HandlePaletteScroll2
 		move.w	#$00DC,d0
-		bsr.w	sub_39B3C
+		bsr.w	HandlePaletteScroll
 		move.w	#$0082,d0
 		bsr.w	sub_39BAA
 		move.w	#$0000,d0

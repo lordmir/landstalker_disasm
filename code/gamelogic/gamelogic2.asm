@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2DCE:					  ; CODE XREF: LoadRoom_0+40p
+CalcPlayerFlattenedCoords:			  ; CODE XREF: LoadRoom_0+40p
 		move.b	(g_PlayerXFlattened).l,d0
 		ext.w	d0
 		lsl.w	#$04,d0
@@ -27,7 +27,7 @@ sub_2DCE:					  ; CODE XREF: LoadRoom_0+40p
 		lsr.w	#$04,d2
 		move.b	d2,(g_PlayerYFlattened).l
 		rts
-; End of function sub_2DCE
+; End of function CalcPlayerFlattenedCoords
 
 ; ---------------------------------------------------------------------------
 

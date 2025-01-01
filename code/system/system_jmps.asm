@@ -136,7 +136,7 @@ j_ClearVDPSpriteTable:				  ; CODE XREF: DisplayIslandMap+172p
 ; Attributes: thunk
 
 j_WaitUntilVBlank:				  ; CODE XREF: ROM:0000EFFAp
-						  ; sub_10ACE:loc_10C2Cp ...
+						  ; LoadPlayerSpecialAnimation:loc_10C2Cp ...
 		jmp	(WaitUntilVBlank).l
 ; End of function j_WaitUntilVBlank
 
@@ -305,7 +305,7 @@ j_DecompressAndQueueGfxCopy:			  ; CODE XREF: LoadStatusGfx+62j
 ; Attributes: thunk
 
 j_QueueTextboxTilemapDMA:			  ; CODE XREF: sub_DB14+6p
-						  ; sub_2343A+4p ...
+						  ; SetUpTextbox+4p ...
 		jmp	(QueueTextboxTilemapDMA).l
 ; End of function j_QueueTextboxTilemapDMA
 
@@ -394,7 +394,7 @@ j_CopyPalette:					  ; CODE XREF: DisplayTitle+1F8p
 
 ; Attributes: thunk
 
-j_ConvertToBase10:				  ; CODE XREF: sub_F346+12p
+j_ConvertToBase10:				  ; CODE XREF: GetPlayTimeDigits+12p
 						  ; sub_F3A6:loc_F3B6p	...
 		jmp	(ConvertToBase10).l
 ; End of function j_ConvertToBase10
@@ -611,7 +611,7 @@ j_CheckForCollision:				  ; CODE XREF: OnTick+12CCp
 
 ; Attributes: thunk
 
-j_LoadRoom_0:					  ; CODE XREF: sub_10ACE+206p
+j_LoadRoom_0:					  ; CODE XREF: LoadPlayerSpecialAnimation+206p
 						  ; ROM:000129BCp ...
 		jmp	(LoadRoom_0).l
 ; End of function j_LoadRoom_0
@@ -631,7 +631,7 @@ sub_3E0:					  ; CODE XREF: ROM:000129C2p
 
 ; Attributes: thunk
 
-j_FadeOutToDarkness:				  ; CODE XREF: sub_10ACE:loc_10C8Ep
+j_FadeOutToDarkness:				  ; CODE XREF: LoadPlayerSpecialAnimation:loc_10C8Ep
 						  ; ROM:0001299Cp ...
 		jmp	(FadeOutToDarkness).l
 ; End of function j_FadeOutToDarkness
@@ -661,7 +661,7 @@ j_CheckForRoomTransition:			  ; CODE XREF: ROM:000126C8p
 
 ; Attributes: thunk
 
-j_LoadSprites:					  ; CODE XREF: sub_10ACE+18Ep
+j_LoadSprites:					  ; CODE XREF: LoadPlayerSpecialAnimation+18Ep
 						  ; ROM:00012736p ...
 		jmp	(LoadSprites).l
 ; End of function j_LoadSprites
@@ -671,7 +671,7 @@ j_LoadSprites:					  ; CODE XREF: sub_10ACE+18Ep
 
 ; Attributes: thunk
 
-sub_3FE:					  ; CODE XREF: sub_10ACE+188p
+sub_3FE:					  ; CODE XREF: LoadPlayerSpecialAnimation+188p
 						  ; ROM:00012BCAp ...
 		jmp	(loc_72E8).l
 ; End of function sub_3FE
@@ -701,7 +701,7 @@ j_DoTileSwap:					  ; CODE XREF: ROM:000128F6p
 
 ; Attributes: thunk
 
-j_InitVDP:					  ; CODE XREF: sub_10ACE+20Cp
+j_InitVDP:					  ; CODE XREF: LoadPlayerSpecialAnimation+20Cp
 						  ; ROM:00013308p ...
 		jmp	(InitVDP).l
 ; End of function j_InitVDP
@@ -711,7 +711,7 @@ j_InitVDP:					  ; CODE XREF: sub_10ACE+20Cp
 
 ; Attributes: thunk
 
-j_FadeInFromDarkness:				  ; CODE XREF: sub_10ACE+22Aj
+j_FadeInFromDarkness:				  ; CODE XREF: LoadPlayerSpecialAnimation+22Aj
 						  ; ROM:00013358p ...
 		jmp	(FadeInFromDarkness).l
 ; End of function j_FadeInFromDarkness
@@ -863,7 +863,7 @@ j_FadeToWhite:					  ; CODE XREF: SpecialWarp+4p
 
 ; Attributes: thunk
 
-j_EkeEkeHealthRecover:				  ; CODE XREF: sub_10ACE+198p
+j_EkeEkeHealthRecover:				  ; CODE XREF: LoadPlayerSpecialAnimation+198p
 		jmp	(EkeEkeHealthRecover).l
 ; End of function j_EkeEkeHealthRecover
 

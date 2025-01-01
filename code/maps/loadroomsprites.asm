@@ -2,20 +2,20 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_19514:					  ; DATA XREF: sub_10388t
+InitSprites:					  ; DATA XREF: sub_10388t
 		bsr.s	ClearSpriteTable
 		bsr.s	InitialiseSprites
 		bsr.w	CheckFlags
 		bsr.w	sub_19A40
-		jsr	(sub_1A4414).l
+		jsr	(j_InitSpritePalettes).l
 		rts
-; End of function sub_19514
+; End of function InitSprites
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ClearSpriteTable:				  ; CODE XREF: sub_19514p
+ClearSpriteTable:				  ; CODE XREF: InitSpritesp
 		lea	(Sprite1_X).l,a1
 		move.w	#$077F,d7
 
@@ -29,7 +29,7 @@ loc_19532:					  ; CODE XREF: ClearSpriteTable+Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-InitialiseSprites:				  ; CODE XREF: sub_19514+2p
+InitialiseSprites:				  ; CODE XREF: InitSprites+2p
 
 ; FUNCTION CHUNK AT 0001972A SIZE 00000072 BYTES
 ; FUNCTION CHUNK AT 0001983E SIZE 00000122 BYTES
@@ -573,7 +573,7 @@ loc_19A3A:					  ; CODE XREF: InitialiseSprites+24j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_19A40:					  ; CODE XREF: sub_19514+8p
+sub_19A40:					  ; CODE XREF: InitSprites+8p
 		lea	(Player_X).l,a1
 		move.w	#$000F,d7
 
@@ -684,7 +684,7 @@ loc_19B1E:					  ; CODE XREF: sub_19AC8+50j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckFlags:					  ; CODE XREF: sub_19514+4p
+CheckFlags:					  ; CODE XREF: InitSprites+4p
 		lea	(Sprite1_X).l,a5
 		bsr.s	DoCustomRoomActions	  ; Mercator North
 		bsr.w	CheckRoomFlagsToHideSprites

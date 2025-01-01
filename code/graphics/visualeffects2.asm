@@ -2,20 +2,20 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_E832:					  ; CODE XREF: sub_E87A+6p
+ContinueKazaltWarpFx:				  ; CODE XREF: sub_E87A+6p
 		move.w	-$00000128(a6),d0
 		cmpi.w	#$0172,d0
 		bcc.s	loc_E83E
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_E83E:					  ; CODE XREF: sub_E832+8j
+loc_E83E:					  ; CODE XREF: ContinueKazaltWarpFx+8j
 		lsr.w	#$02,d0
 		andi.b	#$03,d0
 		cmpi.b	#$01,d0
 		bcs.w	WhiteFlash
 		jmp	(CopyBasePalleteToActivePalette).l
-; End of function sub_E832
+; End of function ContinueKazaltWarpFx
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -49,7 +49,7 @@ sub_E87A:					  ; CODE XREF: NoleWarp+164p
 
 		cmp.w	-$00000128(a6),d0
 		bcs.s	loc_E886
-		bsr.s	sub_E832
+		bsr.s	ContinueKazaltWarpFx
 		bra.w	loc_E7EA
 ; ---------------------------------------------------------------------------
 

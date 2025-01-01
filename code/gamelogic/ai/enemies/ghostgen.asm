@@ -18,21 +18,21 @@ EnemyAI_GhostGen:				  ; CODE XREF: ROM:EnemyAI_GhostGen_Bj
 		bclr	#$01,Flags2(a5)
 		rts
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1A83E6
+; START	OF FUNCTION CHUNK FOR RespawnGhost
 
-loc_1A870E:					  ; CODE XREF: sub_1A83E6+4j
+CheckRespawnGhost:				  ; CODE XREF: RespawnGhost+4j
 		cmpi.b	#SpriteB_Ghost,InitSpriteGraphic(a5)
 		beq.s	loc_1A8718
 
-locret_1A8716:					  ; CODE XREF: sub_1A83E6+33Aj
-						  ; sub_1A83E6+34Ej
+locret_1A8716:					  ; CODE XREF: RespawnGhost+33Aj
+						  ; RespawnGhost+34Ej
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_1A8718:					  ; CODE XREF: sub_1A83E6+32Ej
+loc_1A8718:					  ; CODE XREF: RespawnGhost+32Ej
 		lea	(Sprite1_X).l,a0
 
-loc_1A871E:					  ; CODE XREF: sub_1A83E6+348j
+loc_1A871E:					  ; CODE XREF: RespawnGhost+348j
 		move.w	(a0),d0
 		bmi.s	locret_1A8716
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a0)
@@ -41,7 +41,7 @@ loc_1A871E:					  ; CODE XREF: sub_1A83E6+348j
 		bra.s	loc_1A871E
 ; ---------------------------------------------------------------------------
 
-loc_1A8730:					  ; CODE XREF: sub_1A83E6+342j
+loc_1A8730:					  ; CODE XREF: RespawnGhost+342j
 		cmpi.b	#$7F,d0
 		beq.s	locret_1A8716
 		move.w	InitX(a5),X(a5)
@@ -66,4 +66,4 @@ loc_1A8730:					  ; CODE XREF: sub_1A83E6+342j
 		bsr.w	sub_1A8AE6
 		jsr	(sub_3BC).l
 		bcc.s	loc_1A87D2
-; END OF FUNCTION CHUNK	FOR sub_1A83E6
+; END OF FUNCTION CHUNK	FOR RespawnGhost

@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1AC474:					  ; CODE XREF: ROM:001AC0ECp
+SpawnSmallProjectile:				  ; CODE XREF: ROM:001AC0ECp
 						  ; ROM:001AC3D0p ...
 		movem.w	d0-d1,-(sp)
 		jsr	(sub_103B2).l
@@ -18,21 +18,21 @@ sub_1AC474:					  ; CODE XREF: ROM:001AC0ECp
 		bra.s	loc_1AC4A8
 ; ---------------------------------------------------------------------------
 
-loc_1AC49C:					  ; CODE XREF: sub_1AC474+18j
+loc_1AC49C:					  ; CODE XREF: SpawnSmallProjectile+18j
 		subq.b	#$01,d0
 		bra.s	loc_1AC4A8
 ; ---------------------------------------------------------------------------
 
-loc_1AC4A0:					  ; CODE XREF: sub_1AC474+1Ej
+loc_1AC4A0:					  ; CODE XREF: SpawnSmallProjectile+1Ej
 		addi.w	#$0100,d0
 		bra.s	loc_1AC4A8
 ; ---------------------------------------------------------------------------
 
-loc_1AC4A6:					  ; CODE XREF: sub_1AC474+20j
+loc_1AC4A6:					  ; CODE XREF: SpawnSmallProjectile+20j
 		addq.b	#$01,d0
 
-loc_1AC4A8:					  ; CODE XREF: sub_1AC474+26j
-						  ; sub_1AC474+2Aj ...
+loc_1AC4A8:					  ; CODE XREF: SpawnSmallProjectile+26j
+						  ; SpawnSmallProjectile+2Aj ...
 		move.w	d0,(a1)
 		move.b	d1,RotationAndSize(a1)
 		movem.w	(sp)+,d0-d1
@@ -54,13 +54,13 @@ loc_1AC4A8:					  ; CODE XREF: sub_1AC474+26j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_1AC4FC:					  ; CODE XREF: sub_1AC474+Aj
+loc_1AC4FC:					  ; CODE XREF: SpawnSmallProjectile+Aj
 		movem.w	(sp)+,d0-d1
 		ori	#$01,ccr
 
-locret_1AC504:					  ; DATA XREF: sub_1AC474+40r
+locret_1AC504:					  ; DATA XREF: SpawnSmallProjectile+40r
 		rts
-; End of function sub_1AC474
+; End of function SpawnSmallProjectile
 
 ; ---------------------------------------------------------------------------
 		dc.b SPR_SMLFIREBALL

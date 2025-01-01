@@ -573,7 +573,7 @@ g_currentSpeakerScriptID: equ $00FF1141
 byte_FF1142:         equ $00FF1142
 byte_FF1143:         equ $00FF1143
 byte_FF1144:         equ $00FF1144
-byte_FF1145:         equ $00FF1145
+g_PlayerAnimation:   equ $00FF1145
 g_PlayerStatus:      equ $00FF1146
 byte_FF1147:         equ $00FF1147
 byte_FF1148:         equ $00FF1148
@@ -653,7 +653,7 @@ g_PrintNumericByteValue: equ $00FF187B
 dword_FF187C:        equ $00FF187C
 g_FridayAnimPtr:     equ $00FF1880
 g_curDecomprChar:    equ $00FF1900
-byte_FF1902:         equ $00FF1902
+g_RightArrowCursorState: equ $00FF1902
 byte_FF1903:         equ $00FF1903
 g_YesNoPromptResult: equ $00FF1904
 g_GameFlagProgress1: equ $00FF1906

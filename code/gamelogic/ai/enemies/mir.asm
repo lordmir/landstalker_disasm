@@ -152,7 +152,7 @@ loc_1AC0C0:					  ; CODE XREF: ROM:001AC0B4j
 		or.b	d2,RotationAndSize(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.s	loc_1AC0FC
 		movem.w	(sp)+,d0
 		move.b	d0,RotationAndSize(a5)

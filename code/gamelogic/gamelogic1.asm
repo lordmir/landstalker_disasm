@@ -38,11 +38,11 @@ GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		bsr.w	CheckForLadderClimb
 		bsr.w	ProcessActionButton
 		bsr.w	HandleDirectionalInput
-		jsr	(sub_10348).l
+		jsr	(j_HandleAttack).l
 		jsr	(sub_10358).l
 		bsr.w	sub_24F4
 		bsr.w	sub_21DE
-		jsr	(sub_10300).l
+		jsr	(j_UpdateEntities).l
 		bsr.w	sub_2540
 		bsr.w	sub_1858
 		bsr.w	sub_17EE
@@ -50,7 +50,7 @@ GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		jsr	(sub_1034C).l
 		bsr.w	sub_7274
 		jsr	(j_UpdateFrames).l
-		jsr	(sub_10350).l
+		jsr	(j_LoadPlayerSpecialAnimation).l
 		jsr	(LoadSprites).l
 		jsr	(sub_9DA2).l
 		jsr	(sub_10380).l
@@ -98,7 +98,7 @@ loc_17C0:					  ; CODE XREF: ProcessControlScript+24j
 		clr.w	(g_ControllerPlayback).l
 
 loc_17C6:					  ; CODE XREF: ProcessControlScript+6j
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.s	loc_17E6
 		bsr.w	UpdateControllerInputs
 		btst	#$02,(g_PlayerStatus).l
@@ -1266,7 +1266,7 @@ sub_21B6:					  ; CODE XREF: CheckForLadderClimb:loc_21A4p
 		lea	(Player_X).l,a0
 		move.w	Z(a0),d7
 		movem.w	d7,-(sp)
-		bsr.w	loc_3F92
+		bsr.w	HandleJump
 		movem.w	(sp)+,d6
 		move.w	Z(a0),d7
 		sub.w	d6,d7

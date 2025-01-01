@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 
-loc_3F92:					  ; CODE XREF: sub_21B6+Ep
+HandleJump:					  ; CODE XREF: sub_21B6+Ep
 		move.b	(Player_JumpRate).l,d0
 		andi.w	#$001F,d0
 		bne.s	loc_3FCE
@@ -858,7 +858,7 @@ loc_46C8:					  ; CODE XREF: LoadSpriteGfx+48j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_46DA:					  ; CODE XREF: sub_D25C+32p
+sub_46DA:					  ; CODE XREF: InitInv+32p
 		bsr.s	sub_46EE
 ; End of function sub_46DA
 

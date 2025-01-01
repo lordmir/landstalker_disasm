@@ -2,19 +2,19 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2343A:					  ; DATA XREF: sub_22EE8t
+SetUpTextbox:					  ; DATA XREF: sub_22EE8t
 		bsr.s	RefreshAndClearTextbox
 		bsr.s	SetTextboxHInt
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		rts
-; End of function sub_2343A
+; End of function SetUpTextbox
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-RefreshAndClearTextbox:				  ; CODE XREF: sub_2343Ap
+RefreshAndClearTextbox:				  ; CODE XREF: SetUpTextboxp
 						  ; DATA XREF: j_RefreshAndClearTextboxt
 		movem.l	d0-a6,-(sp)
 		bsr.s	ReloadTextbox
@@ -39,7 +39,7 @@ SetUpTextDisplay:				  ; DATA XREF: j_SetUpTextDisplayt
 ; =============== S U B	R O U T	I N E =======================================
 
 
-SetTextboxHInt:					  ; CODE XREF: sub_2343A+2p
+SetTextboxHInt:					  ; CODE XREF: SetUpTextbox+2p
 						  ; DATA XREF: j_SetTextboxHIntt
 		bsr.s	TestIfInventoryIsOpen
 		bcs.s	loc_23476		  ; Set	HINT to	line 160

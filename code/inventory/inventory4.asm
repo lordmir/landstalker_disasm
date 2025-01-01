@@ -2,24 +2,24 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D584:					  ; CODE XREF: sub_D50C+26p
+PopulateItemSlot:				  ; CODE XREF: sub_D50C+26p
 		jsr	(j_GetItemQtyAndMaxQty).l
 		cmpi.w	#$FFFF,d1
 		bne.s	loc_D592
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_D592:					  ; CODE XREF: sub_D584+Aj
+loc_D592:					  ; CODE XREF: PopulateItemSlot+Aj
 		tst.w	d1
 		beq.s	loc_D59A
 		clr.l	d1
 		bra.s	loc_D59C
 ; ---------------------------------------------------------------------------
 
-loc_D59A:					  ; CODE XREF: sub_D584+10j
+loc_D59A:					  ; CODE XREF: PopulateItemSlot+10j
 		moveq	#$00000001,d1
 
-loc_D59C:					  ; CODE XREF: sub_D584+14j
+loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 		movem.w	d1,-(sp)
 		bsr.w	sub_D642
 		movem.w	(sp)+,d1
@@ -33,15 +33,15 @@ loc_D59C:					  ; CODE XREF: sub_D584+14j
 		lea	$0000005A(a0),a0
 		bsr.s	sub_D5C8
 
-locret_D5C6:					  ; CODE XREF: sub_D584+3Aj
+locret_D5C6:					  ; CODE XREF: PopulateItemSlot+3Aj
 		rts
-; End of function sub_D584
+; End of function PopulateItemSlot
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D5C8:					  ; CODE XREF: sub_D584+40p
+sub_D5C8:					  ; CODE XREF: PopulateItemSlot+40p
 		tst.b	d1
 		beq.s	loc_D5D2
 		move.w	#$A000,d0
@@ -64,8 +64,8 @@ loc_D5D6:					  ; CODE XREF: sub_D5C8+8j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D5E4:					  ; CODE XREF: sub_D584+2Cp
-						  ; sub_ECF4+44p
+sub_D5E4:					  ; CODE XREF: PopulateItemSlot+2Cp
+						  ; GetInvEquipLayout+44p
 		movem.w	d0-d1,-(sp)
 		exg	d0,d1
 		jsr	(j_LoadUncompressedString).l
@@ -119,7 +119,7 @@ loc_D634:					  ; CODE XREF: sub_D5E4+2Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D642:					  ; CODE XREF: sub_D584+1Cp
+sub_D642:					  ; CODE XREF: PopulateItemSlot+1Cp
 						  ; sub_ECA6+2Cp
 		movem.w	d0-d1,-(sp)
 		tst.b	d1
@@ -543,7 +543,7 @@ sub_D96A:					  ; CODE XREF: ROM:0000D3C2p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D996:					  ; CODE XREF: sub_D25C+Ap
+sub_D996:					  ; CODE XREF: InitInv+Ap
 		lea	((g_Buffer+$84)).l,a0
 		lea	MenuCursor2BPP(pc),a1
 		move.b	#$00,d3
@@ -580,7 +580,7 @@ loc_D9B2:					  ; CODE XREF: sub_D996+24j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D9FC:					  ; CODE XREF: sub_D25C+6p
+sub_D9FC:					  ; CODE XREF: InitInv+6p
 						  ; DATA XREF: ROM:00000422t
 		lea	((g_Buffer+$84)).l,a0
 		lea	MenuFont(pc),a1

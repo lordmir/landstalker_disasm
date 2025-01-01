@@ -226,11 +226,11 @@ locret_178C6:					  ; CODE XREF: DecreaseSwordCharge+6j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_178C8:					  ; DATA XREF: sub_10300t
+UpdateEntities:					  ; DATA XREF: j_UpdateEntitiest
 		lea	(Sprite1_X).l,a5
 		moveq	#$0000000E,d7
 
-loc_178D0:					  ; CODE XREF: sub_178C8+28j
+loc_178D0:					  ; CODE XREF: UpdateEntities+28j
 		move.b	(a5),d0
 		bmi.s	locret_178F4
 		movem.l	d7/a5,-(sp)
@@ -240,18 +240,18 @@ loc_178D0:					  ; CODE XREF: sub_178C8+28j
 		beq.s	loc_178E8
 		bsr.w	OnTick
 
-loc_178E8:					  ; CODE XREF: sub_178C8+1Aj
-						  ; sub_178C8+34j
+loc_178E8:					  ; CODE XREF: UpdateEntities+1Aj
+						  ; UpdateEntities+34j
 		movem.l	(sp)+,d7/a5
 		lea	SPRITE_SIZE(a5),a5
 		dbf	d7,loc_178D0
 
-locret_178F4:					  ; CODE XREF: sub_178C8+Aj
+locret_178F4:					  ; CODE XREF: UpdateEntities+Aj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_178F6:					  ; CODE XREF: sub_178C8+14j
+loc_178F6:					  ; CODE XREF: UpdateEntities+14j
 		jsr	(sub_1A4404).l
 		bra.s	loc_178E8
-; End of function sub_178C8
+; End of function UpdateEntities
 

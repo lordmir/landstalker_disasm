@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F346:					  ; CODE XREF: sub_F78E+50p
+GetPlayTimeDigits:				  ; CODE XREF: sub_F78E+50p
 		moveq	#$00000000,d7
 		move.w	(g_HourCount).l,d7
 		mulu.w	#00100,d7
@@ -17,14 +17,14 @@ sub_F346:					  ; CODE XREF: sub_F78E+50p
 		bsr.s	sub_F38C
 		bsr.s	sub_F38C
 		rts
-; End of function sub_F346
+; End of function GetPlayTimeDigits
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F374:					  ; CODE XREF: sub_F346+1Ep
-						  ; sub_F346+20p ...
+sub_F374:					  ; CODE XREF: GetPlayTimeDigits+1Ep
+						  ; GetPlayTimeDigits+20p ...
 		move.b	(a0)+,d0
 		ext.w	d0
 		beq.s	loc_F37C
@@ -45,8 +45,8 @@ loc_F386:					  ; CODE XREF: sub_F374+Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F38C:					  ; CODE XREF: sub_F346+24p
-						  ; sub_F346+28p ...
+sub_F38C:					  ; CODE XREF: GetPlayTimeDigits+24p
+						  ; GetPlayTimeDigits+28p ...
 		move.b	(a0)+,d0
 		ext.w	d0
 		bne.s	loc_F394
@@ -353,7 +353,7 @@ sub_F578:					  ; CODE XREF: sub_F78E+1Ep
 
 
 sub_F5CA:					  ; CODE XREF: sub_F578+4p
-						  ; sub_F6DC+3Ap
+						  ; InitGameStartScreen+3Ap
 		move.w	d0,d1
 
 loc_F5CC:					  ; CODE XREF: sub_F5CA+Cj

@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-PlaybackInput:					  ; CODE XREF: sub_10ACE+226p
+PlaybackInput:					  ; CODE XREF: LoadPlayerSpecialAnimation+226p
 						  ; ROM:000127E4p ...
 		ext.w	d0
 		lea	InputPlayback(pc),a0

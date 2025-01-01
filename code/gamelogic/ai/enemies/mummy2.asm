@@ -257,7 +257,7 @@ locret_1A8080:					  ; CODE XREF: ROM:001A800Ej
 ; ---------------------------------------------------------------------------
 
 loc_1A8082:					  ; CODE XREF: ROM:001A7FF4j
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mummy2
 		tst.b	(byte_FF1142).l
 		bne.w	loc_1A80A2

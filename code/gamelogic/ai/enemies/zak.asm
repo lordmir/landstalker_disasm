@@ -365,7 +365,7 @@ loc_1AD04E:					  ; CODE XREF: ROM:001ACF22j
 ; ---------------------------------------------------------------------------
 		move.b	#$03,d0
 		move.w	#$1400,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	locret_1AD09C
 		move.w	#$44C0,TileSource(a1)
 		move.b	#$04,Speed(a1)

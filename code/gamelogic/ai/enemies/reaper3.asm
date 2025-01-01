@@ -267,7 +267,7 @@ loc_1ACA72:					  ; CODE XREF: ROM:001ACA66j
 		move.w	#$0200,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0800,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	loc_1ACAAA
 		rts
 ; ---------------------------------------------------------------------------

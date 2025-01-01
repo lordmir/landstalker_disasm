@@ -2,10 +2,10 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_22F1C:					  ; DATA XREF: sub_22EC8t
+PrintString_0:					  ; DATA XREF: j_PrintString_0t
 		move.b	#$01,(byte_FF1144).l
 		bra.s	loc_22F2C
-; End of function sub_22F1C
+; End of function PrintString_0
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -14,7 +14,7 @@ sub_22F1C:					  ; DATA XREF: sub_22EC8t
 PrintString:					  ; DATA XREF: j_PrintStringt
 		clr.b	(byte_FF1144).l
 
-loc_22F2C:					  ; CODE XREF: sub_22F1C+8j
+loc_22F2C:					  ; CODE XREF: PrintString_0+8j
 		movem.l	d0-a6,-(sp)
 		bsr.w	InitCompString
 		cmpi.b	#$01,(g_comprStringLen).l

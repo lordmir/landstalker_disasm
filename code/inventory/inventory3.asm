@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D25C:					  ; CODE XREF: CheckForMenuOpen+3Cp
+InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 		jsr	(WaitUntilVBlank).l
 		bsr.w	sub_D9FC
 		bsr.w	sub_D996
@@ -17,7 +17,7 @@ sub_D25C:					  ; CODE XREF: CheckForMenuOpen+3Cp
 		clr.w	d0
 		move.w	#$003E,d7
 
-loc_D28A:					  ; CODE XREF: sub_D25C+56j
+loc_D28A:					  ; CODE XREF: InitInv+56j
 		movem.w	d0-d1/d7,-(sp)
 		jsr	(sub_46DA).l
 		movem.w	(sp)+,d0-d1/d7
@@ -28,7 +28,7 @@ loc_D28A:					  ; CODE XREF: sub_D25C+56j
 		bne.s	loc_D2AE
 		jsr	(FlushDMACopyQueue).l
 
-loc_D2AE:					  ; CODE XREF: sub_D25C+4Aj
+loc_D2AE:					  ; CODE XREF: InitInv+4Aj
 		movem.w	(sp)+,d7
 		dbf	d7,loc_D28A
 		lea	(g_Pal1Base).l,a0
@@ -36,7 +36,7 @@ loc_D2AE:					  ; CODE XREF: sub_D25C+4Aj
 		lea	$0000001C(a1),a2
 		moveq	#$0000001F,d7
 
-loc_D2C8:					  ; CODE XREF: sub_D25C+6Ej
+loc_D2C8:					  ; CODE XREF: InitInv+6Ej
 		move.w	(a0)+,(a2)+
 		dbf	d7,loc_D2C8
 		clr.w	$0000000E(a1)
@@ -44,13 +44,13 @@ loc_D2C8:					  ; CODE XREF: sub_D25C+6Ej
 		lea	(g_Pal0Base).l,a1
 		moveq	#$00000007,d7
 
-loc_D2DE:					  ; CODE XREF: sub_D25C+84j
+loc_D2DE:					  ; CODE XREF: InitInv+84j
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_D2DE
 		lea	(g_Buffer).l,a0
 		move.w	(unk_FF0F9C).l,0000000004(a0)
 		rts
-; End of function sub_D25C
+; End of function InitInv
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -325,7 +325,7 @@ loc_D522:					  ; CODE XREF: sub_D50C+36j
 		clr.w	d0
 		move.b	(a2)+,d0
 		movem.l	a2,-(sp)
-		bsr.w	sub_D584
+		bsr.w	PopulateItemSlot
 		movem.l	(sp)+,a2
 		movem.w	(sp)+,d0-d1/d6-d7
 		addi.w	#$0011,d0

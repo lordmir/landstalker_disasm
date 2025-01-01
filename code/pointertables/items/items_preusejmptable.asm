@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 
-PreUseItemTable:				  ; DATA XREF: sub_85F2+6t
+PreUseItemTable:				  ; DATA XREF: UseItem+6t
 		bra.w	ItemUseEkeEke
 ; ---------------------------------------------------------------------------
 		dc.b ITM_EKEEKE

@@ -3,9 +3,9 @@
 
 ; Attributes: thunk
 
-sub_10300:					  ; DATA XREF: GameLoop+3Ct
-		jmp	sub_178C8(pc)
-; End of function sub_10300
+j_UpdateEntities:				  ; DATA XREF: GameLoop+3Ct
+		jmp	UpdateEntities(pc)
+; End of function j_UpdateEntities
 
 ; ---------------------------------------------------------------------------
 		jmp	sub_17B50(pc)
@@ -140,9 +140,9 @@ j_RefreshAllHUD:				  ; DATA XREF: ROM:00008DE4t
 
 ; Attributes: thunk
 
-sub_10348:					  ; DATA XREF: GameLoop+28t
-		jmp	loc_15C1C(pc)
-; End of function sub_10348
+j_HandleAttack:					  ; DATA XREF: GameLoop+28t
+		jmp	HandleAttack(pc)
+; End of function j_HandleAttack
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -158,9 +158,9 @@ sub_1034C:					  ; DATA XREF: GameLoop+54t
 
 ; Attributes: thunk
 
-sub_10350:					  ; DATA XREF: GameLoop+64t
-		jmp	sub_10ACE(pc)
-; End of function sub_10350
+j_LoadPlayerSpecialAnimation:			  ; DATA XREF: GameLoop+64t
+		jmp	LoadPlayerSpecialAnimation(pc)
+; End of function j_LoadPlayerSpecialAnimation
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -258,7 +258,7 @@ sub_10384:					  ; DATA XREF: GameLoop+A2t
 ; Attributes: thunk
 
 sub_10388:					  ; DATA XREF: LoadRoom_0+3At
-		jmp	(sub_19514).l
+		jmp	(InitSprites).l
 ; End of function sub_10388
 
 
@@ -299,7 +299,7 @@ j_OnTick:					  ; DATA XREF: j_j_OnTickt
 
 ; Attributes: thunk
 
-j_LookupSpriteAnimFlags:			  ; DATA XREF: sub_1A83E6+3AEt
+j_LookupSpriteAnimFlags:			  ; DATA XREF: RespawnGhost+3AEt
 		jmp	LookupSpriteAnimFlags(pc)
 ; End of function j_LookupSpriteAnimFlags
 
@@ -337,7 +337,7 @@ j_RefreshSwordChargeHUD:			  ; DATA XREF: sub_7718+16t
 ; Attributes: thunk
 
 sub_103B2:					  ; DATA XREF: ROM:001A956Ct
-						  ; sub_1AC474+4t ...
+						  ; SpawnSmallProjectile+4t ...
 		jmp	(sub_19288).l
 ; End of function sub_103B2
 
@@ -347,7 +347,7 @@ sub_103B2:					  ; DATA XREF: ROM:001A956Ct
 ; Attributes: thunk
 
 sub_103B8:					  ; DATA XREF: ROM:001A95CEt
-						  ; sub_1AC474+6Ct ...
+						  ; SpawnSmallProjectile+6Ct ...
 		jmp	(sub_192B6).l
 ; End of function sub_103B8
 

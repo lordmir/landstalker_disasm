@@ -209,7 +209,7 @@ loc_1A832E:					  ; CODE XREF: ROM:001A8312j
 ; ---------------------------------------------------------------------------
 
 loc_1A8334:					  ; CODE XREF: ROM:001A832Aj
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mummy3
 		tst.b	(byte_FF1142).l
 		bne.w	loc_1A8354

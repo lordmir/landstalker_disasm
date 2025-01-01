@@ -409,7 +409,7 @@ SmallHeartTiles:dc.b $30,$08,$08,$08,$08,$06,$06,$06,$06,$06
 ; =============== S U B	R O U T	I N E =======================================
 
 
-UpdateEkeEkeHUD:				  ; CODE XREF: sub_10ACE+194p
+UpdateEkeEkeHUD:				  ; CODE XREF: LoadPlayerSpecialAnimation+194p
 						  ; RefreshAllHUD+10p ...
 		moveq	#$00000000,d7
 		move.b	#ITM_EKEEKE,d0

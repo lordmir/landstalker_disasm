@@ -380,5 +380,5 @@ loc_1A04C:					  ; CODE XREF: sub_19FB0+A2j
 		cmp.w	(a5)+,d0
 		beq.w	_Done
 		dbf	d7,loc_1A04C
-		bra.s	loc_1A06C
+		bra.s	ContinueTreeWarpCheck
 ; ---------------------------------------------------------------------------

@@ -2,12 +2,12 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F6DC:					  ; CODE XREF: ROM:0000EEC4p
+InitGameStartScreen:				  ; CODE XREF: ROM:0000EEC4p
 		bsr.w	ClearTextBuffer
 		lea	($000042C0).w,a1
 		moveq	#$00000003,d7
 
-loc_F6E6:					  ; CODE XREF: sub_F6DC+28j
+loc_F6E6:					  ; CODE XREF: InitGameStartScreen+28j
 		movem.l	d7/a1,-(sp)
 		lea	(g_ScreenBuffer).l,a0
 		move.w	#$01C0,d0
@@ -22,14 +22,14 @@ loc_F6E6:					  ; CODE XREF: sub_F6DC+28j
 		bsr.w	sub_F5CA
 		moveq	#$00000003,d0
 
-loc_F71C:					  ; CODE XREF: sub_F6DC+48j
+loc_F71C:					  ; CODE XREF: InitGameStartScreen+48j
 		move.l	d0,-(sp)
 		bsr.w	sub_F736
 		move.l	(sp)+,d0
 		dbf	d0,loc_F71C
 		bsr.w	sub_F306
 		rts
-; End of function sub_F6DC
+; End of function InitGameStartScreen
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -46,7 +46,7 @@ sub_F72E:					  ; CODE XREF: ROM:0000EFB0p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F736:					  ; CODE XREF: sub_F6DC+42p
+sub_F736:					  ; CODE XREF: InitGameStartScreen+42p
 						  ; sub_F72Ep
 		move.b	(g_SaveSlot).l,d1
 		move.l	d1,-(sp)
@@ -114,7 +114,7 @@ loc_F7CC:					  ; CODE XREF: sub_F78E+38j
 		lea	$00000108(a5),a1
 		bsr.w	sub_F3A6
 		lea	$000001A4(a5),a1
-		bsr.w	sub_F346
+		bsr.w	GetPlayTimeDigits
 		lea	$000000FC(a5),a1
 		bsr.w	sub_F3E0
 		bsr.w	sub_F416

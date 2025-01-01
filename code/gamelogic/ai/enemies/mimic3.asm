@@ -361,7 +361,7 @@ loc_1AA6B4:					  ; CODE XREF: ROM:001AA554j
 
 loc_1AA6FA:					  ; CODE XREF: ROM:001AA6E8j
 		movem.w	(sp)+,d0-d1
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mimic3
 		tst.b	(byte_FF1142).l
 		bne.s	loc_1AA718

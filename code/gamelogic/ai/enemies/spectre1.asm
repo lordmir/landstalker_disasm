@@ -242,7 +242,7 @@ loc_1AD514:					  ; CODE XREF: ROM:001AD508j
 		move.w	#$0200,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	loc_1AD54C
 		rts
 ; ---------------------------------------------------------------------------

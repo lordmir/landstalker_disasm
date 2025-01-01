@@ -347,7 +347,7 @@ loc_1AEB8C:					  ; CODE XREF: ROM:001AEAEEj
 ; ---------------------------------------------------------------------------
 		move.b	#$02,d0
 		move.w	#$1E00,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	loc_1AEBF4
 		move.w	#$24C0,TileSource(a1)
 		move.b	#$08,Speed(a1)

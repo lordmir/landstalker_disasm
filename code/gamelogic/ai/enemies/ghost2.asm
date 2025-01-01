@@ -131,7 +131,7 @@ locret_1A7804:					  ; CODE XREF: ROM:001A77C8j
 ; ---------------------------------------------------------------------------
 
 loc_1A7806:					  ; CODE XREF: ROM:001A77AAj
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Ghost2
 		tst.b	(byte_FF1142).l
 		bne.w	loc_1A7826

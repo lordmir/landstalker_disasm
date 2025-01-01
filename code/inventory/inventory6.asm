@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_ECF4:					  ; CODE XREF: sub_EAD4:loc_EAF2p
+GetInvEquipLayout:				  ; CODE XREF: sub_EAD4:loc_EAF2p
 						  ; sub_EC34+22p
 		lea	(g_Buffer).l,a0
 		lea	0000000006(a0),a0
@@ -12,7 +12,7 @@ sub_ECF4:					  ; CODE XREF: sub_EAD4:loc_EAF2p
 		lea	(g_Buffer).l,a4
 		move.w	#$0003,d7
 
-loc_ED10:					  ; CODE XREF: sub_ECF4+56j
+loc_ED10:					  ; CODE XREF: GetInvEquipLayout+56j
 		move.w	#$0001,d0
 		movem.w	d1/d7,-(sp)
 		bsr.w	sub_D86C
@@ -30,13 +30,13 @@ loc_ED10:					  ; CODE XREF: sub_ECF4+56j
 		lea	$00000002(a4),a4
 		dbf	d7,loc_ED10
 		rts
-; End of function sub_ECF4
+; End of function GetInvEquipLayout
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_ED50:					  ; CODE XREF: sub_ECF4+2Cp
+sub_ED50:					  ; CODE XREF: GetInvEquipLayout+2Cp
 		subq.w	#$01,d7
 		movem.l	a0,-(sp)
 		move.w	#$0001,d5
@@ -223,7 +223,7 @@ loc_EE90:					  ; CODE XREF: ROM:0000EE92j
 		jsr	(j_FillVSRAM).l
 		jsr	(j_FillVSRAMOffset1).l
 		bsr.w	LoadGameSelectMenu
-		bsr.w	sub_F6DC
+		bsr.w	InitGameStartScreen
 		bsr.w	sub_F958
 		bsr.w	LoadGameStartPalette
 		clr.w	d6
@@ -250,7 +250,7 @@ loc_EEF6:					  ; CODE XREF: ROM:0000EF16j
 		cmpi.b	#$01,d0
 		beq.w	loc_EF50
 		bcc.w	loc_EFB8
-		bsr.w	sub_FF12
+		bsr.w	HandleGameStartInput
 		jsr	(j_FadeToBlack).l
 		move.w	-$00000004(a6),d0
 		move.b	d0,(g_SaveSlot).l

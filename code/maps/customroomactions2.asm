@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 
-loc_1A06C:					  ; CODE XREF: sub_19FB0+A6j
+ContinueTreeWarpCheck:				  ; CODE XREF: sub_19FB0+A6j
 		btst	#$07,(g_AdditionalFlags+4).l
 		beq.w	_Done
 		lea	(Sprite1_X).l,a5

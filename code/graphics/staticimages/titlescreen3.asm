@@ -2,19 +2,19 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_39C46:					  ; CODE XREF: ROM:00039A0Ep
+HandlePaletteScroll2:				  ; CODE XREF: ROM:00039A0Ep
 		tst.b	-$00000018(a6)
 		bpl.s	loc_39C4E
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39C4E:					  ; CODE XREF: sub_39C46+4j
+loc_39C4E:					  ; CODE XREF: HandlePaletteScroll2+4j
 		cmp.w	-$00000002(a6),d0
 		bcs.s	loc_39C56
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39C56:					  ; CODE XREF: sub_39C46+Cj
+loc_39C56:					  ; CODE XREF: HandlePaletteScroll2+Cj
 		move.w	-$0000000C(a6),d0
 		ext.l	d0
 		clr.l	d6
@@ -23,14 +23,14 @@ loc_39C56:					  ; CODE XREF: sub_39C46+Cj
 		lea	((g_Pal0Base+2)).l,a0
 		moveq	#$0000000E,d7
 
-loc_39C6C:					  ; CODE XREF: sub_39C46+2Cj
+loc_39C6C:					  ; CODE XREF: HandlePaletteScroll2+2Cj
 		lea	Blue(pc),a1
 		bsr.s	sub_39BF2
 		dbf	d7,loc_39C6C
 		lea	((g_Pal1Base+2)).l,a0
 		moveq	#$0000000E,d7
 
-loc_39C7E:					  ; CODE XREF: sub_39C46+40j
+loc_39C7E:					  ; CODE XREF: HandlePaletteScroll2+40j
 		lea	Yellow(pc),a1
 		bsr.w	sub_39BF2
 		dbf	d7,loc_39C7E
@@ -39,15 +39,15 @@ loc_39C7E:					  ; CODE XREF: sub_39C46+40j
 		bcs.s	loc_39C9A
 		move.b	#$FF,-$00000018(a6)
 
-loc_39C9A:					  ; CODE XREF: sub_39C46+1Cj
-						  ; sub_39C46+4Cj
+loc_39C9A:					  ; CODE XREF: HandlePaletteScroll2+1Cj
+						  ; HandlePaletteScroll2+4Cj
 		addq.w	#$01,-$0000000C(a6)
 		rts
-; End of function sub_39C46
+; End of function HandlePaletteScroll2
 
 ; ---------------------------------------------------------------------------
-Blue:		dc.w $0E00			  ; DATA XREF: sub_39C46:loc_39C6Ct
-Yellow:		dc.w $00EE			  ; DATA XREF: sub_39C46:loc_39C7Et
+Blue:		dc.w $0E00			  ; DATA XREF: HandlePaletteScroll2:loc_39C6Ct
+Yellow:		dc.w $00EE			  ; DATA XREF: HandlePaletteScroll2:loc_39C7Et
 
 ; =============== S U B	R O U T	I N E =======================================
 
