@@ -148,11 +148,13 @@ loc_2351E:					  ; CODE XREF: ReloadTextboxSprites+10j
 
 
 ClearTextboxTiles:				  ; CODE XREF: ReloadTextbox+2p
+	if ~(REGION=JP)
 		tst.b	(byte_FF1128).l
 		beq.w	loc_2353A
 		nop
 		nop
 		jsr	(j_WaitUntilVBlank).l
+	endif
 
 loc_2353A:					  ; CODE XREF: ClearTextboxTiles+6j
 		lea	(g_ScreenBuffer).l,a0
@@ -303,7 +305,11 @@ sub_235FE:					  ; CODE XREF: ProcessChar+2Cp
 
 sub_23612:					  ; CODE XREF: sub_235FE+Cp
 		move.w	d7,(word_FF1192).l
+	if REGION=JP
+		move.w	#$000A,d4
+	else
 		move.w	#$0007,d4
+	endif
 		cmpi.b	#$00,d7
 		beq.s	loc_2366C
 		move.w	#$000E,d6

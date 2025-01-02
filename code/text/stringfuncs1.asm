@@ -211,19 +211,23 @@ loc_23094:					  ; CODE XREF: GetNextChar+6j
 		move.l	a1,(dword_FF1844).l
 		cmpi.w	#$FFFF,d0
 		beq.s	loc_230C0
+	if	~(REGION=JP)
 		cmpi.w	#CHR_HYPHENATION_POINT,d0
 		beq.s	loc_23094
 		cmpi.w	#CHR_BREAKING_SPACE,d0
 		beq.s	loc_230BC
 		cmpi.w	#CHR_BREAK_POINT,d0
 		beq.s	loc_23094
+	endif
 		rts
 ; ---------------------------------------------------------------------------
 
+	if	~(REGION=JP)
 loc_230BC:					  ; CODE XREF: GetNextChar+6Ej
 		clr.w	d0
 		rts
 ; ---------------------------------------------------------------------------
+	endif
 
 loc_230C0:					  ; CODE XREF: GetNextChar+62j
 		clr.l	(dword_FF1844).l
@@ -350,6 +354,7 @@ HandleControlChars:				  ; CODE XREF: ProcessChar+8j
 ; ---------------------------------------------------------------------------
 		bra.w	loc_2332C
 ; ---------------------------------------------------------------------------
+	if	~(REGION=JP)
 		bra.w	locret_23102
 ; ---------------------------------------------------------------------------
 		bra.w	loc_231C4
@@ -361,6 +366,7 @@ loc_231C4:					  ; CODE XREF: HandleControlChars+6Cj
 		clr.w	d0
 		bra.w	loc_230D6
 ; ---------------------------------------------------------------------------
+	endif
 
 HandleYesNo:					  ; CODE XREF: HandleControlCharsj
 		bsr.w	sub_2313C
@@ -384,6 +390,11 @@ HandleItemName:					  ; CODE XREF: HandleControlChars+Cj
 ; ---------------------------------------------------------------------------
 
 HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
+	if	REGION=JP
+		bsr.w	PopItem
+		bsr.w	GetChrName
+		bra.w	CopyStringToBuffer
+	else
 		bsr.w	InsertNewline
 		bsr.w	PopItem
 		bsr.w	GetChrName
@@ -392,6 +403,7 @@ HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
 		clr.w	(a1)+
 		move.w	#$FFFF,(a1)+
 		rts
+	endif
 ; ---------------------------------------------------------------------------
 
 locret_2320A:					  ; CODE XREF: HandleControlChars+18j

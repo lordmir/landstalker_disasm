@@ -89,7 +89,11 @@ YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
 		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
 		ext.w	d1
+	if	REGION=JP
+		addi.w	#$0128,d1
+	else
 		addi.w	#$0124,d1
+	endif
 		move.b	#$05,(g_VDPSpr02_Size).l
 		move.w	#$E524,(g_VDPSpr02_TileSource).l
 		move.w	#$00D0,(g_VDPSpr02_X).l
@@ -176,7 +180,11 @@ LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
 		ext.w	d1
+	if	REGION=JP
+		addi.w	#$0138,d1
+	else
 		addi.w	#$0134,d1
+	endif
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		move.w	#$00D0,(g_VDPSpr79_X).l

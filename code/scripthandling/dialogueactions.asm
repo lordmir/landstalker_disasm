@@ -1781,8 +1781,10 @@ CSA_0087:					  ; CODE XREF: ROM:00012318j
 		movem.l	a5,-(sp)
 		lea	(Sprite10_X).l,a5
 		jsr	(j_HideSprite).l
+	if	FIX_ARMLET_SKIP
 		lea	(Sprite12_X).l,a5
 		jsr	(j_HideSprite).l
+	endif
 		movem.l	(sp)+,a5
 		move.b	#ITM_ARMLET,d0
 		jmp	(j_CheckAndConsumeItem).l
@@ -4238,10 +4240,14 @@ CSA_0154:					  ; CODE XREF: ROM:0001264Cj
 ; ---------------------------------------------------------------------------
 		move.w	#00120,d0
 		jsr	(j_Sleep).l
+	if FIX_POTENTIAL_CORRUPTION_ON_GOLA
 		movem.l	a0,-(sp)
 		bsr.w	sub_15914
-; ---------------------------------------------------------------------------
 		movem.l	(sp)+,a0
+	else
+		bsr.w	sub_15914
+	endif
+; ---------------------------------------------------------------------------
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MirWarp
@@ -4552,9 +4558,11 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 loc_15936:					  ; CODE XREF: sub_15914+44j
 		bsr.w	sub_159AE
 		bsr.w	loc_15A96
+	if ENABLE_GOLD_COUNTUP_ON_TREASURE
 		move.w	#00013,d0
 		jsr	(AddGold).l
 		jsr	(j_QueueHUDTilemapDMA).l
+	endif
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	sub_1595C
 		bra.w	loc_15936

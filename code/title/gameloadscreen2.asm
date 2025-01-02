@@ -313,7 +313,11 @@ sub_F92A:					  ; CODE XREF: ROM:loc_EEF6p
 
 loc_F93A:					  ; CODE XREF: sub_F92A+26j
 		move.w	#$00B0,d0
+	if REGION=JP
+		move.w	#$0138,d1
+	else
 		move.w	#$0134,d1
+	endif
 		moveq	#$00000050,d2
 		moveq	#$00000003,d3
 		clr.w	-$0000000C(a6)
@@ -361,7 +365,11 @@ sub_F992:					  ; CODE XREF: ROM:0000EF94p
 		bsr.w	DMACopyTextBuffer
 		bsr.w	sub_F218
 		move.w	#$0118,d0
+	if 	REGION=JP
+		move.w	#$0138,d1
+	else
 		move.w	#$0134,d1
+	endif
 		moveq	#$00000040,d2
 		moveq	#$00000002,d3
 		bsr.w	sub_F9D6

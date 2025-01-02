@@ -842,6 +842,7 @@ loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 						  ; Bit13 - Receive Damage
 		andi.b	#$30,d0
 		beq.s	loc_6880
+	if FIX_COLLISION_GLITCH
 		adda.w	d1,a1
 		movea.l	a1,a5
 		addi.w	#$0020,Z(a5)
@@ -853,9 +854,8 @@ loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 		subi.w	#$0020,Z(a5)
 		subi.w	#$0020,HitBoxZEnd(a5)
 		rts
-; ---------------------------------------------------------------------------
-
-loc_6850:					  ; CODE XREF: ProcessActionButton+194j
+	endif
+loc_6850:	
 		andi.b	#$20,d0
 		move.w	#$0010,(word_FF12E0).l
 		addq.b	#$01,(byte_FF1133).l

@@ -398,7 +398,7 @@ locret_29024:					  ; CODE XREF: ROM:00029012j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_29026:					  ; CODE XREF: HandleShopInterraction+4Ap
+RestoreFromNoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+4Ap
 						  ; ROM:00024F9Ap ...
 		btst	#$01,(g_RightArrowCursorState).l
 		beq.s	locret_29044

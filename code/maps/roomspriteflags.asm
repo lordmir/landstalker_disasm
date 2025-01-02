@@ -206,9 +206,11 @@ loc_1A450:					  ; CODE XREF: CheckLockedDoorSpriteFlags+4j
 
 loc_1A45A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+1Cj
 		move.w	#$FFFF,(a0,d2.w)	  ; Move offscreen
+	if FIX_SPRITE_HIDE_BUG
 		addi.w	#SPRITE_SIZE,d2
 		cmpi.w	#ALL_SPRITES_SIZE,d2
 		bne.s	loc_1A45A		  ; Move offscreen
+	endif
 
 locret_1A46A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+6j
 						  ; CheckFlagsToHideMultipleSprites+Cj

@@ -23,14 +23,22 @@ loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 		movem.w	d1,-(sp)
 		bsr.w	sub_D642
 		movem.w	(sp)+,d1
+	if REGION=JP
+		lea	-$0000008E(a0),a0
+	else
 		lea	-$000000D6(a0),a0
 		movem.l	a0,-(sp)
+	endif
 		bsr.s	sub_D5E4
 		jsr	(j_GetItemQtyAndMaxQty).l
+	if ~(REGION=JP)
 		movem.l	(sp)+,a0
+	endif
 		tst.w	d2
 		bne.s	locret_D5C6
+	if ~(REGION=JP)
 		lea	$0000005A(a0),a0
+	endif
 		bsr.s	sub_D5C8
 
 locret_D5C6:					  ; CODE XREF: PopulateItemSlot+3Aj
@@ -66,7 +74,11 @@ loc_D5D6:					  ; CODE XREF: sub_D5C8+8j
 
 sub_D5E4:					  ; CODE XREF: PopulateItemSlot+2Cp
 						  ; GetInvEquipLayout+44p
-		movem.w	d0-d1,-(sp)
+	if REGION=JP
+		movem.w	d0,-(sp)
+	else
+		movem.w d0-d1,-(sp)
+	endif
 		exg	d0,d1
 		jsr	(j_LoadUncompressedString).l
 		movea.l	a0,a1
@@ -82,25 +94,35 @@ loc_D5FC:					  ; CODE XREF: sub_D5E4+10j
 loc_D600:					  ; CODE XREF: sub_D5E4+16j
 						  ; sub_D5E4:loc_D634j
 		move.b	(a2)+,d0
+	if ~(REGION=JP)
 		cmpi.b	#CHR_HYPHENATION_POINT,d0
 		bne.s	loc_D616
 		move.b	#CHR_Dash,d0
 		move.w	d0,(a0)
 		lea	$00000048(a1),a0
 		bra.w	loc_D634
+	endif
 ; ---------------------------------------------------------------------------
 
 loc_D616:					  ; CODE XREF: sub_D5E4+22j
 		cmpi.b	#CHR_BREAKING_SPACE,d0
 		bne.s	loc_D624
+	if	REGION=JP
+		move.w	d0,-$48(a0)
+	else
 		lea	$00000048(a1),a0
+	endif
 		bra.w	loc_D634
 ; ---------------------------------------------------------------------------
 
 loc_D624:					  ; CODE XREF: sub_D5E4+36j
 		cmpi.b	#CHR_BREAK_POINT,d0
 		bne.s	loc_D632
+	if	REGION=JP
+		move.w	d0,-$48(a0)
+	else
 		lea	$00000048(a1),a0
+	endif
 		bra.w	loc_D634
 ; ---------------------------------------------------------------------------
 
@@ -111,7 +133,11 @@ loc_D634:					  ; CODE XREF: sub_D5E4+2Ej
 						  ; sub_D5E4+3Cj ...
 		dbf	d7,loc_D600
 		lea	$00000012(a1),a0
-		movem.w	(sp)+,d0-d1
+	if REGION=JP
+		movem.w	(sp)+,d0
+	else
+		movem.w (sp)+,d0-d1
+	endif
 		rts
 ; End of function sub_D5E4
 

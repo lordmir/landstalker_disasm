@@ -53,6 +53,11 @@ jobs:
         shell: bash
         run: ./build_expanded.sh | tee build_landstalker_us_expanded.log
 
+      - name: Build JP Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build_jp.sh | tee build_landstalker_jp.log
+
       - name: Verify US Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
@@ -64,6 +69,12 @@ jobs:
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
         run: |
-             grep "Checksum: 7489" build_landstalker_us_expanded.log
-             echo e90a902363eb23425a2a6a0946c5f656b1817c9bbcf3e35e3e26491bfaadee91 landstalker_expanded.bin | sha256sum -c
+             grep "Checksum: 2CDF" build_landstalker_us_expanded.log
+             echo 94c4dddaaaee3c196523dc579c82bbe8f220b98216b1f9199ae9787dc32a86a2 landstalker_expanded.bin | sha256sum -c
 
+      - name: Verify JP Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: |
+             grep "Checksum: 35A6" build_landstalker_jp.log
+             echo d0c2080a7890bd908dcb698173266d2326e7bba8f701afba1104c9e67d6c116a landstalker_jp.bin | sha256sum -c

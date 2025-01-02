@@ -81,7 +81,7 @@ loc_24F3E:					  ; CODE XREF: HandleShopInterraction+28j
 loc_24F50:					  ; CODE XREF: HandleShopInterraction+1Ej
 						  ; HandleShopInterraction+32j
 		bsr.w	RunTextCmd
-		bsr.w	sub_29026
+		bsr.w	RestoreFromNoMoneyEffect
 		movem.l	(sp)+,d0-d2/a0
 		addq.l	#$04,sp
 		rts

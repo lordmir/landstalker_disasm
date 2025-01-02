@@ -173,7 +173,7 @@ word_29C78:	dc.w $0000,$0008,$0002,$0100,$0004,$0000,$027F ; DATA XREF: SpellBoo
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_29C8A:					  ; CODE XREF: ROM:00024FC4p
+CurePaletteEffect:					  ; CODE XREF: ROM:00024FC4p
 		movem.l	d0-d4,-(sp)
 		move.w	#$0003,d0
 		bsr.w	sub_29D52

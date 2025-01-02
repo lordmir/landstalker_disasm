@@ -332,10 +332,12 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 ; ---------------------------------------------------------------------------
 
 loc_30BC:					  ; CODE XREF: sub_3058+30j
+	if FIX_COLLISION_GLITCH
 		cmpi.w	#$0001,InitFlags4_DropProbability(a0)
 		bne.s	loc_30CA
 		tst.b	GoldOrChestContents(a0)
 		beq.s	loc_308A
+	endif
 
 loc_30CA:					  ; CODE XREF: sub_3058+36j
 						  ; sub_3058+3Cj ...
