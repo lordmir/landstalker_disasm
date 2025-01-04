@@ -68,14 +68,14 @@ jobs:
         shell: bash
         run: |
              grep "Checksum: F37C" build_landstalker_us.log
-             echo ad9f49cf2d528ee40fab74f8687ed908036873e54a7dd30c5dc32286c29fc614 landstalker.bin | sha256sum -c
+             echo ad9f49cf2d528ee40fab74f8687ed908036873e54a7dd30c5dc32286c29fc614 landstalker_us.bin | sha256sum -c
 
       - name: Verify US Expanded Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
         run: |
              grep "Checksum: 2CDF" build_landstalker_us_expanded.log
-             echo 94c4dddaaaee3c196523dc579c82bbe8f220b98216b1f9199ae9787dc32a86a2 landstalker_expanded.bin | sha256sum -c
+             echo 94c4dddaaaee3c196523dc579c82bbe8f220b98216b1f9199ae9787dc32a86a2 landstalker_us_expanded.bin | sha256sum -c
 
       - name: Verify JP Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
