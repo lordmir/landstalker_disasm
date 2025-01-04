@@ -133,12 +133,3 @@ FR:                     equ     3
 DE:                     equ     4
 US_BETA:                equ     5
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-REGION:                             equ     US
-ENABLE_REGION_CHECK:                equ     True
-FIX_COLLISION_GLITCH:               equ     True
-FIX_ARMLET_SKIP:                    equ     True
-FIX_EINSTEIN_WHISTLE_FLAG_CHECK:    equ     True
-FIX_SPRITE_HIDE_BUG:                equ     True
-ENABLE_GOLD_COUNTUP_ON_TREASURE:    equ     True
-FIX_POTENTIAL_CORRUPTION_ON_GOLA:   equ     True
-FIX_GOLD_CAP_ON_FILE_LOAD:          equ     True
