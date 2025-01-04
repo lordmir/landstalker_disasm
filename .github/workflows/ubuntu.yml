@@ -88,5 +88,5 @@ jobs:
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
         run: |
-             grep "Checksum: 8100" build_landstalker_jp.log
+             grep "Checksum: 8100" build_landstalker_jp_expanded.log
              echo 5632fedb26b4f7d2604469e8350f02e17044762c4a0d9c3af79881362e7b08b5 landstalker_jp_expanded.bin | sha256sum -c
