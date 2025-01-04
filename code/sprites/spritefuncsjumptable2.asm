@@ -13,8 +13,8 @@ j_HideSprite:					  ; DATA XREF: ROM:000117A6t
 
 ; Attributes: thunk
 
-sub_1A4404:					  ; DATA XREF: sub_178C8:loc_178F6t
-		jmp	sub_1A83E6(pc)
+sub_1A4404:					  ; DATA XREF: UpdateEntities:loc_178F6t
+		jmp	RespawnGhost(pc)
 ; End of function sub_1A4404
 
 

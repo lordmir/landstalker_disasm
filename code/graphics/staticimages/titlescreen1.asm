@@ -233,11 +233,19 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		bsr.w	DecompTilemap
 		move.w	#$0280,d0
 		bsr.w	ReindexDecompTilemap
+	if REGION=JP
+		moveq	#$00000013,d0
+		moveq	#$0000000E,d1
+		move.w	#$2000,d2
+		moveq	#$0000000E,d6
+		moveq	#$00000002,d7
+	else
 		moveq	#$00000010,d0
 		moveq	#$0000000D,d1
 		move.w	#$2000,d2
 		moveq	#$00000013,d6
 		moveq	#$00000004,d7
+	endif
 		bsr.w	sub_39E72
 		moveq	#$0000000E,d0
 		moveq	#$00000013,d1
@@ -249,6 +257,9 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		moveq	#$00000013,d6
 		moveq	#$00000001,d7
 		bsr.w	sub_39E72
+	if REGION=JP
+		bsr.w	loc_39EAE
+	endif
 		lea	(g_Pal0Base).l,a0
 		moveq	#$0000001F,d7
 
@@ -349,9 +360,9 @@ loc_399E4:					  ; CODE XREF: ROM:00039A52j
 		move.w	#$012C,d0
 		bsr.w	sub_39CA4
 		move.w	#$0118,d0
-		bsr.w	sub_39C46
+		bsr.w	HandlePaletteScroll2
 		move.w	#$00DC,d0
-		bsr.w	sub_39B3C
+		bsr.w	HandlePaletteScroll
 		move.w	#$0082,d0
 		bsr.w	sub_39BAA
 		move.w	#$0000,d0

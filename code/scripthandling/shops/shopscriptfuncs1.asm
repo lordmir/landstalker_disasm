@@ -2,10 +2,10 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A34:					  ; DATA XREF: sub_22EC0t
-		clr.b	(byte_FF1902).l
+HideRightArrow:					  ; DATA XREF: j_HideRightArrowt
+		clr.b	(g_RightArrowCursorState).l
 		rts
-; End of function sub_24A34
+; End of function HideRightArrow
 
 
 ; =============== S U B	R O U T	I N E =======================================

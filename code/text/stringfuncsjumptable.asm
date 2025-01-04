@@ -3,9 +3,9 @@
 
 ; Attributes: thunk
 
-sub_22E88:					  ; DATA XREF: CheckForMenuOpen+8Ct
-		jmp	sub_2482C(pc)
-; End of function sub_22E88
+j_LoadYesNoPrompt:				  ; DATA XREF: CheckForMenuOpen+8Ct
+		jmp	LoadYesNoPrompt(pc)
+; End of function j_LoadYesNoPrompt
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -130,9 +130,9 @@ j_PlayerTalk:					  ; DATA XREF: CheckTalk+120t
 
 ; Attributes: thunk
 
-sub_22EC0:					  ; DATA XREF: LoadGame+2t
-		jmp	sub_24A34(pc)
-; End of function sub_22EC0
+j_HideRightArrow:				  ; DATA XREF: LoadGame+2t
+		jmp	HideRightArrow(pc)
+; End of function j_HideRightArrow
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -149,10 +149,10 @@ j_LoadUncompressedString:			  ; DATA XREF: sub_D5E4+6t
 
 ; Attributes: thunk
 
-sub_22EC8:					  ; DATA XREF: OnTick+156Ct
+j_PrintString_0:				  ; DATA XREF: OnTick+156Ct
 						  ; YesNoPrompt+10t ...
-		jmp	sub_22F1C(pc)
-; End of function sub_22EC8
+		jmp	PrintString_0(pc)
+; End of function j_PrintString_0
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -213,7 +213,7 @@ j_RunTextCmd:					  ; DATA XREF: Trap01Handler+Et
 
 sub_22EE8:					  ; DATA XREF: CheckOpenChest+7At
 						  ; CheckOpenChest+1AEt ...
-		jmp	sub_2343A(pc)
+		jmp	SetUpTextbox(pc)
 ; End of function sub_22EE8
 
 
@@ -300,7 +300,7 @@ j_GetItem:					  ; DATA XREF: CheckOpenChest+106t
 ; Attributes: thunk
 
 j_CheckAndConsumeItem:				  ; DATA XREF: ConsumeItem+Et
-						  ; sub_10ACE+136t ...
+						  ; LoadPlayerSpecialAnimation+136t ...
 		jmp	CheckAndConsumeItem(pc)
 ; End of function j_CheckAndConsumeItem
 
@@ -310,7 +310,7 @@ j_CheckAndConsumeItem:				  ; DATA XREF: ConsumeItem+Et
 ; Attributes: thunk
 
 sub_22F10:					  ; DATA XREF: sub_3EB0E+28t
-		jmp	sub_29516(pc)
+		jmp	GetIslandMapLocation(pc)
 ; End of function sub_22F10
 
 

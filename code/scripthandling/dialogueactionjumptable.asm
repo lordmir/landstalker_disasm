@@ -2,8 +2,8 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-ProcessDialogueScriptAction:			  ; CODE XREF: sub_10ACE+CAp
-						  ; sub_10ACE+F2j ...
+ProcessDialogueScriptAction:			  ; CODE XREF: LoadPlayerSpecialAnimation+CAp
+						  ; LoadPlayerSpecialAnimation+F2j ...
 		lsl.w	#$02,d0
 		jmp	CustomScriptActionTable(pc,d0.w)
 ; End of function ProcessDialogueScriptAction

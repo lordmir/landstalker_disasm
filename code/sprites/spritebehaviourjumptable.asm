@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-OnTick:						  ; CODE XREF: sub_178C8+1Cp
+OnTick:						  ; CODE XREF: UpdateEntities+1Cp
 						  ; DATA XREF: j_OnTickt
 
 ; FUNCTION CHUNK AT 00017ADE SIZE 00000062 BYTES
@@ -31,7 +31,7 @@ OnTick:						  ; CODE XREF: sub_178C8+1Cp
 ProcessNextCmd:					  ; CODE XREF: OnTick+1C0j
 						  ; OnTick+1C8j ...
 		move.w	BehavParam(a5),d0
-		beq.w	locret_17AB8
+		beq.w	EB_NULL
 		andi.w	#$00FF,d0
 		lsl.w	#$02,d0
 		jmp	loc_17918(pc,d0.w)

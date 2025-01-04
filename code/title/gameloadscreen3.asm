@@ -3,7 +3,7 @@
 
 ; Attributes: bp-based frame
 
-sub_FF12:					  ; CODE XREF: ROM:0000EF32p
+HandleGameStartInput:				  ; CODE XREF: ROM:0000EF32p
 
 var_2		= -2
 
@@ -11,7 +11,7 @@ var_2		= -2
 		movea.l	a4,a0
 		moveq	#$0000000B,d7
 
-loc_FF1A:					  ; CODE XREF: sub_FF12+Aj
+loc_FF1A:					  ; CODE XREF: HandleGameStartInput+Aj
 		clr.b	-(a0)
 		dbf	d7,loc_FF1A
 		clr.b	-$00000019(a6)
@@ -19,7 +19,7 @@ loc_FF1A:					  ; CODE XREF: sub_FF12+Aj
 		move.w	#$0060,-$0000000E(a6)
 		move.w	#$0078,d7
 
-loc_FF32:					  ; CODE XREF: sub_FF12+5Ej
+loc_FF32:					  ; CODE XREF: HandleGameStartInput+5Ej
 		bsr.w	sub_F2E2
 		move.b	(g_Controller1State).l,d0
 		cmpi.b	#CTRLBF_B,d0
@@ -37,16 +37,16 @@ loc_FF32:					  ; CODE XREF: sub_FF12+5Ej
 		movem.w	(sp)+,d7
 		dbf	d7,loc_FF32
 
-loc_FF74:					  ; CODE XREF: sub_FF12+2Ej
+loc_FF74:					  ; CODE XREF: HandleGameStartInput+2Ej
 		unlk	a4
 		rts
-; End of function sub_FF12
+; End of function HandleGameStartInput
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_FF78:					  ; CODE XREF: sub_FF12+12p
+sub_FF78:					  ; CODE XREF: HandleGameStartInput+12p
 		lea	((g_Buffer+2)).l,a0
 		move.w	#$6000,d0
 		move.w	(a0),d1
@@ -94,7 +94,7 @@ loc_FFCC:					  ; CODE XREF: sub_FF78+56j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_FFE2:					  ; CODE XREF: sub_FF12+40p
+sub_FFE2:					  ; CODE XREF: HandleGameStartInput+40p
 
 ; FUNCTION CHUNK AT 0000FFF2 SIZE 0000000A BYTES
 ; FUNCTION CHUNK AT 00010002 SIZE 00000012 BYTES
@@ -144,7 +144,7 @@ locret_10012:					  ; CODE XREF: sub_FFE2+24j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_10014:					  ; CODE XREF: sub_FF12+38p
+sub_10014:					  ; CODE XREF: HandleGameStartInput+38p
 		tst.b	-$0000000B(a4)
 		beq.s	loc_1001C
 		rts
@@ -189,7 +189,7 @@ word_1006E:	dc.w $0002,$0001		  ; DATA XREF: sub_10014:loc_10024t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1007E:					  ; CODE XREF: sub_FF12+4Cp
+sub_1007E:					  ; CODE XREF: HandleGameStartInput+4Cp
 		cmp.w	-$00000002(a4),d0
 		bcs.s	loc_10086
 		rts

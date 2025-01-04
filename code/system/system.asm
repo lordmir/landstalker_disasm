@@ -40,7 +40,9 @@ loc_4FE:					  ; CODE XREF: ROM:000006F6j
 		bsr.s	ResetVDPAndClearRAM
 		bsr.w	InitZ80Driver
 		bsr.s	ClearAndInitGraphics
+	if	ENABLE_REGION_CHECK
 		jsr	(j_CheckRegion).l
+	endif
 		bsr.w	CheckSRAM
 		jmp	(ResetGame).l
 
@@ -940,7 +942,7 @@ ClearScrollPlanes:				  ; CODE XREF: ROM:00000260j
 
 WaitUntilVBlank:				  ; CODE XREF: j_WaitUntilVBlankj
 						  ; WaitUntilZ80Ready:loc_824p	...
-		bsr.w	nullsub_1
+		bsr.w	Return
 		bsr.w	UpdateFridayAnimation
 		bset	#$07,(g_InterruptFlags).l
 

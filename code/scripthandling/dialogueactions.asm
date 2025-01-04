@@ -24,7 +24,7 @@ LoadCutsceneDialogue:				  ; CODE XREF: ROM:00012690j
 
 
 CSA_0000:					  ; CODE XREF: CustomScriptActionTablej
-		move.b	#$01,(byte_FF1145).l
+		move.b	#$01,(g_PlayerAnimation).l
 		rts
 ; End of function CSA_0000
 
@@ -685,7 +685,7 @@ loc_12DCE:					  ; CODE XREF: ROM:00012DB4j
 		bsr.w	MarkHUDForUpdate
 		bsr.w	RefreshHUD
 		jsr	(j_EnableDMAQueueProcessing).l
-		clr.b	(byte_FF1145).l
+		clr.b	(g_PlayerAnimation).l
 		clr.b	(byte_FF1142).l
 		clr.b	(byte_FF1143).l
 		clr.w	(g_ControllerPlayback).l
@@ -715,7 +715,7 @@ CSA_0033:					  ; CODE XREF: ROM:000121C8j
 		bsr.w	MarkHUDForUpdate
 		bsr.w	RefreshHUD
 		jsr	(j_EnableDMAQueueProcessing).l
-		clr.b	(byte_FF1145).l
+		clr.b	(g_PlayerAnimation).l
 		clr.b	(byte_FF1142).l
 		clr.b	(byte_FF1143).l
 		clr.w	(g_ControllerPlayback).l
@@ -1292,15 +1292,15 @@ loc_134BA:					  ; CODE XREF: ROM:000134A4j
 ; ---------------------------------------------------------------------------
 
 CSA_0063:					  ; CODE XREF: ROM:00012288j
-		move.b	#$01,(byte_FF1145).l
+		move.b	#$01,(g_PlayerAnimation).l
 
 loc_134D2:					  ; CODE XREF: ROM:000134EAj
 		bsr.w	sub_135F6
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
-		cmpi.b	#$1A,(byte_FF1145).l
+		cmpi.b	#$1A,(g_PlayerAnimation).l
 		bne.s	loc_134D2
-		clr.b	(byte_FF1145).l
+		clr.b	(g_PlayerAnimation).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_FadeOut0
@@ -1375,8 +1375,8 @@ sub_135D0:					  ; CODE XREF: ROM:0001350Ap
 
 sub_135F6:					  ; CODE XREF: ROM:loc_134D2p
 		move.w	#$0048,(Player_AnimationIndex).l
-		addq.b	#$01,(byte_FF1145).l
-		cmpi.b	#$02,(byte_FF1145).l
+		addq.b	#$01,(g_PlayerAnimation).l
+		cmpi.b	#$02,(g_PlayerAnimation).l
 		bne.s	loc_13620
 		move.w	#$0004,(Player_AnimationFrame).l
 		ori.b	#$80,(Player_Unk0A).l
@@ -1384,7 +1384,7 @@ sub_135F6:					  ; CODE XREF: ROM:loc_134D2p
 ; ---------------------------------------------------------------------------
 
 loc_13620:					  ; CODE XREF: sub_135F6+16j
-		cmpi.b	#$0F,(byte_FF1145).l
+		cmpi.b	#$0F,(g_PlayerAnimation).l
 		bne.s	loc_1363C
 		move.w	#$0008,(Player_AnimationFrame).l
 		ori.b	#$80,(Player_Unk0A).l
@@ -1392,7 +1392,7 @@ loc_13620:					  ; CODE XREF: sub_135F6+16j
 ; ---------------------------------------------------------------------------
 
 loc_1363C:					  ; CODE XREF: sub_135F6+32j
-		cmpi.b	#$14,(byte_FF1145).l
+		cmpi.b	#$14,(g_PlayerAnimation).l
 		bne.s	loc_13658
 		move.w	#$000C,(Player_AnimationFrame).l
 		ori.b	#$80,(Player_Unk0A).l
@@ -1400,7 +1400,7 @@ loc_1363C:					  ; CODE XREF: sub_135F6+32j
 ; ---------------------------------------------------------------------------
 
 loc_13658:					  ; CODE XREF: sub_135F6+4Ej
-		cmpi.b	#$19,(byte_FF1145).l
+		cmpi.b	#$19,(g_PlayerAnimation).l
 		bne.s	locret_13672
 		move.w	#$0010,(Player_AnimationFrame).l
 		ori.b	#$80,(Player_Unk0A).l
@@ -1781,8 +1781,10 @@ CSA_0087:					  ; CODE XREF: ROM:00012318j
 		movem.l	a5,-(sp)
 		lea	(Sprite10_X).l,a5
 		jsr	(j_HideSprite).l
+	if	FIX_ARMLET_SKIP
 		lea	(Sprite12_X).l,a5
 		jsr	(j_HideSprite).l
+	endif
 		movem.l	(sp)+,a5
 		move.b	#ITM_ARMLET,d0
 		jmp	(j_CheckAndConsumeItem).l
@@ -3056,7 +3058,7 @@ loc_14680:					  ; CODE XREF: ROM:000146B0j
 		dc.w SND_EnemyNoise
 ; ---------------------------------------------------------------------------
 		bset	#$00,(g_AdditionalFlags+$19).l
-		move.b	#$01,(byte_FF1145).l
+		move.b	#$01,(g_PlayerAnimation).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3082,7 +3084,7 @@ loc_14704:					  ; CODE XREF: ROM:0001472Cj
 		clr.w	(Player_SubX).l
 		bsr.w	SpecialWarp
 		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1145).l
+		clr.b	(g_PlayerAnimation).l
 		move.w	#$00DD,d0		  ; Cutscene 0x0DD: 0x0255E8
 		bsr.w	LoadCutsceneDialogue
 		movem.l	a5,-(sp)
@@ -4238,10 +4240,14 @@ CSA_0154:					  ; CODE XREF: ROM:0001264Cj
 ; ---------------------------------------------------------------------------
 		move.w	#00120,d0
 		jsr	(j_Sleep).l
+	if FIX_POTENTIAL_CORRUPTION_ON_GOLA
 		movem.l	a0,-(sp)
 		bsr.w	sub_15914
-; ---------------------------------------------------------------------------
 		movem.l	(sp)+,a0
+	else
+		bsr.w	sub_15914
+	endif
+; ---------------------------------------------------------------------------
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MirWarp
@@ -4552,9 +4558,11 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 loc_15936:					  ; CODE XREF: sub_15914+44j
 		bsr.w	sub_159AE
 		bsr.w	loc_15A96
+	if ENABLE_GOLD_COUNTUP_ON_TREASURE
 		move.w	#00013,d0
 		jsr	(AddGold).l
 		jsr	(j_QueueHUDTilemapDMA).l
+	endif
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	sub_1595C
 		bra.w	loc_15936

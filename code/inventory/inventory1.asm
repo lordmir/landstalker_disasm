@@ -26,7 +26,7 @@ loc_7654:					  ; CODE XREF: CheckForMenuOpen+26j
 ; ---------------------------------------------------------------------------
 		bsr.w	FadeOutToDarkness
 		bsr.w	sub_7816
-		bsr.w	sub_D25C
+		bsr.w	InitInv
 		bsr.w	InitInvDisplay
 		jsr	(j_RefreshAndClearTextbox).l
 		bsr.w	QueueTextboxTilemapDMA
@@ -48,7 +48,7 @@ loc_76A0:					  ; CODE XREF: CheckForMenuOpen+80j
 		dbf	d7,loc_76A0
 		bsr.w	QueueInventoryScrBTilemapDMA
 		bsr.w	sub_D4AE
-		jsr	(sub_22E88).l
+		jsr	(j_LoadYesNoPrompt).l
 		bsr.w	FadeInFromDarkness
 		jsr	(sub_22E8C).l
 		bcc.w	sub_7766
@@ -95,7 +95,7 @@ ArmourDefence:	dc.w $0100,$00E6,$00CC,$00B3,$0080
 
 sub_7718:					  ; CODE XREF: CheckForMenuOpen+BAp
 						  ; CheckForMenuOpen+BCp ...
-		bsr.w	sub_EA12
+		bsr.w	InitInvEquipScreen
 		tst.b	d0
 		bne.s	loc_7744
 		cmp.b	(a0),d1
@@ -122,7 +122,7 @@ loc_774A:					  ; CODE XREF: CheckForMenuOpen+A2j
 		tst.b	d1
 		bne.s	sub_7766
 		movem.w	d0,-(sp)
-		bsr.w	sub_85F2
+		bsr.w	UseItem
 		bsr.s	sub_7766
 		movem.w	(sp)+,d0
 		bsr.w	sub_8BC8

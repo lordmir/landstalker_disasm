@@ -3,7 +3,7 @@
 
 ; Church in cave
 
-sub_9EB9C:					  ; DATA XREF: sub_9B00Ct
+OpenChest:					  ; DATA XREF: j_OpenChestt
 		cmpi.w	#$0188,(g_RmNum1).l
 		beq.s	locret_9EBC4
 		move.b	#$FF,GoldOrChestContents(a4)
@@ -15,9 +15,9 @@ sub_9EB9C:					  ; DATA XREF: sub_9B00Ct
 		lea	(g_ChestOpenFlags).l,a0
 		bset	d1,(a0,d0.w)
 
-locret_9EBC4:					  ; CODE XREF: sub_9EB9C+8j
+locret_9EBC4:					  ; CODE XREF: OpenChest+8j
 		rts
-; End of function sub_9EB9C
+; End of function OpenChest
 
 
 ; =============== S U B	R O U T	I N E =======================================

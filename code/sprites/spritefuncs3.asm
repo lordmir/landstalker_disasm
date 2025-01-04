@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A4414:					  ; DATA XREF: sub_19514+Ct
+j_InitSpritePalettes:				  ; DATA XREF: InitSprites+Ct
 
 ; FUNCTION CHUNK AT 001AEEDA SIZE 00000024 BYTES
 ; FUNCTION CHUNK AT 001AEF4C SIZE 00000026 BYTES
@@ -11,7 +11,7 @@ sub_1A4414:					  ; DATA XREF: sub_19514+Ct
 ; FUNCTION CHUNK AT 001AF292 SIZE 000001B6 BYTES
 ; FUNCTION CHUNK AT 001AF4FE SIZE 00000088 BYTES
 
-		jmp	loc_1A4422(pc)
+		jmp	InitSpritePalettes(pc)
 ; ---------------------------------------------------------------------------
 
 loc_1A4418:					  ; DATA XREF: sub_12CAE+16t
@@ -20,13 +20,13 @@ loc_1A4418:					  ; DATA XREF: sub_12CAE+16t
 		jmp	(EnemyAI_Gola_A).l
 ; ---------------------------------------------------------------------------
 
-loc_1A4422:					  ; DATA XREF: sub_1A4414t
+InitSpritePalettes:				  ; DATA XREF: j_InitSpritePalettest
 		lea	((g_Pal1Base+4)).l,a0
 		lea	((g_Pal1Base+$10)).l,a1
 		lea	((g_Pal3Base+4)).l,a2
 		moveq	#$00000005,d7
 
-loc_1A4436:					  ; CODE XREF: sub_1A4414+28j
+loc_1A4436:					  ; CODE XREF: j_InitSpritePalettes+28j
 		clr.w	(a0)+
 		clr.w	(a1)+
 		clr.w	(a2)+
@@ -35,29 +35,29 @@ loc_1A4436:					  ; CODE XREF: sub_1A4414+28j
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
 
-loc_1A444A:					  ; CODE XREF: sub_1A4414+4Ej
-		tst.w	(a0)
+loc_1A444A:					  ; CODE XREF: j_InitSpritePalettes+4Ej
+		tst.w	X(a0)
 		bmi.s	locret_1A4466
-		move.b	$00000006(a0),d0
+		move.b	TileSource(a0),d0
 		andi.b	#$20,d0
 		beq.s	loc_1A445E
-		move.b	$0000003B(a0),d0
+		move.b	SpriteType(a0),d0
 		bsr.s	GetSpritePalette
 
-loc_1A445E:					  ; CODE XREF: sub_1A4414+42j
-		lea	$00000080(a0),a0
+loc_1A445E:					  ; CODE XREF: j_InitSpritePalettes+42j
+		lea	SPRITE_SIZE(a0),a0
 		dbf	d7,loc_1A444A
 
-locret_1A4466:					  ; CODE XREF: sub_1A4414+38j
+locret_1A4466:					  ; CODE XREF: j_InitSpritePalettes+38j
 		rts
-; End of function sub_1A4414
+; End of function j_InitSpritePalettes
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-GetSpritePalette:				  ; CODE XREF: sub_1A4414+48p
-						  ; DATA XREF: sub_1A4414:loc_1A4418t
+GetSpritePalette:				  ; CODE XREF: j_InitSpritePalettes+48p
+						  ; DATA XREF: j_InitSpritePalettes:loc_1A4418t
 		lea	SpritePaletteLUT(pc),a1
 
 loc_1A446C:					  ; CODE XREF: GetSpritePalette+10j

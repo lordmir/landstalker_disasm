@@ -2,8 +2,8 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-LoadPal3Low:					  ; CODE XREF: sub_1A4414+AEB4p
-						  ; sub_1A4414+AEF2p ...
+LoadPal3Low:					  ; CODE XREF: j_InitSpritePalettes+AEB4p
+						  ; j_InitSpritePalettes+AEF2p	...
 		move.l	#$C0640000,(VDP_CTRL_REG).l ; CRAM 0x64	(Palette 3, Entry 4)
 		move.w	(ProjectilePalette2,pc),d1
 		nop

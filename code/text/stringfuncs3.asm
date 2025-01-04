@@ -83,13 +83,17 @@ YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
 		bsr.w	sub_24998
 		move.w	#$0050,(word_FF1194).l
 		move.w	#$0000,d0		  ; Yes
-		jsr	(sub_22EC8).l
+		jsr	(j_PrintString_0).l
 		move.w	#$00A0,(word_FF1194).l
 		move.w	#$0001,d0		  ; No
-		jsr	(sub_22EC8).l
+		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
 		ext.w	d1
+	if	REGION=JP
+		addi.w	#$0128,d1
+	else
 		addi.w	#$0124,d1
+	endif
 		move.b	#$05,(g_VDPSpr02_Size).l
 		move.w	#$E524,(g_VDPSpr02_TileSource).l
 		move.w	#$00D0,(g_VDPSpr02_X).l
@@ -165,25 +169,29 @@ loc_24822:					  ; CODE XREF: YesNoPrompt+86j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2482C:					  ; DATA XREF: sub_22E88t
+LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 		bsr.w	sub_24998
 		bsr.w	ReloadTextbox
 		move.w	#$0050,(word_FF1194).l
 		move.w	#$0002,d0
-		jsr	(sub_22EC8).l
+		jsr	(j_PrintString_0).l
 		move.w	#$00A0,(word_FF1194).l
 		move.w	#$0003,d0
-		jsr	(sub_22EC8).l
+		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
 		ext.w	d1
+	if	REGION=JP
+		addi.w	#$0138,d1
+	else
 		addi.w	#$0134,d1
+	endif
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		move.w	#$00D0,(g_VDPSpr79_X).l
 		move.w	d1,(g_VDPSpr79_Y).l
 		move.w	d1,(word_FF1800).l
 		rts
-; End of function sub_2482C
+; End of function LoadYesNoPrompt
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -280,7 +288,7 @@ loc_2498E:					  ; CODE XREF: sub_2488A+40j
 
 
 sub_24998:					  ; CODE XREF: YesNoPromptp
-						  ; sub_2482Cp
+						  ; LoadYesNoPromptp
 		lea	RightArrowGfx(pc),a0
 		lea	($0000A480).l,a1
 		move.w	#$0040,d0

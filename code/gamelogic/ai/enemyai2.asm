@@ -23,9 +23,9 @@ HideSprite:					  ; DATA XREF: j_HideSpritet
 ; End of function HideSprite
 
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1A83E6
+; START	OF FUNCTION CHUNK FOR RespawnGhost
 
-loc_1A87D2:					  ; CODE XREF: sub_1A83E6+3BEj
+loc_1A87D2:					  ; CODE XREF: RespawnGhost+3BEj
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
@@ -38,11 +38,11 @@ loc_1A87D2:					  ; CODE XREF: sub_1A83E6+3BEj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_1A8800:					  ; CODE XREF: sub_1A83E6+406j
+loc_1A8800:					  ; CODE XREF: RespawnGhost+406j
 		bset	#$07,Unk48(a5)
 		clr.w	AnimationIndex(a5)
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1A83E6
+; END OF FUNCTION CHUNK	FOR RespawnGhost
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -358,7 +358,7 @@ j_j_LoadSpriteBehaviour:			  ; CODE XREF: sub_1A4D0E+40p
 
 ; Attributes: thunk
 
-sub_1A8AE6:					  ; CODE XREF: sub_1A83E6+3B4p
+sub_1A8AE6:					  ; CODE XREF: RespawnGhost+3B4p
 						  ; DATA XREF: ROM:001A6412t ...
 		jmp	(sub_1038E).l
 ; End of function sub_1A8AE6

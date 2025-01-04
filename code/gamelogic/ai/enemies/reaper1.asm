@@ -267,7 +267,7 @@ loc_1AC3B4:					  ; CODE XREF: ROM:001AC3A8j
 		move.w	#$0200,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	loc_1AC3EC
 		rts
 ; ---------------------------------------------------------------------------

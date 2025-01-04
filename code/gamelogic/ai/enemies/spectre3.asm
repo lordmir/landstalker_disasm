@@ -242,7 +242,7 @@ loc_1ADA20:					  ; CODE XREF: ROM:001ADA14j
 		move.w	#$0200,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0700,d1
-		bsr.w	sub_1AC474
+		bsr.w	SpawnSmallProjectile
 		bcs.w	loc_1ADA58
 		rts
 ; ---------------------------------------------------------------------------

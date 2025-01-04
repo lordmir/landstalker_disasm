@@ -26,6 +26,16 @@ loc_38634:					  ; CODE XREF: DisplaySegaLogo+36j
 
 LoadSegaLogoTilemap:				  ; CODE XREF: DisplaySegaLogo+Ep
 		move.w	#$0001,d0
+	if REGION=JP
+		move.l	#$451C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC51C
+		bsr.s	FillAscendingTileNums
+		move.l	#$459C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC59C
+		bsr.s	FillAscendingTileNums
+		move.l	#$461C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC61C
+		bsr.s	FillAscendingTileNums
+		move.l	#$469C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC69C
+		bsr.s	FillAscendingTileNums
+	else
 		move.l	#$461C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC61C
 		bsr.s	FillAscendingTileNums
 		move.l	#$469C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC69C
@@ -34,6 +44,7 @@ LoadSegaLogoTilemap:				  ; CODE XREF: DisplaySegaLogo+Ep
 		bsr.s	FillAscendingTileNums
 		move.l	#$479C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC79C
 		bsr.s	FillAscendingTileNums
+	endif
 		rts
 ; End of function LoadSegaLogoTilemap
 

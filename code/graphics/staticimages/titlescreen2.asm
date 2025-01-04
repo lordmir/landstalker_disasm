@@ -2,26 +2,26 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_39B3C:					  ; CODE XREF: ROM:00039A16p
+HandlePaletteScroll:				  ; CODE XREF: ROM:00039A16p
 		tst.b	-$00000016(a6)
 		bpl.s	loc_39B44
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39B44:					  ; CODE XREF: sub_39B3C+4j
+loc_39B44:					  ; CODE XREF: HandlePaletteScroll+4j
 		cmp.w	-$00000002(a6),d0
 		bcs.s	loc_39B4C
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39B4C:					  ; CODE XREF: sub_39B3C+Cj
+loc_39B4C:					  ; CODE XREF: HandlePaletteScroll+Cj
 		move.w	-$00000008(a6),d0
 		ext.l	d0
 		lea	((g_Pal1Base+$C)).l,a0
 		clr.b	d6
 		moveq	#$00000009,d7
 
-loc_39B5C:					  ; CODE XREF: sub_39B3C+24j
+loc_39B5C:					  ; CODE XREF: HandlePaletteScroll+24j
 		bsr.w	sub_39B80
 		dbf	d7,loc_39B5C
 		move.l	d6,d7
@@ -32,16 +32,16 @@ loc_39B5C:					  ; CODE XREF: sub_39B3C+24j
 		bcs.s	loc_39B7A
 		move.b	#$FF,-$00000016(a6)
 
-loc_39B7A:					  ; CODE XREF: sub_39B3C+36j
+loc_39B7A:					  ; CODE XREF: HandlePaletteScroll+36j
 		addq.w	#$01,-$00000008(a6)
 		rts
-; End of function sub_39B3C
+; End of function HandlePaletteScroll
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_39B80:					  ; CODE XREF: sub_39B3C:loc_39B5Cp
+sub_39B80:					  ; CODE XREF: HandlePaletteScroll:loc_39B5Cp
 		subi.l	#$00000004,d0
 		bmi.s	locret_39BA8
 		andi.w	#$FFFC,d0
@@ -106,7 +106,7 @@ loc_39BEC:					  ; CODE XREF: sub_39BAA+26j
 
 
 sub_39BF2:					  ; CODE XREF: sub_39BAA:loc_39BD4p
-						  ; sub_39C46+2Ap ...
+						  ; HandlePaletteScroll2+2Ap ...
 		move.w	#$000E,d5
 		move.w	(a0),d1
 		move.w	d1,d2

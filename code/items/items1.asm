@@ -2,11 +2,11 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_85F2:					  ; CODE XREF: CheckForMenuOpen+132p
+UseItem:					  ; CODE XREF: CheckForMenuOpen+132p
 		move.b	d0,(byte_FF1152).l
 		lea	PreUseItemTable(pc),a0
 
-loc_85FC:					  ; CODE XREF: sub_85F2+1Ej
+loc_85FC:					  ; CODE XREF: UseItem+1Ej
 		move.b	0000000004(a0),d2
 		cmpi.b	#$FF,d2
 		beq.s	PrintNothingHappenedString
@@ -17,14 +17,14 @@ loc_85FC:					  ; CODE XREF: sub_85F2+1Ej
 		bra.s	loc_85FC
 ; ---------------------------------------------------------------------------
 
-loc_8612:					  ; CODE XREF: sub_85F2+1Aj
+loc_8612:					  ; CODE XREF: UseItem+1Aj
 		jmp	(a0)
 ; ---------------------------------------------------------------------------
 
-PrintNothingHappenedString:			  ; CODE XREF: sub_85F2+12j
+PrintNothingHappenedString:			  ; CODE XREF: UseItem+12j
 						  ; ROM:ReturnFailurep
 		move.w	#$0016,d0
 		jsr	(j_PrintString).l
 		rts
-; End of function sub_85F2
+; End of function UseItem
 

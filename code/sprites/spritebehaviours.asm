@@ -1,6 +1,6 @@
 ; ---------------------------------------------------------------------------
 
-locret_17AB8:					  ; CODE XREF: OnTick+Cj
+EB_NULL:					  ; CODE XREF: OnTick+Cj
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2355,7 +2355,7 @@ EB_PrintText:					  ; CODE XREF: OnTick+17Ej
 		lsl.w	#$08,d0
 		movea.l	BehaviourLUTPtr(a5),a6
 		move.b	SubX(a6),d0
-		jsr	(sub_22EC8).l
+		jsr	(j_PrintString_0).l
 		moveq	#$00000003,d0
 		bsr.w	LoadNextCmd
 		bra.w	ProcessNextCmd

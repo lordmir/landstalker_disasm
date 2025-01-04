@@ -32,10 +32,10 @@ j_LookupChestContents:				  ; DATA XREF: InitialiseSprites+214t
 
 ; Attributes: thunk
 
-sub_9B00C:					  ; DATA XREF: CheckOpenChest+AAt
+j_OpenChest:					  ; DATA XREF: CheckOpenChest+AAt
 						  ; CheckOpenChest+E4t	...
-		jmp	sub_9EB9C(pc)		  ; Church in cave
-; End of function sub_9B00C
+		jmp	OpenChest(pc)		  ; Church in cave
+; End of function j_OpenChest
 
 
 ; =============== S U B	R O U T	I N E =======================================

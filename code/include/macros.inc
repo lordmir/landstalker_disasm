@@ -1,3 +1,13 @@
+False:                  equ     0
+True:                   equ     1
+
+US:                     equ     0
+JP:                     equ     1
+UK:                     equ     2
+FR:                     equ     3
+DE:                     equ     4
+US_BETA:                equ     5
+
 ScriptID    macro
             if      narg<>2
             inform  2,"Wrong number of arguments"

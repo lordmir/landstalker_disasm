@@ -2,15 +2,15 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A83E6:					  ; DATA XREF: sub_1A4404t
+RespawnGhost:					  ; DATA XREF: sub_1A4404t
 
 ; FUNCTION CHUNK AT 001A870E SIZE 00000098 BYTES
 ; FUNCTION CHUNK AT 001A87D2 SIZE 0000003A BYTES
 
 		cmpi.b	#$7F,X(a5)
-		beq.w	loc_1A870E
+		beq.w	CheckRespawnGhost
 		clr.w	d1
-; End of function sub_1A83E6
+; End of function RespawnGhost
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -396,7 +396,7 @@ loc_1A84A6:					  ; DATA XREF: sub_1A83F0:loc_1A840Et
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A86D6:					  ; CODE XREF: sub_1A83E6+414p
+sub_1A86D6:					  ; CODE XREF: RespawnGhost+414p
 						  ; DATA XREF: sub_1A440Ct
 		move.w	#$0004,d1
 		bsr.w	sub_1A83F0

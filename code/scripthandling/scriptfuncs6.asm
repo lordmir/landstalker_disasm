@@ -301,13 +301,13 @@ loc_28F62:					  ; CODE XREF: ROM:00028F5Cj
 
 LoadTextboxGraphics:				  ; CODE XREF: DisplayText+4p
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(byte_FF1902).l
+		btst	#$00,(g_RightArrowCursorState).l
 		bne.s	loc_28F98
 		bsr.w	j_RefreshAndClearTextbox
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	j_SetTextboxHInt
-		bset	#$00,(byte_FF1902).l
+		bset	#$00,(g_RightArrowCursorState).l
 
 loc_28F98:					  ; CODE XREF: LoadTextboxGraphics+Cj
 		movem.l	(sp)+,d0-a6
@@ -335,10 +335,10 @@ OpenTextbox:					  ; CODE XREF: ROM:00028EBCp
 ClearTextbox:					  ; CODE XREF: ROM:loc_24B3Ep
 						  ; ROM:000250C4p ...
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(byte_FF1902).l
+		btst	#$00,(g_RightArrowCursorState).l
 		beq.s	loc_28FD2
 		bsr.w	j_SetUpTextDisplay
-		bclr	#$00,(byte_FF1902).l
+		bclr	#$00,(g_RightArrowCursorState).l
 
 loc_28FD2:					  ; CODE XREF: ClearTextbox+Cj
 		movem.l	(sp)+,d0-a6
@@ -383,14 +383,14 @@ loc_29000:					  ; CODE XREF: GetYesNoAnswer+10j
 
 NoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+2Ap
 						  ; ROM:00024F92p ...
-		btst	#$01,(byte_FF1902).l
+		btst	#$01,(g_RightArrowCursorState).l
 		bne.s	locret_29024
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Stop
 ; ---------------------------------------------------------------------------
 		bsr.w	sub_29CC4
-		bset	#$01,(byte_FF1902).l
+		bset	#$01,(g_RightArrowCursorState).l
 
 locret_29024:					  ; CODE XREF: ROM:00029012j
 		rts
@@ -398,9 +398,9 @@ locret_29024:					  ; CODE XREF: ROM:00029012j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_29026:					  ; CODE XREF: HandleShopInterraction+4Ap
+RestoreFromNoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+4Ap
 						  ; ROM:00024F9Ap ...
-		btst	#$01,(byte_FF1902).l
+		btst	#$01,(g_RightArrowCursorState).l
 		beq.s	locret_29044
 		bsr.w	sub_29D16
 		trap	#$00			  ; Trap00Handler
@@ -408,7 +408,7 @@ sub_29026:					  ; CODE XREF: HandleShopInterraction+4Ap
 		dc.w SND_MusicChestOpen
 ; ---------------------------------------------------------------------------
 		bsr.w	RestoreBGM_1
-		bclr	#$01,(byte_FF1902).l
+		bclr	#$01,(g_RightArrowCursorState).l
 
 locret_29044:					  ; CODE XREF: sub_29026+8j
 		rts

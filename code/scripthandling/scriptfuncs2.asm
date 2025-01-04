@@ -70,8 +70,12 @@ loc_25218:					  ; CODE XREF: ROM:00025202j
 		bne.s	loc_25222
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
+	if	REGION=JP
+		ScriptID     $3,$0
+	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
 						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+	endif
 ; ---------------------------------------------------------------------------
 
 loc_25222:					  ; CODE XREF: ROM:0002521Cj
@@ -118,8 +122,12 @@ loc_25262:					  ; CODE XREF: ROM:00025254j
 		bne.s	loc_2526C
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
+	if	REGION=JP
+		ScriptID     $4,$0
+	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
 						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+	endif
 ; ---------------------------------------------------------------------------
 
 loc_2526C:					  ; CODE XREF: ROM:00025266j
@@ -158,8 +166,12 @@ loc_252A0:					  ; CODE XREF: ROM:00025282j
 		bne.s	loc_252AA
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
+	if	REGION=JP
+		ScriptID     $2,$0
+	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
 						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+	endif
 ; ---------------------------------------------------------------------------
 
 loc_252AA:					  ; CODE XREF: ROM:000252A4j
@@ -220,8 +232,12 @@ loc_2530C:					  ; CODE XREF: HandleProgressDependentDialogue+3Ej
 		bne.s	loc_25316
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
+	if	REGION=JP
+		ScriptID     $5,$0
+	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
 						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+	endif
 ; ---------------------------------------------------------------------------
 
 loc_25316:					  ; CODE XREF: HandleProgressDependentDialogue+60j

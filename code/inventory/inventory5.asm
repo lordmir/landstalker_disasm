@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_EA12:					  ; CODE XREF: sub_7718p
+InitInvEquipScreen:				  ; CODE XREF: sub_7718p
 		movem.l	d0/a0,-(sp)
 		move.w	(g_CurrentEquippedItems).l,d1
 		lea	EquipInventoryLayout(pc),a0
@@ -11,22 +11,22 @@ sub_EA12:					  ; CODE XREF: sub_7718p
 		beq.w	loc_EA34
 		subq.w	#$01,d0
 
-loc_EA2A:					  ; CODE XREF: sub_EA12+1Ej
+loc_EA2A:					  ; CODE XREF: InitInvEquipScreen+1Ej
 		lsr.w	#$04,d1
 		lea	$00000005(a0),a0
 		dbf	d0,loc_EA2A
 
-loc_EA34:					  ; CODE XREF: sub_EA12+12j
+loc_EA34:					  ; CODE XREF: InitInvEquipScreen+12j
 		andi.w	#$0007,d1
 		move.b	(a0,d1.w),d1
 		btst	#$07,d1
 		beq.s	loc_EA44
 		clr.b	d1
 
-loc_EA44:					  ; CODE XREF: sub_EA12+2Ej
+loc_EA44:					  ; CODE XREF: InitInvEquipScreen+2Ej
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function sub_EA12
+; End of function InitInvEquipScreen
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -112,7 +112,7 @@ loc_EAEA:					  ; CODE XREF: sub_EAD4+1Cj
 
 loc_EAF2:					  ; CODE XREF: sub_EAD4+4j
 						  ; sub_EAD4+14j ...
-		bsr.w	sub_ECF4
+		bsr.w	GetInvEquipLayout
 		bsr.w	sub_EC60
 		bsr.w	sub_EDA6
 		bsr.w	sub_D96A
@@ -312,7 +312,7 @@ sub_EC34:					  ; CODE XREF: ROM:0000EAD0p
 loc_EC50:					  ; CODE XREF: sub_EC34+1Ej
 		move.w	d0,(a0)+
 		dbf	d7,loc_EC50
-		bsr.w	sub_ECF4
+		bsr.w	GetInvEquipLayout
 		bsr.w	sub_EC60
 		rts
 ; End of function sub_EC34

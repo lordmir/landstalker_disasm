@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F346:					  ; CODE XREF: sub_F78E+50p
+GetPlayTimeDigits:				  ; CODE XREF: sub_F78E+50p
 		moveq	#$00000000,d7
 		move.w	(g_HourCount).l,d7
 		mulu.w	#00100,d7
@@ -17,14 +17,14 @@ sub_F346:					  ; CODE XREF: sub_F78E+50p
 		bsr.s	sub_F38C
 		bsr.s	sub_F38C
 		rts
-; End of function sub_F346
+; End of function GetPlayTimeDigits
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F374:					  ; CODE XREF: sub_F346+1Ep
-						  ; sub_F346+20p ...
+sub_F374:					  ; CODE XREF: GetPlayTimeDigits+1Ep
+						  ; GetPlayTimeDigits+20p ...
 		move.b	(a0)+,d0
 		ext.w	d0
 		beq.s	loc_F37C
@@ -45,8 +45,8 @@ loc_F386:					  ; CODE XREF: sub_F374+Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F38C:					  ; CODE XREF: sub_F346+24p
-						  ; sub_F346+28p ...
+sub_F38C:					  ; CODE XREF: GetPlayTimeDigits+24p
+						  ; GetPlayTimeDigits+28p ...
 		move.b	(a0)+,d0
 		ext.w	d0
 		bne.s	loc_F394
@@ -68,9 +68,11 @@ loc_F394:					  ; CODE XREF: sub_F38C+4j
 
 sub_F3A6:					  ; CODE XREF: sub_F78E+48p
 		move.w	(g_Gold).l,d7
+	if FIX_GOLD_CAP_ON_FILE_LOAD
 		cmpi.w	#$2710,d7
 		bcs.s	loc_F3B6
 		move.w	#$270F,d7
+	endif
 
 loc_F3B6:					  ; CODE XREF: sub_F3A6+Aj
 		jsr	(j_ConvertToBase10).l
@@ -106,7 +108,11 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF0F9A).l,a0
+	if	REGION=JP
+		bsr.s	sub_F374
+	else
 		bsr.w	sub_F374
+	endif
 		bsr.s	sub_F38C
 		addq.l	#$02,a1
 		move.l	(sp)+,d7
@@ -114,7 +120,11 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF0F9A).l,a0
 		bsr.w	sub_F374
+	if	REGION=JP
+		bsr.s	sub_F38C
+	else
 		bsr.w	sub_F38C
+	endif
 		rts
 ; End of function sub_F3E0
 
@@ -353,7 +363,7 @@ sub_F578:					  ; CODE XREF: sub_F78E+1Ep
 
 
 sub_F5CA:					  ; CODE XREF: sub_F578+4p
-						  ; sub_F6DC+3Ap
+						  ; InitGameStartScreen+3Ap
 		move.w	d0,d1
 
 loc_F5CC:					  ; CODE XREF: sub_F5CA+Cj

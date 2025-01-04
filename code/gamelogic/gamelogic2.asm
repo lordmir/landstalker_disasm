@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2DCE:					  ; CODE XREF: LoadRoom_0+40p
+CalcPlayerFlattenedCoords:			  ; CODE XREF: LoadRoom_0+40p
 		move.b	(g_PlayerXFlattened).l,d0
 		ext.w	d0
 		lsl.w	#$04,d0
@@ -27,7 +27,7 @@ sub_2DCE:					  ; CODE XREF: LoadRoom_0+40p
 		lsr.w	#$04,d2
 		move.b	d2,(g_PlayerYFlattened).l
 		rts
-; End of function sub_2DCE
+; End of function CalcPlayerFlattenedCoords
 
 ; ---------------------------------------------------------------------------
 
@@ -332,10 +332,12 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 ; ---------------------------------------------------------------------------
 
 loc_30BC:					  ; CODE XREF: sub_3058+30j
+	if FIX_COLLISION_GLITCH
 		cmpi.w	#$0001,InitFlags4_DropProbability(a0)
 		bne.s	loc_30CA
 		tst.b	GoldOrChestContents(a0)
 		beq.s	loc_308A
+	endif
 
 loc_30CA:					  ; CODE XREF: sub_3058+36j
 						  ; sub_3058+3Cj ...

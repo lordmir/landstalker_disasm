@@ -1,23 +1,23 @@
 ; ---------------------------------------------------------------------------
 
-loc_15C1C:					  ; DATA XREF: sub_10348t
+HandleAttack:					  ; DATA XREF: j_HandleAttackt
 		lea	(Player_X).l,a0
 		move.w	#$4000,d0
-		and.w	d0,$000000AC(a0)
-		and.w	d0,$0000012C(a0)
-		and.w	d0,$000001AC(a0)
-		and.w	d0,$0000022C(a0)
-		and.w	d0,$000002AC(a0)
-		and.w	d0,$0000032C(a0)
-		and.w	d0,$000003AC(a0)
-		and.w	d0,$0000042C(a0)
-		and.w	d0,$000004AC(a0)
-		and.w	d0,$0000052C(a0)
-		and.w	d0,$000005AC(a0)
-		and.w	d0,$0000062C(a0)
-		and.w	d0,$000006AC(a0)
-		and.w	d0,$0000072C(a0)
-		and.w	d0,$000007AC(a0)
+		and.w	d0,(SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(2*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(3*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(4*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(5*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(6*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(7*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(8*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(9*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(10*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(11*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(12*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(13*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(14*SPRITE_SIZE+QueuedAction)(a0)
+		and.w	d0,(15*SPRITE_SIZE+QueuedAction)(a0)
 		lea	SPRITE_SIZE(a0),a5
 		moveq	#$0000000E,d7
 		bclr	#$00,(byte_FF1157).l
@@ -854,7 +854,7 @@ sub_16420:					  ; DATA XREF: sub_1034Ct
 
 ; FUNCTION CHUNK AT 00016512 SIZE 0000006C BYTES
 
-		tst.b	(byte_FF1145).l
+		tst.b	(g_PlayerAnimation).l
 		bne.w	locret_164E4
 		tst.b	(byte_FF1142).l
 		bne.w	loc_16512
@@ -938,7 +938,7 @@ PlayerDeath:					  ; CODE XREF: sub_16420+38j
 						  ; DATA XREF: ...
 		clr.b	(byte_FF1142).l
 		clr.b	(byte_FF1143).l
-		move.b	#$01,(byte_FF1145).l
+		move.b	#$01,(g_PlayerAnimation).l
 		move.b	#$08,d0
 		bsr.w	PlaybackInput
 		trap	#$00			  ; Trap00Handler

@@ -842,6 +842,7 @@ loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 						  ; Bit13 - Receive Damage
 		andi.b	#$30,d0
 		beq.s	loc_6880
+	if FIX_COLLISION_GLITCH
 		adda.w	d1,a1
 		movea.l	a1,a5
 		addi.w	#$0020,Z(a5)
@@ -853,9 +854,8 @@ loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 		subi.w	#$0020,Z(a5)
 		subi.w	#$0020,HitBoxZEnd(a5)
 		rts
-; ---------------------------------------------------------------------------
-
-loc_6850:					  ; CODE XREF: ProcessActionButton+194j
+	endif
+loc_6850:	
 		andi.b	#$20,d0
 		move.w	#$0010,(word_FF12E0).l
 		addq.b	#$01,(byte_FF1133).l
@@ -1850,7 +1850,7 @@ loc_70A4:					  ; CODE XREF: CheckOpenChest+8j
 		ext.l	d0
 		move.l	d0,(g_PrintNumericDwordValue).l
 		jsr	(j_AddGold).l
-		jsr	(sub_9B00C).l
+		jsr	(j_OpenChest).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
@@ -1878,7 +1878,7 @@ loc_711E:					  ; CODE XREF: CheckOpenChest+8Ej
 loc_7132:					  ; CODE XREF: CheckOpenChest+88j
 						  ; CheckOpenChest+DCj
 		movem.w	d0-d1,-(sp)
-		jsr	(sub_9B00C).l
+		jsr	(j_OpenChest).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
@@ -1949,7 +1949,7 @@ loc_71E6:					  ; CODE XREF: CheckOpenChest+66j
 		move.b	#$18,Height(a4)
 		addq.w	#$08,HitBoxZEnd(a4)
 		jsr	(sub_22EE8).l
-		jsr	(sub_9B00C).l
+		jsr	(j_OpenChest).l
 		move.w	#$0014,d0
 		jsr	(j_PrintString).l
 		bra.s	loc_71B4

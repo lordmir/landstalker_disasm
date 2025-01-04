@@ -509,7 +509,7 @@ BlackFlash:					  ; DATA XREF: ROM:0000E138o
 		bra.s	loc_E4F2
 ; ---------------------------------------------------------------------------
 
-WhiteFlash:					  ; CODE XREF: sub_E832+16j
+WhiteFlash:					  ; CODE XREF: ContinueKazaltWarpFx+16j
 						  ; DATA XREF: ROM:0000E13Co
 		moveq	#$FFFFFFFF,d2
 
