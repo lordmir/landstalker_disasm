@@ -2,6 +2,9 @@
 ;; LANDSTALKER US ROM 4MByte Expansion ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e EXPANDED=1
+;; REGION = US
+;;
 ;; To build, run:
 ;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e EXPANDED=1 landstalker_expanded.asm,landstalker_expanded.bin
 
