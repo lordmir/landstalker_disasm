@@ -4529,7 +4529,7 @@ CS_011E:
 		ScriptID    $4CD,$2		  ; Flag set:	Run text script	at offset 0x028190
 						  ; 0xE461: PRINT MSG 0x04AE, MSGBOX CLEARED, END: "{5B}ahead and save the princess.{57}The duke has taken Miss	Lara{57}prisoner...please find her!{5E}"
 ; ---------------------------------------------------------------------------
-		ScriptID    $22FF,$3
+		rts
 ; ---------------------------------------------------------------------------
 
 CS_011F:
