@@ -1,22 +1,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LANDSTALKER US ROM Disassembly ;;
+;; LANDSTALKER EUR ROM Disassembly ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0
-;; REGION = US
-;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0 landstalker.asm,landstalker.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=2;NTSC=0;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1 landstalker.asm,landstalker.bin
 
 Defines:                    include "code\include\landstalker.inc"
-                            include "code\include\landstalker_us.inc"
+                            include "code\include\landstalker_eur.inc"
                             include "code\include\ram.inc"
                             include "code\include\macros.inc"
 
 
                             org     $000000
                             include "code\system\vector_table.asm"
-                            include "code\system\header_us.asm"
+                            include "code\system\header_eur.asm"
                             include "code\system\system_jmps.asm"
                             include "code\system\system.asm"
                             include "code\system\savegame.asm"
@@ -196,7 +193,7 @@ TilesetData:                include "code\graphics\tileset_data.asm"
                             PadTo   $09B000
                             include "code\sprites\sprites1.asm"
 SpriteBehaviourOffsets:     incbin  "assets_packed\spritedata\behaviouroffsets.bin"
-SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable.bin"
+SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_eur.bin"
                             Align   $2
                             include "code\maps\chests1.asm"
 RoomChestOffsets:           incbin  "assets_packed\roomdata\chests\chestoffsets.bin"
@@ -204,7 +201,7 @@ ChestContents:              incbin  "assets_packed\roomdata\chests\chestcontents
                             Align   $2
                             include "code\maps\chests2.asm"
                             include "code\ending\endcredits1.asm"
-EndCreditText:              incbin  "assets_packed\strings\ending\credits.bin"
+EndCreditText:              incbin  "assets_packed\strings\ending\credits_eur.bin"
                             Align   $2
                             include "code\ending\endcredits2.asm"
 EndCreditsData:             include "code\ending\endcreditsdata.asm"

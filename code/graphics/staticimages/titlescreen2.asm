@@ -42,7 +42,11 @@ loc_39B7A:					  ; CODE XREF: HandlePaletteScroll+36j
 
 
 sub_39B80:					  ; CODE XREF: HandlePaletteScroll:loc_39B5Cp
-		subi.l	#$00000004,d0
+	if REGION=UK
+		subi.l	#5,d0
+	else
+		subi.l	#4,d0
+	endif
 		bmi.s	locret_39BA8
 		andi.w	#$FFFC,d0
 		move.w	(a0),d1

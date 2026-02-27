@@ -4240,7 +4240,7 @@ CSA_0154:					  ; CODE XREF: ROM:0001264Cj
 ; ---------------------------------------------------------------------------
 		move.w	#00120,d0
 		jsr	(j_Sleep).l
-	if FIX_POTENTIAL_CORRUPTION_ON_GOLA
+	if FIX_GOLA_BUG
 		movem.l	a0,-(sp)
 		bsr.w	sub_15914
 		movem.l	(sp)+,a0
@@ -4558,7 +4558,7 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 loc_15936:					  ; CODE XREF: sub_15914+44j
 		bsr.w	sub_159AE
 		bsr.w	loc_15A96
-	if ENABLE_GOLD_COUNTUP_ON_TREASURE
+	if ENABLE_GOLD_COUNT_AT_END
 		move.w	#00013,d0
 		jsr	(AddGold).l
 		jsr	(j_QueueHUDTilemapDMA).l

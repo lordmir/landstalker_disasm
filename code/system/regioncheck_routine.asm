@@ -3,7 +3,11 @@
 
 
 CheckRegion:					  ; DATA XREF: j_CheckRegiont
+	if NTSC
 		move.b	#$80,d1
+	else
+		move.b	#$C0,d1
+	endif
 		bne.s	loc_11EA6C
 		rts
 ; ---------------------------------------------------------------------------
@@ -21,7 +25,11 @@ loc_11EA7C:					  ; CODE XREF: CheckRegion+14j
 		lea	RegionErrorLine1(pc),a0
 		lea	((g_ForegroundBlocks+$886)).l,a1
 		bsr.w	sub_11EB40
+	if NTSC
 		move.b	#$80,d1
+	else
+		move.b	#$C0,d1
+	endif
 		cmpi.b	#$80,d1
 		bne.s	loc_11EAAA
 		lea	RegionErrorNTSC(pc),a0

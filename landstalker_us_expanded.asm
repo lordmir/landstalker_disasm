@@ -2,11 +2,11 @@
 ;; LANDSTALKER US ROM 4MByte Expansion ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e EXPANDED=1
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0
 ;; REGION = US
 ;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e EXPANDED=1 landstalker_expanded.asm,landstalker_expanded.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0 landstalker_expanded.asm,landstalker_expanded.bin
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_us.inc"
@@ -138,8 +138,8 @@ DownArrowGfx:               incbin  "assets_packed\graphics\static\textbox\downa
                             include "code\text\stringfuncs2.asm"
 TextBoxTilemap:             incbin  "assets_packed\graphics\static\textbox\threelinetextbox.map"
 InventoryTextBoxTilemap:    incbin  "assets_packed\graphics\static\textbox\twolinetextbox.map"
-HuffTableOffsets:           incbin  "assets_packed\strings\main\us\huffmancharoffsets.bin"
-HuffTables:                 incbin  "assets_packed\strings\main\us\huffmantables.bin"
+HuffTableOffsets:           incbin  "assets_packed\strings\main\en\huffmancharoffsets.bin"
+HuffTables:                 incbin  "assets_packed\strings\main\en\huffmantables.bin"
                             Align   $2
                             include "code\text\stringfuncs3.asm"
 RightArrowGfx:              incbin  "assets_packed\graphics\static\textbox\rightarrow.bin"
@@ -175,7 +175,7 @@ StringTables:               include "code\text\stringtables_en.asm"
                             include "code\scripthandling\script_visualfx.asm"
 SineTable:                  incbin  "assets_packed\misc\data\sinetable.bin"
                             include "code\misc\debugmenu.asm"
-StringData:                 include "code\text\strings_us.asm"
+StringData:                 include "code\text\strings_en.asm"
                             Align   $2
 StringBankPtrs:             include "code\pointertables\strings\stringptrs.asm"
                             include "code\graphics\staticimages\staticgraphicjumps.asm"

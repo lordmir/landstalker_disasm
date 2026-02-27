@@ -37,7 +37,7 @@ ItemUseEinsteinWhistle:				  ; CODE XREF: ROM:00008656j
 		subi.b	#$1E,d0
 		cmpi.b	#$04,d0
 		bcc.w	ReturnFailure
-	if	FIX_EINSTEIN_WHISTLE_FLAG_CHECK
+	if	FIX_WHISTLE_CHECK
 		btst	#$00,(g_AdditionalFlags+6).l
 		bne.w	ReturnFailure
 	endif
