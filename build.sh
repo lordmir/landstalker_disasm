@@ -9,7 +9,7 @@ while getopts r:o:e flag; do
         r) REGION=${OPTARG};;
         o) MANUAL_OUTPUT=${OPTARG};;
         e) EXPANDED=1;;
-        *) echo "Usage: ${0} [-r (US|JP|UK)] [-e] [-o <Output ROM Filename>]";;
+        *) echo "Usage: ${0} [-r (US|JP|EUR)] [-e] [-o <Output ROM Filename>]";;
     esac
 done
 
@@ -60,17 +60,17 @@ elif [ ${REGION} == "JP" ]; then
     FIX_POTENTIAL_CORRUPTION_ON_GOLA=0
     FIX_GOLD_CAP_ON_FILE_LOAD=0
     FIX_END_CREDITS_GLITCH=0
-elif [ ${REGION} == "UK" ]; then
+elif [ ${REGION} == "EUR" ]; then
     if [ ${EXPANDED} -eq 1 ]; then
-        SOURCE="landstalker_uk_expanded.asm"
-        OUTPUT="landstalker_uk_expanded.bin"
-        SYMBOL="landstalker_uk_expanded.sym"
-        LISTING="landstalker_uk_expanded.lst"
+        SOURCE="landstalker_eur_expanded.asm"
+        OUTPUT="landstalker_eur_expanded.bin"
+        SYMBOL="landstalker_eur_expanded.sym"
+        LISTING="landstalker_eur_expanded.lst"
     else
-        SOURCE="landstalker_uk.asm"
-        OUTPUT="landstalker_uk.bin"
-        SYMBOL="landstalker_uk.sym"
-        LISTING="landstalker_uk.lst"
+        SOURCE="landstalker_eur.asm"
+        OUTPUT="landstalker_eur.bin"
+        SYMBOL="landstalker_eur.sym"
+        LISTING="landstalker_eur.lst"
     fi
     REGION_CODE=2
     NTSC=0
