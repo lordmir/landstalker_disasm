@@ -2,8 +2,11 @@
 ;; LANDSTALKER JP ROM Disassembly ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=1;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=0;FIX_COLLISION_GLITCH=0;FIX_ARMLET_SKIP=0;FIX_WHISTLE_CHECK=0;FIX_SPRITE_HIDE_BUG=0;ENABLE_GOLD_COUNT_AT_END=0;FIX_GOLA_BUG=0;FIX_GOLD_CAP=0;FIX_END_CREDITS=0
+;; REGION = JP
+;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e EXPANDED=0 landstalker.asm,landstalker.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=1;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=0;FIX_COLLISION_GLITCH=0;FIX_ARMLET_SKIP=0;FIX_WHISTLE_CHECK=0;FIX_SPRITE_HIDE_BUG=0;ENABLE_GOLD_COUNT_AT_END=0;FIX_GOLA_BUG=0;FIX_GOLD_CAP=0;FIX_END_CREDITS=0 landstalker.asm,landstalker.bin
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_jp.inc"

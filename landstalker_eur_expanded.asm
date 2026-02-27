@@ -1,22 +1,22 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LANDSTALKER US ROM Disassembly ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LANDSTALKER EUR ROM 4MByte Expansion ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0
-;; REGION = US
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=2;NTSC=0;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1
+;; REGION = EUR
 ;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=0 landstalker.asm,landstalker.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=2;NTSC=0;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1 landstalker_expanded.asm,landstalker_expanded.bin
 
 Defines:                    include "code\include\landstalker.inc"
-                            include "code\include\landstalker_us.inc"
+                            include "code\include\landstalker_eur.inc"
                             include "code\include\ram.inc"
                             include "code\include\macros.inc"
 
 
                             org     $000000
                             include "code\system\vector_table.asm"
-                            include "code\system\header_us.asm"
+                            include "code\system\header_eur.asm"
                             include "code\system\system_jmps.asm"
                             include "code\system\system.asm"
                             include "code\system\savegame.asm"
@@ -48,6 +48,7 @@ ItemPreUseTable:            include "code\pointertables\items\items_preusejmptab
 ItemPostUseTable:           include "code\pointertables\items\items_postusejmptable.asm"
 ItemFuncs1:                 include "code\items\items2.asm"
 LightableRooms:             incbin  "assets_packed\roomdata\flagactions\lanternflags.bin"
+                            Align   $2
 ItemFuncs2:                 include "code\items\items3.asm"
                             include "code\gamelogic\gamelogic5.asm"
 DefaultPlayerPal:           incbin  "assets_packed\graphics\miscpalettes\defaultplayer.pal"
@@ -94,7 +95,6 @@ EquipInventoryLayout:       incbin  "assets_packed\misc\inventory\inventoryequip
                             Align   $2
                             include "code\inventory\inventory6.asm"
 GameLoadScreen:             include "code\title\gameloadscreen.asm"
-                            PadTo   $010300
                             include "code\sprites\spritefuncsjumptable.asm"
                             include "code\sprites\spritefuncs1.asm"
 SpriteAnimFlags:            incbin  "assets_packed\spritedata\spriteanimflags.bin"
@@ -114,7 +114,6 @@ StatusAnimData:             include "code\graphics\staticimages\statusfx.asm"
                             include "code\gamelogic\gamefuncs.asm"
                             include "code\sprites\spritebehaviourjumptable.asm"
                             include "code\sprites\spritebehaviours.asm"
-                            dcb.b   $200, $FF
                             include "code\maps\loadroomsprites.asm"
 CustomRoomActions1:         include "code\maps\customroomactions1.asm"
 BigTreeLocations:           incbin  "assets_packed\roomdata\misc\bigtreelocs.bin"
@@ -132,7 +131,6 @@ SpriteDimensionsLookup:     incbin  "assets_packed\spritedata\spritedimensions.b
 RoomSpriteTableOffset:      incbin  "assets_packed\spritedata\roomtableoffsets.bin"
 EnemyStats:                 incbin  "assets_packed\spritedata\enemystats.bin"
 RoomSpriteTable:            incbin  "assets_packed\spritedata\roomspritetable.bin"
-                            dcb.b   $30, $FF
 StringPtrs:                 include "code\pointertables\strings\stringbankptr.asm"
                             include "code\text\stringfuncsjumptable.asm"
                             include "code\text\stringfuncs1.asm"
@@ -148,7 +146,7 @@ RightArrowGfx:              incbin  "assets_packed\graphics\static\textbox\right
                             include "code\scripthandling\shops\shopscriptfuncs1.asm"
 ShopSpecialItemsScript:     include "code\script\en\shops\shoptable_specialitems.asm"
                             include "code\scripthandling\shops\shopscriptfuncs2.asm"
-ShopScript:	                include "code\script\en\shops\shoptable.asm"
+ShopScript:                 include "code\script\en\shops\shoptable.asm"
                             include "code\scripthandling\scriptfuncs1.asm"
 ShopSpecialItemsFuncs:      include "code\script\en\shops\script_shopspecialitems.asm"
                             include "code\scripthandling\scriptfuncs2.asm"
@@ -180,7 +178,6 @@ SineTable:                  incbin  "assets_packed\misc\data\sinetable.bin"
 StringData:                 include "code\text\strings_en.asm"
                             Align   $2
 StringBankPtrs:             include "code\pointertables\strings\stringptrs.asm"
-                            PadTo   $038600
                             include "code\graphics\staticimages\staticgraphicjumps.asm"
 SegaLogo:                   include "code\graphics\staticimages\segalogo.asm"
                             include "code\graphics\staticimages\lithograph.asm"
@@ -190,13 +187,11 @@ TitleScreen:                include "code\graphics\staticimages\titlescreen.asm"
 ClimaxLogoData:             include "code\graphics\staticimages\climaxlogodata.asm"
                             include "code\graphics\staticimages\islandmaproutines.asm"
 IslandMap:                  include "code\graphics\staticimages\islandmap.asm"
-                            PadTo   $044010
 TilesetPtrTable:            include "code\pointertables\graphics\tilesetpointers.asm"
 TilesetData:                include "code\graphics\tileset_data.asm"
-                            PadTo   $09B000
                             include "code\sprites\sprites1.asm"
 SpriteBehaviourOffsets:     incbin  "assets_packed\spritedata\behaviouroffsets.bin"
-SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable.bin"
+SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_eur.bin"
                             Align   $2
                             include "code\maps\chests1.asm"
 RoomChestOffsets:           incbin  "assets_packed\roomdata\chests\chestoffsets.bin"
@@ -204,26 +199,23 @@ ChestContents:              incbin  "assets_packed\roomdata\chests\chestcontents
                             Align   $2
                             include "code\maps\chests2.asm"
                             include "code\ending\endcredits1.asm"
-EndCreditText:              incbin  "assets_packed\strings\ending\credits.bin"
+EndCreditText:              incbin  "assets_packed\strings\ending\credits_eur.bin"
                             Align   $2
                             include "code\ending\endcredits2.asm"
 EndCreditsData:             include "code\ending\endcreditsdata.asm"
-                            PadTo   $0A0A00
+                            Align   $2
                             include "code\pointertables\maps\mappointers.asm"
                             include "code\system\regioncheckjump.asm"
 RoomData_0:                 include "code\pointertables\maps\roomlist.asm"
 RoomMaps:                   include "code\graphics\roommaps.asm"
-                            Align   $2
 RoomPals:                   include "code\palettes\roompals.asm"
 RoomExits:                  incbin  "assets_packed\roomdata\warps\exits.bin"
 RegionCheck:                include "code\system\regioncheck.asm"
-                            PadTo   $120000
                             include "code\pointertables\sprites\spritegraphicsptr.asm"
 SpriteGfxOffsetTable:       incbin  "assets_packed\spritedata\spritegfxoffsettable.bin"
 SpriteAnimationPtrs:        include "code\pointertables\sprites\spriteanimations.asm"
 SpriteFramePtrs:            include "code\pointertables\sprites\spriteanimationframes.asm"
 SpriteFrames:               include "code\sprites\spriteframes.asm"
-                            PadTo   $1A4400
                             include "code\sprites\spritefuncsjumptable2.asm"
                             include "code\sprites\spritefuncs3.asm"
 SpritePalettes:             include "code\sprites\spritepalettes.asm"
@@ -238,18 +230,17 @@ ProjectilePalette1:         incbin  "assets_packed\graphics\spritepalettes\proje
                             include "code\gamelogic\ai\enemies4.asm"
                             include "code\gamelogic\ai\enemyai5.asm"
 ProjectilePalette2:         incbin  "assets_packed\graphics\spritepalettes\projectile2.pal"
-                            PadTo   $1AF800
 BlocksetPrimaryPointers:    include "code\pointertables\blocks\primaryblocksetpointers.asm"
 BlocksetSecondaryPointers:  include "code\pointertables\blocks\secondaryblocksetpointers.asm"
 Blocksets:                  include "code\blocks\blocksets.asm"
-                            PadTo   $1E0000
+                            PadTo   $3E0000
 SoundBank1:                 incbin  "assets_packed\sound\soundbank1.bin"
-                            PadTo   $1E8000
+                            PadTo   $3E8000
 SoundBank2:                 incbin  "assets_packed\sound\soundbank2.bin"
-                            PadTo   $1F0000
+                            PadTo   $3F0000
 SoundBank3:                 incbin  "assets_packed\sound\soundbank3.bin"
-                            PadTo   $1F6000
-SoundDriver:                incbin  "assets_packed\sound\sounddrv.z80"
-                            PadTo   $1F8000
+                            PadTo   $3F6000
+SoundDriver:                incbin  "sounddrv_expanded.z80"
+                            PadTo   $3F8000
 SoundBank4:                 incbin  "assets_packed\sound\soundbank4.bin"
-                            PadTo   $200000
+                            PadTo   $400000

@@ -54,16 +54,20 @@ loc_9EC06:					  ; CODE XREF: ROM:0009EC08j
 		lea	EndCreditText(pc),a0
 
 loc_9EC9A:					  ; CODE XREF: ROM:0009ECC0j
-		move.w	-$0000000C(a6),d0
-		move.w	-$00000002(a6),d1
-		lsr.w	#$04,d1
+		move.w	-12(a6),d0
+		move.w	-2(a6),d1
+	if FIX_END_CREDITS
+		lsl.w	#4,d0
+	else
+		lsr.w	#4,d1
+	endif
 		cmp.w	d0,d1
 		bcs.s	loc_9ECBC
 		clr.w	d0
 		move.b	(a0)+,d0
 		cmpi.b	#$FF,d0
 		beq.w	loc_9ECC2
-		add.w	d0,-$0000000C(a6)
+		add.w	d0,-12(a6)
 		bsr.w	sub_9ED10
 
 loc_9ECBC:					  ; CODE XREF: ROM:0009ECA6j

@@ -354,16 +354,36 @@ loc_399E4:					  ; CODE XREF: ROM:00039A52j
 		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		bne.s	loc_39A54
-		move.w	#$0136,d0
+	if NTSC
+		move.w	#310,d0
+	else
+		move.w	#280,d0
+	endif
 		bsr.w	sub_39DD8
 		bsr.w	sub_39D3A
-		move.w	#$012C,d0
+	if NTSC
+		move.w	#300,d0
+	else
+		move.w	#270,d0
+	endif
 		bsr.w	sub_39CA4
-		move.w	#$0118,d0
+	if NTSC
+		move.w	#280,d0
+	else
+		move.w	#250,d0
+	endif
 		bsr.w	HandlePaletteScroll2
-		move.w	#$00DC,d0
+	if NTSC
+		move.w	#220,d0
+	else
+		move.w	#176,d0
+	endif
 		bsr.w	HandlePaletteScroll
-		move.w	#$0082,d0
+	if NTSC
+		move.w	#130,d0
+	else
+		move.w	#120,d0
+	endif
 		bsr.w	sub_39BAA
 		move.w	#$0000,d0
 		bsr.w	sub_39A98

@@ -68,7 +68,7 @@ loc_F394:					  ; CODE XREF: sub_F38C+4j
 
 sub_F3A6:					  ; CODE XREF: sub_F78E+48p
 		move.w	(g_Gold).l,d7
-	if FIX_GOLD_CAP_ON_FILE_LOAD
+	if FIX_GOLD_CAP
 		cmpi.w	#$2710,d7
 		bcs.s	loc_F3B6
 		move.w	#$270F,d7
