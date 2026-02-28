@@ -240,7 +240,7 @@ SoundBank2:                 incbin  "assets_packed\sound\soundbank2.bin"
                             PadTo   $3F0000
 SoundBank3:                 incbin  "assets_packed\sound\soundbank3.bin"
                             PadTo   $3F6000
-SoundDriver:                incbin  "sounddrv_expanded.z80"
+SoundDriver:                incbin  "cube.bin"
                             PadTo   $3F8000
 SoundBank4:                 incbin  "assets_packed\sound\soundbank4.bin"
                             PadTo   $400000

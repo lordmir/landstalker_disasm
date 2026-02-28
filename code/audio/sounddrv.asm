@@ -242,7 +242,11 @@ LoadBank:				; CODE XREF: init+20p LoadDacSound+2Ep ...
 		ld	(hl), b
 		ld	(hl), b
 		ld	(hl), b
+	IF       EXPANDED == 0
 		ld	(hl), c
+	ELSEIF   EXPANDED == 1
+		ld	(hl), b
+	ENDIF
 		ld	(hl), c
 		ld	(hl), c
 		pop	de
@@ -267,7 +271,11 @@ LoadMusicBank:				; CODE XREF: Main+2Bp Main+39p ...
 		ld	(hl), b
 		ld	(hl), b
 		ld	(hl), b
+	IF       EXPANDED == 0
 		ld	(hl), c
+	ELSEIF   EXPANDED == 1
+		ld	(hl), b
+	ENDIF
 		ld	(hl), c
 		ld	(hl), c
 		pop	hl
@@ -292,7 +300,11 @@ LoadInstrumentsBank:			; CODE XREF: YM1_LoadInstrumentp
 		ld	(hl), b
 		ld	(hl), b
 		ld	(hl), b
+	IF       EXPANDED == 0
 		ld	(hl), c
+	ELSEIF   EXPANDED == 1
+		ld	(hl), b
+	ENDIF
 		ld	(hl), c
 		ld	(hl), c
 		pop	hl
