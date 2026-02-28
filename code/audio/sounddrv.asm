@@ -3005,9 +3005,7 @@ _LoopCmdE0:				; CODE XREF: ParseLoopCommand+9Cj
 		ret
 ; End of function ParseLoopCommand
 
-
 ; =============== S U B	R O U T	I N E =======================================
-
 
 FadeOut:				; CODE XREF: Main+12j UpdateSound+31p
 		ld	a, 12h

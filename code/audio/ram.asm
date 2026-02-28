@@ -1,3 +1,4 @@
+        org 1F80h
 END_OF_DRIVER:			ds 70h
 STACK_START:			ds 8
 NEW_SAMPLE_TO_LOAD:		ds 1
