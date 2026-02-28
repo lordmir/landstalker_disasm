@@ -1,0 +1,4 @@
+		db 2
+		dw UNUSED_SFX_2_YM
+		dw UNUSED_SFX_2_YM
+		dw UNUSED_SFX_2_YM
