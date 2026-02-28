@@ -1,0 +1,3 @@
+SFX_13_NOOP:	db 0FFh, 0, 0
+SFX_13_PSG3:	db 0FCh, 0, 0FBh, 0A2h,	0FDh, 7Eh, 0B0h, 11h
+SFX_13_PSGN:	db 0FFh, 0, 0

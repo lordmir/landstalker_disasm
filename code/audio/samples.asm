@@ -1,0 +1,24 @@
+t_SAMPLE_LOAD_DATA:db 01h, 00h,	00h, 00h, 52h, 09h, 00h, 80h ; DATA XREF: LoadDacSound+12o
+		db 01h,	00h, 00h, 00h, 76h, 10h, 52h, 89h
+		db 01h,	00h, 00h, 00h, 0AFh, 10h, 0C8h,	99h
+		db 05h,	00h, 00h, 00h, 0AFh, 10h, 0C8h,	99h
+		db 09h,	00h, 00h, 00h, 0AFh, 10h, 0C8h,	99h
+		db 03h,	00h, 00h, 00h, 00h, 19h, 77h, 0AAh
+		db 09h,	00h, 00h, 00h, 76h, 10h, 52h, 89h
+		db 14h,	00h, 00h, 00h, 52h, 09h, 00h, 80h
+		db 14h,	00h, 00h, 00h, 0AFh, 10h, 0C8h,	99h
+		db 01h,	00h, 00h, 00h, 0E5h, 10h, 77h, 0C3h
+		db 01h,	00h, 00h, 00h, 0E5h, 10h, 5Ch, 0D4h
+		db 01h,	00h, 01h, 00h, 4Eh, 0Bh, 00h, 80h
+		db 01h,	00h, 01h, 00h, 0EAh, 0Bh, 0E2h,	99h
+		db 05h,	00h, 00h, 00h, 93h, 0Ah, 41h, 0E5h
+		db 01h,	00h, 00h, 00h, 93h, 0Ah, 41h, 0E5h
+		db 05h,	00h, 01h, 00h, 0EAh, 0Bh, 0E2h,	99h
+		db 01h,	00h, 01h, 00h, 0D2h, 31h, 0CCh,	0A5h
+		db 09h,	00h, 00h, 00h, 0F9h, 0Fh, 0D4h,	0EFh
+		db 09h,	00h, 01h, 00h, 94h, 0Eh, 4Eh, 8Bh
+		db 14h,	00h, 00h, 00h, 0F9h, 0Fh, 0D4h,	0EFh
+		db 14h,	00h, 01h, 00h, 94h, 0Eh, 4Eh, 8Bh
+		db 0Ah,	00h, 01h, 00h, 3Eh, 21h, 9Eh, 0D7h
+		db 14h,	00h, 01h, 00h, 3Eh, 21h, 9Eh, 0D7h
+		db 01h,	00h, 01h, 00h, 0Fh, 07h, 0DCh, 0F8h

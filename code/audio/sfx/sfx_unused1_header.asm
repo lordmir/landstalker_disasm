@@ -1,0 +1,4 @@
+        db 2
+		dw SFX_UNUSED1_NOOP
+		dw SFX_UNUSED1_NOOP
+		dw SFX_UNUSED1_YM6

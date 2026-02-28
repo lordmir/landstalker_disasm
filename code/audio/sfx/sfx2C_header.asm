@@ -1,0 +1,11 @@
+        db 1
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_NOOP
+		dw SFX_2C_PSG3
+		dw SFX_2C_NOOP

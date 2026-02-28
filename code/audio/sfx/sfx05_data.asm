@@ -1,0 +1,2 @@
+SFX_05_PSG3:	db 0FDh, 0Fh, 0FCh, 0, 0FBh, 0C1h, 0C0h, 4
+SFX_05_NOOP:	db 0FFh, 0, 0

@@ -1,0 +1,11 @@
+        db 1
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_16_NOOP
+		dw SFX_15_PSG3
+		dw SFX_16_NOOP

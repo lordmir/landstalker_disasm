@@ -1,0 +1,2 @@
+SFX_UNUSED1_YM6:     db 87h, 5Ah
+SFX_UNUSED1_NOOP:    db 0FFh, 0, 0
