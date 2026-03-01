@@ -1,3 +1,5 @@
+; Music Track 0x1C - Beneath the Mysterious Tree
+
 		db 0, 0, 0, 176
 		dw MUSIC_1C_YM1
 		dw MUSIC_1C_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_1C_PSG2
 		dw MUSIC_1C_PSG3
 		dw MUSIC_1C_PSG3
+
 MUSIC_1C_YM1:
 		db  0FAh,  80h,	0F8h,	 0, 0FEh,  17h,	0FDh,  0Ch, 0FCh,    1,	0FBh,	 0, 0F8h, 0C1h,	0ABh,  0Ch
 		db  0ABh,    6,	0A9h,  0Ch, 0A5h,    6,	0ADh,  12h,  9Fh,    6,	 2Bh, 0A9h,  0Ch, 0A5h,	   6, 0ADh

@@ -1,3 +1,5 @@
+; Music Track 0x24 - The Marquis' Invitation
+
 		db 0, 0, 0, 202
 		dw MUSIC_24_YM1
 		dw MUSIC_24_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_24_PSG2
 		dw MUSIC_24_PSG3
 		dw MUSIC_24_PSG3
+
 MUSIC_24_YM1:
 		db  0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0FEh,  1Ah, 0FDh,  0Ch,	0ABh,  30h, 0B0h,  48h,	0AFh,  0Ch
 		db   2Dh,  2Fh,	 30h,  32h,  70h, 0ABh,	 90h, 0F0h,  18h,  34h,	0B5h,  0Ch,  34h,  35h,	 39h, 0AEh

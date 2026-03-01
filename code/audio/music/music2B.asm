@@ -1,3 +1,5 @@
+; Music Track 0x2B - A Ballad for Princess Loria
+
 		db 0, 0, 0, 183
 		dw MUSIC_2B_YM1
 		dw MUSIC_2B_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_2B_PSG2
 		dw MUSIC_2B_PSG3
 		dw MUSIC_2B_PSG3
+
 MUSIC_2B_YM1:
 		db  0F0h,  14h,	0FEh,	 1, 0FDh,  0Bh,	0FCh,	 1, 0FBh,    0,	0A6h,  0Fh, 0AFh,  0Dh,	 2Bh, 0FDh
 		db   0Ch, 0B2h,	 0Ch, 0AFh,  0Bh,  37h,	0B2h,  0Ah, 0BBh,  0Bh,	 37h, 0BEh,  0Ch, 0BBh,	 0Dh, 0C3h

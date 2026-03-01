@@ -1,3 +1,5 @@
+; Music Track 0x01 - Torchlight
+
         db 0, 0, 0, 186
 		dw MUSIC_01_YM1
 		dw MUSIC_01_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_01_PSG2
 		dw MUSIC_01_PSG3
 		dw MUSIC_01_PSG3
+
 MUSIC_01_YM1:
 		db  0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0F0h,  30h, 0FEh,  31h,	0FDh,  0Bh,  2Fh,  37h,	0B8h,  48h
 		db  0AFh,  18h,	 37h,  38h,  3Ah,  3Bh,	 37h,  38h, 0FCh,  80h,	0B4h, 0C0h, 0FBh,  20h,	0FCh,	 1

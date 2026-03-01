@@ -1,3 +1,5 @@
+; Music Track 0x22 - Wicked God's Banquet
+
 		db 0, 0, 0, 183
 		dw MUSIC_22_YM1
 		dw MUSIC_22_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_22_PSG2
 		dw MUSIC_22_PSG3
 		dw MUSIC_22_PSG3
+
 MUSIC_22_YM1:
 		db  0F8h,    0,	0FEh,  1Eh, 0FDh,  0Ah,	0FCh,	 0, 0FBh, 0A8h,	0F8h, 0C5h,  8Eh,  18h,	 0Eh,  0Eh
 		db   0Eh,  0Eh,	 0Eh,	 7,  89h,  0Ch,	0F8h, 0E0h, 0F8h, 0C3h,	 8Eh,  18h,  0Eh,  0Eh,	 0Eh,  0Eh

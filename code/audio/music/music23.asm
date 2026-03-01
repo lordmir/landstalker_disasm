@@ -1,3 +1,5 @@
+; Music Track 0x23 - Heh Heh, I think I will Disrupt This Good Cheer
+
 		db 0, 0, 0, 182
 		dw MUSIC_23_YM1
 		dw MUSIC_23_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_23_PSG2
 		dw MUSIC_23_PSG3
 		dw MUSIC_23_PSG3
+
 MUSIC_23_YM1:
 		db  0FEh,  1Dh,	0FDh,  0Ch, 0FCh,    1,	0FBh,  2Ch,  9Ch,  18h,	 9Ch,  12h,  9Ch,    6,	 70h,  1Ch
 		db   15h,  70h,	 15h,  70h,  97h,  0Ch,	 9Ch,  12h,  9Ch,  0Ch,	 9Bh,	 6,  1Ch,  23h,	 70h,  23h

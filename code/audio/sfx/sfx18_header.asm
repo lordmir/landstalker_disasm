@@ -1,3 +1,5 @@
+; SFX 18 - Door Lock
+
         db 2
 		dw SFX_18_YM4
 		dw SFX_18_YM5

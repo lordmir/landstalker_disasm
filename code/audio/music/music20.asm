@@ -1,3 +1,5 @@
+; Music Track 0x20 - Prayers to God
+
 		db 0, 0, 0, 182
 		dw MUSIC_20_YM1
 		dw MUSIC_20_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_20_PSG2
 		dw MUSIC_20_PSG3
 		dw MUSIC_20_PSG3
+
 MUSIC_20_YM1:
 		db  0F0h,  18h,	0FEh,  0Bh, 0FDh,  0Ah,	0FCh,	 1, 0FBh,  2Ch,	0F8h,	 0, 0B2h,  28h,	0F0h,	 8
 		db  0B2h,  30h,	0B1h,  0Ch,  2Fh, 0B1h,	 24h, 0B4h,  0Ch, 0ADh,	 18h,  39h, 0B6h,  0Ch,	 37h, 0B9h

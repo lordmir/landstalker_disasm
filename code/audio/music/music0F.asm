@@ -1,3 +1,5 @@
+; Music Track 0x0F - Title Theme
+
 		db 0, 0, 0, 198
 		dw MUSIC_0F_YM1
 		dw MUSIC_0F_YM2

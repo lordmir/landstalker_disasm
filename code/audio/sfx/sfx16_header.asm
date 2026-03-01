@@ -1,3 +1,5 @@
+; SFX 16 - Throw
+
         db 1
 		dw SFX_16_NOOP
 		dw SFX_16_NOOP

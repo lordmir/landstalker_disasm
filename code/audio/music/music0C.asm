@@ -1,3 +1,5 @@
+; Music Track 0x0C - Einstien Whistle
+
 		db 0, 0, 0, 196
 		dw MUSIC_0C_YM1
 		dw MUSIC_0C_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_0C_NULL
 		dw MUSIC_0C_NULL
 		dw MUSIC_0C_NULL
+
 MUSIC_0C_YM1:
 		db  0F8h,    0,	0FEh,  12h, 0FDh,  0Dh,	0FCh,	 0, 0FBh,  4Ch,	0FCh,  80h, 0D1h,  48h,	0FCh,  87h
 		db  0D2h,    3,	 51h,  52h,  51h,  52h,	 51h,  52h,  51h,  52h,	 51h,  52h,  51h,  52h,	 51h,  52h

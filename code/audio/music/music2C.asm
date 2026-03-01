@@ -1,3 +1,5 @@
+; Music Track 0x2C - A Ballad for Princess Loria (Loop Version)
+
 		db 0, 0, 0, 183
 		dw MUSIC_2C_YM1
 		dw MUSIC_2C_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_2C_PSG2
 		dw MUSIC_2C_PSG3
 		dw MUSIC_2C_PSG3
+
 MUSIC_2C_YM1:
 		db  0F8h,    0,	0F0h,	 8, 0FEh,    1,	0FCh,	 1, 0FBh,    0,	0FDh,  0Bh, 0B4h,  17h,	0F0h,  13h
 		db  0B9h,  45h,	0FDh,  0Ah, 0B4h,  17h,	0F0h,	 2, 0FDh,  0Ch,	0B2h,  18h, 0F0h,  11h,	0B7h,  5Fh

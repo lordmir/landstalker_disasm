@@ -1,3 +1,5 @@
+; Music Track 0x1A - To The Great Adventurers
+
 		db 0, 0, 0, 196
 		dw MUSIC_1A_YM1
 		dw MUSIC_1A_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_1A_PSG2
 		dw MUSIC_1A_PSG3
 		dw MUSIC_1A_PSG3
+
 MUSIC_1A_YM1:
 		db  0FEh,  31h,	0FDh,  0Ch, 0FCh,    1,	0FBh,  2Ch, 0F8h,  20h,	0BBh,  3Ch, 0B2h,  0Ch,	 37h,  3Bh
 		db  0B9h,  3Ch,	0B0h,  0Ch,  35h,  39h,	0F8h,  40h, 0B7h,  3Ch,	0AFh,  0Ch,  32h,  37h,	0B5h,  30h

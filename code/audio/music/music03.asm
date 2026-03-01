@@ -1,3 +1,5 @@
+; Music Track 0x03 - Fanfare 1 (Unused)
+
 		db 0, 0, 0, 180
 		dw MUSIC_03_YM1
 		dw MUSIC_03_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_03_PSG2
 		dw MUSIC_03_PSG3
 		dw MUSIC_03_PSG3
+
 MUSIC_03_YM1:
 		db  0FCh,    1,	0FBh,  2Ch, 0FEh,  1Ah,	0FDh,  0Bh, 0A9h,    4,	 2Eh,  30h,  35h,  3Ah,	 3Ch, 0C1h
 		db     6,  70h,	0FDh,  0Ah,  35h,  70h,	 35h,  70h,  35h,  70h,	0F8h, 0C1h, 0B5h,  0Ch,	0B5h,	 6

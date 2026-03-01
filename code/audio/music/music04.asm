@@ -1,3 +1,5 @@
+; Music Track 0x04 - Receive Item
+
 		db 0, 0, 0, 178
 		dw MUSIC_04_YM1
 		dw MUSIC_04_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_04_PSG2
 		dw MUSIC_04_PSG3
 		dw MUSIC_04_PSG3
+
 MUSIC_04_YM1:
 		db  0FEh,  0Dh,	0FDh,  0Bh, 0FCh,    1,	0FBh,  2Ch, 0ABh,    5,	0F0h,	 3, 0A9h,    5,	0F0h,	 3
 		db  0ABh,    5,	0F0h,	 3, 0ACh,  36h,	0F0h,	 6, 0FFh,    0,	   0

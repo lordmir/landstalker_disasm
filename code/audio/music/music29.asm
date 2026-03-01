@@ -1,3 +1,5 @@
+; Music Track 0x29 - The Silence, the Darkness, and...
+
 		db 0, 0, 0, 199
 		dw MUSIC_29_YM1
 		dw MUSIC_29_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_29_PSG2
 		dw MUSIC_29_PSG3
 		dw MUSIC_29_PSG3
+
 MUSIC_29_YM1:
 		db  0F8h,    0,	0FEh,  11h, 0FDh,  0Dh,	0FCh,	 1, 0FBh,  50h,	0FAh, 0C0h, 0C0h,  0Ch,	0FCh,  80h
 		db  0C0h, 0B4h,	0FCh,	 1, 0C0h,  90h,	0BEh,  0Ch, 0BEh,  24h,	0C3h,  0Ch, 0FCh,  80h,	0C3h, 0B4h

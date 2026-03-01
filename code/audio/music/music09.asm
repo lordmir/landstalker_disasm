@@ -1,3 +1,5 @@
+; Music Track 0x09 - The Death God's Invitation
+
 		db 0, 0, 0, 188
 		dw MUSIC_09_YM1
 		dw MUSIC_09_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_09_PSG2
 		dw MUSIC_09_PSG3
 		dw MUSIC_09_PSG3
+
 MUSIC_09_YM1:
 		db  0F8h,    0,	0FCh,	 1, 0FBh,  2Ch,	0FEh,  31h, 0FDh,  0Bh,	0F8h, 0CBh, 0B7h,    4,	 33h,  2Fh
 		db  0F8h, 0E0h,	0FDh,  0Ah, 0B7h,    4,	 33h,  2Fh, 0FDh,    9,	 37h,  33h,  2Fh, 0FDh,	   8,  37h

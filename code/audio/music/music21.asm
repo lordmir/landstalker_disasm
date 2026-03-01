@@ -1,3 +1,5 @@
+; Music Track 0x21 - Light of the Setting Sun
+
 		db 0, 0, 0, 210
 		dw MUSIC_21_YM1
 		dw MUSIC_21_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_21_PSG2
 		dw MUSIC_21_PSG3
 		dw MUSIC_21_PSG3
+
 MUSIC_21_YM1:
 		db  0FEh,    1,	0FDh,  0Ah, 0FCh,    1,	0FBh,  5Ch, 0F8h,    0,	0ABh,  41h, 0B0h,  42h,	 32h, 0B3h
 		db   26h, 0B2h,	 1Ah, 0B0h,  19h, 0AFh,	 21h, 0B2h,  77h, 0F0h,	 39h, 0ABh,  46h, 0B2h,	 3Fh, 0B3h

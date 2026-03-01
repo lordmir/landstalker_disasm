@@ -1,3 +1,5 @@
+; Music Track 0x05 - Rest
+
 		db 0, 0, 0, 168
 		dw MUSIC_05_YM1
 		dw MUSIC_05_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_05_PSG2
 		dw MUSIC_05_PSG3
 		dw MUSIC_05_PSG3
+
 MUSIC_05_YM1:
 		db  0FEh,  1Ah,	0FDh,  0Ah, 0FCh,    1,	0FBh,  2Ch, 0A0h,  19h,	 9Dh,  18h, 0F0h,    9,	0FDh,  0Bh
 		db  0AFh,    8,	 31h, 0B5h,  12h, 0B3h,	   8, 0B2h,  64h, 0F0h,	   6, 0FFh,    0,    0

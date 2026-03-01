@@ -1,3 +1,5 @@
+; SFX 2C - Switch
+
         db 1
 		dw SFX_2C_NOOP
 		dw SFX_2C_NOOP

@@ -1,3 +1,5 @@
+; Music Track 0x25 - The King's Chamber
+
 		db 0, 0, 0, 171
 		dw MUSIC_25_YM1
 		dw MUSIC_25_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_25_PSG2
 		dw MUSIC_25_PSG3
 		dw MUSIC_25_PSG3
+
 MUSIC_25_YM1:
 		db  0FEh,    5,	0FDh,  0Bh, 0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0ABh,	 6,  70h, 0B0h,	 24h, 0AFh
 		db     6,  2Dh,	 2Fh,  30h,  32h,  70h,	0ABh,  30h, 0F0h,  12h,	0B7h,	 6, 0B5h,  12h,	0B4h,	 6

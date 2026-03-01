@@ -1,3 +1,5 @@
+; Music Track 0x26 - Mysterious Island
+
 		db 0, 0, 0, 206
 		dw MUSIC_26_YM1
 		dw MUSIC_26_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_26_PSG2
 		dw MUSIC_26_PSG3
 		dw MUSIC_26_PSG3
+
 MUSIC_26_YM1:
 		db  0F0h,  30h,	0FEh,  2Ah, 0FDh,  0Ah,	0FCh,	 1, 0FBh,  2Ch,	0A3h,  0Ah, 0A8h,    8,	0A5h,  38h
 		db  0F0h,  2Ah,	0A6h,	 8,  2Bh, 0A8h,	 34h, 0F0h,  28h, 0FDh,	 0Bh, 0A9h,    8,  2Eh,	0ABh,  32h

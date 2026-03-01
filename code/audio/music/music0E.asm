@@ -1,3 +1,5 @@
+; Music Track 0x0E - Friday Appear
+
 		db 0, 0, 0, 181
 		dw MUSIC_0E_YM1
 		dw MUSIC_0E_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_0E_NULL
 		dw MUSIC_0E_NULL
 		dw MUSIC_0E_NULL
+
 MUSIC_0E_YM1:
 		db  0FEh,  35h,	0FDh,  0Bh, 0FCh,    1,	0FBh,  2Ch, 0BEh,  30h,	0F0h,	 6, 0FFh,    0,	   0
 MUSIC_0E_YM2:

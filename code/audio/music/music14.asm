@@ -1,3 +1,5 @@
+; Music Track 0x14 - Friday and a Soft Breeze
+
 		db 0, 0, 0, 181
 		dw MUSIC_14_YM1
 		dw MUSIC_14_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_14_PSG2
 		dw MUSIC_14_PSG3
 		dw MUSIC_14_PSG3
+
 MUSIC_14_YM1:
 		db  0FEh,  27h,	0FDh,  0Ah, 0FCh,    1,	0FBh,  2Ch, 0B5h,    6,	 31h,  2Dh,  34h,  31h,	 2Bh,  32h
 		db   2Dh,  2Ah,	 30h,  2Dh,  2Ah,  2Fh,	 28h,  26h,  2Ch,  26h,	 23h,  2Dh, 0F0h,  1Eh,	0F8h,	 0

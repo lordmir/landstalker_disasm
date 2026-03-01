@@ -1,3 +1,5 @@
+; Music Track 0x12 - Seeking Treasure
+
 		db 0, 0, 0, 183
 		dw MUSIC_12_YM1
 		dw MUSIC_12_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_12_PSG2
 		dw MUSIC_12_PSG3
 		dw MUSIC_12_PSG3
+
 MUSIC_12_YM1:
 		db  0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0F0h, 0B4h, 0F8h,  20h,	0FEh,  14h, 0FDh,  0Ah,	0ADh,	 6
 		db   70h,  32h,	 34h, 0B5h,  18h, 0ADh,	   6,  70h,  34h,  35h,	0B7h,  18h, 0ADh,    6,	 70h,  35h

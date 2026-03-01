@@ -1,3 +1,5 @@
+; Music Track 0x02 - Premonition of Trouble
+
 		db 0, 0, 0, 181
 		dw MUSIC_02_YM1
 		dw MUSIC_02_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_02_PSG2
 		dw MUSIC_02_PSG3
 		dw MUSIC_02_PSG3
+
 MUSIC_02_YM1:
 		db  0F8h,    0,	0FEh,  35h, 0FDh,  0Ch,	0FCh,	 1, 0FBh,  2Ch,	0A1h,  30h,  28h, 0A7h,	 18h,  23h
 		db   1Fh,  21h,	 9Eh,  3Ch, 0F0h,  0Ch,	 9Eh,	 6,  70h,  1Eh,	 70h,  9Fh,  5Ah, 0F0h,	   6, 0A2h

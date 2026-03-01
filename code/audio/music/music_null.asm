@@ -1,4 +1,4 @@
-; Null Music Track Data (Silence)
+; Null Music Track (Silence)
 
 		db 0, 0, 0, 200
 		dw MUSIC_NULL_CMD

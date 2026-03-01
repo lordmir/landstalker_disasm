@@ -1,4 +1,6 @@
-        db 1
+; SFX 11 - Sword Swing
+	
+	    db 1
 		dw SFX_11_NOOP
 		dw SFX_11_NOOP
 		dw SFX_11_NOOP

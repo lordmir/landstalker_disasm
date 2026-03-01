@@ -1,3 +1,5 @@
+; Music Track 0x2E - Adventure Spirit
+
 		db 0, 0, 0, 201
 		dw MUSIC_2E_YM1
 		dw MUSIC_2E_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_2E_PSG2
 		dw MUSIC_2E_PSG3
 		dw MUSIC_2E_PSG3
+
 MUSIC_2E_YM1:
 		db  0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0FEh,  0Dh, 0FDh,  0Bh,	0F8h,  20h, 0B2h,    6,	 70h, 0B1h
 		db   54h, 0F0h,	 0Ch, 0B2h,  18h, 0B1h,	   6,  70h, 0F8h,  40h,	0B5h,  12h,  34h, 0B1h,	   6,  70h

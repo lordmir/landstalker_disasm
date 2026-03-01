@@ -1,3 +1,4 @@
+; SFX 08 - Speaker Pitch 5
 
         db 1
 		dw SFX_05_NOOP

@@ -1,3 +1,5 @@
+; SFX 03 - Cursor Select
+
         db 1
 		dw SFX_03_NOOP
 		dw SFX_03_NOOP

@@ -1,3 +1,5 @@
+; Music Track 0x11 - Treasure Hunter Lyle
+
 		db 0, 0, 0, 201
 		dw MUSIC_11_YM1
 		dw MUSIC_11_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_11_PSG2
 		dw MUSIC_11_PSG3
 		dw MUSIC_11_PSG3
+
 MUSIC_11_YM1
 		db  0F0h,  48h,	0F8h,	 0, 0FEh,    8,	0FDh,  0Bh, 0FCh,    1,	0FBh,  2Eh, 0A2h,  18h,	0F8h,  20h
 		db  0A7h,  24h,	0A9h,	 5, 0F0h,    7,	0A9h,  30h, 0F0h,  0Ch,	 22h,  27h,  29h,  2Bh,	 2Ch,  29h

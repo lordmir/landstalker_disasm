@@ -1,3 +1,5 @@
+; Music Track 0x0B - Status Heal
+
 		db 0, 0, 0, 188
 		dw MUSIC_07_YM1
 		dw MUSIC_07_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_07_PSG2
 		dw MUSIC_07_PSG3
 		dw MUSIC_07_PSG3
+
 MUSIC_07_YM1:
 		db  0FEh,  1Ah,	0FDh,  0Ch, 0FCh,    1,	0FBh,  2Ch, 0B7h,  10h,	0BAh,  0Eh, 0B9h,  0Dh,	0B8h,  0Ch
 		db  0B7h,  0Bh,	0BAh,  0Ah, 0B9h,    9,	 38h, 0B5h,    6, 0B1h,	   5, 0B5h,    4,  38h,	0BBh,	 3

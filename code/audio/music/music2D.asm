@@ -1,3 +1,5 @@
+; Music Track 0x2D - Pink Book
+
 		db 0, 0, 0, 200
 		dw MUSIC_2D_YM1
 		dw MUSIC_2D_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_2D_PSG2
 		dw MUSIC_2D_PSG3
 		dw MUSIC_2D_PSG3
+
 MUSIC_2D_YM1:
 		db  0FAh, 0C0h,	0FCh,	 0, 0FBh,  2Dh,	0F0h, 0C0h, 0F0h, 0A8h,	0FEh,  35h, 0FDh,  0Ch,	0A4h,  0Ch
 		db   70h, 0F8h,	   0, 0A9h,    0, 0FCh,	 82h, 0ABh, 0F0h, 0FCh,	0FFh, 0F0h,  0Ch, 0A4h,	   6,  70h

@@ -1,3 +1,5 @@
+; Music Track 0x00 - Duke Fanfare
+
 		db 0, 0, 0, 204
 		dw MUSIC_0A_YM1
 		dw MUSIC_0A_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_0A_PSG2
 		dw MUSIC_0A_PSG3
 		dw MUSIC_0A_PSG3
+
 MUSIC_0A_YM1:
 		db  0FEh,  38h,	0FDh,  0Bh, 0FCh,    1,	0FBh,  2Fh, 0B2h,  3Ch,	0F0h,  0Ch, 0ABh,    8,	0F0h,  10h
 		db  0B0h,  1Ch,	0F0h,  0Ah,  32h, 0B2h,	 3Ch, 0F0h,  0Ch, 0ABh,	   8, 0F0h,  0Eh, 0B0h,	   8, 0F0h

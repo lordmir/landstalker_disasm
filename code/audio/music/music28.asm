@@ -1,3 +1,5 @@
+; Music Track 0x28 - Divine Guardian of the Maze
+
 		db 0, 0, 0, 194
 		dw MUSIC_28_YM1
 		dw MUSIC_28_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_28_PSG2
 		dw MUSIC_28_PSG3
 		dw MUSIC_28_PSG3
+
 MUSIC_28_YM1:
 		db  0F0h,  14h,	0FEh,  35h, 0FDh,  0Dh,	0FCh,	 6, 0FBh,  2Ch,	0B2h,  10h,  2Dh,  2Eh,	 28h,  29h
 		db  0FCh,    1,	0A5h,  2Dh, 0F0h,    3,	0A5h,	 6,  29h,  2Dh,	 30h,  31h,  35h,  39h,	 3Ch, 0F0h

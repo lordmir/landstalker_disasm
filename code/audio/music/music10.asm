@@ -1,3 +1,5 @@
+; Music Track 0x10 - Let's Go on an Adventure
+
 		db 0, 0, 0, 202
 		dw MUSIC_10_YM1
 		dw MUSIC_10_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_10_PSG2
 		dw MUSIC_10_PSG3
 		dw MUSIC_10_PSG3
+
 MUSIC_10_YM1:
 		db  0FEh,    8,	0FDh,  0Ah, 0FCh,    1,	0FBh,  2Ch, 0F8h,    0,	0F8h,  20h, 0ABh,  39h,	0F0h,  0Ch
 		db  0ABh,    6,	0F0h,  12h, 0ABh,  39h,	0F0h,  0Ch, 0ABh,    6,	0F0h,  12h, 0AEh,  39h,	0F0h,  0Ch

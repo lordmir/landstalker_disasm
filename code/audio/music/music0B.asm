@@ -1,3 +1,5 @@
+; Music Track 0x0B - Fanfare 2
+
 		db 0, 0, 0, 208
 		dw MUSIC_0B_YM1
 		dw MUSIC_0B_YM2
@@ -9,6 +11,7 @@
 		dw MUSIC_0B_PSG2
 		dw MUSIC_0B_PSG3
 		dw MUSIC_0B_PSG3
+
 MUSIC_0B_YM1:
 		db  0FEh,  0Dh,	0FDh,  0Ah, 0FCh,    1,	0FBh,  4Ah, 0B5h,  0Ah,	0F0h,  0Eh, 0B5h,  0Ah,	0F0h,  0Eh
 		db  0B5h,  0Ah,	0F0h,  0Eh, 0F8h, 0C1h,	0B5h,  14h, 0F0h,    4,	 35h,  70h,  35h,  70h,	 35h,  70h
