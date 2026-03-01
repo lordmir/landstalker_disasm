@@ -1,3 +1,5 @@
+; SFX 1F - Throw Alternative
+
         db 1
 		dw SFX_1F_NOOP
 		dw SFX_1F_NOOP

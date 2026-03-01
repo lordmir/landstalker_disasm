@@ -1,3 +1,5 @@
+; SFX 1C - HP Absorb
+
         db 1
 		dw SFX_1C_NOOP
 		dw SFX_1C_NOOP

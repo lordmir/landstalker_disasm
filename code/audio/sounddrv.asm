@@ -599,7 +599,7 @@ StopMusic:				; CODE XREF: Main+Dj Main+60p	...
 		ld	(CALL_YM2_INSTEAD_OF_YM1), a
 		xor	a
 		ld	(iy+0),	a
-		ld	a, (SFX_TYPE_2_CHANNEL_1_NOT_IN_USE)
+		ld	a, (SFX_TYPE_2_CHANNEL_DATA_1 + 3)
 		or	a
 		jr	z, loc_3AD
 		xor	a
@@ -610,7 +610,7 @@ StopMusic:				; CODE XREF: Main+Dj Main+60p	...
 
 loc_3AD:				; CODE XREF: StopMusic+48j
 		inc	(iy+0)
-		ld	a, (SFX_TYPE_2_CHANNEL_2_NOT_IN_USE)
+		ld	a, (SFX_TYPE_2_CHANNEL_DATA_2 + 3)
 		or	a
 		jr	z, loc_3C4
 		xor	a
@@ -629,7 +629,7 @@ loc_3C4:				; CODE XREF: StopMusic+5Fj
 		ld	(hl), a
 		ld	a, 0FFh
 		ld	(hl), a
-		ld	hl, YM_CHANNEL_1_NOT_IN_USE
+		ld	hl, YM_CHANNEL_DATA_1 + 3
 		ld	de, 20h	; ' '
 		ld	b, 0Ah
 		ld	a, 1

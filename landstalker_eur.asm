@@ -240,13 +240,13 @@ BlocksetPrimaryPointers:    include "code\pointertables\blocks\primaryblocksetpo
 BlocksetSecondaryPointers:  include "code\pointertables\blocks\secondaryblocksetpointers.asm"
 Blocksets:                  include "code\blocks\blocksets.asm"
                             PadTo   $1E0000
-SoundBank1:                 incbin  "assets_packed\sound\soundbank1.bin"
+pcmbank0:                 incbin  "assets_packed\sound\pcmbank0.bin"
                             PadTo   $1E8000
-SoundBank2:                 incbin  "assets_packed\sound\soundbank2.bin"
+pcmbank1:                 incbin  "assets_packed\sound\pcmbank1.bin"
                             PadTo   $1F0000
-SoundBank3:                 incbin  "assets_packed\sound\soundbank3.bin"
+SoundBank3:                 incbin  "soundbank3.bin"
                             PadTo   $1F6000
 SoundDriver:                incbin  "cube.bin"
                             PadTo   $1F8000
-SoundBank4:                 incbin  "assets_packed\sound\soundbank4.bin"
+SoundBank4:                 incbin  "soundbank4.bin"
                             PadTo   $200000

@@ -1,3 +1,5 @@
+; SFX 2B - Kazalt Warp
+
         db 1
 		dw SFX_2B_NOOP
 		dw SFX_2B_NOOP

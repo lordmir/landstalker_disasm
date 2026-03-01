@@ -1,0 +1,16 @@
+; Null Music Track (Silence)
+
+		db 0, 0, 0, 200
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+		dw MUSIC_NULL_CMD
+
+MUSIC_NULL_CMD:
+		db  0FFh,    0,	   0

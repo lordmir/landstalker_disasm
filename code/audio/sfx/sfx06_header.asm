@@ -1,3 +1,4 @@
+; SFX 06 - Speaker Pitch 7
 
         db 1
 		dw SFX_05_NOOP
