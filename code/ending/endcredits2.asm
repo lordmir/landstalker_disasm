@@ -91,11 +91,19 @@ loc_9F6F2:					  ; CODE XREF: sub_9F6D4+14j
 ; ---------------------------------------------------------------------------
 
 loc_9F700:					  ; CODE XREF: sub_9F6D4+22j
+	if REGION=FR
+		cmpi.b	#$50,d0
+		bcs.w	loc_9F71E
+		cmpi.b	#$70,d0
+		bcc.w	loc_9F71E
+		subi.b	#$4F,d0
+	else
 		cmpi.b	#$40,d0
 		bcs.w	loc_9F71E
 		cmpi.b	#$80,d0
 		bcc.w	loc_9F71E
 		subi.b	#$3F,d0
+	endif
 		ext.w	d0
 		sub.w	d0,(word_FF1194).l
 		bra.s	loc_9F6DC

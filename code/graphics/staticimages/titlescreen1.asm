@@ -247,10 +247,17 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		moveq	#$00000004,d7
 	endif
 		bsr.w	sub_39E72
+	if REGION=FR
+		moveq	#$0000000C,d0
+		moveq	#$00000012,d1
+		moveq	#$0000000F,d6
+		moveq	#$00000001,d7
+	else
 		moveq	#$0000000E,d0
 		moveq	#$00000013,d1
 		moveq	#$0000000E,d6
 		moveq	#$00000000,d7
+	endif
 		bsr.w	sub_39E72
 		moveq	#$0000000A,d0
 		moveq	#$00000016,d1

@@ -332,7 +332,11 @@ FlagMenu:					  ; DATA XREF: ROM:0002A4A0o
 		movem.l	d0-a6,-(sp)
 		lea	FlagMenuActionJmpTable(pc),a0
 		clr.w	d1
+	if REGION=FR
+		move.w	#$0010,d2
+	else
 		move.w	#$000F,d2
+	endif
 		bsr.w	JmpToDebugActionTableEntry
 
 loc_2A6D6:					  ; DATA XREF: ROM:FlagMenuActionJmpTable+2o
@@ -399,6 +403,9 @@ FlagMenuExit:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
 FlagMenuOpts:	dc.w $FFFF			  ; DATA XREF: ROM:0002A724r
 		dc.w $0014			  ; 4  GUMI
 		dc.w $0022			  ; 6  RYUMA
+	if REGION=FR
+		dc.w $0021            ; 9  ESTAMPE
+	endif
 		dc.w $0023			  ; 10 MERCATOR
 		dc.w $001D			  ; 16 CASTLE MRCTR
 		dc.w $0093			  ; 19 CASTLE BANQUET

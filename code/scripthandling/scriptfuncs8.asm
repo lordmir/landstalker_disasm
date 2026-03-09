@@ -253,6 +253,18 @@ GetItemMaxQty:					  ; CODE XREF: SetItemQuantity+8p
 
 
 GetItemUseStringIdx:				  ; DATA XREF: j_GetItemUseStringIdxt
+	if REGION=FR
+		movem.l	d0/a0,-(sp)
+		andi.w	#$FF,d0
+		move.w	d0,(word_FF1196).l
+		bsr.s	GetItemProperties
+		move.b	(a0),d0
+		andi.w	#$F0,d0
+		lsr.w	#$04,d0
+		bsr.w	GetItemUseString
+		move.w	d0,d1
+		movem.l	(sp)+,d0/a0
+	else
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
 		move.b	(a0),d1
@@ -260,6 +272,7 @@ GetItemUseStringIdx:				  ; DATA XREF: j_GetItemUseStringIdxt
 		lsr.w	#$04,d1
 		addi.w	#$000C,d1
 		movea.l	(sp)+,a0
+	endif
 		rts
 ; End of function GetItemUseStringIdx
 

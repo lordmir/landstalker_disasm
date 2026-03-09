@@ -26,7 +26,7 @@ loc_38634:					  ; CODE XREF: DisplaySegaLogo+36j
 
 LoadSegaLogoTilemap:				  ; CODE XREF: DisplaySegaLogo+Ep
 		move.w	#$0001,d0
-	if REGION=JP
+	if ((REGION=JP)!(REGION=FR))
 		move.l	#$451C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC51C
 		bsr.s	FillAscendingTileNums
 		move.l	#$459C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC59C

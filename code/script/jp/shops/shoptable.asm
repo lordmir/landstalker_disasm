@@ -1,4 +1,4 @@
-			dc.w $254		; DATA XREF: sub_2595E+2At
+		dc.w $254		; DATA XREF: sub_2595E+2At
 					; sub_25BD2+At
 		dc.b $10
 		dc.b 8

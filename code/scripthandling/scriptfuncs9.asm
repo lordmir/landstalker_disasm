@@ -9,7 +9,7 @@ DebugGetAllItems:				  ; DATA XREF: j_DebugGetAllItemst
 loc_2940C:					  ; CODE XREF: DebugGetAllItems:loc_29418j
 		bsr.w	GetItemMaxQty
 		beq.s	loc_29418
-		moveq	#$00000009,d1
+		moveq	#9,d1
 		bsr.w	SetItemQuantity
 
 loc_29418:					  ; CODE XREF: DebugGetAllItems+Cj
@@ -18,7 +18,67 @@ loc_29418:					  ; CODE XREF: DebugGetAllItems+Cj
 		rts
 ; End of function DebugGetAllItems
 
-
+	if REGION=FR
+GetItemArticle:
+		move.l	a0,-(sp)
+		lea		ItemArticles(pc),a0
+		asr.w	#1,d0
+		bcs.s	loc_2901A
+		move.b	(a0,d0.w),d0
+		asr.w	#4,d0
+		bra.s	loc_2901E
+loc_2901A:
+		move.b	(a0,d0.w),d0
+loc_2901E:
+		andi.w	#$F,d0
+		movea.l	(sp)+,a0
+		rts
+; ---------------------------------------------------------------------------
+        ; 4 bits for each item:
+        ; 0 - Vowel
+        ; 2 - Fem
+        ; 4 - Masc
+        ; 6 - Plural
+        ; 8 - None
+ItemArticles:
+		dc.b $80,$00,$08,$66,$64,$44,$02,$22,$24,$02,$28,$42,$42,$20,$82,$24
+		dc.b $44,$44,$44,$20,$44,$44,$28,$26,$22,$24,$42,$42,$24,$04,$68,$24
+; =============== S U B R O U T I N E =======================================
+GetItemUseString:
+		movem.l	d1/a0,-(sp)
+		lea		ItemUseStringOffsets(pc),a0
+loc_2904E:
+		move.w	d0,d1
+		move.w	(word_FF1196).l,d0
+		bsr.s	GetItemArticle
+		move.w	(a0,d0.w),d0
+		add.w	d1,d0
+		movem.l	(sp)+,d1/a0
+		rts
+; ---------------------------------------------------------------------------
+; Appears not to be used, string offsets for use strings:
+; 1. Beginning vowel
+; 2. Fem
+; 3. Masc
+; 4. Plural
+; 5. No Article
+ItemUseStringOffsets:
+		dcb.w	5,$C
+; =============== S U B R O U T I N E =======================================
+GetItemFoundString:
+		movem.l	d1/a0,-(sp)
+		lea		ItemFoundStringOffsets(pc),a0
+		bra.s	loc_2904E
+; ---------------------------------------------------------------------------
+; Appears not to be used, string offsets for item found strings:
+; 1. Beginning vowel
+; 2. Fem
+; 3. Masc
+; 4. Plural
+; 5. No Article
+ItemFoundStringOffsets:
+		dcb.w	5,$11
+	endif
 ; =============== S U B	R O U T	I N E =======================================
 
 

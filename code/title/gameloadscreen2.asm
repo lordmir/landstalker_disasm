@@ -312,19 +312,25 @@ sub_F92A:					  ; CODE XREF: ROM:loc_EEF6p
 		bsr.s	sub_F958
 
 loc_F93A:					  ; CODE XREF: sub_F92A+26j
-		move.w	#$00B0,d0
 	if REGION=JP
+		move.w	#$00B0,d0
 		move.w	#$0138,d1
-	else
+		moveq	#$50,d2
+	elseif REGION=FR
+		move.w	#$0096,d0
 		move.w	#$0134,d1
+		moveq	#$60,d2
+	else
+		move.w	#$00B0,d0
+		move.w	#$0134,d1
+		moveq	#$50,d2
 	endif
-		moveq	#$00000050,d2
-		moveq	#$00000003,d3
-		clr.w	-$0000000C(a6)
+		moveq	#3,d3
+		clr.w	-12(a6)
 		bsr.w	sub_F9D6
 		tst.w	d0
 		bmi.s	loc_F93A
-		move.w	d0,-$0000000C(a6)
+		move.w	d0,-12(a6)
 		rts
 ; End of function sub_F92A
 
@@ -335,13 +341,25 @@ loc_F93A:					  ; CODE XREF: sub_F92A+26j
 sub_F958:					  ; CODE XREF: ROM:0000EEC8p
 						  ; sub_F92A+Ep
 		bsr.w	ClearTextBuffer
-		move.w	#$0028,(word_FF1194).l
-		move.w	#$0043,d1
+	if REGION=FR
+		move.w	#$10,(word_FF1194).l
+	else
+		move.w	#$28,(word_FF1194).l
+	endif
+		move.w	#$43,d1
 		bsr.w	j_j_LoadUncompressedString ; Start
+	if REGION=FR
+		move.w	#$0070,(word_FF1194).l
+	else
 		move.w	#$0078,(word_FF1194).l
+	endif
 		move.w	#$0044,d1
 		bsr.w	j_j_LoadUncompressedString ; Copy
+	if REGION=FR
+		move.w	#$00D0,(word_FF1194).l
+	else
 		move.w	#$00C8,(word_FF1194).l
+	endif
 		move.w	#$0045,d1
 		bsr.w	j_j_LoadUncompressedString ; Delete
 		bsr.w	DMACopyTextBuffer
