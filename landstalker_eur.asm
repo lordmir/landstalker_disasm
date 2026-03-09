@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=2;NTSC=0;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNT_AT_END=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1 landstalker.asm,landstalker.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=2;NTSC=0;EXPANDED=0;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNTUP=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1 landstalker.asm,landstalker.bin
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_eur.inc"
@@ -129,7 +129,7 @@ SpriteDimensionsLookup:     incbin  "assets_packed\spritedata\spritedimensions.b
 RoomSpriteTableOffset:      incbin  "assets_packed\spritedata\roomtableoffsets.bin"
 EnemyStats:                 incbin  "assets_packed\spritedata\enemystats.bin"
 RoomSpriteTable:            incbin  "assets_packed\spritedata\roomspritetable.bin"
-                            dcb.b   $30, $FF
+                            PadTo   $22E80
 StringPtrs:                 include "code\pointertables\strings\stringbankptr.asm"
                             include "code\text\stringfuncsjumptable.asm"
                             include "code\text\stringfuncs1.asm"

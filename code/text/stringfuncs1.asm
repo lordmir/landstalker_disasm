@@ -240,14 +240,20 @@ loc_230C0:					  ; CODE XREF: GetNextChar+62j
 
 ProcessChar:					  ; CODE XREF: PrintString:loc_22F60p
 		tst.w	d0
+	if	~(REGION=FR)
 		bpl.s	loc_230D6
+loc_2314E:
 		not.w	d0
 		lsl.w	#$02,d0
 		jmp	HandleControlChars(pc,d0.w)
+	else
+ 		bmi.w	loc_2314E
+	endif
 ; ---------------------------------------------------------------------------
-
-loc_230D6:					  ; CODE XREF: ProcessChar+2j
-						  ; HandleControlChars+76j
+loc_230D6:
+	if REGION=FR
+		cmpi.b	#CHR_OpenBracket,d0
+	endif
 		cmpi.b	#CHR_BEGIN_TALK,d0
 		bne.s	loc_230F4
 		andi.b	#$01,(byte_FF1144).l
@@ -308,7 +314,12 @@ loc_2314A:					  ; CODE XREF: sub_2313C+8j
 
 
 ; =============== S U B	R O U T	I N E =======================================
-
+	if REGION=FR
+loc_2314E:
+		not.w	d0
+		lsl.w	#$02,d0
+		jmp	HandleControlChars(pc,d0.w)
+	endif
 
 HandleControlChars:				  ; CODE XREF: ProcessChar+8j
 
@@ -396,6 +407,10 @@ HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
 		bra.w	CopyStringToBuffer
 	else
 		bsr.w	InsertNewline
+	if REGION=FR
+		clr.w	(word_FF1194).l
+		move.l	#word_FF1196,(dword_FF184C).l
+	endif
 		bsr.w	PopItem
 		bsr.w	GetChrName
 		bsr.w	CopyStringToBuffer

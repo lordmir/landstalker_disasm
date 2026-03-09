@@ -4558,10 +4558,12 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 loc_15936:					  ; CODE XREF: sub_15914+44j
 		bsr.w	sub_159AE
 		bsr.w	loc_15A96
-	if ENABLE_GOLD_COUNT_AT_END
+	if ENABLE_GOLD_COUNTUP
 		move.w	#00013,d0
+	if REFRESH_GOLD_CTR
 		jsr	(AddGold).l
 		jsr	(j_QueueHUDTilemapDMA).l
+	endif
 	endif
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	sub_1595C

@@ -7,13 +7,21 @@ InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 		bsr.w	sub_D9FC
 		bsr.w	sub_D996
 		jsr	(WaitUntilVBlank).l
+	if REGION=FR
+		move.w	#$A880,d0
+	else
 		move.w	#$8F80,d0
+	endif
 		move.w	#$0800,d1
 		clr.w	d2
 		jsr	(DoDMAFill).l		  ; d0 - Fill destination address VDP
 						  ; d1 - Fill length bytes
 						  ; d2 - Fill pattern
+	if REGION=FR
+		move.w	#$0144,d1
+	else
 		move.w	#$00BC,d1
+	endif
 		clr.w	d0
 		move.w	#$003E,d7
 

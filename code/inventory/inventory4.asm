@@ -21,12 +21,21 @@ loc_D59A:					  ; CODE XREF: PopulateItemSlot+10j
 
 loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 		movem.w	d1,-(sp)
+	if REGION=FR
+		movem.l a0,-(sp)
+	endif
 		bsr.w	sub_D642
+	if REGION=FR
+		movem.l (sp)+,a0
+	endif
 		movem.w	(sp)+,d1
 	if REGION=JP
-		lea	-$0000008E(a0),a0
+		lea	-$8E(a0),a0
+	elseif REGION=FR
+		movem.l	a0,-(sp)
+		lea	8(a0),a0
 	else
-		lea	-$000000D6(a0),a0
+		lea	-$D6(a0),a0
 		movem.l	a0,-(sp)
 	endif
 		bsr.s	sub_D5E4
@@ -36,8 +45,10 @@ loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 	endif
 		tst.w	d2
 		bne.s	locret_D5C6
-	if ~(REGION=JP)
-		lea	$0000005A(a0),a0
+	if REGION=FR
+		lea	$AC(a0),a0
+	elseif ~(REGION=JP)
+		lea	$5A(a0),a0
 	endif
 		bsr.s	sub_D5C8
 
@@ -61,10 +72,18 @@ loc_D5D2:					  ; CODE XREF: sub_D5C8+2j
 
 loc_D5D6:					  ; CODE XREF: sub_D5C8+8j
 		move.b	#CHR_MULT,d0
+	if REGION=FR
+		bsr.w	sub_D64E
+	else
 		move.w	d0,(a0)+
+	endif
 		move.b	d1,d0
 		addq.b	#$01,d0
+	if REGION=FR
+		bsr.w	sub_D64A
+	else
 		move.w	d0,(a0)+
+	endif
 		rts
 ; End of function sub_D5C8
 
@@ -76,6 +95,8 @@ sub_D5E4:					  ; CODE XREF: PopulateItemSlot+2Cp
 						  ; GetInvEquipLayout+44p
 	if REGION=JP
 		movem.w	d0,-(sp)
+	elseif REGION=FR
+		movem.w d0-d2,-(sp)
 	else
 		movem.w d0-d1,-(sp)
 	endif
@@ -93,6 +114,7 @@ loc_D5FC:					  ; CODE XREF: sub_D5E4+10j
 
 loc_D600:					  ; CODE XREF: sub_D5E4+16j
 						  ; sub_D5E4:loc_D634j
+	if ~(REGION=FR)
 		move.b	(a2)+,d0
 	if ~(REGION=JP)
 		cmpi.b	#CHR_HYPHENATION_POINT,d0
@@ -140,7 +162,69 @@ loc_D634:					  ; CODE XREF: sub_D5E4+2Ej
 	endif
 		rts
 ; End of function sub_D5E4
-
+	else		; French menu text parsing
+loc_D60C:
+		clr.w	d2
+loc_D60E:
+		move.b	(a2)+,d0
+		cmpi.b	#CHR_BREAK_POINT,d0
+		beq.w	loc_D62E
+		cmpi.b	#CHR_BREAKING_SPACE,d0
+		beq.w	loc_D62E
+		cmpi.b	#CHR_HYPHENATION_POINT,d0
+		bne.s	loc_D638
+		move.b  #CHR_Dash,d0
+		bsr.w   sub_D666
+loc_D62E:
+		lea		$90(a1),a0
+		moveq	#1,d2
+		bra.w	loc_D63C
+loc_D638:
+		bsr.w	sub_D666
+loc_D63C:
+		dbf		d7,loc_D60E
+		lea		$12(a1),a0
+		movem.w	(sp)+,d0-d2
+		rts
+sub_D64A:
+		bsr.w	sub_D67A
+sub_D64E:
+		movem.w	d0,-(sp)
+		asl.b	#$01,d0
+		addi.w	#$98,d0
+		move.w	d0,(a0)+
+		addq.b	#$01,d0
+		move.w	d0,$46(a0)
+		movem.w	(sp)+,d0
+		rts
+sub_D666:
+		tst.b	d2
+		bne.s	sub_D64A
+		bsr.w	sub_D67A
+		asl.b	#$01,d0
+		move.w	d0,(a0)+
+		addq.b	#$01,d0
+		move.w	d0,$46(a0)
+		rts
+sub_D67A:
+		cmpi.b	#CHR_Asterisk,d0
+		bcc.s	loc_D682
+locret_D680:
+		rts
+loc_D682:
+		cmpi.b	#CHR_Apostrophe,d0
+		bne.s	loc_D68E
+		move.b	#CHR_Asterisk,d0
+		rts
+loc_D68E:
+		cmpi.b	#CHR_Dash,d0
+		bne.s	loc_D69A
+		move.b	#CHR_DoubleQuote,d0
+		rts
+loc_D69A:
+		subi.b #$15,d0
+		rts
+	endif
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -150,12 +234,20 @@ sub_D642:					  ; CODE XREF: PopulateItemSlot+1Cp
 		movem.w	d0-d1,-(sp)
 		tst.b	d1
 		bne.s	loc_D652
+	if REGION=FR
+		move.w	#$A144,d1
+	else
 		move.w	#$A0BC,d1
+	endif
 		bra.w	loc_D656
 ; ---------------------------------------------------------------------------
 
 loc_D652:					  ; CODE XREF: sub_D642+6j
+	if REGION=FR
+		move.w	#$C144,d1
+	else
 		move.w	#$C0BC,d1
+	endif
 
 loc_D656:					  ; CODE XREF: sub_D642+Cj
 		andi.w	#$003F,d0
@@ -319,7 +411,11 @@ sub_D756:					  ; CODE XREF: sub_D714+Cp
 		clr.b	d4
 
 loc_D77C:					  ; CODE XREF: sub_D756+22j
+	if REGION=FR
+		move.w	#$8140,d3
+	else
 		move.w	#$80B8,d3
+	endif
 		move.b	#$05,d2
 		move.w	#$0098,(a0)
 		tst.w	$00000006(a1)
@@ -516,8 +612,8 @@ sub_D902:					  ; CODE XREF: sub_D714+6p
 loc_D90A:					  ; CODE XREF: sub_D902+4j
 		tst.b	d2
 		bne.s	loc_D92C
-		lea	(g_Buffer).l,a0
-		move.w	g_Buffer+4-g_Buffer(a0),d2
+		lea		(g_Buffer).l,a0
+		move.w	4(a0),d2
 		move.w	(unk_FF0F9C).l,d3
 		sub.w	d2,d3
 		andi.b	#$1F,d3
@@ -531,7 +627,11 @@ loc_D92C:					  ; CODE XREF: sub_D902+Aj
 		move.w	d0,0000000006(a0)
 		move.w	d1,(a0)
 		move.b	#$0F,$00000002(a0)
+	if REGION=FR
+		move.w	#$A130,d2
+	else
 		move.w	#$A0A8,d2
+	endif
 		move.w	d2,$00000004(a0)
 		rts
 ; End of function sub_D902
@@ -593,7 +693,11 @@ loc_D9B2:					  ; CODE XREF: sub_D996+24j
 		bsr.w	Expand2BPPGfx
 		bsr.w	Expand2BPPGfx
 		lea	((g_Buffer+$84)).l,a0
-		lea	($00001500).w,a1
+	if REGION=FR
+		lea	($2600).w,a1
+	else
+		lea	($1500).w,a1
+	endif
 		move.w	#$0140,d0
 		move.w	#$0002,d1
 		jsr	(DoDMACopy).l		  ; d0 = DMA Length
@@ -608,34 +712,64 @@ loc_D9B2:					  ; CODE XREF: sub_D996+24j
 
 sub_D9FC:					  ; CODE XREF: InitInv+6p
 						  ; DATA XREF: ROM:00000422t
+	if REGION=FR
+		lea		MenuFont(pc),a0
+		lea		((g_Buffer+$1384)).l,a1
+		lea		($0000).w,a2
+		jsr		(j_LoadCompressedGfx).l
+		lea		((g_Buffer+$84)).l,a0
+		lea		((g_Buffer+$1384)).l,a1
+		move.b	#1,d2
+		move.b	#0,d3
+		move.w	#$0097,d6
+	else
 		lea	((g_Buffer+$84)).l,a0
 		lea	MenuFont(pc),a1
 		move.b	#$01,d2
 		move.b	#$00,d3
 		bsr.w	Expand1bppTo4bpp
 		move.w	#$009E,d6
-
+	endif
 loc_DA16:					  ; CODE XREF: sub_D9FC+1Ej
 		bsr.w	Expand1bppTo4bpp
-		dbf	d6,loc_DA16
+		dbf		d6,loc_DA16
+	if REGION=FR
+		lea		((g_Buffer+$1384)).l,a1
+		bsr.w	Expand1bppTo4bpp
+	endif
 		move.b	#$0A,d3
 		move.b	#$0A,d4
 		move.b	#$01,d5
 		move.b	d3,d6
+	if ~(REGION=FR)
 		bsr.w	sub_DA62
+	endif
 		move.b	#$0A,d3
 		move.b	#$0A,d4
 		move.b	#$03,d5
 		move.b	d3,d6
+	if ~(REGION=FR)
 		bsr.w	sub_DA62
-		lea	((g_Buffer+$84)).l,a0
-		lea	(0000000000).w,a1
+	endif
+		lea		((g_Buffer+$84)).l,a0
+	if REGION=FR
+		lea		($000C).w,a1
+		move.w	#$0980,d0
+	else
+		lea		($0000).w,a1
 		move.w	#$0A80,d0
-		move.w	#$0002,d1
-		jsr	(QueueDMAOp).l		  ; d0 - DMA Length
-						  ; a0 - DMA Source
-						  ; a1 - DMA Copy
+	endif
+		move.w	#2,d1
+		jsr	(QueueDMAOp).l
 		jsr	(FlushDMACopyQueue).l
+	if REGION=FR
+		lea	((g_Buffer+$8C)).l,a0
+		lea	($1300).w,a1
+		move.w	#$0980,d0
+		move.w	#2,d1
+		jsr	(QueueDMAOp).l
+		jsr	(FlushDMACopyQueue).l
+	endif
 		rts
 ; End of function sub_D9FC
 

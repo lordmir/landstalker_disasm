@@ -217,7 +217,12 @@ ReceiveItem:					  ; DATA XREF: ROM:ActionPointerListo
 ; ---------------------------------------------------------------------------
 		move.w	(word_FF1196).l,d0
 		bsr.w	GetItem
+	if REGION=FR
+		moveq	#2,d0
+		bsr.w	GetItemFoundString
+	else
 		move.w	#$0013,d0		  ; Got	ITEM
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		jsr	(j_RestoreBGM).l
 		move.l	(sp)+,d0

@@ -37,8 +37,14 @@ DisplayItemPriceMessage:			  ; CODE XREF: ROM:ShopPrice_01p
 						  ; ROM:ShopPrice_02p ...
 		movem.l	d0-d1/a0,-(sp)
 		bsr.w	GetItemShopSellPrice
-		movea.l	$0000000C(sp),a0	  ; Previous stack pointer
+		movea.l	$C(sp),a0	  ; Previous stack pointer
+	if REGION=FR
+		move.w	(word_FF1198).l,d0
+		bsr.w	GetItemArticle
+		move.w	(a0,d0.w),d0
+	else
 		move.w	(a0),d0
+	endif
 		bsr.w	RunTextCmd
 		movem.l	(sp)+,d0-d1/a0
 		addq.l	#$04,sp

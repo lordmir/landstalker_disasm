@@ -121,7 +121,12 @@ GainItem:					  ; CODE XREF: sub_24A5C+Ap
 		move.w	d2,d0
 		bsr.w	GetRemainingItemAllowedCount
 		bne.s	loc_24AF4
-		move.w	#$0012,d0
+	if REGION=FR
+		moveq	#1,d0
+		bsr.w	GetItemFoundString
+	else
+		move.w	#$12,d0
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		bra.s	loc_24B3E
 ; ---------------------------------------------------------------------------
@@ -130,9 +135,19 @@ loc_24AF4:					  ; CODE XREF: ROM:00024AE8j
 		move.w	#$013B,d0
 		bsr.w	TestFlagBit
 		beq.s	loc_24B16
+	if REGION=FR
+		moveq	#6,d0
+		bsr.w	GetItemFoundString
+	else
 		move.w	#$0017,d0
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+	if REGION=FR
+		moveq	#7,d0
+		bsr.w	GetItemFoundString
+	else
 		move.w	#$0018,d0
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		bsr.w	Sleep_0
 ; ---------------------------------------------------------------------------
@@ -148,9 +163,19 @@ loc_24B16:					  ; CODE XREF: ROM:00024AFCj
 ; ---------------------------------------------------------------------------
 		move.w	d2,d0
 		bsr.w	GetItem
+	if REGION=FR
+		clr.w	d0
+		bsr.w	GetItemFoundString
+	else
 		move.w	#$0011,d0
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+	if REGION=FR
+		moveq	#2,d0
+		bsr.w	GetItemFoundString
+	else
 		move.w	#$0013,d0
+	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		jsr	(j_RestoreBGM).l
 

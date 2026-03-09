@@ -114,3 +114,27 @@ jobs:
         run: |
              grep "Checksum: B5BC" build_landstalker_eur_expanded.log
              echo aa5dec676eeeefac4f3a52fd3fc5b5506e1d674c69764e74a4b9a2a6e7dd50f1 landstalker_eur_expanded.bin | sha256sum -c
+
+      - name: Build FR Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build.sh -r FR -o landstalker_fr.bin | tee build_landstalker_fr.log
+
+      - name: Verify FR Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: |
+             grep "Checksum: 0446" build_landstalker_fr.log
+             echo 909f5fd141edbede56e6e54402dc61c0c4320edd75991323a37bc74222234fc8 landstalker_fr.bin | sha256sum -c
+
+      - name: Build FR Expanded Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: ./build.sh -r FR -e -o landstalker_fr_expanded.bin | tee build_landstalker_fr_expanded.log
+
+      - name: Verify FR Expanded Landstalker ROM
+        working-directory: ${{github.workspace}}/landstalker_disasm
+        shell: bash
+        run: |
+             grep "Checksum: 4153" build_landstalker_fr_expanded.log
+             echo 6729d68d4e290428167144d239f74f917b6112fbf9992c27af6245adc09f32c5 landstalker_fr_expanded.bin | sha256sum -c

@@ -9,8 +9,10 @@ GetInvEquipLayout:				  ; CODE XREF: sub_EAD4:loc_EAF2p
 		clr.w	(a0)
 	if	REGION=JP
 		move.w  #3,d1
+	elseif	REGION=FR
+		moveq	#1,d1
 	else
-		moveq	#$00000002,d1
+		moveq	#$2,d1
 	endif
 		lea	EquipInventoryLayout(pc),a3
 		lea	(g_Buffer).l,a4
@@ -20,7 +22,11 @@ loc_ED10:					  ; CODE XREF: GetInvEquipLayout+56j
 		move.w	#$0001,d0
 		movem.w	d1/d7,-(sp)
 		bsr.w	sub_D86C
-		move.w	#$0008,d7
+	if REGION=FR
+		move.w	#9,d7
+	else
+		move.w	#8,d7
+	endif
 		bsr.w	sub_ED50
 		move.w	$00000010(a4),d0
 		andi.l	#$00000007,d0
@@ -43,7 +49,11 @@ loc_ED10:					  ; CODE XREF: GetInvEquipLayout+56j
 sub_ED50:					  ; CODE XREF: GetInvEquipLayout+2Cp
 		subq.w	#$01,d7
 		movem.l	a0,-(sp)
-		move.w	#$0001,d5
+	if REGION=FR
+		move.w	#3,d5
+	else
+		move.w	#1,d5
+	endif
 
 loc_ED5A:					  ; CODE XREF: sub_ED50+1Ej
 		move.w	d7,d6

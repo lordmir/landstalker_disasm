@@ -1,0 +1,7 @@
+MainFont:                   incbin  "assets_packed\graphics\fonts\mainfont_fr.1bpp"
+StringBank0:                incbin  "assets_packed\strings\main\fr\strings01.huf"
+StringBank1:                incbin  "assets_packed\strings\main\fr\strings02.huf"
+StringBank2:                incbin  "assets_packed\strings\main\fr\strings03.huf"
+StringBank3:                incbin  "assets_packed\strings\main\fr\strings04.huf"
+StringBank4:                incbin  "assets_packed\strings\main\fr\strings05.huf"
+StringBank5:                incbin  "assets_packed\strings\main\fr\strings06.huf"
