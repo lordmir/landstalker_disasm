@@ -136,8 +136,8 @@ jobs:
         working-directory: ${{github.workspace}}/landstalker_disasm
         shell: bash
         run: |
-             grep "Checksum: 4153" build_landstalker_fr_expanded.log
-             echo 6729d68d4e290428167144d239f74f917b6112fbf9992c27af6245adc09f32c5 landstalker_fr_expanded.bin | sha256sum -c
+             grep "Checksum: B32B" build_landstalker_fr_expanded.log
+             echo 6086c3801ec7d00f1987c1a881be4b28bb2e725f58c1a6203b39a578f85cf22b landstalker_fr_expanded.bin | sha256sum -c
 
       - name: Build DE Landstalker ROM
         working-directory: ${{github.workspace}}/landstalker_disasm
