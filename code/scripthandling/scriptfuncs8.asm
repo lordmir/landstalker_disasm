@@ -253,7 +253,7 @@ GetItemMaxQty:					  ; CODE XREF: SetItemQuantity+8p
 
 
 GetItemUseStringIdx:				  ; DATA XREF: j_GetItemUseStringIdxt
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		movem.l	d0/a0,-(sp)
 		andi.w	#$FF,d0
 		move.w	d0,(word_FF1196).l

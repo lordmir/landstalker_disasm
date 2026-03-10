@@ -192,11 +192,11 @@ ClimaxLogoData:             include "code\graphics\staticimages\climaxlogodata.a
 IslandMap:                  include "code\graphics\staticimages\islandmap.asm"
                             PadTo   $044010
 TilesetPtrTable:            include "code\pointertables\graphics\tilesetpointers.asm"
-TilesetData:                include "code\graphics\tileset_data_fr.asm"
+TilesetData:                include "code\graphics\tileset_data_frde.asm"
                             PadTo   $09B000
                             include "code\sprites\sprites1.asm"
 SpriteBehaviourOffsets:     incbin  "assets_packed\spritedata\behaviouroffsets.bin"
-SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_fr.bin"
+SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_frde.bin"
                             Align   $2
                             include "code\maps\chests1.asm"
 RoomChestOffsets:           incbin  "assets_packed\roomdata\chests\chestoffsets.bin"

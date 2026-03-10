@@ -28,7 +28,7 @@ while getopts r:o:e flag; do
         r) REGION=${OPTARG};;
         o) MANUAL_OUTPUT=${OPTARG};;
         e) EXPANDED=1;;
-        *) echo "Usage: ${0} [-r (US|JP|EUR|FR)] [-e] [-o <Output ROM Filename>]";;
+        *) echo "Usage: ${0} [-r (US|JP|EUR|FR|DE)] [-e] [-o <Output ROM Filename>]";;
     esac
 done
 
@@ -128,6 +128,30 @@ elif [ ${REGION} == "FR" ]; then
     FIX_POTENTIAL_CORRUPTION_ON_GOLA=1
     FIX_GOLD_CAP_ON_FILE_LOAD=1
     FIX_END_CREDITS_GLITCH=1
+    REFRESH_GOLD_CTR=0
+elif [ ${REGION} == "DE" ]; then
+    if [ ${EXPANDED} -eq 1 ]; then
+        SOURCE="landstalker_de_expanded.asm"
+        OUTPUT="landstalker_de_expanded.bin"
+        SYMBOL="landstalker_de_expanded.sym"
+        LISTING="landstalker_de_expanded.lst"
+    else
+        SOURCE="landstalker_de.asm"
+        OUTPUT="landstalker_de.bin"
+        SYMBOL="landstalker_de.sym"
+        LISTING="landstalker_de.lst"
+    fi
+    REGION_CODE=4
+    NTSC=0
+    ENABLE_REGION_CHECK=1
+    FIX_COLLISION_GLITCH=1
+    FIX_ARMLET_SKIP=1
+    FIX_EINSTEIN_WHISTLE_FLAG_CHECK=1
+    FIX_SPRITE_HIDE_BUG=1
+    ENABLE_GOLD_COUNTUP_ON_TREASURE=1
+    FIX_POTENTIAL_CORRUPTION_ON_GOLA=1
+    FIX_GOLD_CAP_ON_FILE_LOAD=1
+    FIX_END_CREDITS_GLITCH=0
     REFRESH_GOLD_CTR=0
 else
     echo Unsupported Region

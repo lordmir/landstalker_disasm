@@ -42,7 +42,7 @@ loc_39B7A:					  ; CODE XREF: HandlePaletteScroll+36j
 
 
 sub_39B80:					  ; CODE XREF: HandlePaletteScroll:loc_39B5Cp
-	if REGION=UK
+	if ((REGION=UK)!(REGION=DE))
 		subi.l	#5,d0
 	else
 		subi.l	#4,d0

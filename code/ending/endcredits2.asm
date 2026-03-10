@@ -97,6 +97,12 @@ loc_9F700:					  ; CODE XREF: sub_9F6D4+22j
 		cmpi.b	#$70,d0
 		bcc.w	loc_9F71E
 		subi.b	#$4F,d0
+	elseif REGION=DE
+		cmpi.b	#$46,d0
+		bcs.w	loc_9F71E
+		cmpi.b	#$66,d0
+		bcc.w	loc_9F71E
+		subi.b	#$45,d0
 	else
 		cmpi.b	#$40,d0
 		bcs.w	loc_9F71E

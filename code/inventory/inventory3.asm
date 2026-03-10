@@ -9,6 +9,8 @@ InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 		jsr	(WaitUntilVBlank).l
 	if REGION=FR
 		move.w	#$A880,d0
+	elseif REGION=DE
+		move.w	#$A000,d0
 	else
 		move.w	#$8F80,d0
 	endif
@@ -19,6 +21,8 @@ InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 						  ; d2 - Fill pattern
 	if REGION=FR
 		move.w	#$0144,d1
+	elseif REGION=DE
+		move.w	#$140,d1
 	else
 		move.w	#$00BC,d1
 	endif

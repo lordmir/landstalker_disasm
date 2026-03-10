@@ -160,7 +160,7 @@ Shop_06:
 					; 0xA02F: PRINT	MSG 0x007D, END: "{6A}Cela fera{66}{69}	Ors, d'accord?{66}{67}"
 		ScriptID    $3E,$1	; Sale confirmation: Run text script at	offset 0x027996
 					; 0xE03E: PRINT	MSG 0x008C, MSGBOX CLEARED, END: "{6A}Merci, Ryle.{66}Ce sera bien utile,{66}c'est moi qui vous le dis!{6D}"
-word_25F76:	ScriptID    $52,$2	; Not enough money:  Run text script at	offset 0x0279BE
+		ScriptID    $52,$2	; Not enough money:  Run text script at	offset 0x0279BE
 					; 0xE052: PRINT	MSG 0x00A0, MSGBOX CLEARED, END: "{6A}Dommage!{66}Il vous manque quelques Ors.{6D}"
 		ScriptID    $3F,$3	; Sale declined:     Run text script at	offset 0x027998
 					; 0xE03F: PRINT	MSG 0x008D, MSGBOX CLEARED, END: "{6A}J'en suis d�sol� ...{6D}"

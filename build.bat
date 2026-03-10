@@ -47,7 +47,7 @@ IF "%~1"=="-o" (
 IF "%~1"=="" (
     GOTO ENDPARSE
 )
-ECHO Usage: %~0% [-r ^(US^|JP^|EUR^|FR^)] [-e] [-o <Output ROM Filename>]
+ECHO Usage: %~0% [-r ^(US^|JP^|EUR^|FR^|DE^)] [-e] [-o <Output ROM Filename>]
 EXIT 1
 
 :ENDPARSE
@@ -153,6 +153,32 @@ IF %REGION%==US (
     SET /A FIX_POTENTIAL_CORRUPTION_ON_GOLA=1
     SET /A FIX_GOLD_CAP_ON_FILE_LOAD=1
     SET /A FIX_END_CREDITS_GLITCH=1
+    SET /A REFRESH_GOLD_CTR=0
+) ELSE IF %REGION%==DE (
+    IF %EXPANDED%==1 (
+        SET SOURCE="landstalker_de_expanded.asm"
+        SET OUTPUT="landstalker_de_expanded.bin"
+        SET SYMBOL="landstalker_de_expanded.sym"
+        SET LISTING="landstalker_de_expanded.lst"
+        SET /A EXPANDED=1
+    ) ELSE (
+        SET SOURCE="landstalker_de.asm"
+        SET OUTPUT="landstalker_de.bin"
+        SET SYMBOL="landstalker_de.sym"
+        SET LISTING="landstalker_de.lst"
+        SET /A EXPANDED=0
+    )
+    SET /A REGION_CODE=4
+    SET /A NTSC=0
+    SET /A ENABLE_REGION_CHECK=1
+    SET /A FIX_COLLISION_GLITCH=1
+    SET /A FIX_ARMLET_SKIP=1
+    SET /A FIX_EINSTEIN_WHISTLE_FLAG_CHECK=1
+    SET /A FIX_SPRITE_HIDE_BUG=1
+    SET /A ENABLE_GOLD_COUNTUP_ON_TREASURE=1
+    SET /A FIX_POTENTIAL_CORRUPTION_ON_GOLA=1
+    SET /A FIX_GOLD_CAP_ON_FILE_LOAD=1
+    SET /A FIX_END_CREDITS_GLITCH=0
     SET /A REFRESH_GOLD_CTR=0
 ) ELSE (
     ECHO Unsupported Region

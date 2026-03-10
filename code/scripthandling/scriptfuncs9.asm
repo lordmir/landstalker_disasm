@@ -18,7 +18,7 @@ loc_29418:					  ; CODE XREF: DebugGetAllItems+Cj
 		rts
 ; End of function DebugGetAllItems
 
-	if REGION=FR
+	if ((REGION=FR)|(REGION=DE))
 GetItemArticle:
 		move.l	a0,-(sp)
 		lea		ItemArticles(pc),a0
@@ -41,8 +41,13 @@ loc_2901E:
         ; 6 - Plural
         ; 8 - None
 ItemArticles:
+	if REGION=FR
 		dc.b $80,$00,$08,$66,$64,$44,$02,$22,$24,$02,$28,$42,$42,$20,$82,$24
 		dc.b $44,$44,$44,$20,$44,$44,$28,$26,$22,$24,$42,$42,$24,$04,$68,$24
+	elseif REGION=DE
+		dc.b $00,$00,$04,$66,$64,$44,$44,$44,$40,$02,$22,$04,$22,$24,$22,$44
+		dc.b $20,$00,$00,$22,$04,$08,$28,$20,$44,$44,$82,$48,$88,$04,$68,$28
+	endif
 ; =============== S U B R O U T I N E =======================================
 GetItemUseString:
 		movem.l	d1/a0,-(sp)

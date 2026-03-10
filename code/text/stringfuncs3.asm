@@ -84,7 +84,11 @@ YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
 		move.w	#$0050,(word_FF1194).l
 		move.w	#$0000,d0		  ; Yes
 		jsr	(j_PrintString_0).l
+	if REGION=DE
+		move.w	#$00A8,(word_FF1194).l
+	else
 		move.w	#$00A0,(word_FF1194).l
+	endif
 		move.w	#$0001,d0		  ; No
 		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
@@ -144,9 +148,17 @@ loc_247D4:					  ; CODE XREF: YesNoPrompt+88j
 ; ---------------------------------------------------------------------------
 
 loc_247E8:					  ; CODE XREF: YesNoPrompt+9Cj
+	if REGION=DE
+		cmpi.w	#$0128,(g_VDPSpr02_X).l
+	else
 		cmpi.w	#$0120,(g_VDPSpr02_X).l
+	endif
 		beq.s	loc_247CC
+	if REGION=DE
+		move.w	#$0128,(g_VDPSpr02_X).l
+	else
 		move.w	#$0120,(g_VDPSpr02_X).l
+	endif
 		clr.b	(word_FF1800).l
 		bra.w	loc_24778
 ; ---------------------------------------------------------------------------
@@ -175,7 +187,11 @@ LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 		move.w	#$0050,(word_FF1194).l
 		move.w	#$0002,d0
 		jsr	(j_PrintString_0).l
+	if REGION=DE
+		move.w	#$00A8,(word_FF1194).l
+	else
 		move.w	#$00A0,(word_FF1194).l
+	endif
 		move.w	#$0003,d0
 		jsr	(j_PrintString_0).l
 		move.b	(byte_FF1129).l,d1
@@ -252,9 +268,17 @@ loc_24910:					  ; CODE XREF: sub_2488A+80j
 ; ---------------------------------------------------------------------------
 
 loc_24916:					  ; CODE XREF: sub_2488A+58j
+	if REGION=DE
+		cmpi.w	#$0128,(g_VDPSpr79_X).l
+	else
 		cmpi.w	#$0120,(g_VDPSpr79_X).l
+	endif
 		beq.w	loc_248EE
+	if REGION=DE
+		move.w	#$0128,(g_VDPSpr79_X).l
+	else
 		move.w	#$0120,(g_VDPSpr79_X).l
+	endif
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		clr.b	(word_FF1800).l

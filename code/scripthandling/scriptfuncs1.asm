@@ -38,7 +38,7 @@ DisplayItemPriceMessage:			  ; CODE XREF: ROM:ShopPrice_01p
 		movem.l	d0-d1/a0,-(sp)
 		bsr.w	GetItemShopSellPrice
 		movea.l	$C(sp),a0	  ; Previous stack pointer
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		move.w	(word_FF1198).l,d0
 		bsr.w	GetItemArticle
 		move.w	(a0,d0.w),d0

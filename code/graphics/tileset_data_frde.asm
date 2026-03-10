@@ -39,4 +39,4 @@ Tileset04Anim02:     incbin   "assets_packed/graphics/tilesets/animated/tileset0
 Tileset18Anim01:     incbin   "assets_packed/graphics/tilesets/animated/tileset18Anim01.bin"
 Tileset09Anim01:     incbin   "assets_packed/graphics/tilesets/animated/tileset09Anim01.bin"
 Tileset17Anim01:     incbin   "assets_packed/graphics/tilesets/animated/tileset17Anim01.bin"
-IntroFont:           incbin   "assets_packed/graphics/fonts/introfont_fr.bin"
+IntroFont:           incbin   "assets_packed/graphics/fonts/introfont_frde.bin"

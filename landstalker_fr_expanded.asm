@@ -85,7 +85,7 @@ RoomVisitedFlagLookup:      incbin  "assets_packed\roomdata\flagactions\roomvisi
 InventoryItems:             incbin  "assets_packed\misc\inventory\inventoryitems.bin"
                             Align   $2
                             include "code\inventory\inventory4.asm"
-InventoryGraphics:          include "code\inventory\graphics.asm"
+InventoryGraphics:          include "code\inventory\graphics_fr.asm"
                             Align   $2
                             include "code\graphics\visualeffects1.asm"
 KazaltWarpPalette:          incbin  "assets_packed\graphics\miscpalettes\kazaltwarp.pal"
@@ -188,10 +188,10 @@ ClimaxLogoData:             include "code\graphics\staticimages\climaxlogodata.a
                             include "code\graphics\staticimages\islandmaproutines.asm"
 IslandMap:                  include "code\graphics\staticimages\islandmap.asm"
 TilesetPtrTable:            include "code\pointertables\graphics\tilesetpointers.asm"
-TilesetData:                include "code\graphics\tileset_data_fr.asm"
+TilesetData:                include "code\graphics\tileset_data_frde.asm"
                             include "code\sprites\sprites1.asm"
 SpriteBehaviourOffsets:     incbin  "assets_packed\spritedata\behaviouroffsets.bin"
-SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_fr.bin"
+SpriteBehaviourTable:       incbin  "assets_packed\spritedata\behaviourtable_frde.bin"
                             Align   $2
                             include "code\maps\chests1.asm"
 RoomChestOffsets:           incbin  "assets_packed\roomdata\chests\chestoffsets.bin"
