@@ -9,7 +9,7 @@ GetInvEquipLayout:				  ; CODE XREF: sub_EAD4:loc_EAF2p
 		clr.w	(a0)
 	if	REGION=JP
 		move.w  #3,d1
-	elseif	REGION=FR
+	elseif	((REGION=FR)!(REGION=DE))
 		moveq	#1,d1
 	else
 		moveq	#$2,d1
@@ -22,7 +22,7 @@ loc_ED10:					  ; CODE XREF: GetInvEquipLayout+56j
 		move.w	#$0001,d0
 		movem.w	d1/d7,-(sp)
 		bsr.w	sub_D86C
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		move.w	#9,d7
 	else
 		move.w	#8,d7
@@ -49,7 +49,7 @@ loc_ED10:					  ; CODE XREF: GetInvEquipLayout+56j
 sub_ED50:					  ; CODE XREF: GetInvEquipLayout+2Cp
 		subq.w	#$01,d7
 		movem.l	a0,-(sp)
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		move.w	#3,d5
 	else
 		move.w	#1,d5

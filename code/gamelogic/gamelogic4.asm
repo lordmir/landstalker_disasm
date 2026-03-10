@@ -1883,7 +1883,12 @@ loc_7132:					  ; CODE XREF: CheckOpenChest+88j
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
 ; ---------------------------------------------------------------------------
+	if REGION=DE
+		clr.w	d0
+		jsr		(j_GetItemFoundString).l
+	else
 		move.w	#$0011,d0
+	endif
 		jsr	(j_PrintString).l
 		bsr.w	RestoreBGM
 		movem.w	(sp)+,d0-d1
@@ -1923,7 +1928,12 @@ loc_71B4:					  ; CODE XREF: CheckOpenChest+1C4j
 ; ---------------------------------------------------------------------------
 
 loc_71BC:					  ; CODE XREF: CheckOpenChest+D6j
+	if REGION=DE
+		move.w	#1,d0
+		jsr		(j_GetItemFoundString).l
+	else
 		move.w	#$0012,d0
+	endif
 		jsr	(j_PrintString).l
 		jsr	(j_SetUpTextDisplay).l
 		bsr.s	sub_7234

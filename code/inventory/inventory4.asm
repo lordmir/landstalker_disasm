@@ -21,17 +21,17 @@ loc_D59A:					  ; CODE XREF: PopulateItemSlot+10j
 
 loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 		movem.w	d1,-(sp)
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		movem.l a0,-(sp)
 	endif
 		bsr.w	sub_D642
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		movem.l (sp)+,a0
 	endif
 		movem.w	(sp)+,d1
 	if REGION=JP
 		lea	-$8E(a0),a0
-	elseif REGION=FR
+	elseif ((REGION=FR)!(REGION=DE))
 		movem.l	a0,-(sp)
 		lea	8(a0),a0
 	else
@@ -45,7 +45,7 @@ loc_D59C:					  ; CODE XREF: PopulateItemSlot+14j
 	endif
 		tst.w	d2
 		bne.s	locret_D5C6
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		lea	$AC(a0),a0
 	elseif ~(REGION=JP)
 		lea	$5A(a0),a0
@@ -72,14 +72,14 @@ loc_D5D2:					  ; CODE XREF: sub_D5C8+2j
 
 loc_D5D6:					  ; CODE XREF: sub_D5C8+8j
 		move.b	#CHR_MULT,d0
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		bsr.w	sub_D64E
 	else
 		move.w	d0,(a0)+
 	endif
 		move.b	d1,d0
 		addq.b	#$01,d0
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		bsr.w	sub_D64A
 	else
 		move.w	d0,(a0)+
@@ -95,7 +95,7 @@ sub_D5E4:					  ; CODE XREF: PopulateItemSlot+2Cp
 						  ; GetInvEquipLayout+44p
 	if REGION=JP
 		movem.w	d0,-(sp)
-	elseif REGION=FR
+	elseif ((REGION=FR)!(REGION=DE))
 		movem.w d0-d2,-(sp)
 	else
 		movem.w d0-d1,-(sp)
@@ -114,7 +114,7 @@ loc_D5FC:					  ; CODE XREF: sub_D5E4+10j
 
 loc_D600:					  ; CODE XREF: sub_D5E4+16j
 						  ; sub_D5E4:loc_D634j
-	if ~(REGION=FR)
+	if ~((REGION=FR)!(REGION=DE))
 		move.b	(a2)+,d0
 	if ~(REGION=JP)
 		cmpi.b	#CHR_HYPHENATION_POINT,d0
@@ -168,11 +168,16 @@ loc_D60C:
 loc_D60E:
 		move.b	(a2)+,d0
 		cmpi.b	#CHR_BREAK_POINT,d0
+	if REGION=DE
+		beq.w	loc_D62E_a
+	else
 		beq.w	loc_D62E
+	endif
 		cmpi.b	#CHR_BREAKING_SPACE,d0
 		beq.w	loc_D62E
 		cmpi.b	#CHR_HYPHENATION_POINT,d0
 		bne.s	loc_D638
+loc_D62E_a:
 		move.b  #CHR_Dash,d0
 		bsr.w   sub_D666
 loc_D62E:
@@ -191,7 +196,11 @@ sub_D64A:
 sub_D64E:
 		movem.w	d0,-(sp)
 		asl.b	#$01,d0
+	if REGION=FR
 		addi.w	#$98,d0
+	elseif REGION=DE
+		addi.w	#$92,d0
+	endif
 		move.w	d0,(a0)+
 		addq.b	#$01,d0
 		move.w	d0,$46(a0)
@@ -207,22 +216,32 @@ sub_D666:
 		move.w	d0,$46(a0)
 		rts
 sub_D67A:
-		cmpi.b	#CHR_Asterisk,d0
+	if REGION=FR
+		cmpi.b	#(CHR_z+1),d0
+	elseif REGION=DE
+		cmpi.b	#(CHR_Z+1),d0
+	endif
 		bcc.s	loc_D682
 locret_D680:
 		rts
 loc_D682:
+	if REGION=FR
 		cmpi.b	#CHR_Apostrophe,d0
 		bne.s	loc_D68E
-		move.b	#CHR_Asterisk,d0
+		move.b	#CHR_Apostrophe_Menu,d0
 		rts
+	endif
 loc_D68E:
 		cmpi.b	#CHR_Dash,d0
 		bne.s	loc_D69A
-		move.b	#CHR_DoubleQuote,d0
+		move.b	#CHR_Dash_Menu,d0
 		rts
 loc_D69A:
-		subi.b #$15,d0
+	if REGION=FR
+		subi.b	#$15,d0
+	elseif REGION=DE
+		subi.b	#$FC,d0
+	endif
 		rts
 	endif
 
@@ -236,6 +255,8 @@ sub_D642:					  ; CODE XREF: PopulateItemSlot+1Cp
 		bne.s	loc_D652
 	if REGION=FR
 		move.w	#$A144,d1
+	elseif REGION=DE
+		move.w	#$A140,d1
 	else
 		move.w	#$A0BC,d1
 	endif
@@ -245,6 +266,8 @@ sub_D642:					  ; CODE XREF: PopulateItemSlot+1Cp
 loc_D652:					  ; CODE XREF: sub_D642+6j
 	if REGION=FR
 		move.w	#$C144,d1
+	elseif REGION=DE
+		move.w	#$C140,d1
 	else
 		move.w	#$C0BC,d1
 	endif
@@ -413,6 +436,8 @@ sub_D756:					  ; CODE XREF: sub_D714+Cp
 loc_D77C:					  ; CODE XREF: sub_D756+22j
 	if REGION=FR
 		move.w	#$8140,d3
+	elseif REGION=DE
+		move.w	#$813C,d3
 	else
 		move.w	#$80B8,d3
 	endif
@@ -629,6 +654,8 @@ loc_D92C:					  ; CODE XREF: sub_D902+Aj
 		move.b	#$0F,$00000002(a0)
 	if REGION=FR
 		move.w	#$A130,d2
+	elseif REGION=DE
+		move.w	#$A12C,d2
 	else
 		move.w	#$A0A8,d2
 	endif
@@ -695,6 +722,8 @@ loc_D9B2:					  ; CODE XREF: sub_D996+24j
 		lea	((g_Buffer+$84)).l,a0
 	if REGION=FR
 		lea	($2600).w,a1
+	elseif REGION=DE
+		lea ($2580).w,a1
 	else
 		lea	($1500).w,a1
 	endif
@@ -712,16 +741,28 @@ loc_D9B2:					  ; CODE XREF: sub_D996+24j
 
 sub_D9FC:					  ; CODE XREF: InitInv+6p
 						  ; DATA XREF: ROM:00000422t
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		lea		MenuFont(pc),a0
-		lea		((g_Buffer+$1384)).l,a1
+	if REGION=FR
+		lea		((g_ScreenBuffer+$684)).l,a1
+	elseif REGION=DE
+		lea		((g_ScreenBuffer+$5C4)).l,a1
+	endif
 		lea		($0000).w,a2
 		jsr		(j_LoadCompressedGfx).l
 		lea		((g_Buffer+$84)).l,a0
-		lea		((g_Buffer+$1384)).l,a1
+	if REGION=FR
+		lea		((g_ScreenBuffer+$684)).l,a1
+	elseif REGION=DE
+		lea		((g_ScreenBuffer+$5C4)).l,a1
+	endif
 		move.b	#1,d2
 		move.b	#0,d3
+	if REGION=FR
 		move.w	#$0097,d6
+	elseif REGION=DE
+		move.w	#$0091,d6
+	endif
 	else
 		lea	((g_Buffer+$84)).l,a0
 		lea	MenuFont(pc),a1
@@ -734,27 +775,33 @@ loc_DA16:					  ; CODE XREF: sub_D9FC+1Ej
 		bsr.w	Expand1bppTo4bpp
 		dbf		d6,loc_DA16
 	if REGION=FR
-		lea		((g_Buffer+$1384)).l,a1
+		lea		((g_ScreenBuffer+$684)).l,a1
+		bsr.w	Expand1bppTo4bpp
+	elseif REGION=DE
+		lea		((g_ScreenBuffer+$5C4)).l,a1
 		bsr.w	Expand1bppTo4bpp
 	endif
 		move.b	#$0A,d3
 		move.b	#$0A,d4
 		move.b	#$01,d5
 		move.b	d3,d6
-	if ~(REGION=FR)
+	if ~((REGION=FR)!(REGION=DE))
 		bsr.w	sub_DA62
 	endif
 		move.b	#$0A,d3
 		move.b	#$0A,d4
 		move.b	#$03,d5
 		move.b	d3,d6
-	if ~(REGION=FR)
+	if ~((REGION=FR)!(REGION=DE))
 		bsr.w	sub_DA62
 	endif
 		lea		((g_Buffer+$84)).l,a0
 	if REGION=FR
 		lea		($000C).w,a1
 		move.w	#$0980,d0
+	elseif REGION=DE
+		lea		($000C).w,a1
+		move.w	#$0920,d0
 	else
 		lea		($0000).w,a1
 		move.w	#$0A80,d0
@@ -766,6 +813,13 @@ loc_DA16:					  ; CODE XREF: sub_D9FC+1Ej
 		lea	((g_Buffer+$8C)).l,a0
 		lea	($1300).w,a1
 		move.w	#$0980,d0
+		move.w	#2,d1
+		jsr	(QueueDMAOp).l
+		jsr	(FlushDMACopyQueue).l
+	elseif REGION=DE
+		lea	((g_Buffer+$8C)).l,a0
+		lea	($1240).w,a1
+		move.w	#$0920,d0
 		move.w	#2,d1
 		jsr	(QueueDMAOp).l
 		jsr	(FlushDMACopyQueue).l

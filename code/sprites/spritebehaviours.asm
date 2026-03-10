@@ -1554,7 +1554,7 @@ EB_DisableRotation:				  ; CODE XREF: OnTick+BEj
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
-EB_B2D:						  ; CODE XREF: OnTick+CEj
+EB_Loot:						  ; CODE XREF: OnTick+CEj
 		tst.b	$0000000A(a5)
 		bmi.w	locret_188C2
 		move.w	$00000014(a5),d0
@@ -1619,7 +1619,12 @@ loc_18816:					  ; CODE XREF: OnTick+F14j
 loc_18832:					  ; CODE XREF: OnTick+F26j
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(sub_22EE8).l
+	if REGION=DE
+		move.w	#2,d0
+		jsr		(j_GetItemFoundString).l
+	else
 		move.w	#$0013,d0
+	endif
 		jsr	(j_PrintString).l
 		jsr	(j_SetUpTextDisplay).l
 		bra.s	loc_188BC

@@ -240,7 +240,7 @@ loc_230C0:					  ; CODE XREF: GetNextChar+62j
 
 ProcessChar:					  ; CODE XREF: PrintString:loc_22F60p
 		tst.w	d0
-	if	~(REGION=FR)
+	if ~((REGION=FR)!(REGION=DE))
 		bpl.s	loc_230D6
 loc_2314E:
 		not.w	d0
@@ -251,7 +251,16 @@ loc_2314E:
 	endif
 ; ---------------------------------------------------------------------------
 loc_230D6:
-	if REGION=FR
+	if REGION=DE
+		cmpi.b	#CHR_SS,d0
+		bne.s	loc_230D4
+		move.w	#CHR_S,d0
+		bsr.s	ProcessChar
+		move.w	#CHR_S,d0
+		bsr.s	ProcessChar
+		bra.s	locret_23102
+loc_230D4:
+	elseif REGION=FR
 		cmpi.b	#CHR_OpenBracket,d0
 	endif
 		cmpi.b	#CHR_BEGIN_TALK,d0
@@ -259,7 +268,6 @@ loc_230D6:
 		andi.b	#$01,(byte_FF1144).l
 		ori.b	#$22,(byte_FF1144).l
 		move.b	#$01,(byte_FF1155).l
-
 loc_230F4:					  ; CODE XREF: ProcessChar+10j
 		bsr.s	loc_23104
 		bsr.w	sub_235FE
@@ -314,7 +322,7 @@ loc_2314A:					  ; CODE XREF: sub_2313C+8j
 
 
 ; =============== S U B	R O U T	I N E =======================================
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 loc_2314E:
 		not.w	d0
 		lsl.w	#$02,d0
@@ -407,7 +415,7 @@ HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
 		bra.w	CopyStringToBuffer
 	else
 		bsr.w	InsertNewline
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		clr.w	(word_FF1194).l
 		move.l	#word_FF1196,(dword_FF184C).l
 	endif

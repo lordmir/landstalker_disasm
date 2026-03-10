@@ -66,6 +66,7 @@ CHR_x:		 equ $3C
 CHR_y:		 equ $3D
 CHR_z:		 equ $3E
 CHR_Asterisk:	 equ $3F
+CHR_Apostrophe_Menu:   equ $3F
 CHR_FullStop:	 equ $40
 CHR_Comma:	 equ $41
 CHR_QuestionMark: equ $42
@@ -78,6 +79,7 @@ CHR_BEGIN_TALK:	 equ $47
 CHR_Dash:	     equ $48
 CHR_Apostrophe:	 equ $49
 CHR_DoubleQuote: equ $4A
+CHR_Dash_Menu:   equ $4A
 CHR_Percent:	 equ $4B
 CHR_MULT:	     equ $4B
 CHR_Hash:	     equ $4C

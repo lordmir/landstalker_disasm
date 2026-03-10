@@ -217,7 +217,7 @@ ReceiveItem:					  ; DATA XREF: ROM:ActionPointerListo
 ; ---------------------------------------------------------------------------
 		move.w	(word_FF1196).l,d0
 		bsr.w	GetItem
-	if REGION=FR
+	if ((REGION=FR)!(REGION=DE))
 		moveq	#2,d0
 		bsr.w	GetItemFoundString
 	else

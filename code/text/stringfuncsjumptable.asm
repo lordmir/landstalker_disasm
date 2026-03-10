@@ -325,3 +325,8 @@ j_ClearTextbox:					  ; DATA XREF: ROM:00014B74t
 
 ; ---------------------------------------------------------------------------
 		jmp	SpellBook(pc)
+
+	if REGION=DE
+j_GetItemFoundString:
+		jmp GetItemFoundString(pc)
+	endif

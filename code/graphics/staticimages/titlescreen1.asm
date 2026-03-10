@@ -239,6 +239,12 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		move.w	#$2000,d2
 		moveq	#$0000000E,d6
 		moveq	#$00000002,d7
+	elseif REGION=DE
+		moveq	#$00000010,d0
+		moveq	#$0000000D,d1
+		move.w	#$2000,d2
+		moveq	#$00000014,d6
+		moveq	#$00000004,d7
 	else
 		moveq	#$00000010,d0
 		moveq	#$0000000D,d1
@@ -251,6 +257,11 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		moveq	#$0000000C,d0
 		moveq	#$00000012,d1
 		moveq	#$0000000F,d6
+		moveq	#$00000001,d7
+	elseif REGION=DE
+		moveq	#$0000000E,d0
+		moveq	#$00000013,d1
+		moveq	#$0000000E,d6
 		moveq	#$00000001,d7
 	else
 		moveq	#$0000000E,d0

@@ -454,20 +454,37 @@ loc_3EAA6:					  ; CODE XREF: sub_3E9F8+A8j
 		move.w	#$FFFF,(a1)
 
 loc_3EAAA:					  ; CODE XREF: sub_3E9F8+ACj
-		lea	$00000008(a1),a1
-		move.w	#$0015,d1
-		move.w	d1,$00000004(a1)
-		move.b	#$0D,$00000002(a1)
+		lea	8(a1),a1
+		move.w	#$15,d1
+		move.w	d1,$4(a1)
+		move.b	#$D,$2(a1)
 		move.w	(a0,d0.w),d1
-		addi.w	#$0020,d1
+		addi.w	#$20,d1
 		move.w	d1,$00000006(a1)
 		move.w	$00000002(a0,d0.w),d1
 		tst.w	d2
+	if REGION=DE
+		bne.s	loc_3EB36
+		move.w	d1,(a1)
+		bra.s	loc_3EB3A
+; ---------------------------------------------------------------------------
+loc_3EB36:					  ; CODE XREF: sub_3E9F8+A8j
+		move.w	#$FFFF,(a1)
+
+loc_3EB3A:					  ; CODE XREF: sub_3E9F8+ACj
+		lea	$10(a1),a1
+		move.w	#$1D,d1
+		move.w	d1,4(a1)
+		move.b	#9,2(a1)
+		move.w	(a0,d0.w),d1
+		addi.w	#$40,d1
+		move.w	d1,$00000006(a1)
+		move.w	$00000002(a0,d0.w),d1
+		tst.w	d2
+	endif
 		bne.s	loc_3EAD4
 		move.w	d1,(a1)
 		bra.s	loc_3EAD8
-; ---------------------------------------------------------------------------
-
 loc_3EAD4:					  ; CODE XREF: sub_3E9F8+D6j
 		move.w	#$FFFF,(a1)
 
@@ -529,7 +546,11 @@ sub_3EB5E:					  ; CODE XREF: DisplayIslandMap+78p
 		lea	(g_Buffer).l,a5
 		movea.l	a5,a1
 		clr.l	d0
+	if REGION=DE
+		move.w	#$00C0,d7
+	else
 		move.w	#$0080,d7
+	endif
 
 loc_3EB6C:					  ; CODE XREF: sub_3EB5E+10j
 		move.l	d0,(a1)+
@@ -589,7 +610,11 @@ loc_3EBDA:					  ; CODE XREF: sub_3EB5E+76j
 		dbf	d7,loc_3EB84
 		lea	(g_ScreenBuffer).l,a0
 		movea.l	a5,a1
+	if REGION=DE
+		move.w	#$02FF,d7
+	else
 		move.w	#$01FF,d7
+	endif
 		moveq	#$0000000F,d1
 		moveq	#$FFFFFFF0,d2
 
