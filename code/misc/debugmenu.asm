@@ -290,7 +290,7 @@ MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(sub_3E0).l
+		jsr	(j_InitVDPAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
 ; ---------------------------------------------------------------------------
@@ -390,7 +390,7 @@ loc_2A734:					  ; CODE XREF: ROM:0002A728j
 		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(sub_3E0).l
+		jsr	(j_InitVDPAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
 ; ---------------------------------------------------------------------------

@@ -70,7 +70,7 @@ loc_25218:					  ; CODE XREF: ROM:00025202j
 		bne.s	loc_25222
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $3,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
@@ -122,7 +122,7 @@ loc_25262:					  ; CODE XREF: ROM:00025254j
 		bne.s	loc_2526C
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $4,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
@@ -166,7 +166,7 @@ loc_252A0:					  ; CODE XREF: ROM:00025282j
 		bne.s	loc_252AA
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $2,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
@@ -232,7 +232,7 @@ loc_2530C:					  ; CODE XREF: HandleProgressDependentDialogue+3Ej
 		bne.s	loc_25316
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $5,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6

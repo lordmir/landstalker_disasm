@@ -184,7 +184,7 @@ sub_39D76:					  ; CODE XREF: DisplayTitle:loc_39948p
 						  ; sub_39D3A+30p
 		lea	(unk_FF34C2).l,a5
 		movea.l	a5,a0
-	if REGION=JP
+	if ((REGION=JP)!(REGION=US_BETA))
 		move.w	#$045F,d7
 	else
 		move.w	#$06FF,d7
@@ -195,7 +195,7 @@ loc_39D82:					  ; CODE XREF: sub_39D76+Ej
 		dbf	d7,loc_39D82
 		lea	(g_Buffer).l,a0
 		clr.w	d6
-	if ~(REGION=JP)
+	if ~((REGION=JP)!(REGION=US_BETA))
 		clr.w	d5
 	endif
 		clr.w	d7
@@ -208,7 +208,7 @@ loc_39D82:					  ; CODE XREF: sub_39D76+Ej
 loc_39D9E:					  ; CODE XREF: sub_39D76+38j
 		movea.l	a1,a2
 		moveq	#$00000027,d6
-	if ~(REGION=JP)
+	if ~((REGION=JP)!(REGION=US_BETA))
 		move.w	d5,d6
 	endif
 

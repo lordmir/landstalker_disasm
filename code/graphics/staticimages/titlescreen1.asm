@@ -245,6 +245,12 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		move.w	#$2000,d2
 		moveq	#$00000014,d6
 		moveq	#$00000004,d7
+	elseif REGION=US_BETA
+		moveq	#$00000013,d0
+		moveq	#$0000000B,d1
+		move.w	#$2000,d2
+		moveq	#$0000000C,d6
+		moveq	#$00000005,d7
 	else
 		moveq	#$00000010,d0
 		moveq	#$0000000D,d1
@@ -263,6 +269,11 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		moveq	#$00000013,d1
 		moveq	#$0000000E,d6
 		moveq	#$00000001,d7
+	elseif REGION=US_BETA
+		moveq	#$00000013,d0
+		moveq	#$0000000E,d1
+		moveq	#$00000011,d6
+		moveq	#$00000002,d7
 	else
 		moveq	#$0000000E,d0
 		moveq	#$00000013,d1
@@ -270,6 +281,13 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 		moveq	#$00000000,d7
 	endif
 		bsr.w	sub_39E72
+	if REGION=US_BETA
+		moveq	#$0000000E,d0
+		moveq	#$00000013,d1
+		moveq	#$0000000E,d6
+		moveq	#$00000000,d7
+		bsr.w	sub_39E72
+	endif
 		moveq	#$0000000A,d0
 		moveq	#$00000016,d1
 		moveq	#$00000013,d6

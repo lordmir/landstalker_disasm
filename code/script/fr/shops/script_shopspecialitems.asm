@@ -236,7 +236,7 @@ loc_25176:				; CODE XREF: ROM:0002516Ej
 		moveq	#3,d0
 		jsr	(j_DisplayIslandMap).l
 		jsr	(j_LoadRoom).l
-		jsr	(sub_3E0).l
+		jsr	(j_InitVDPAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		bsr.w	RestoreBGM_1
 		move.b	#$FF,(byte_FF1903).l

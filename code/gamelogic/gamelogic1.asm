@@ -536,7 +536,7 @@ loc_1B48:					  ; CODE XREF: HandleDirectionalControl+220j
 
 loc_1B4E:					  ; CODE XREF: HandleDirectionalControl+210j
 		btst	#$06,(g_PlayerStatus).l
-	if	FIX_COLLISION_GLITCH
+	if	FIX_COLL_2
 		bne.s	loc_1B48
 	else
 		bne.s	loc_1B7E
@@ -718,7 +718,7 @@ loc_1CE0:					  ; CODE XREF: HandleDirectionalControl+3B8j
 
 loc_1CE6:					  ; CODE XREF: HandleDirectionalControl+3A8j
 		btst	#$06,(g_PlayerStatus).l
-	if FIX_COLLISION_GLITCH
+	if FIX_COLL_2
 		bne.s	loc_1CE0
 	else
 		bne.s	loc_1D16
@@ -884,7 +884,7 @@ loc_1E62:					  ; CODE XREF: HandleDirectionalControl+53Aj
 
 loc_1E68:					  ; CODE XREF: HandleDirectionalControl+52Aj
 		btst	#$06,(g_PlayerStatus).l
-	if FIX_COLLISION_GLITCH
+	if FIX_COLL_2
 		bne.s	loc_1E62
 	else
 		bne.s	loc_1E98
@@ -1115,7 +1115,7 @@ loc_2068:					  ; CODE XREF: HandleDirectionalControl+740j
 
 loc_206E:					  ; CODE XREF: HandleDirectionalControl+730j
 		btst	#$06,(g_PlayerStatus).l
-	if FIX_COLLISION_GLITCH
+	if FIX_COLL_2
 		bne.s	loc_2068
 	else
 		bne.s	loc_209E

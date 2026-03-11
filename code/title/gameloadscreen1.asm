@@ -108,7 +108,7 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF0F9A).l,a0
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		bsr.s	sub_F374
 	else
 		bsr.w	sub_F374
@@ -120,7 +120,7 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF0F9A).l,a0
 		bsr.w	sub_F374
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		bsr.s	sub_F38C
 	else
 		bsr.w	sub_F38C

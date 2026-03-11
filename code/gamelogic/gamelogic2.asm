@@ -76,7 +76,7 @@ loc_2E70:					  ; CODE XREF: ROM:00002E7Ej
 		move.b	#$08,(Player_SubY).l
 		clr.b	d0
 		bsr.w	LoadRoom_0
-		bra.w	sub_8E9C
+		bra.w	InitVDPAndFadeIn
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR CheckForDebugSaveGame
 
@@ -332,7 +332,7 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 ; ---------------------------------------------------------------------------
 
 loc_30BC:					  ; CODE XREF: sub_3058+30j
-	if FIX_COLLISION_GLITCH
+	if FIX_COLL_1
 		cmpi.w	#$0001,InitFlags4_DropProbability(a0)
 		bne.s	loc_30CA
 		tst.b	GoldOrChestContents(a0)

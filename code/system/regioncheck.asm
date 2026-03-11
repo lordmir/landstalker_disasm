@@ -1,4 +1,4 @@
-        if      ENABLE_REGION_CHECK
+        if      REGION_CHECK
                             Align   $2
 RegionCheckRoutine:         include "code\system\regioncheck_routine.asm"
 RegionCheckStrings:         include "code\system\regioncheck_strings.asm"

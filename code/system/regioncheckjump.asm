@@ -1,4 +1,4 @@
-		if		ENABLE_REGION_CHECK
+		if		REGION_CHECK
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
