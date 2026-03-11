@@ -64,11 +64,11 @@ loc_8E10:					  ; CODE XREF: ROM:00008E3Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_8E9C:					  ; CODE XREF: ROM:00002EB4j
+InitVDPAndFadeIn:					  ; CODE XREF: ROM:00002EB4j
 						  ; sub_620A+12p ...
 		bsr.s	InitVDP
 		bra.s	FadeInFromDarkness
-; End of function sub_8E9C
+; End of function InitVDPAndFadeIn
 
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -147,7 +147,7 @@ loc_776E:					  ; CODE XREF: CheckForMenuOpen+C4j
 		move.w	#$9203,d0
 		bsr.w	SetVDPReg
 		bsr.w	LoadRoom
-		bsr.w	sub_8E9C
+		bsr.w	InitVDPAndFadeIn
 		bsr.w	LoadMagicSwordGfx
 		clr.b	(g_Controller1State).l
 		movem.w	(sp)+,d1

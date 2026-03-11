@@ -409,7 +409,7 @@ HandleItemName:					  ; CODE XREF: HandleControlChars+Cj
 ; ---------------------------------------------------------------------------
 
 HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
-	if	REGION=JP
+	if	((REGION=JP)!(REGION=US_BETA))
 		bsr.w	PopItem
 		bsr.w	GetChrName
 		bra.w	CopyStringToBuffer

@@ -56,7 +56,7 @@ loc_9EC06:					  ; CODE XREF: ROM:0009EC08j
 loc_9EC9A:					  ; CODE XREF: ROM:0009ECC0j
 		move.w	-12(a6),d0
 		move.w	-2(a6),d1
-	if FIX_END_CREDITS
+	if FIX_END_CREDS
 		lsl.w	#4,d0
 	else
 		lsr.w	#4,d1

@@ -40,7 +40,7 @@ loc_4FE:					  ; CODE XREF: ROM:000006F6j
 		bsr.s	ResetVDPAndClearRAM
 		bsr.w	InitZ80Driver
 		bsr.s	ClearAndInitGraphics
-	if	ENABLE_REGION_CHECK
+	if	REGION_CHECK
 		jsr	(j_CheckRegion).l
 	endif
 		bsr.w	CheckSRAM

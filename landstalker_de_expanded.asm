@@ -2,11 +2,11 @@
 ;; LANDSTALKER DE ROM 4MByte Expansion ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=4;NTSC=0;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNTUP=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=4;NTSC=0;EXPANDED=1;REGION_CHECK=1;FIX_COLL_11;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=1
 ;; REGION = DE
 ;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=4;NTSC=0;EXPANDED=1;ENABLE_REGION_CHECK=1;FIX_COLLISION_GLITCH=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE_BUG=1;ENABLE_GOLD_COUNTUP=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDITS=1 landstalker_expanded.asm,landstalker_expanded.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=4;NTSC=0;EXPANDED=1;REGION_CHECK=1;FIX_COLL_11;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=1 landstalker_expanded.asm,landstalker_expanded.bin
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_de.inc"

@@ -221,7 +221,7 @@ loc_6212:					  ; CODE XREF: sub_42Ej
 		bsr.w	sub_A0C2
 		clr.b	d0
 		bsr.w	LoadRoom_0
-		bsr.w	sub_8E9C
+		bsr.w	InitVDPAndFadeIn
 		bra.w	CheckBell
 ; ---------------------------------------------------------------------------
 
@@ -338,7 +338,7 @@ loc_6310:					  ; CODE XREF: sub_620A+E8j
 		bsr.w	sub_A0C2
 		clr.b	d0
 		bsr.w	LoadRoom_0
-		bra.w	sub_8E9C
+		bra.w	InitVDPAndFadeIn
 ; ---------------------------------------------------------------------------
 
 loc_6330:					  ; CODE XREF: sub_620A+10Ej
@@ -384,7 +384,7 @@ loc_6374:					  ; CODE XREF: sub_620A+164j
 		bsr.w	FadeOutToDarkness
 		move.b	#$01,d0
 		bsr.w	LoadRoom_0
-		bsr.w	sub_8E9C
+		bsr.w	InitVDPAndFadeIn
 		bra.w	CheckBell
 ; ---------------------------------------------------------------------------
 
@@ -403,7 +403,7 @@ HandleFloorElevator:				  ; CODE XREF: sub_604C+3Cj
 		bsr.w	FadeOutToDarkness
 		move.b	#$02,d0
 		bsr.w	LoadRoom_0
-		bsr.w	sub_8E9C
+		bsr.w	InitVDPAndFadeIn
 		bra.w	CheckBell
 ; ---------------------------------------------------------------------------
 
@@ -425,7 +425,7 @@ HandleFloorLadder:				  ; CODE XREF: sub_604C+2Cj
 		bsr.w	FadeOutToDarkness
 		move.b	#$03,d0
 		bsr.w	LoadRoom_0
-		bsr.w	sub_8E9C
+		bsr.w	InitVDPAndFadeIn
 		bra.w	CheckBell
 ; ---------------------------------------------------------------------------
 
@@ -842,7 +842,7 @@ loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 						  ; Bit13 - Receive Damage
 		andi.b	#$30,d0
 		beq.s	loc_6880
-	if FIX_COLLISION_GLITCH
+	if FIX_COLL_2
 		adda.w	d1,a1
 		movea.l	a1,a5
 		addi.w	#$0020,Z(a5)

@@ -621,9 +621,9 @@ j_LoadRoom_0:					  ; CODE XREF: LoadPlayerSpecialAnimation+206p
 
 ; Attributes: thunk
 
-sub_3E0:					  ; CODE XREF: ROM:000129C2p
+j_InitVDPAndFadeIn:					  ; CODE XREF: ROM:000129C2p
 						  ; ROM:000250E4p ...
-		jmp	(sub_8E9C).l
+		jmp	(InitVDPAndFadeIn).l
 ; End of function sub_3E0
 
 

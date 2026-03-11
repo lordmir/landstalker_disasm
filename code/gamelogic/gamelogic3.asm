@@ -1269,7 +1269,7 @@ loc_4B4C:					  ; CODE XREF: sub_4B14+8j
 DoTileSwap:					  ; CODE XREF: j_DoTileSwapj
 						  ; sub_4FA8+38p ...
 		move.b	(byte_FF1128).l,(byte_FF115A).l
-	if ~(REGION=JP)
+	if FIX_TS_GLITCH
 		clr.b	(byte_FF1128).l
 	endif
 		movem.w	d0,-(sp)

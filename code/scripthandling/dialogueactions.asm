@@ -300,7 +300,7 @@ CSA_001D:					  ; CODE XREF: ROM:00012170j
 		bclr	#$06,(Player_Flags2).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(sub_3E0).l
+		jsr	(j_InitVDPAndFadeIn).l
 		move.b	#$31,(g_FridayAnimation2).l
 		clr.w	(g_ControllerPlayback).l
 		bset	#$04,(g_Flags).l
@@ -4558,7 +4558,7 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 loc_15936:					  ; CODE XREF: sub_15914+44j
 		bsr.w	sub_159AE
 		bsr.w	loc_15A96
-	if ENABLE_GOLD_COUNTUP
+	if ENABLE_GOLD_COUNT
 		move.w	#00013,d0
 	if REFRESH_GOLD_CTR
 		jsr	(AddGold).l
