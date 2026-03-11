@@ -2,11 +2,11 @@
 ;; LANDSTALKER US ROM Disassembly ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;REGION_CHECK=1;FIX_COLL_11;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=0
+;; BUILDOPTS = /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;REGION_CHECK=1;FIX_COLL_1=1;FIX_COLL_2=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=0;REFRESH_GOLD_CTR=1;FIX_TS_GLITCH=1
 ;; REGION = US
 ;;
 ;; To build, run:
-;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;REGION_CHECK=1;FIX_COLL_11;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=0 landstalker.asm,landstalker.bin
+;; .\build\asm68k.exe /p /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_ /e REGION=0;NTSC=1;EXPANDED=0;REGION_CHECK=1;FIX_COLL_1=1;FIX_COLL_2=1;FIX_ARMLET_SKIP=1;FIX_WHISTLE_CHECK=1;FIX_SPRITE_HIDE=1;ENABLE_GOLD_COUNT=1;FIX_GOLA_BUG=1;FIX_GOLD_CAP=1;FIX_END_CREDS=0;REFRESH_GOLD_CTR=1;FIX_TS_GLITCH=1 landstalker_us.asm,landstalker_us.bin
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_us.inc"

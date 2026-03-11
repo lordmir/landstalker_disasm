@@ -1,0 +1,241 @@
+Builds:
+    US:
+        Source: landstalker_us.asm
+        Target: landstalker_us.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 0
+            NTSC: 1
+            EXPANDED: 0
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 1
+    US_EXPANDED:
+        Source: landstalker_us_expanded.asm
+        Target: landstalker_us_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 0
+            NTSC: 1
+            EXPANDED: 1
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 1
+    JP:
+        Source: landstalker_jp.asm
+        Target: landstalker_jp.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 1
+            NTSC: 1
+            EXPANDED: 0
+            REGION_CHECK: 0
+            FIX_COLL_1: 0
+            FIX_COLL_2: 0
+            FIX_ARMLET_SKIP: 0
+            FIX_WHISTLE_CHECK: 0
+            FIX_SPRITE_HIDE: 0
+            ENABLE_GOLD_COUNT: 0
+            FIX_GOLA_BUG: 0
+            FIX_GOLD_CAP: 0
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 0
+    JP_EXPANDED:
+        Source: landstalker_jp_expanded.asm
+        Target: landstalker_jp_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 1
+            NTSC: 1
+            EXPANDED: 1
+            REGION_CHECK: 0
+            FIX_COLL_1: 0
+            FIX_COLL_2: 0
+            FIX_ARMLET_SKIP: 0
+            FIX_WHISTLE_CHECK: 0
+            FIX_SPRITE_HIDE: 0
+            ENABLE_GOLD_COUNT: 0
+            FIX_GOLA_BUG: 0
+            FIX_GOLD_CAP: 0
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 0
+    EUR:
+        Source: landstalker_eur.asm
+        Target: landstalker_eur.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 2
+            NTSC: 0
+            EXPANDED: 0
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 1
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 1
+    EUR_EXPANDED:
+        Source: landstalker_eur_expanded.asm
+        Target: landstalker_eur_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 2
+            NTSC: 0
+            EXPANDED: 1
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 1
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 1
+    FR:
+        Source: landstalker_fr.asm
+        Target: landstalker_fr.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 3
+            NTSC: 0
+            EXPANDED: 0
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 1
+            REFRESH_GOLD_CTR: 0
+            FIX_TS_GLITCH: 1
+    FR_EXPANDED:
+        Source: landstalker_fr_expanded.asm
+        Target: landstalker_fr_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 3
+            NTSC: 0
+            EXPANDED: 1
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 1
+            REFRESH_GOLD_CTR: 0
+            FIX_TS_GLITCH: 1
+    DE:
+        Source: landstalker_de.asm
+        Target: landstalker_de.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 4
+            NTSC: 0
+            EXPANDED: 0
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 0
+            FIX_TS_GLITCH: 1
+    DE_EXPANDED:
+        Source: landstalker_de_expanded.asm
+        Target: landstalker_de_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 4
+            NTSC: 0
+            EXPANDED: 1
+            REGION_CHECK: 1
+            FIX_COLL_1: 1
+            FIX_COLL_2: 1
+            FIX_ARMLET_SKIP: 1
+            FIX_WHISTLE_CHECK: 1
+            FIX_SPRITE_HIDE: 1
+            ENABLE_GOLD_COUNT: 1
+            FIX_GOLA_BUG: 1
+            FIX_GOLD_CAP: 1
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 0
+            FIX_TS_GLITCH: 1
+    BETA:
+        Source: landstalker_beta.asm
+        Target: landstalker_beta.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 5
+            NTSC: 1
+            EXPANDED: 0
+            REGION_CHECK: 0
+            FIX_COLL_1: 1
+            FIX_COLL_2: 0
+            FIX_ARMLET_SKIP: 0
+            FIX_WHISTLE_CHECK: 0
+            FIX_SPRITE_HIDE: 0
+            ENABLE_GOLD_COUNT: 0
+            FIX_GOLA_BUG: 0
+            FIX_GOLD_CAP: 0
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 0
+    BETA_EXPANDED:
+        Source: landstalker_beta_expanded.asm
+        Target: landstalker_beta_expanded.bin
+        Buildopts: /p /d /o ae-,e+,w+,c+,op+,os+,ow+,oz+,l_
+        Defines:
+            REGION: 5
+            NTSC: 1
+            EXPANDED: 1
+            REGION_CHECK: 0
+            FIX_COLL_1: 1
+            FIX_COLL_2: 0
+            FIX_ARMLET_SKIP: 0
+            FIX_WHISTLE_CHECK: 0
+            FIX_SPRITE_HIDE: 0
+            ENABLE_GOLD_COUNT: 0
+            FIX_GOLA_BUG: 0
+            FIX_GOLD_CAP: 0
+            FIX_END_CREDS: 0
+            REFRESH_GOLD_CTR: 1
+            FIX_TS_GLITCH: 0
