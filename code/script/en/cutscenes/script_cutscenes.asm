@@ -916,8 +916,11 @@ XS_00AD_Options:ScriptID    $85A,$0		  ; DATA XREF: ROM:0002767Et
 XS_00B2:					  ; Trap01Handler
 		trap	#$01
 ; ---------------------------------------------------------------------------
-		ScriptID    $86A,$5		  ; Run	text script at offset 0x0288CA
-						  ; 0xE6C8: PRINT MSG 0x0715, MSGBOX CLEARED, END: "{5B}Got it?	 'Bye!{5E}"
+        ScriptID    $86F,$0               ; Run text script at offset 0x0288D4
+                          ; 0x1BED: LOAD SPECIAL CHARACTER * (0x05)
+                          ; 0x86CC: PRINT MSG 0x0719 "{5B}I can't see you, but{57}I'm glad to meet you.{62}"
+                          ; 0x86CD: PRINT MSG 0x071A "{5B}I'm having my lunch.{57}I can't see it, but it looks{57}good.  Would you like some?{62}"
+                          ; 0xA6CE: PRINT MSG 0x071B, END: "{5B}You're in hurry?{62}"
 ; ---------------------------------------------------------------------------
 		move.w	#ITM_RESTORATION,d0
 		bsr.w	GetRemainingItemAllowedCount
