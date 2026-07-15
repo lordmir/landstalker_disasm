@@ -363,14 +363,14 @@ Shop_08:
 		bsr.w	GetYesNoAnswer
 		bcc.s	loc_25258
 		trap	#1
-		move.w	-(a5),(a2)
+		ScriptID	$6EB,$0
 		move.b	#$FF,(byte_FF1903).l
 		bra.s	locret_2525C
 ; ---------------------------------------------------------------------------
 
 loc_25258:				; CODE XREF: ROM:00025248j
 		trap	#1
-		move.w	(a1)+,(a2)
+		ScriptID	$06EC,$0
 
 locret_2525C:				; CODE XREF: ROM:00025256j
 		rts

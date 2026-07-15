@@ -117,9 +117,9 @@ loc_D600:					  ; CODE XREF: sub_D5E4+16j
 	if ~((REGION=FR)!(REGION=DE))
 		move.b	(a2)+,d0
 	if ~(REGION=JP)
-		cmpi.b	#CHR_HYPHENATION_POINT,d0
+		cmpi.b	#CHR_MENU_HYPHENATION_POINT,d0
 		bne.s	loc_D616
-		move.b	#CHR_Dash,d0
+		move.b	#CHR_DASH,d0
 		move.w	d0,(a0)
 		lea	$00000048(a1),a0
 		bra.w	loc_D634
@@ -127,7 +127,7 @@ loc_D600:					  ; CODE XREF: sub_D5E4+16j
 ; ---------------------------------------------------------------------------
 
 loc_D616:					  ; CODE XREF: sub_D5E4+22j
-		cmpi.b	#CHR_BREAKING_SPACE,d0
+		cmpi.b	#CHR_MENU_BREAKING_SPACE,d0
 		bne.s	loc_D624
 	if	REGION=JP
 		move.w	d0,-$48(a0)
@@ -138,7 +138,7 @@ loc_D616:					  ; CODE XREF: sub_D5E4+22j
 ; ---------------------------------------------------------------------------
 
 loc_D624:					  ; CODE XREF: sub_D5E4+36j
-		cmpi.b	#CHR_BREAK_POINT,d0
+		cmpi.b	#CHR_MENU_BREAK_POINT,d0
 		bne.s	loc_D632
 	if	REGION=JP
 		move.w	d0,-$48(a0)
@@ -167,18 +167,18 @@ loc_D60C:
 		clr.w	d2
 loc_D60E:
 		move.b	(a2)+,d0
-		cmpi.b	#CHR_BREAK_POINT,d0
+		cmpi.b	#CHR_MENU_BREAK_POINT,d0
 	if REGION=DE
 		beq.w	loc_D62E_a
 	else
 		beq.w	loc_D62E
 	endif
-		cmpi.b	#CHR_BREAKING_SPACE,d0
+		cmpi.b	#CHR_MENU_BREAKING_SPACE,d0
 		beq.w	loc_D62E
-		cmpi.b	#CHR_HYPHENATION_POINT,d0
+		cmpi.b	#CHR_MENU_HYPHENATION_POINT,d0
 		bne.s	loc_D638
 loc_D62E_a:
-		move.b  #CHR_Dash,d0
+		move.b  #CHR_DASH,d0
 		bsr.w   sub_D666
 loc_D62E:
 		lea		$90(a1),a0
@@ -217,24 +217,24 @@ sub_D666:
 		rts
 sub_D67A:
 	if REGION=FR
-		cmpi.b	#(CHR_z+1),d0
+		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
 	elseif REGION=DE
-		cmpi.b	#(CHR_Z+1),d0
+		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
 	endif
 		bcc.s	loc_D682
 locret_D680:
 		rts
 loc_D682:
 	if REGION=FR
-		cmpi.b	#CHR_Apostrophe,d0
+		cmpi.b	#CHR_APOSTROPHE,d0
 		bne.s	loc_D68E
-		move.b	#CHR_Apostrophe_Menu,d0
+		move.b	#CHR_MENU_APOSTROPHE,d0
 		rts
 	endif
 loc_D68E:
-		cmpi.b	#CHR_Dash,d0
+		cmpi.b	#CHR_DASH,d0
 		bne.s	loc_D69A
-		move.b	#CHR_Dash_Menu,d0
+		move.b	#CHR_MENU_DASH,d0
 		rts
 loc_D69A:
 	if REGION=FR

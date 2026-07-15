@@ -750,7 +750,7 @@ XS_0091:
 
 XS_00A5:
 		trap	#1
-		bset	d6,-(sp)
+		ScriptID	$602,$0
 		bsr.w	GetYesNoAnswer
 		bcs.s	XS_00A5_0
 		trap	#1
@@ -796,7 +796,7 @@ XS_00A5_2:				; CODE XREF: ROM:0002774Ap
 		bsr.w	CheckIfItemIsOwned
 		bne.s	XS_00A5_3
 		trap	#1
-		bset	d6,(a3)
+		ScriptID $612,$0
 		clr.b	(g_YesNoPromptResult).l
 
 XS_00A5_3:				; CODE XREF: XS_00A5_2+Aj

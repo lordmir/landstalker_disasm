@@ -254,14 +254,14 @@ loc_230D6:
 	if REGION=DE
 		cmpi.b	#CHR_SS,d0
 		bne.s	loc_230D4
-		move.w	#CHR_S,d0
+		move.w	#CHR_UPPERCASE_S,d0
 		bsr.s	ProcessChar
-		move.w	#CHR_S,d0
+		move.w	#CHR_UPPERCASE_S,d0
 		bsr.s	ProcessChar
 		bra.s	locret_23102
 loc_230D4:
 	elseif REGION=FR
-		cmpi.b	#CHR_OpenBracket,d0
+		cmpi.b	#CHR_OPEN_BRACKET,d0
 	endif
 		cmpi.b	#CHR_BEGIN_TALK,d0
 		bne.s	loc_230F4
@@ -422,7 +422,7 @@ HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
 		bsr.w	PopItem
 		bsr.w	GetChrName
 		bsr.w	CopyStringToBuffer
-		move.w	#CHR_Colon,(a1)+
+		move.w	#CHR_BEGIN_TALK,(a1)+
 		clr.w	(a1)+
 		move.w	#$FFFF,(a1)+
 		rts

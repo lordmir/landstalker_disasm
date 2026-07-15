@@ -47,24 +47,12 @@ Diacritics:
     "゜": {
             "は": "ぱ", "ひ": "ぴ", "ふ": "ぷ", "へ": "ぺ", "へ": "ぺ", "ほ": "ぽ", "ハ": "パ", "ヒ": "ピ", "フ": "プ", "ヘ": "ペ", "ホ": "ポ"
           }
-ControlChars:
-    BEGIN_TALK: "「"
-    STRING_BEGIN: 233
-    SELECTION_POINT: 234
-    NEWLINE: 235
-    PROMPT_YES_OR_NO: 236
-    PAUSE_1S_NO_SKIP: 237
-    INSERT_NUMBER: 238
-    INSERT_SPEAKER_NAME: 239
-    STRING_END: 242
-    INSERT_ITEM_NAME: 243
-    POP_ITEM: 244
-    CONTINUE_PROMPT: 246
-    NEWLINE_AND_PROMPT: 247
-    PAUSE_1S_SKIPPABLE: 248
-    PAUSE_1_5S_SKIPPABLE: 249
-    PAUSE_2S_SKIPPABLE: 250
-    SET_COLOUR: 252
-    HYPHENATION_POINT: 253
-    BREAKING_SPACE: 254
-    BREAK_POINT: 255
+Constants:
+    SPACE: 0
+    MENU_BREAKING_SPACE: 123
+    MENU_BREAK_POINT: 124
+    MULT: 128
+    PERIOD: 216
+    BEGIN_TALK: 217
+    STR_BEGIN: 233
+    ARROW_PROMPT: 234
