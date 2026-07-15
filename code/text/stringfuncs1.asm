@@ -286,9 +286,9 @@ loc_23104:					  ; CODE XREF: ProcessChar:loc_230F4p
 		movem.w	d0,-(sp)
 		tst.b	(byte_FF1155).l
 		beq.s	loc_23136
-		cmpi.b	#CHR_Space,d0
+		cmpi.b	#CHR_SPACE,d0
 		beq.s	loc_23136
-		cmpi.b	#CHR_FullStop,d0
+		cmpi.b	#CHR_PERIOD,d0
 		beq.s	loc_23136
 		addq.b	#$01,(byte_FF1155).l
 		btst	#$01,(byte_FF1155).l
