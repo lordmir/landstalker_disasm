@@ -1,4 +1,4 @@
-MenuFont:            incbin   "assets_packed\graphics\fonts\menufont_fr.1bpp"
+MenuFont:            incbin   "assets_packed\graphics\fonts\menufont_fr.lz77"
 MenuCursor2BPP:      incbin   "assets_packed\graphics\static\inventory\cursor.2bpp"
 ArrowGraphic2BPP:    incbin   "assets_packed\graphics\static\inventory\arrow.2bpp"
 Unused1_2BPP:        incbin   "assets_packed\graphics\static\inventory\unused1.2bpp"
