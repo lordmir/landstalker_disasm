@@ -1,25 +1,32 @@
-; ---------------------------------------------------------------------------
+Knight1	module
+; AI for SPR_KNIGHT1. Chases; can pause at range or retreat, and has
+; the knights' two special moves: the sword guard - raised when the
+; player is mid sword swing nearby, making the knight invincible
+; (CombatFlags bit 0) while it holds the block - and the long sword
+; thrust ($29-deep hit box), sometimes delivered with a hop
+; (BHVS_HOP).
 
-EnemyAI_Knight1_B:				  ; CODE XREF: ROM:001A850Aj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Knight1_B:
 		bra.s	EnemyAI_Knight1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Knight1_A:				  ; CODE XREF: ROM:001A8506j
+; A routine, run every tick.
+EnemyAI_Knight1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A6EB6
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A6EBC
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A6EE8
-		bra.w	loc_1A703A
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A6EB6:					  ; CODE XREF: ROM:001A6EA4j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6EBC:					  ; CODE XREF: ROM:001A6EAAj
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $10 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,219 +36,190 @@ loc_1A6EBC:					  ; CODE XREF: ROM:001A6EAAj
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Knight1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Knight1:				  ; CODE XREF: ROM:EnemyAI_Knight1_Bj
-						  ; ROM:001A6EE0j ...
+; Aggro / attack-over / hitstun recovery: start chasing the player
+; (behaviour 6, AIState $10).
+EnemyAI_Knight1:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1A6EE8:					  ; CODE XREF: ROM:001A6EB0j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A6F18
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A6F1C
-		bcs.s	loc_1A6F12
-		bsr.s	sub_1A6F58
-		bcs.s	loc_1A6F12
-		bsr.w	sub_1A6F94
-		bcs.s	loc_1A6F12
-		bsr.w	sub_1A6FE0
+		bsr.s	_tryWait
+		bcs.s	_chaseTick
+		bsr.s	_tryRetreat
+		bcs.s	_chaseTick
+		bsr.w	_tryGuard
+		bcs.s	_chaseTick
+		bsr.w	_tryThrust
 
-loc_1A6F12:					  ; CODE XREF: ROM:001A6F02j
-						  ; ROM:001A6F06j ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6F18:					  ; CODE XREF: ROM:001A6EEEj
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6F1C:					  ; CODE XREF: ROM:001A6F00p
+; Player in the $40-$48 band ahead, $10 lateral: 38-in-1000 chance to
+; stop and wait (state $20, BHVS_PAUSE_32_AI).
+_tryWait:
 		move.w	#$0048,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A6F54
+		bcc.s	_waitMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
-		bhi.s	loc_1A6F54
+		bhi.s	_waitMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6F54:					  ; CODE XREF: sub_1A6F1C+10j
-						  ; sub_1A6F1C+20j
+_waitMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6F1C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6F58:					  ; CODE XREF: ROM:001A6F04p
+; Player in the $30-$38 band ahead, $8 lateral: 26-in-1000 chance to
+; retreat (state $21, BHVS_RETREAT: turn 180 and walk away).
+_tryRetreat:
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A6F90
+		bcc.s	_retreatMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
-		bhi.s	loc_1A6F90
+		bhi.s	_retreatMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0008,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RETREAT,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6F90:					  ; CODE XREF: sub_1A6F58+10j
-						  ; sub_1A6F58+20j
+_retreatMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6F58
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6F94:					  ; CODE XREF: ROM:001A6F08p
+; Player within $28 ahead, $10 lateral, 15% roll, and the player is
+; mid sword swing (the high byte of Player_Action holds the attack
+; action id): raise the guard (state $22).
+_tryGuard:
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A6FDC
+		bcc.s	_guardMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00150,d7
-		bhi.s	loc_1A6FDC
-		move.b	(Player_Action).l,d0	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		bhi.s	_guardMiss
+		move.b	(Player_Action).l,d0	; player action id byte
 		andi.b	#$07,d0
-		beq.s	loc_1A6FDC
+		beq.s	_guardMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6FDC:					  ; CODE XREF: sub_1A6F94+10j
-						  ; sub_1A6F94+20j ...
+_guardMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6F94
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6FE0:					  ; CODE XREF: ROM:001A6F0Ep
+; Player point-blank ahead ($20 ahead, $8 lateral): thrust - 30% with
+; a hop (state $23, BHVS_HOP), else standing (state $24).
+_tryThrust:
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A7036
+		bcc.s	_thrustMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00030,d7
-		bcc.s	loc_1A701C
+		bcc.s	_thrustStand
 		move.b	#$23,AIState(a5)
-		move.w	#$0009,BehaviourLUTIndex(a5)
+		move.w	#BHVS_HOP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A701C:					  ; CODE XREF: sub_1A6FE0+20j
+_thrustStand:
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A7036:					  ; CODE XREF: sub_1A6FE0+10j
+_thrustMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6FE0
 
-; ---------------------------------------------------------------------------
-
-loc_1A703A:					  ; CODE XREF: ROM:001A6EB2j
+; States $20+: 0/1 = behaviour-driven wait/retreat, 2 = guard,
+; 3/4 = thrust.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A7056
+		beq.s	_tick
 		cmpi.b	#$01,d0
-		beq.s	loc_1A7056
+		beq.s	_tick
 		cmpi.b	#$02,d0
-		beq.s	loc_1A705C
+		beq.s	_guard
 		cmpi.b	#$03,d0
-		beq.s	loc_1A708E
-		bra.w	loc_1A708E
-; ---------------------------------------------------------------------------
+		beq.s	_thrust
+		bra.w	_thrust
 
-loc_1A7056:					  ; CODE XREF: ROM:001A703Ej
-						  ; ROM:001A7044j
+_tick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A705C:					  ; CODE XREF: ROM:001A704Aj
+; Guard: raise the sword (ACT_ATTACK3) for 5 ticks, then hold the
+; block pose (ACT_ATTACK4) until tick $17 - invincible (CombatFlags
+; bit 0) the whole time, cleared at the end.
+_guard:
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$05,AnimPhase(a5)
-		bcs.s	loc_1A7086
+		bcs.s	_guardHold
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$17,AnimPhase(a5)
-		bcs.s	loc_1A7086
+		bcs.s	_guardHold
 		bclr	#$00,CombatFlags(a5)
 		bra.w	EnemyAI_Knight1
-; ---------------------------------------------------------------------------
 
-loc_1A7086:					  ; CODE XREF: ROM:001A706Cj
-						  ; ROM:001A707Aj
+_guardHold:
 		bset	#$00,CombatFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A708E:					  ; CODE XREF: ROM:001A7050j
-						  ; ROM:001A7052j
+; Sword thrust: ACT_ATTACK1 windup for $F ticks, then the hit box
+; ($29 ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing.
+_thrust:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1A70C2
+		bcs.s	_thrustTick
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	loc_1A70C2
+		bcs.s	_thrustTick
 		bra.w	EnemyAI_Knight1
-; ---------------------------------------------------------------------------
 
-loc_1A70C2:					  ; CODE XREF: ROM:001A709Ej
-						  ; ROM:001A70BCj
+_thrustTick:
 		bsr.w	j_j_OnTick
 		rts
+
+		modend

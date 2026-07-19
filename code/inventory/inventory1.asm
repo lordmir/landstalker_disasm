@@ -195,6 +195,13 @@ locret_77F2:					  ; CODE XREF: LoadMagicSwordGfx+Aj
 ; =============== S U B	R O U T	I N E =======================================
 
 
+; Load a sword's elemental hit-effect graphics: d0 = sword item id
+; (ITM_MAGICSWORD / ITM_THUNDERSWORD, anything else gets the Ice
+; Sword's), a2 = VRAM destination. Decompresses the effect tiles into
+; g_Buffer and queues the DMA copy. Besides the swords' burn-on-hit
+; animation, enemy AIs (spectres, reapers, Ifrit, Mir, Gola) call
+; this to load the flames for their fireball projectiles.
+
 LoadMagicSwordEffect:				  ; CODE XREF: j_LoadMagicSwordEffectj
 		lea	MagicSwordGfx(pc),a0
 		cmpi.b	#ITM_MAGICSWORD,d0

@@ -1,179 +1,180 @@
-; ---------------------------------------------------------------------------
+Ghost2	module
+; AI for SPR_GHOST2. Like Ghost1 with a stronger drain ($100 health,
+; wider grab box), and after the grab lands it rolls: 90% drain, 10%
+; the vanish attack - a large damaging burst, after which the ghost
+; disappears (parked offscreen) until the ghost generator respawns it.
 
-EnemyAI_Ghost2_B:				  ; CODE XREF: ROM:001A852Aj
+; B routine (behaviour command $2B): reset.
+EnemyAI_Ghost2_B:
 		bra.s	EnemyAI_Ghost2
-; ---------------------------------------------------------------------------
 
-EnemyAI_Ghost2_A:				  ; CODE XREF: ROM:001A8526j
+; A routine, run every tick.
+EnemyAI_Ghost2_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A76D2
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A76D8
+		beq.s	_spawn
 		cmpi.b	#$10,d0
-		beq.s	loc_1A7718
-		bra.w	loc_1A77A0
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A76D2:					  ; CODE XREF: ROM:001A76C0j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A76D8:					  ; CODE XREF: ROM:001A76C6j
-		bra.s	loc_1A76E0
-; ---------------------------------------------------------------------------
+_spawn:
+		bra.s	_startMaterialise
 
-EnemyAI_Ghost2:					  ; CODE XREF: ROM:EnemyAI_Ghost2_Bj
-						  ; ROM:001A77B4j ...
+; Reset entry: materialise if AnimCtrl bit 7 is set (fresh respawn),
+; otherwise straight to the chase.
+EnemyAI_Ghost2:
 		tst.b	AnimCtrl(a5)
-		bpl.s	loc_1A76FC
+		bpl.s	_startChase
 
-loc_1A76E0:					  ; CODE XREF: ROM:loc_1A76D8j
-		move.w	#$0000,BehaviourLUTIndex(a5)
+_startMaterialise:
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$20,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A76FC:					  ; CODE XREF: ROM:001A76DEj
-						  ; ROM:001A7846j ...
-		move.w	#$0006,BehaviourLUTIndex(a5)
+_startChase:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A7718:					  ; CODE XREF: ROM:001A76CCj
+; State $10: chase, trying the grab each tick.
+_chase:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.w	sub_1A7732
+		bsr.w	_tryGrab
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A7732:					  ; CODE XREF: ROM:001A7728p
+; Player within $10 ahead, $8 lateral, and no more than $20 above the
+; ghost's hitbox top: 90% latch on and drain (state $21), 10% the
+; vanish attack (state $22).
+_tryGrab:
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A779C
+		bcc.s	_grabMiss
 		move.w	HitBoxZEnd(a5),d0
 		sub.w	(Player_Z).l,d0
 		cmpi.w	#$0020,d0
-		bcc.s	loc_1A779C
-		move.w	#$0064,d6
+		bcc.s	_grabMiss
+		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.w	#$005A,d7
-		bcc.s	loc_1A7782
+		cmpi.w	#00090,d7
+		bcc.s	_startVanish
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A7782:					  ; CODE XREF: sub_1A7732+30j
+_startVanish:
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A779C:					  ; CODE XREF: sub_1A7732+10j
-						  ; sub_1A7732+20j
+_grabMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A7732
 
-; ---------------------------------------------------------------------------
-
-loc_1A77A0:					  ; CODE XREF: ROM:001A76CEj
+; States $20+: 0 = materialise, 1 = drain, 2 = vanish, anything else
+; = reset.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A77B8
+		beq.s	_materialise
 		cmpi.b	#$01,d0
-		beq.s	loc_1A7806
+		beq.s	_drain
 		cmpi.b	#$02,d0
-		beq.w	loc_1A7882
+		beq.w	_vanish
 		bra.w	EnemyAI_Ghost2
-; ---------------------------------------------------------------------------
 
-loc_1A77B8:					  ; CODE XREF: ROM:001A77A4j
+; Materialise: step through ACT_ATTACK1-4 (the fade-in frames) every
+; 8 ticks, then start chasing.
+_materialise:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$08,AnimPhase(a5)
-		bcs.s	locret_1A7804
+		bcs.s	_matRts
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$10,AnimPhase(a5)
-		bcs.s	locret_1A7804
+		bcs.s	_matRts
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		cmpi.b	#$18,AnimPhase(a5)
-		bcs.s	locret_1A7804
+		bcs.s	_matRts
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$20,AnimPhase(a5)
-		bcs.s	locret_1A7804
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		bcs.s	_matRts
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 
-locret_1A7804:					  ; CODE XREF: ROM:001A77C8j
-						  ; ROM:001A77D6j ...
+_matRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A7806:					  ; CODE XREF: ROM:001A77AAj
+; State $21 drain: aborts if the player is in a special animation;
+; holds them in hitstun (g_PlayerHurtTimer = 1) and, on the first
+; tick, plays the absorb sound and drains $100 health (a5 temporarily
+; points at the player). Lets go back to the chase if the player
+; escapes the box, or after $3C ticks.
+_drain:
 		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Ghost2
 		tst.b	(g_PlayerHurtTimer).l
-		bne.w	loc_1A7826
+		bne.w	_drainHold
 		move.b	#$01,(g_PlayerHurtTimer).l
-		bra.w	*+4
-; ---------------------------------------------------------------------------
+		bra.w	*+4			  ; (no-op branch)
 
-loc_1A7826:					  ; CODE XREF: ROM:001A7816j
-						  ; ROM:001A7822j
+_drainHold:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0019,d5
 		move.w	#$0009,d6
 		move.w	#$0009,d7
 		bsr.w	CheckPlayerInRange
-		bcc.w	loc_1A76FC
+		bcc.w	_startChase
 		move.b	AICounter(a5),d0
 		addq.b	#$01,AICounter(a5)
 		tst.b	d0
-		bne.s	loc_1A786E
+		bne.s	_drainWait
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_GhostAbsorbHP
-; ---------------------------------------------------------------------------
 		lea	(Player_X).l,a5
 		move.w	#$0100,d0
 		bsr.w	j_j_RemoveHealth
 		tst.w	CurrentHealth(a5)
-		beq.s	loc_1A7878
+		beq.s	_playerDead
 
-loc_1A786E:					  ; CODE XREF: ROM:001A7854j
+_drainWait:
 		cmpi.b	#$3C,d0
-		bcc.w	loc_1A76FC
+		bcc.w	_startChase
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A7878:					  ; CODE XREF: ROM:001A786Cj
+; The drain killed the player: clear their blink flag so they are
+; drawn (a5 is the player here) and run the death sequence.
+_playerDead:
 		bclr	#$06,InteractFlags(a5)
 		bra.w	j_j_PlayerDeath
-; ---------------------------------------------------------------------------
 
-loc_1A7882:					  ; CODE XREF: ROM:001A77B0j
+; State $22 vanish: a large hit box ($29 ahead/behind, $19 lateral)
+; is live every tick with the vanish pose (ACT_ATTACK5); the vanish
+; sound plays at phase 2, and at $F the ghost parks itself offscreen
+; ($7F7F) - the ghost generator will respawn it later.
+_vanish:
 		move.w	#$0029,d1
 		move.w	#$0029,d2
 		move.w	#$0019,d3
@@ -181,18 +182,17 @@ loc_1A7882:					  ; CODE XREF: ROM:001A77B0j
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcc.w	loc_1A78B4
+		bcc.w	_vanishGone
 		cmpi.b	#$02,AnimPhase(a5)
-		bne.s	locret_1A78B2
+		bne.s	_vanishRts
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyDie1
-; ---------------------------------------------------------------------------
 
-locret_1A78B2:					  ; CODE XREF: ROM:001A78ACj
+_vanishRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A78B4:					  ; CODE XREF: ROM:001A78A2j
+_vanishGone:
 		bsr.w	MoveSpriteOffscreen
 		bra.w	EnemyAI_Ghost2
+
+		modend

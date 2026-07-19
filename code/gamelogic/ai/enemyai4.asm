@@ -44,7 +44,7 @@ _setPos:
 		move.w	d3,Z(a1)
 		move.w	SubX(a5),SubX(a1)
 		move.w	#$64C0,TileSource(a1)
-		move.w	#$021C,BehaviourLUTIndex(a1)
+		move.w	#BHVS_ENEMY_PROJECTILE,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
 		jsr	(j_InitSpawnedSprite).l
 		bset	#$00,CombatFlags(a1)

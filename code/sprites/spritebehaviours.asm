@@ -2085,7 +2085,7 @@ _phHit:
 
 _phHitstun:
 		bsr.w	StartEnemyHitstun
-		move.w	#$013E,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ENEMY_HITSTUN,BehaviourLUTIndex(a5)
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_EnemyHit1

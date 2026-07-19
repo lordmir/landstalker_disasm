@@ -1,26 +1,30 @@
-; ---------------------------------------------------------------------------
+Spectre3	module
+; AI for SPR_SPECTRE3. The strongest spectre: vanishes 33-in-1000,
+; summons fireballs 26-in-1000, and the fireball's AttackStrength is
+; $700.
 
-EnemyAI_Spectre3_B:				  ; CODE XREF: ROM:001A8662j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Spectre3_B:
 		bra.s	EnemyAI_Spectre3
-; ---------------------------------------------------------------------------
 
-EnemyAI_Spectre3_A:				  ; CODE XREF: ROM:001A865Ej
+; A routine, run every tick. FallRate bit 7 keeps it airborne.
+EnemyAI_Spectre3_A:
 		bset	#$07,FallRate(a5)
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AD830
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AD836
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AD862
-		bra.w	loc_1AD9D2
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AD830:					  ; CODE XREF: ROM:001AD81Ej
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD836:					  ; CODE XREF: ROM:001AD824j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $20 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -30,253 +34,232 @@ loc_1AD836:					  ; CODE XREF: ROM:001AD824j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Spectre3
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Spectre3:				  ; CODE XREF: ROM:EnemyAI_Spectre3_Bj
-						  ; ROM:001AD85Aj ...
+; Aggro / attack-over / hitstun recovery: chase (behaviour 6,
+; AIState $10).
+EnemyAI_Spectre3:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1AD862:					  ; CODE XREF: ROM:001AD82Aj
+; State $10: chasing (invisibly, if vanished). After $1E ticks
+; vanished it tries to re-materialise every tick; then try each move
+; in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1AD8AE
+		bne.s	_playerHurt
 		btst	#$06,InteractFlags(a5)
-		beq.s	loc_1AD886
+		beq.s	_chaseMoves
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$1E,AICounter(a5)
-		bcs.s	loc_1AD8A8
+		bcs.s	_chaseTick
 		subq.b	#$01,AICounter(a5)
-		bsr.w	sub_1AD9B0
+		bsr.w	_tryMaterialise
 
-loc_1AD886:					  ; CODE XREF: ROM:001AD870j
+_chaseMoves:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1AD8B2
-		bcs.s	loc_1AD8A8
-		bsr.s	sub_1AD8F4
-		bcs.s	loc_1AD8A8
-		bsr.w	sub_1AD926
-		bcs.s	loc_1AD8A8
-		bsr.w	sub_1AD96C
+		bsr.s	_tryVanish
+		bcs.s	_chaseTick
+		bsr.s	_tryReappear
+		bcs.s	_chaseTick
+		bsr.w	_tryFireball
+		bcs.s	_chaseTick
+		bsr.w	_trySwing
 
-loc_1AD8A8:					  ; CODE XREF: ROM:001AD87Cj
-						  ; ROM:001AD898j ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD8AE:					  ; CODE XREF: ROM:001AD868j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD8B2:					  ; CODE XREF: ROM:001AD896p
+; Visible, player in the box $70 ahead, $30 behind, $20 lateral:
+; 33-in-1000 chance to vanish - hidden (InteractFlags bit 6) and
+; floating at the fixed height (Z $100), still chasing.
+_tryVanish:
 		move.w	#$0070,d5
 		move.w	#$0030,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD8F0
+		bcc.s	_vanishMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00032,d7
-		bhi.s	loc_1AD8F0
+		bhi.s	_vanishMiss
 		bset	#$06,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD8F0:					  ; CODE XREF: sub_1AD8B2+10j
-						  ; sub_1AD8B2+20j
+_vanishMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD8B2
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD8F4:					  ; CODE XREF: ROM:001AD89Ap
+; Player within $60 ahead, $20 lateral: 7-in-1000 chance to
+; re-materialise early (teleporting in beside the player); when
+; already visible this succeeds without doing anything.
+_tryReappear:
 		move.w	#$0060,d5
 		move.w	#$0000,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD922
+		bcc.s	_reappearMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00006,d7
-		bhi.s	loc_1AD922
-		bsr.w	sub_1AD9B0
-		bcc.s	loc_1AD922
+		bhi.s	_reappearMiss
+		bsr.w	_tryMaterialise
+		bcc.s	_reappearMiss
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD922:					  ; CODE XREF: sub_1AD8F4+10j
-						  ; sub_1AD8F4+20j ...
+_reappearMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD8F4
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD926:					  ; CODE XREF: ROM:001AD89Ep
+; Player in the box $60 ahead, $48 behind, $10 lateral: 26-in-1000
+; chance to summon a fireball (state $22) - materialising first if
+; vanished.
+_tryFireball:
 		move.w	#$0060,d5
 		move.w	#$0048,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD968
+		bcc.s	_fireballMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
-		bhi.s	loc_1AD968
-		bsr.w	sub_1AD9B0
-		bcc.s	loc_1AD968
+		bhi.s	_fireballMiss
+		bsr.w	_tryMaterialise
+		bcc.s	_fireballMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD968:					  ; CODE XREF: sub_1AD926+10j
-						  ; sub_1AD926+20j ...
+_fireballMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD926
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD96C:					  ; CODE XREF: ROM:001AD8A4p
+; Player point-blank ahead ($18 ahead, $8 lateral): 80% chance to
+; swing (state $23) - materialising first if vanished.
+_trySwing:
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD9AC
+		bcc.s	_swingMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00080,d7
-		bcc.s	loc_1AD9AC
-		bsr.s	sub_1AD9B0
-		bcc.s	loc_1AD9AC
+		bcc.s	_swingMiss
+		bsr.s	_tryMaterialise
+		bcc.s	_swingMiss
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD9AC:					  ; CODE XREF: sub_1AD96C+10j
-						  ; sub_1AD96C+20j ...
+_swingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD96C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD9B0:					  ; CODE XREF: ROM:001AD882p
-						  ; sub_1AD8F4+22p ...
+; Succeeds (carry set) if the spectre is visible, or if vanished and
+; the teleport in beside the player (at the player's height, hitbox
+; top $F above) finds a clear spot - becoming visible again.
+_tryMaterialise:
 		btst	#$06,InteractFlags(a5)
-		beq.s	loc_1AD9C6
+		beq.s	_materialise
 		move.w	#$000F,d1
-		bsr.w	sub_1AE944
-		bcs.s	loc_1AD9C6
+		bsr.w	TeleportBesidePlayer
+		bcs.s	_materialise
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD9C6:					  ; CODE XREF: sub_1AD9B0+6j
-						  ; sub_1AD9B0+10j
+_materialise:
 		bclr	#$06,InteractFlags(a5)
 		ori	#$01,ccr
 		rts
-; End of function sub_1AD9B0
 
-; ---------------------------------------------------------------------------
-
-loc_1AD9D2:					  ; CODE XREF: ROM:001AD82Cj
+; States $20+: 0-2 = summon fireball (entered as $22), 3+ = swing.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1AD9EC
+		beq.s	_castFireball
 		cmpi.b	#$01,d0
-		beq.s	loc_1AD9EC
+		beq.s	_castFireball
 		cmpi.b	#$02,d0
-		beq.s	loc_1AD9EC
+		beq.s	_castFireball
 		cmpi.b	#$03,d0
-		beq.s	loc_1ADA60
-		bra.s	loc_1ADA60
-; ---------------------------------------------------------------------------
+		beq.s	_swing
+		bra.s	_swing
 
-loc_1AD9EC:					  ; CODE XREF: ROM:001AD9D6j
-						  ; ROM:001AD9DCj ...
+; Summon a fireball, driven by AICounter: tick 1 - casting pose
+; (ACT_ATTACK3) and load the fireball's flame graphics (shared
+; with the Magic Sword's burn animation) to VRAM $9880 (tail call); tick 2 - load the
+; projectile palette; tick $2D - throwing pose (ACT_ATTACK2) and spawn
+; the fireball (type 1, AttackStrength $700; abort if no free slot);
+; then recover until tick $46.
+_castFireball:
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1ADA0E
+		bne.s	_castPalette
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jmp	(j_LoadMagicSwordEffect).l
-; ---------------------------------------------------------------------------
 
-loc_1ADA0E:					  ; CODE XREF: ROM:001AD9F6j
+_castPalette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1ADA20
+		bne.w	_castThrow
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
-; ---------------------------------------------------------------------------
 
-loc_1ADA20:					  ; CODE XREF: ROM:001ADA14j
+_castThrow:
 		cmpi.b	#$2D,AICounter(a5)
-		bhi.w	loc_1ADA46
-		bcs.w	locret_1ADA56
+		bhi.w	_castRecover
+		bcs.w	_castWait
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0700,d1
 		bsr.w	SpawnSmallProjectile
-		bcs.w	loc_1ADA58
+		bcs.w	_castDone
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ADA46:					  ; CODE XREF: ROM:001ADA26j
+_castRecover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$46,AICounter(a5)
-		beq.w	loc_1ADA58
+		beq.w	_castDone
 
-locret_1ADA56:					  ; CODE XREF: ROM:001ADA2Aj
+_castWait:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ADA58:					  ; CODE XREF: ROM:001ADA40j
-						  ; ROM:001ADA52j
+_castDone:
 		clr.b	AICounter(a5)
 		bra.w	EnemyAI_Spectre3
-; ---------------------------------------------------------------------------
 
-loc_1ADA60:					  ; CODE XREF: ROM:001AD9E8j
-						  ; ROM:001AD9EAj
+; Swing: ACT_ATTACK1 windup for $F ticks, then the hit box ($19
+; ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing.
+_swing:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1ADA94
+		bcs.s	_swingRts
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1ADA94
+		bcs.s	_swingRts
 		beq.w	EnemyAI_Spectre3
 
-locret_1ADA94:					  ; CODE XREF: ROM:001ADA70j
-						  ; ROM:001ADA8Ej
+_swingRts:
 		rts
+
+		modend

@@ -80,7 +80,7 @@ _tryPounce:
 		cmpi.w	#00012,d7
 		bhi.s	_pounceMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$000E,BehaviourLUTIndex(a5)
+		move.w	#BHVS_POUNCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -108,7 +108,7 @@ _tryStandoff:
 		cmpi.w	#00018,d7
 		bhi.s	_standoffMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0007,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_60_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -136,7 +136,7 @@ _tryRetreat:
 		cmpi.w	#00012,d7
 		bhi.s	_retreatMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0008,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RETREAT,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -159,7 +159,7 @@ _trySwing:
 		cmpi.w	#00050,d7
 		bcc.s	_swingHop
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
@@ -167,7 +167,7 @@ _trySwing:
 
 _swingHop:
 		move.b	#$24,AIState(a5)
-		move.w	#$0009,BehaviourLUTIndex(a5)
+		move.w	#BHVS_HOP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
@@ -178,7 +178,7 @@ _swingMiss:
 		rts
 
 ; States $20+: 0 = pounce, 1/2 = behaviour-driven standoff/retreat,
-; 3/4 = sword swing.
+; 3/4 = club swing.
 _attackStates:
 		andi.b	#$0F,d0
 		beq.s	_pounceTick
@@ -200,7 +200,7 @@ _tick:
 		bsr.w	j_j_OnTick
 		rts
 
-; Sword swing: ACT_ATTACK1 windup for $F ticks, then the hit box
+; Club swing: ACT_ATTACK1 windup for $F ticks, then the hit box
 ; ($19 ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
 ; until tick $1E, then back to chasing.
 _swing:

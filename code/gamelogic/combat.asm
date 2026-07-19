@@ -139,16 +139,16 @@ _sweepDamageNW:
 
 _sweepHitstunNW:
 		bsr.w	StartEnemyHitstun
-		move.w	#$000D,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCKBACK_NW,BehaviourLUTIndex(a5)
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
 		bne.s	_sweepChkGolaNW
-		move.w	#$0268,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ENEMY_HITSTUN_2,BehaviourLUTIndex(a5)
 		bra.s	_sweepBehavNW
 
 _sweepChkGolaNW:
 		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
 		bne.s	_sweepBehavNW
-		move.w	#$0364,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCK_UP,BehaviourLUTIndex(a5)
 
 _sweepBehavNW:
 		jsr	(j_LoadSpriteBehaviour).l
@@ -213,16 +213,16 @@ _sweepDamageNE:
 
 _sweepHitstunNE:
 		bsr.w	StartEnemyHitstun
-		move.w	#$000A,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCKBACK_NE,BehaviourLUTIndex(a5)
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
 		bne.s	_sweepChkGolaNE
-		move.w	#$0268,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ENEMY_HITSTUN_2,BehaviourLUTIndex(a5)
 		bra.s	_sweepBehavNE
 
 _sweepChkGolaNE:
 		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
 		bne.s	_sweepBehavNE
-		move.w	#$0364,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCK_UP,BehaviourLUTIndex(a5)
 
 _sweepBehavNE:
 		jsr	(j_LoadSpriteBehaviour).l
@@ -287,16 +287,16 @@ _sweepDamageSW:
 
 _sweepHitstunSW:
 		bsr.w	StartEnemyHitstun
-		move.w	#$000C,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCKBACK_SW,BehaviourLUTIndex(a5)
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
 		bne.s	_sweepChkGolaSW
-		move.w	#$0268,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ENEMY_HITSTUN_2,BehaviourLUTIndex(a5)
 		bra.s	_sweepBehavSW
 
 _sweepChkGolaSW:
 		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
 		bne.s	_sweepBehavSW
-		move.w	#$0364,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCK_UP,BehaviourLUTIndex(a5)
 
 _sweepBehavSW:
 		jsr	(j_LoadSpriteBehaviour).l
@@ -361,16 +361,16 @@ _sweepDamageSE:
 
 _sweepHitstunSE:
 		bsr.s	StartEnemyHitstun
-		move.w	#$000B,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCKBACK_SE,BehaviourLUTIndex(a5)
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
 		bne.s	_sweepChkGolaSE
-		move.w	#$0268,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ENEMY_HITSTUN_2,BehaviourLUTIndex(a5)
 		bra.s	_sweepBehavSE
 
 _sweepChkGolaSE:
 		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
 		bne.s	_sweepBehavSE
-		move.w	#$0364,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCK_UP,BehaviourLUTIndex(a5)
 
 _sweepBehavSE:
 		jsr	(j_LoadSpriteBehaviour).l
@@ -489,7 +489,7 @@ _quakeDamage:
 
 _quakeHitstun:
 		bsr.w	StartEnemyHitstun
-		move.w	#$00E3,BehaviourLUTIndex(a5)
+		move.w	#BHVS_KNOCKBACK_BACK,BehaviourLUTIndex(a5)
 		jsr	(j_LoadSpriteBehaviour).l
 
 _quakeMark:
@@ -569,7 +569,7 @@ _projSet:
 		move.w	d3,Z(a1)
 		move.w	(Player_SubX).l,SubX(a1)
 		move.w	#$47C0,TileSource(a1)
-		move.w	#$013C,BehaviourLUTIndex(a1)
+		move.w	#BHVS_PLAYER_PROJECTILE,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
 		jsr	(InitSpawnedSprite).l
 

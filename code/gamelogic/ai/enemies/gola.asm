@@ -34,7 +34,7 @@ sub_1AEF04:					  ; CODE XREF: ROM:EnemyAI_Golap
 						  ; j_InitSpritePalettes+ACCAj	...
 		bclr	#$06,CombatFlags(a5)
 		bclr	#$00,CombatFlags(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
@@ -81,7 +81,7 @@ sub_1AEF72:					  ; CODE XREF: j_InitSpritePalettes:loc_1AEF4Cp
 		cmpi.w	#00050,d7
 		bcc.w	loc_1AF0BA
 		move.b	#$27,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
@@ -146,7 +146,7 @@ sub_1AF01A:					  ; CODE XREF: j_InitSpritePalettes+AB3Ep
 		cmpi.w	#00030,d7
 		bhi.w	loc_1AF04E
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -168,7 +168,7 @@ sub_1AF052:					  ; CODE XREF: j_InitSpritePalettes+AB48p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00010,d7
 		bhi.s	loc_1AF080
-		move.w	#$0383,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_60_AI_IDLE,BehaviourLUTIndex(a5)
 
 loc_1AF068:					  ; CODE XREF: j_InitSpritePalettes+AF5Aj
 		move.b	#$22,AIState(a5)
@@ -199,7 +199,7 @@ sub_1AF084:					  ; CODE XREF: j_InitSpritePalettes+AB4Ep
 		cmpi.w	#00085,d7
 		bcc.s	loc_1AF0BA
 		move.b	#$23,AIState(a5)
-		move.w	#$0363,BehaviourLUTIndex(a5)
+		move.w	#BHVS_FORWARD_12,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
@@ -221,7 +221,7 @@ loc_1AF0BA:					  ; CODE XREF: sub_1AEF72+6j
 
 loc_1AF0BE:					  ; CODE XREF: sub_1AEFAC+66j
 		move.b	#$24,AIState(a5)
-		move.w	#$0361,BehaviourLUTIndex(a5)
+		move.w	#BHVS_DESCEND_6,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -272,7 +272,7 @@ loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
 		movem.l	(sp)+,d0
 		bcs.s	loc_1AF184
 		move.b	#$26,AIState(a5)
-		move.w	#$0361,BehaviourLUTIndex(a5)
+		move.w	#BHVS_DESCEND_6,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		subi.w	#$0020,Z(a5)
@@ -308,7 +308,7 @@ loc_1AF1BA:					  ; CODE XREF: ROM:001AEF00j
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.b	#$25,AIState(a5)
-		move.w	#$0362,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ASCEND_15,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -322,7 +322,7 @@ loc_1AF1E6:					  ; CODE XREF: sub_1AF18A+6j
 ; End of function sub_1AF18A
 
 ; ---------------------------------------------------------------------------
-		bsr.w	sub_1AC010
+		bsr.w	GetDirToPlayer
 		move.b	d2,d1
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
@@ -370,7 +370,7 @@ loc_1AF26E:					  ; CODE XREF: j_InitSpritePalettes+AE46j
 						  ; j_InitSpritePalettes+AE4Ej
 		move.b	#$10,d0
 		bsr.s	sub_1AF27E
-		bsr.w	sub_1AEE66
+		bsr.w	ScreenShake
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -461,7 +461,7 @@ loc_1AF35C:					  ; CODE XREF: j_InitSpritePalettes+AE18j
 ; ---------------------------------------------------------------------------
 
 loc_1AF368:					  ; CODE XREF: j_InitSpritePalettes+AF50j
-		move.w	#$0384,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_30_AI_IDLE,BehaviourLUTIndex(a5)
 		bra.w	loc_1AF068
 ; ---------------------------------------------------------------------------
 

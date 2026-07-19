@@ -273,7 +273,7 @@ _rangeMiss:
 ; Switch to behaviour script 6 (follow the player with ledge jumps,
 ; looped forever) and run this tick's OnTick.
 RunChaseBehaviour:
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
@@ -282,7 +282,7 @@ RunChaseBehaviour:
 ; AIState $10, hurt flag cleared (the EnemyAI_* hitstun-recovery
 ; entries jump here).
 StartEnemyChase:
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)

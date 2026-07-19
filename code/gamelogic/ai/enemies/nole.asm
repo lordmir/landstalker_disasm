@@ -82,81 +82,25 @@ sub_1AE91C:					  ; CODE XREF: ROM:001AE8F6p
 ; FUNCTION CHUNK AT 001AE9D4 SIZE 0000001A BYTES
 
 		btst	#$06,InteractFlags(a5)
-		beq.w	loc_1AE9CA
+		beq.w	TeleportFail
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00030,d7
-		bhi.w	loc_1AE9CA
+		bhi.w	TeleportFail
 		move.w	#$001F,d1
-		bsr.s	sub_1AE944
+		bsr.s	TeleportBesidePlayer
 		bcs.w	loc_1AE9D4
 		rts
 ; End of function sub_1AE91C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE944:					  ; CODE XREF: sub_1AD4A4+Cp
-						  ; sub_1AD72A+Cp ...
-		movem.w	d1,-(sp)
-		move.w	#00007,d6
-		jsr	(j_GenerateRandomNumber).l
-		addi.b	#$03,d7
-		move.w	d7,d5
-		move.w	#00002,d6
-		jsr	(j_GenerateRandomNumber).l
-		tst.b	d7
-		beq.s	loc_1AE968
-		neg.b	d5
-
-loc_1AE968:					  ; CODE XREF: sub_1AE944+20j
-		move.w	#00002,d6
-		jsr	(j_GenerateRandomNumber).l
-		tst.b	d7
-		beq.s	loc_1AE988
-		add.b	(Player_X).l,d5
-		move.b	d5,X(a5)
-		move.b	(Player_Y).l,Y(a5)
-		bra.s	loc_1AE998
-; ---------------------------------------------------------------------------
-
-loc_1AE988:					  ; CODE XREF: sub_1AE944+30j
-		add.b	(Player_Y).l,d5
-		move.b	d5,Y(a5)
-		move.b	(Player_X).l,X(a5)
-
-loc_1AE998:					  ; CODE XREF: sub_1AE944+42j
-		movea.l	a5,a1
-		jsr	(j_j_CalcSpriteHitbox).l
-		move.w	(Player_Z).l,d0
-		move.w	d0,Z(a5)
-		movem.w	(sp)+,d1
-		add.w	d1,d0
-		move.w	d0,HitBoxZEnd(a5)
-		movea.l	a5,a1
-		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1AE9CE
-		move.w	#$0100,Z(a5)
-		move.w	#$0120,HitBoxZEnd(a5)
-
-loc_1AE9CA:					  ; CODE XREF: sub_1AE91C+6j
-						  ; sub_1AE91C+18j
-		tst.b	d0
-		rts
-; ---------------------------------------------------------------------------
-
-loc_1AE9CE:					  ; CODE XREF: sub_1AE944+78j
-		ori	#$01,ccr
-		rts
-; End of function sub_1AE944
+        include         "code/gamelogic/ai/enemyteleport.asm"
 
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR sub_1AE91C
 
 loc_1AE9D4:					  ; CODE XREF: sub_1AE91C+22j
 		move.b	#$25,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -174,7 +118,7 @@ sub_1AE9EE:					  ; CODE XREF: ROM:001AE8FCp
 
 loc_1AE9FE:					  ; CODE XREF: ROM:001AE8C6j
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -203,7 +147,7 @@ sub_1AEA1C:					  ; CODE XREF: ROM:001AE902p
 		cmpi.w	#00300,d7
 		bhi.s	loc_1AEA60
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -233,7 +177,7 @@ sub_1AEA64:					  ; CODE XREF: ROM:001AE908p
 		cmpi.w	#00025,d7
 		bhi.s	loc_1AEAA8
 		move.b	#$22,AIState(a5)
-		move.w	#$0012,BehaviourLUTIndex(a5)
+		move.w	#BHVS_LEAP_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
@@ -259,7 +203,7 @@ sub_1AEAAC:					  ; CODE XREF: ROM:001AE90Ep
 		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AEAE0
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr

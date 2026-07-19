@@ -1,26 +1,33 @@
-; ---------------------------------------------------------------------------
+Skeleton2	module
+; AI for SPR_SKELETON2. Adds the skeletons' block to Skeleton1's kit:
+; when it and the player are facing each other head-on it holds the
+; block pose (ACT_ATTACK4), invincible (CombatFlags bit 0) for $28
+; ticks. Its long-range move is a run-then-jump (BHVS_RUN_JUMP),
+; swinging on the way down, and its point-blank swings advance or
+; leap.
 
-EnemyAI_Skeleton2_B:				  ; CODE XREF: ROM:001A8572j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Skeleton2_B:
 		bra.s	EnemyAI_Skeleton2
-; ---------------------------------------------------------------------------
 
-EnemyAI_Skeleton2_A:				  ; CODE XREF: ROM:001A856Ej
+; A routine, run every tick. Being hurt drops the block.
+EnemyAI_Skeleton2_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A95F2
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A95FE
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A9644
-		bra.w	loc_1A97B4
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A95F2:					  ; CODE XREF: ROM:001A95E0j
+_hurtTick:
 		bclr	#$00,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A95FE:					  ; CODE XREF: ROM:001A95E6j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -30,235 +37,219 @@ loc_1A95FE:					  ; CODE XREF: ROM:001A95E6j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Skeleton2
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Skeleton2:				  ; CODE XREF: ROM:EnemyAI_Skeleton2_Bj
-						  ; ROM:001A9622j ...
+; Aggro / attack-over / hitstun recovery: drop the block and start
+; chasing the player (behaviour 6, AIState $10).
+EnemyAI_Skeleton2:
 		bclr	#$00,CombatFlags(a5)
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9644:					  ; CODE XREF: ROM:001A95ECj
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A9674
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A9684
-		bcs.s	loc_1A966E
-		bsr.s	sub_1A96C0
-		bcs.s	loc_1A966E
-		bsr.w	sub_1A971A
-		bcs.s	loc_1A966E
-		bsr.w	sub_1A975A
+		bsr.s	_tryRunJump
+		bcs.s	_chaseTick
+		bsr.s	_tryBlock
+		bcs.s	_chaseTick
+		bsr.w	_tryLunge
+		bcs.s	_chaseTick
+		bsr.w	_trySwing
 
-loc_1A966E:					  ; CODE XREF: ROM:001A965Ej
-						  ; ROM:001A9662j ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9674:					  ; CODE XREF: ROM:001A964Aj
-		move.w	#$0006,BehaviourLUTIndex(a5)
+_playerHurt:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A9684:					  ; CODE XREF: ROM:001A965Cp
+; Player in the $50-$70 band ahead, $10 lateral: 63-in-1000 chance to
+; run and jump at them (state $20, BHVS_RUN_JUMP).
+_tryRunJump:
 		move.w	#$0070,d5
 		move.w	#$FFB0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A96BC
+		bcc.s	_runJumpMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.w	#$003E,d7
-		bhi.s	loc_1A96BC
+		cmpi.w	#00062,d7
+		bhi.s	_runJumpMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0019,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RUN_JUMP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A96BC:					  ; CODE XREF: sub_1A9684+10j
-						  ; sub_1A9684+20j
+_runJumpMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A9684
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A96C0:					  ; CODE XREF: ROM:001A9660p
+; Player within $50 ahead, $10 lateral, and the two are facing each
+; other head-on (own facing flipped 180 equals the player's):
+; 61-in-1000 chance to block (state $21).
+_tryBlock:
 		move.w	#$0050,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A9716
+		bcc.s	_blockMiss
 		move.b	RotationAndSize(a5),d0
 		andi.b	#DIR_MASK,d0
 		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
-		andi.b	#$C0,d1
+		andi.b	#DIR_MASK,d1
 		cmp.b	d0,d1
-		bne.s	loc_1A9716
+		bne.s	_blockMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00060,d7
-		bhi.s	loc_1A9716
+		bhi.s	_blockMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9716:					  ; CODE XREF: sub_1A96C0+10j
-						  ; sub_1A96C0+2Aj ...
+_blockMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A96C0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A971A:					  ; CODE XREF: ROM:001A9664p
+; Player in the $20-$30 band ahead, $8 lateral: 19-in-1000 chance to
+; lunge (state $22, BHVS_ADVANCE).
+_tryLunge:
 		move.w	#$0030,d5
 		move.w	#$FFE0,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A9756
+		bcc.s	_lungeMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bhi.s	loc_1A9756
+		bhi.s	_lungeMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9756:					  ; CODE XREF: sub_1A971A+10j
-						  ; sub_1A971A+20j
+_lungeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A971A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A975A:					  ; CODE XREF: ROM:001A966Ap
+; Player point-blank ahead ($28 ahead, $8 lateral): swing - 40% with
+; a leap (state $23, BHVS_LEAP_ADVANCE), else advancing (state $24,
+; BHVS_ADVANCE).
+_trySwing:
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A97B0
+		bcc.s	_swingMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00040,d7
-		bcc.s	loc_1A9796
+		bcc.s	_swingAdvance
 		move.b	#$23,AIState(a5)
-		move.w	#$0012,BehaviourLUTIndex(a5)
+		move.w	#BHVS_LEAP_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9796:					  ; CODE XREF: sub_1A975A+20j
+_swingAdvance:
 		move.b	#$24,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A97B0:					  ; CODE XREF: sub_1A975A+10j
+_swingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A975A
 
-; ---------------------------------------------------------------------------
-
-loc_1A97B4:					  ; CODE XREF: ROM:001A95EEj
+; States $20+: 0 = run-jump, 1 = block, 2 = lunge, 3/4 = swing.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A97D4
+		beq.s	_runJump
 		cmpi.b	#$01,d0
-		beq.s	loc_1A9808
+		beq.s	_block
 		cmpi.b	#$02,d0
-		beq.w	loc_1A985E
+		beq.w	_lunge
 		cmpi.b	#$03,d0
-		beq.w	loc_1A9824
-		bra.w	loc_1A9824
-; ---------------------------------------------------------------------------
+		beq.w	_swing
+		bra.w	_swing
 
-loc_1A97D4:					  ; CODE XREF: ROM:001A97B8j
-		btst	#$05,Action1(a5)
-		beq.s	loc_1A97E4
+; Run-jump: sword raised (ACT_ATTACK1) while rising; the hit box ($19
+; ahead) goes live with ACT_ATTACK2 on the way down.
+_runJump:
+		btst	#$05,Action1(a5)	; ACT_JUMP bit
+		beq.s	_rjFall
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
-		bra.s	loc_1A9802
-; ---------------------------------------------------------------------------
+		bra.s	_rjTick
 
-loc_1A97E4:					  ; CODE XREF: ROM:001A97DAj
-		btst	#$04,Action1(a5)
-		beq.s	loc_1A9802
+_rjFall:
+		btst	#$04,Action1(a5)	; ACT_FALL bit
+		beq.s	_rjTick
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 
-loc_1A9802:					  ; CODE XREF: ROM:001A97E2j
-						  ; ROM:001A97EAj
+_rjTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9808:					  ; CODE XREF: ROM:001A97BEj
+; Block: hold the block pose (ACT_ATTACK4), invincible (CombatFlags
+; bit 0), for $28 ticks; the reset drops the flag.
+_block:
 		bset	#$00,CombatFlags(a5)
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$28,AnimPhase(a5)
 		bcc.w	EnemyAI_Skeleton2
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9824:					  ; CODE XREF: ROM:001A97CCj
-						  ; ROM:001A97D0j
+; Swing: ACT_ATTACK1 windup for $F ticks, then the hit box ($19
+; ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing. Runs the behaviour, so the
+; leap and advance variants keep moving.
+_swing:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1A9858
+		bcs.s	_swingTick
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	loc_1A9858
+		bcs.s	_swingTick
 		beq.w	EnemyAI_Skeleton2
 
-loc_1A9858:					  ; CODE XREF: ROM:001A9834j
-						  ; ROM:001A9852j ...
+_swingTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A985E:					  ; CODE XREF: ROM:001A97C4j
+; Lunge: the deep hit box ($29 ahead, 9 behind, 9 lateral) is live
+; every tick with the lunge pose (ACT_ATTACK3) while the advance
+; behaviour moves the skeleton, for $F ticks.
+_lunge:
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
@@ -266,5 +257,7 @@ loc_1A985E:					  ; CODE XREF: ROM:001A97C4j
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1A9858
+		bcs.s	_swingTick
 		bra.w	EnemyAI_Skeleton2
+
+		modend

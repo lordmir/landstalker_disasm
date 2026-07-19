@@ -36,7 +36,7 @@ _idle:
 		rts
 
 _startMove:
-		move.w	#$0020,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RANDOM_STEP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 
 _tick:
@@ -51,7 +51,7 @@ _startWobble:
 ; Hitstun recovery entry: back to idle (behaviour 0, AIState 0, hurt
 ; flag cleared).
 EnemyAI_Bubble1:
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
 		bclr	#$01,InteractFlags(a5)

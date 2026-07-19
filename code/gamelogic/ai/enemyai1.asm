@@ -203,8 +203,8 @@ EnemyAIHandlers:
 		bra.w	EnemyAI_GhostGen_B
 		bra.w	EnemyAI_GhostGen_A		; SPR_GHOSTGEN3
 		bra.w	EnemyAI_GhostGen_B
-		bra.w	EnemyAI_Zak_A_0			; SPR_ZAK
-		bra.w	EnemyAI_Zak_B_0
+		bra.w	EnemyAI_Zak_A			; SPR_ZAK
+		bra.w	EnemyAI_Zak_B
 		bra.w	EnemyAI_Golem1_A		; SPR_GOLEM1
 		bra.w	EnemyAI_Golem1_B
 		bra.w	EnemyAI_Golem2_A		; SPR_GOLEM2

@@ -1,25 +1,30 @@
-; ---------------------------------------------------------------------------
+Mushroom3	module
+; AI for SPR_MUSHROOM3. Like Mushroom2, but its spore burst deals no
+; damage at all - it only inflicts status effects: roll 0-99 at the
+; end of the puff for poison (0-29), paralysis (30-49), confusion
+; (50-64), curse (65-69), or nothing (70+).
 
-EnemyAI_Mushroom3_B:				  ; CODE XREF: ROM:001A85AAj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Mushroom3_B:
 		bra.s	EnemyAI_Mushroom3
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mushroom3_A:				  ; CODE XREF: ROM:001A85A6j
+; A routine, run every tick.
+EnemyAI_Mushroom3_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AAED2
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AAED8
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AAF1E
-		bra.w	loc_1AB0E2
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AAED2:					  ; CODE XREF: ROM:001AAEC0j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AAED8:					  ; CODE XREF: ROM:001AAEC6j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($50 ahead, $10 behind, $20 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,318 +34,305 @@ loc_1AAED8:					  ; CODE XREF: ROM:001AAEC6j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Mushroom3
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mushroom3:				  ; CODE XREF: ROM:EnemyAI_Mushroom3_Bj
-						  ; ROM:001AAEFCj ...
+; Aggro / attack-over / hitstun recovery: drop the disguise and chase
+; the player (behaviour 6, AIState $10).
+EnemyAI_Mushroom3:
 		bclr	#$06,CombatFlags(a5)
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AAF1E:					  ; CODE XREF: ROM:001AAECCj
+; State $10: chasing (or sitting shrunken, if disguised). Try each
+; move; while disguised the behaviour is not run, so the mushroom sits
+; still.
+_chase:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1AAF50
-		bcs.s	loc_1AAF42
-		bsr.w	sub_1AAFF0
-		bcs.s	loc_1AAF42
-		bsr.w	sub_1AB038
-		bcs.s	loc_1AAF42
-		bsr.w	sub_1AB080
+		bsr.s	_tryMorph
+		bcs.s	_chaseTick
+		bsr.w	_tryWait
+		bcs.s	_chaseTick
+		bsr.w	_trySpore
+		bcs.s	_chaseTick
+		bsr.w	_tryMelee
 
-loc_1AAF42:					  ; CODE XREF: ROM:001AAF30j
-						  ; ROM:001AAF36j ...
+_chaseTick:
 		btst	#$06,CombatFlags(a5)
-		bne.s	locret_1AAF4E
+		bne.s	_chaseRts
 		bsr.w	j_j_OnTick
 
-locret_1AAF4E:					  ; CODE XREF: ROM:001AAF48j
+_chaseRts:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AAF50:					  ; CODE XREF: ROM:001AAF2Ep
+; Shrink or pop up (both via the state $20 morph sequence), never
+; while airborne. Player within $20: 38-in-1000 chance per tick to
+; shrink (disguise on, hitbox flattened, phases run 1-$18) when
+; upright, or to pop up (AnimPhase $1F, resuming at the rise phases
+; $20-$30) when disguised.
+_tryMorph:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
-		bne.w	loc_1AAFEC
+		bne.w	_morphMiss
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1AAFAE
+		bne.s	_tryReveal
 		move.w	#$0020,d5
 		move.w	#$0020,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.w	loc_1AAFEC
+		bcc.w	_morphMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
-		bhi.s	loc_1AAFEC
+		bhi.s	_morphMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bset	#$06,CombatFlags(a5)
 		move.w	Z(a5),HitBoxZEnd(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AAFAE:					  ; CODE XREF: sub_1AAF50+12j
+_tryReveal:
 		move.w	#$0020,d5
 		move.w	#$0020,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AAFEC
+		bcc.s	_morphMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
-		bhi.s	loc_1AAFEC
+		bhi.s	_morphMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$1F,AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AAFEC:					  ; CODE XREF: sub_1AAF50+8j
-						  ; sub_1AAF50+24j ...
+_morphMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AAF50
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AAFF0:					  ; CODE XREF: ROM:001AAF32p
+; Player in the $30-$38 band directly ahead (d6 negative pulls the box
+; in front): 13-in-1000 chance to stop and wait (state $21,
+; BHVS_PAUSE_32_AI).
+_tryWait:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1AB034
+		bne.s	_waitMiss
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB034
+		bcc.s	_waitMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1AB034
+		bhi.s	_waitMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB034:					  ; CODE XREF: sub_1AAFF0+6j
-						  ; sub_1AAFF0+18j ...
+_waitMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AAFF0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB038:					  ; CODE XREF: ROM:001AAF38p
+; Player in the $18-$20 band directly ahead: 88-in-1000 chance to
+; release a spore burst (state $22).
+_trySpore:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1AB07C
+		bne.s	_sporeMiss
 		move.w	#$0020,d5
 		move.w	#$FFE8,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB07C
+		bcc.s	_sporeMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00087,d7
-		bhi.s	loc_1AB07C
+		bhi.s	_sporeMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB07C:					  ; CODE XREF: sub_1AB038+6j
-						  ; sub_1AB038+18j ...
+_sporeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB038
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB080:					  ; CODE XREF: ROM:001AAF3Ep
+; Player point-blank ahead ($18 ahead, $8 lateral): bite - 70%
+; standing still (state $23), else advancing (state $24,
+; BHVS_ADVANCE).
+_tryMelee:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1AB0DE
+		bne.s	_meleeMiss
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB0DE
+		bcc.s	_meleeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00070,d7
-		bcc.s	loc_1AB0C4
+		bcc.s	_meleeAdvance
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB0C4:					  ; CODE XREF: sub_1AB080+28j
+_meleeAdvance:
 		move.b	#$24,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB0DE:					  ; CODE XREF: sub_1AB080+6j
-						  ; sub_1AB080+18j
+_meleeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB080
 
-; ---------------------------------------------------------------------------
-
-loc_1AB0E2:					  ; CODE XREF: ROM:001AAECEj
+; States $20+: 0 = morph (shrink/rise), 2 = spore burst, 3 = bite,
+; 1/4 = behaviour-driven.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1AB104
+		beq.s	_morph
 		cmpi.b	#$01,d0
-		beq.w	loc_1AB1CC
+		beq.w	_tick
 		cmpi.b	#$02,d0
-		beq.w	loc_1AB1D2
+		beq.w	_spore
 		cmpi.b	#$03,d0
-		beq.w	loc_1AB22E
-		bra.w	loc_1AB1CC
-; ---------------------------------------------------------------------------
+		beq.w	_melee
+		bra.w	_tick
 
-loc_1AB104:					  ; CODE XREF: ROM:001AB0E6j
+; State $20 morph sequence: phases 1/$8/$10/$18 shrink (forcing morph
+; animation frames via Action1 = $FF + PrevAction $40/$80/$C0/$100),
+; then $20/$28/$30 rise back up. _tryMorph starts it at phase 0
+; (shrink) or phase $1F (rise).
+_morph:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
-		bne.s	loc_1AB11E
+		bne.s	_shrink2
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB11E:					  ; CODE XREF: ROM:001AB10Ej
+_shrink2:
 		cmpi.b	#$08,AnimPhase(a5)
-		bne.s	loc_1AB134
+		bne.s	_shrink3
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB134:					  ; CODE XREF: ROM:001AB124j
+_shrink3:
 		cmpi.b	#$10,AnimPhase(a5)
-		bne.s	loc_1AB14A
+		bne.s	_shrunk
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB14A:					  ; CODE XREF: ROM:001AB13Aj
+; Fully shrunken. Unlike Mushroom1 this does not return to state $10:
+; the phase keeps counting, so it pops back up on its own when it
+; reaches the rise phases 8 ticks later.
+_shrunk:
 		cmpi.b	#$18,AnimPhase(a5)
-		bne.s	loc_1AB160
+		bne.s	_rise
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB160:					  ; CODE XREF: ROM:001AB150j
+; Rising needs headroom: try the full-height hitbox and back off a
+; phase if something is in the way.
+_rise:
 		cmpi.b	#$20,AnimPhase(a5)
-		bne.s	loc_1AB196
+		bne.s	_rise2
 		clr.w	d0
 		move.b	#$20,d0
 		subq.b	#$01,d0
 		add.w	d0,HitBoxZEnd(a5)
 		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1AB188
+		bcc.s	_riseOk
 		move.w	Z(a5),HitBoxZEnd(a5)
 		subq.b	#$01,AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB188:					  ; CODE XREF: ROM:001AB17Aj
+_riseOk:
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB196:					  ; CODE XREF: ROM:001AB166j
+_rise2:
 		cmpi.b	#$28,AnimPhase(a5)
-		bne.s	loc_1AB1AC
+		bne.s	_rise3
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB1AC:					  ; CODE XREF: ROM:001AB19Cj
+; Upright again: clear the disguise and go back to chasing.
+_rise3:
 		cmpi.b	#$30,AnimPhase(a5)
-		bne.s	locret_1AB1CA
+		bne.s	_morphRts
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
 		bclr	#$06,CombatFlags(a5)
 		bra.w	EnemyAI_Mushroom3
-; ---------------------------------------------------------------------------
 
-locret_1AB1CA:					  ; CODE XREF: ROM:001AB1B2j
+_morphRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB1CC:					  ; CODE XREF: ROM:001AB0ECj
-						  ; ROM:001AB100j
+_tick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB1D2:					  ; CODE XREF: ROM:001AB0F4j
+; State $22 spore burst: puff animation (ACT_ATTACK3/ACT_ATTACK4
+; alternating) for $20 ticks, then roll 0-99 for the status effect:
+; 0-29 poison, 30-49 paralysis, 50-64 confusion, 65-69 curse,
+; 70+ nothing.
+_spore:
 		addq.b	#$01,AnimPhase(a5)
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
-		addi.w	#$0300,d0
+		addi.w	#ACT_ATTACK3,d0
 		move.w	d0,QueuedAction(a5)
 		cmpi.b	#$20,AnimPhase(a5)
-		bcs.s	locret_1AB22C
+		bcs.s	_sporeRts
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		move.b	#STATUS_POISON,d0
 		cmpi.b	#030,d7
-		bcs.s	loc_1AB224
+		bcs.s	_sporeStatus
 		move.b	#STATUS_PARALYSIS,d0
 		cmpi.b	#050,d7
-		bcs.s	loc_1AB224
+		bcs.s	_sporeStatus
 		move.b	#STATUS_CONFUSION,d0
 		cmpi.b	#065,d7
-		bcs.s	loc_1AB224
+		bcs.s	_sporeStatus
 		move.b	#STATUS_CURSE,d0
 		cmpi.b	#070,d7
 		bcc.w	EnemyAI_Mushroom3
 
-loc_1AB224:					  ; CODE XREF: ROM:001AB202j
-						  ; ROM:001AB20Cj ...
+_sporeStatus:
 		bsr.w	j_j_AddStatusEffect
 		bra.w	EnemyAI_Mushroom3
-; ---------------------------------------------------------------------------
 
-locret_1AB22C:					  ; CODE XREF: ROM:001AB1EEj
+_sporeRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB22E:					  ; CODE XREF: ROM:001AB0FCj
+; State $23/$24 bite: the hit box ($19 ahead, 9 behind, 9 lateral) is
+; live every tick with ACT_ATTACK1/ACT_ATTACK2 alternating, until
+; tick $20.
+_melee:
 		addq.b	#$01,AnimPhase(a5)
 		move.w	#$0019,d1
 		move.w	#$0009,d2
@@ -349,12 +341,13 @@ loc_1AB22E:					  ; CODE XREF: ROM:001AB0FCj
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
-		addi.w	#$0100,d0
+		addi.w	#ACT_ATTACK1,d0
 		move.w	d0,QueuedAction(a5)
 		cmpi.b	#$20,AnimPhase(a5)
-		bcs.s	locret_1AB260
+		bcs.s	_meleeRts
 		bra.w	EnemyAI_Mushroom3
-; ---------------------------------------------------------------------------
 
-locret_1AB260:					  ; CODE XREF: ROM:001AB25Aj
+_meleeRts:
 		rts
+
+		modend

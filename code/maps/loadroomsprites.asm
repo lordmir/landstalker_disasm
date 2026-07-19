@@ -200,7 +200,7 @@ _setBehaviour:
 		move.b	1(a2),d2	  ; a2 = &data[6]
 						  ; d2 = data[7]
 		bne.s	_setItemAnim
-		move.w	#$0002,d2
+		move.w	#BHVS_SHOP_ITEM,d2
 
 _setItemAnim:
 		move.w	d2,BehaviourLUTIndex(a1)

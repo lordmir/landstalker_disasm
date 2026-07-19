@@ -1,25 +1,31 @@
-; ---------------------------------------------------------------------------
+Mummy3	module
+; AI for SPR_MUMMY3. The strongest mummy trades tricks for pressure:
+; it opens with a wait-then-rush (BHVS_WAIT_RUSH) or a straight rush
+; (BHVS_RUSH_24), and in reach prefers the grab - 40% slash / 60%
+; drain. It does not unravel, and the other mummies' pause move
+; survives only as an unreachable leftover below the chase code.
 
-EnemyAI_Mummy3_B:				  ; CODE XREF: ROM:001A854Aj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Mummy3_B:
 		bra.s	EnemyAI_Mummy3
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mummy3_A:				  ; CODE XREF: ROM:001A8546j
+; A routine, run every tick.
+EnemyAI_Mummy3_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A814E
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A8154
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A81B4
-		bra.w	loc_1A830E
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A814E:					  ; CODE XREF: ROM:001A813Cj
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8154:					  ; CODE XREF: ROM:001A8142j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($70 ahead, $30 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,196 +35,182 @@ loc_1A8154:					  ; CODE XREF: ROM:001A8142j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Mummy3
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mummy3:					  ; CODE XREF: ROM:EnemyAI_Mummy3_Bj
-						  ; ROM:001A8178j ...
-		move.w	#$0006,BehaviourLUTIndex(a5)
+; Aggro / attack-over / hitstun recovery: start chasing the player
+; (behaviour 6, AIState $10).
+EnemyAI_Mummy3:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8198:					  ; CODE XREF: ROM:001A83A0j
-		move.w	#$0000,BehaviourLUTIndex(a5)
+; Drain cycle complete ($28 ticks): re-enter the drain state fresh -
+; the mummy keeps absorbing until the player gets away.
+_restartDrain:
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$24,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A81B4:					  ; CODE XREF: ROM:001A8148j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A81E0
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A822C
-		bcs.s	loc_1A81DA
-		bsr.w	sub_1A8268
-		bcs.s	loc_1A81DA
-		bsr.w	sub_1A82A4
+		bsr.s	_tryWaitRush
+		bcs.s	_chaseTick
+		bsr.w	_tryRush
+		bcs.s	_chaseTick
+		bsr.w	_tryMelee
 
-loc_1A81DA:					  ; CODE XREF: ROM:001A81CEj
-						  ; ROM:001A81D4j
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A81E0:					  ; CODE XREF: ROM:001A81BAj
-		move.w	#$0006,BehaviourLUTIndex(a5)
+_playerHurt:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
+
+; Unreachable leftover: the other mummies' pause move (state $20,
+; BHVS_PAUSE_32_AI) - nothing jumps here.
 		move.w	#$0050,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A8228
+		bcc.s	_pauseMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bhi.s	loc_1A8228
+		bhi.s	_pauseMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8228:					  ; CODE XREF: ROM:001A8200j
-						  ; ROM:001A8210j
+_pauseMiss:
 		tst.b	d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A822C:					  ; CODE XREF: ROM:001A81CCp
+; Player in the $40-$50 band ahead, $10 lateral: 32-in-1000 chance to
+; wind up and rush him (state $21, BHVS_WAIT_RUSH).
+_tryWaitRush:
 		move.w	#$0050,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A8264
+		bcc.s	_waitRushMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00031,d7
-		bhi.s	loc_1A8264
+		bhi.s	_waitRushMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0016,BehaviourLUTIndex(a5)
+		move.w	#BHVS_WAIT_RUSH,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8264:					  ; CODE XREF: sub_1A822C+10j
-						  ; sub_1A822C+20j
+_waitRushMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A822C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8268:					  ; CODE XREF: ROM:001A81D0p
+; Player in the $38-$48 band ahead, $10 lateral: 19-in-1000 chance to
+; rush him (state $22, BHVS_RUSH_24).
+_tryRush:
 		move.w	#$0048,d5
 		move.w	#$FFC8,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A82A0
+		bcc.s	_rushMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bhi.s	loc_1A82A0
+		bhi.s	_rushMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0014,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RUSH_24,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A82A0:					  ; CODE XREF: sub_1A8268+10j
-						  ; sub_1A8268+20j
+_rushMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A8268
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A82A4:					  ; CODE XREF: ROM:001A81D6p
+; Player within $18 ahead, $8 lateral, and no more than $21 above the
+; player's feet: 40% slash (state $23), else grab and drain (state
+; $24).
+_tryMelee:
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A830A
+		bcc.s	_meleeMiss
 		move.w	HitBoxZEnd(a5),d0
 		sub.w	(Player_Z).l,d0
 		cmpi.w	#$0021,d0
-		bhi.s	loc_1A830A
+		bhi.s	_meleeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00040,d7
-		bcc.s	loc_1A82F0
+		bcc.s	_meleeDrain
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A82F0:					  ; CODE XREF: sub_1A82A4+30j
+_meleeDrain:
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A830A:					  ; CODE XREF: sub_1A82A4+10j
-						  ; sub_1A82A4+20j
+_meleeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A82A4
 
-; ---------------------------------------------------------------------------
-
-loc_1A830E:					  ; CODE XREF: ROM:001A814Aj
+; States $20+: 0-2 = behaviour ticks (wait-rush / rush), 3 = slash,
+; 4+ = drain. No unravel - state 2 is the second rush here.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A832E
+		beq.s	_behaviourTick
 		cmpi.b	#$01,d0
-		beq.s	loc_1A832E
+		beq.s	_behaviourTick
 		cmpi.b	#$02,d0
-		beq.w	loc_1A832E
+		beq.w	_behaviourTick
 		cmpi.b	#$03,d0
-		beq.w	loc_1A83B0
-		bra.w	loc_1A8334
-; ---------------------------------------------------------------------------
+		beq.w	_slash
+		bra.w	_drain
 
-loc_1A832E:					  ; CODE XREF: ROM:001A8312j
-						  ; ROM:001A8318j ...
+_behaviourTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8334:					  ; CODE XREF: ROM:001A832Aj
+; Drain: aborts if the player is in a special animation; holds him in
+; hitstun (g_PlayerHurtTimer = 1) and lets go if he escapes the small
+; box ($15 ahead, 9 behind, 9 lateral). On the first tick it plays
+; the absorb sound and takes $40 health (a5 temporarily points at the
+; player); after $28 ticks the state restarts and drains again.
+_drain:
 		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mummy3
 		tst.b	(g_PlayerHurtTimer).l
-		bne.w	loc_1A8354
+		bne.w	_drainHold
 		move.b	#$01,(g_PlayerHurtTimer).l
-		bra.w	*+4
-; ---------------------------------------------------------------------------
+		bra.w	*+4			  ; (no-op branch)
 
-loc_1A8354:					  ; CODE XREF: ROM:001A8344j
-						  ; ROM:001A8350j
+_drainHold:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0015,d5
@@ -229,33 +221,34 @@ loc_1A8354:					  ; CODE XREF: ROM:001A8344j
 		move.b	AnimPhase(a5),d0
 		addq.b	#$01,AnimPhase(a5)
 		tst.b	d0
-		bne.s	loc_1A839C
+		bne.s	_drainWait
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Throw
-; ---------------------------------------------------------------------------
 		lea	(Player_X).l,a5
 		move.w	#$0040,d0
 		bsr.w	j_j_RemoveHealth
 		tst.w	CurrentHealth(a5)
-		beq.s	loc_1A83A6
+		beq.s	_playerDead
 
-loc_1A839C:					  ; CODE XREF: ROM:001A8382j
+_drainWait:
 		cmpi.b	#$28,d0
-		bcc.w	loc_1A8198
+		bcc.w	_restartDrain
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A83A6:					  ; CODE XREF: ROM:001A839Aj
+; The drain killed the player: clear his blink flag so he is drawn
+; (a5 is the player here) and run the death sequence.
+_playerDead:
 		bclr	#$06,InteractFlags(a5)
 		bra.w	j_j_PlayerDeath
-; ---------------------------------------------------------------------------
 
-loc_1A83B0:					  ; CODE XREF: ROM:001A8326j
+; Slash: ACT_ATTACK1 windup for $F ticks, then the deep, wide hit box
+; ($21 ahead, 9 behind, $11 lateral) is live with ACT_ATTACK2 each
+; tick until tick $1E, then back to chasing.
+_slash:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.w	locret_1A83E4
+		bcs.w	_slashRts
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0011,d3
@@ -264,5 +257,7 @@ loc_1A83B0:					  ; CODE XREF: ROM:001A8326j
 		cmpi.b	#$1E,AnimPhase(a5)
 		bcc.w	EnemyAI_Mummy3
 
-locret_1A83E4:					  ; CODE XREF: ROM:001A83C0j
+_slashRts:
 		rts
+
+		modend

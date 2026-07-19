@@ -1,27 +1,38 @@
-; ---------------------------------------------------------------------------
+Duke	module
+; AI for SPR_DUKE - Duke Mercator's sword fight. He uses Skeleton3's
+; kit and odds: a long rush (BHVS_RUSH_40, 87-in-1000) that ends in
+; the jab over its last $18 ticks, a block (126-in-1000: the guard
+; pose with CombatFlags bit 0 invincibility for $28 ticks, dropped
+; when he is hurt), the jab itself - the deep $29 box live every tick
+; with no windup - and 50/50 leaping/advancing closes that also
+; finish in the jab. CombatFlags bit 6, the alternate animation bank
+; with his special poses (including the receive-damage animation), is
+; held every tick.
 
-EnemyAI_Duke_B:					  ; CODE XREF: ROM:001A8602j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Duke_B:
 		bra.s	EnemyAI_Duke
-; ---------------------------------------------------------------------------
 
-EnemyAI_Duke_A:					  ; CODE XREF: ROM:001A85FEj
+; A routine, run every tick. Being hurt drops the block (and his
+; hitstun plays the damage animation from the alternate bank).
+EnemyAI_Duke_A:
 		bset	#$06,CombatFlags(a5)
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1ACAD2
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1ACADE
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1ACB24
-		bra.w	loc_1ACC7A
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1ACAD2:					  ; CODE XREF: ROM:001ACAC0j
+_hurtTick:
 		bclr	#$00,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACADE:					  ; CODE XREF: ROM:001ACAC6j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -31,205 +42,191 @@ loc_1ACADE:					  ; CODE XREF: ROM:001ACAC6j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Duke
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Duke:					  ; CODE XREF: ROM:EnemyAI_Duke_Bj
-						  ; ROM:001ACB02j ...
+; Aggro / attack-over / hitstun recovery: drop the block and start
+; chasing the player (behaviour 6, AIState $10).
+EnemyAI_Duke:
 		bclr	#$00,CombatFlags(a5)
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACB24:					  ; CODE XREF: ROM:001ACACCj
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1ACB54
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1ACB64
-		bcs.s	loc_1ACB4E
-		bsr.s	sub_1ACBA0
-		bcs.s	loc_1ACB4E
-		bsr.w	sub_1ACBE0
-		bcs.s	loc_1ACB4E
-		bsr.w	sub_1ACC20
+		bsr.s	_tryRush
+		bcs.s	_chaseTick
+		bsr.s	_tryBlock
+		bcs.s	_chaseTick
+		bsr.w	_tryJab
+		bcs.s	_chaseTick
+		bsr.w	_tryClose
 
-loc_1ACB4E:					  ; CODE XREF: ROM:001ACB3Ej
-						  ; ROM:001ACB42j ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACB54:					  ; CODE XREF: ROM:001ACB2Aj
-		move.w	#$0006,BehaviourLUTIndex(a5)
+_playerHurt:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1ACB64:					  ; CODE XREF: ROM:001ACB3Cp
+; Player in the $50-$70 band ahead, $10 lateral: 87-in-1000 chance to
+; rush (state $20, BHVS_RUSH_40) - the rush ends in the jab.
+_tryRush:
 		move.w	#$0070,d5
 		move.w	#$FFB0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1ACB9C
+		bcc.s	_rushMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00086,d7
-		bhi.s	loc_1ACB9C
+		bhi.s	_rushMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$001A,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RUSH_40,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACB9C:					  ; CODE XREF: sub_1ACB64+10j
-						  ; sub_1ACB64+20j
+_rushMiss:
 		tst.b	d0
 		rts
-; End of function sub_1ACB64
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1ACBA0:					  ; CODE XREF: ROM:001ACB40p
+; Player within $50 ahead, $10 lateral: 126-in-1000 chance to block
+; (state $21).
+_tryBlock:
 		move.w	#$0050,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1ACBDC
+		bcc.s	_blockMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00125,d7
-		bhi.s	loc_1ACBDC
+		bhi.s	_blockMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACBDC:					  ; CODE XREF: sub_1ACBA0+10j
-						  ; sub_1ACBA0+20j
+_blockMiss:
 		tst.b	d0
 		rts
-; End of function sub_1ACBA0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1ACBE0:					  ; CODE XREF: ROM:001ACB44p
+; Player in the $20-$30 band ahead, $8 lateral: 44-in-1000 chance to
+; jab (state $22, BHVS_ADVANCE).
+_tryJab:
 		move.w	#$0030,d5
 		move.w	#$FFE0,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1ACC1C
+		bcc.s	_jabMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00043,d7
-		bhi.s	loc_1ACC1C
+		bhi.s	_jabMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACC1C:					  ; CODE XREF: sub_1ACBE0+10j
-						  ; sub_1ACBE0+20j
+_jabMiss:
 		tst.b	d0
 		rts
-; End of function sub_1ACBE0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1ACC20:					  ; CODE XREF: ROM:001ACB4Ap
+; Player point-blank ahead ($28 ahead, $8 lateral): close in - 50%
+; with a leap (state $23, BHVS_LEAP_ADVANCE), else advancing (state
+; $24, BHVS_ADVANCE); both finish in the jab.
+_tryClose:
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1ACC76
+		bcc.s	_closeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bcc.s	loc_1ACC5C
+		bcc.s	_closeAdvance
 		move.b	#$23,AIState(a5)
-		move.w	#$0012,BehaviourLUTIndex(a5)
+		move.w	#BHVS_LEAP_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACC5C:					  ; CODE XREF: sub_1ACC20+20j
+_closeAdvance:
 		move.b	#$24,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACC76:					  ; CODE XREF: sub_1ACC20+10j
+_closeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1ACC20
 
-; ---------------------------------------------------------------------------
-
-loc_1ACC7A:					  ; CODE XREF: ROM:001ACACEj
+; States $20+: 0/3/4 = walking moves with the jab finish, 1 = block,
+; 2 = jab. (The default's bra.w *+4 is a no-op falling into the
+; walk-jab.)
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1ACC9A
+		beq.s	_walkJab
 		cmpi.b	#$01,d0
-		beq.s	loc_1ACCBE
+		beq.s	_block
 		cmpi.b	#$02,d0
-		beq.w	loc_1ACCE0
+		beq.w	_jab
 		cmpi.b	#$03,d0
-		beq.w	loc_1ACC9A
-		bra.w	*+4
-; ---------------------------------------------------------------------------
+		beq.w	_walkJab
+		bra.w	*+4			  ; (no-op branch)
 
-loc_1ACC9A:					  ; CODE XREF: ROM:001ACC7Ej
-						  ; ROM:001ACC92j ...
+; Rush / leap / advance: once the behaviour's walk has fewer than $18
+; ticks left (BehavParam counts them down), the jab comes out -
+; ACT_ATTACK1 with the deep hit box ($29 ahead, 9 behind, 9 lateral)
+; live each tick.
+_walkJab:
 		cmpi.b	#$18,BehavParam(a5)
-		bcc.s	loc_1ACCB8
+		bcc.s	_walkJabTick
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 
-loc_1ACCB8:					  ; CODE XREF: ROM:001ACCA0j
+_walkJabTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACCBE:					  ; CODE XREF: ROM:001ACC84j
+; Block: hold the guard pose (ACT_ATTACK2), invincible (CombatFlags
+; bit 0), for $28 ticks; being hurt or the reset drops the flag.
+_block:
 		bset	#$00,CombatFlags(a5)
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$28,AnimPhase(a5)
 		bcc.w	EnemyAI_Duke
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACCDA:					  ; CODE XREF: ROM:001ACD00j
+_jabTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ACCE0:					  ; CODE XREF: ROM:001ACC8Aj
+; The jab: the deep hit box ($29 ahead, 9 behind, 9 lateral) is live
+; every tick with the jab pose (ACT_ATTACK1) - no windup - while the
+; advance behaviour moves him, for $F ticks.
+_jab:
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
@@ -237,5 +234,7 @@ loc_1ACCE0:					  ; CODE XREF: ROM:001ACC8Aj
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1ACCDA
+		bcs.s	_jabTick
 		bra.w	EnemyAI_Duke
+
+		modend

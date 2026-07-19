@@ -1,120 +1,123 @@
-; ---------------------------------------------------------------------------
+Ifrit	module
+; AI for SPR_IFRIT, the fire boss. He lives on a grid of four lava
+; pits (the IfritCoordinates table: cells $1B1D, $221D, $1B24, $2224)
+; and never walks - each tick in his ready state he rolls for one of:
+; a dash (11%) - an invincible no-clip glide to the adjacent pit his
+; facing points at (BHVS_DASH_NE/SE/SW/NW picked from which pit he is
+; in); a teleport (21%) - sinking down, vanishing, and surfacing in a
+; random other pit facing the player; or a fireball cast (the rest -
+; always): 75% a single medium fireball (SPR_IFRITFIREBALL,
+; AttackStrength $F00, BHVS_PROJECTILE_64), 25% a spread of three
+; (straight, weave clockwise, weave anticlockwise) from the three
+; cells ahead of him. Being hurt pins him in place (Speed cleared).
 
-EnemyAI_Ifrit_B:				  ; CODE XREF: ROM:001A8692j
+; B routine (behaviour command $2B): reset, then teleport away.
+EnemyAI_Ifrit_B:
 		bra.s	EnemyAI_Ifrit
-; ---------------------------------------------------------------------------
 
-EnemyAI_Ifrit_A:				  ; CODE XREF: ROM:001A868Ej
+; A routine, run every tick.
+EnemyAI_Ifrit_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AE3B8
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	EnemyAI_Ifrit
 		cmpi.b	#$10,d0
-		beq.s	loc_1AE3EC
-		bra.w	loc_1AE562
-; ---------------------------------------------------------------------------
+		beq.s	_chooseMove
+		bra.w	_attackStates
 
-loc_1AE3B8:					  ; CODE XREF: ROM:001AE3A6j
+_hurtTick:
 		clr.b	Speed(a5)
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Ifrit:					  ; CODE XREF: ROM:EnemyAI_Ifrit_Bj
-						  ; ROM:001AE3ACj
-		bsr.s	sub_1AE3C8
-		bra.w	loc_1AE4D4
+; Fresh fight (state 0) or B routine: reset, then open with the
+; teleport.
+EnemyAI_Ifrit:
+		bsr.s	_reset
+		bra.w	_startTeleport
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE3C8:					  ; CODE XREF: ROM:EnemyAI_Ifritp
-						  ; ROM:001AE602j ...
+; Reset: drop the invincibility and alternate-bank flags, stand on
+; the idle behaviour in the ready state ($10).
+_reset:
 		bclr	#$06,CombatFlags(a5)
 		bclr	#$00,CombatFlags(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; End of function sub_1AE3C8
 
-; ---------------------------------------------------------------------------
-
-loc_1AE3EC:					  ; CODE XREF: ROM:001AE3B2j
+; State $10: standing in his pit, rolling for the next move. (The
+; fourth call is never reached - the fireball try always succeeds.)
+_chooseMove:
 		bclr	#$00,CombatFlags(a5)
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1AE41C
-		bcs.s	loc_1AE416
-		bsr.w	sub_1AE4C4
-		bcs.s	loc_1AE416
-		bsr.w	sub_1AE4F8
-		bcs.s	loc_1AE416
-		bsr.w	sub_1AE524
+		bsr.s	_tryDash
+		bcs.s	_moveTick
+		bsr.w	_tryTeleport
+		bcs.s	_moveTick
+		bsr.w	_tryFireball
+		bcs.s	_moveTick
+		bsr.w	_tripleFireball
 
-loc_1AE416:					  ; CODE XREF: ROM:001AE404j
-						  ; ROM:001AE40Aj ...
+_moveTick:
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE41C:					  ; CODE XREF: ROM:001AE402p
+; 11-in-100: dash to an adjacent pit (state $21). The pit he is in
+; (X:Y cell) and his current facing select the dash: each pit allows
+; the two directions along the pit grid, and the roll is wasted if
+; he faces a diagonal with no neighbour.
+_tryDash:
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00010,d7
-		bhi.w	loc_1AE4C0
+		bhi.w	_dashMiss
 		move.b	RotationAndSize(a5),d0
 		andi.b	#DIR_MASK,d0
 		cmpi.w	#$1B1D,X(a5)
-		beq.s	loc_1AE45C
+		beq.s	_dashFromNorth
 		cmpi.w	#$221D,X(a5)
-		beq.s	loc_1AE472
+		beq.s	_dashFromEast
 		cmpi.w	#$1B24,X(a5)
-		beq.s	loc_1AE488
-		move.w	#$034A,d1
+		beq.s	_dashFromWest
+		move.w	#BHVS_DASH_NE,d1	; south pit ($2224)
 		tst.b	d0
-		beq.s	loc_1AE49C
-		move.w	#$034D,d1
+		beq.s	_startDash
+		move.w	#BHVS_DASH_NW,d1
 		cmpi.b	#$C0,d0
-		beq.s	loc_1AE49C
-		bra.s	loc_1AE4C0
-; ---------------------------------------------------------------------------
+		beq.s	_startDash
+		bra.s	_dashMiss
 
-loc_1AE45C:					  ; CODE XREF: sub_1AE41C+1Ej
-		move.w	#$034B,d1
+_dashFromNorth:
+		move.w	#BHVS_DASH_SE,d1
 		cmpi.b	#$40,d0
-		beq.s	loc_1AE49C
-		move.w	#$034C,d1
+		beq.s	_startDash
+		move.w	#BHVS_DASH_SW,d1
 		cmpi.b	#$80,d0
-		beq.s	loc_1AE49C
-		bra.s	loc_1AE4C0
-; ---------------------------------------------------------------------------
+		beq.s	_startDash
+		bra.s	_dashMiss
 
-loc_1AE472:					  ; CODE XREF: sub_1AE41C+24j
-		move.w	#$034C,d1
+_dashFromEast:
+		move.w	#BHVS_DASH_SW,d1
 		cmpi.b	#$80,d0
-		beq.s	loc_1AE49C
-		move.w	#$034D,d1
+		beq.s	_startDash
+		move.w	#BHVS_DASH_NW,d1
 		cmpi.b	#$C0,d0
-		beq.s	loc_1AE49C
-		bra.s	loc_1AE4C0
-; ---------------------------------------------------------------------------
+		beq.s	_startDash
+		bra.s	_dashMiss
 
-loc_1AE488:					  ; CODE XREF: sub_1AE41C+2Aj
-		move.w	#$034B,d1
+_dashFromWest:
+		move.w	#BHVS_DASH_SE,d1
 		cmpi.b	#$40,d0
-		beq.s	loc_1AE49C
-		move.w	#$034A,d1
+		beq.s	_startDash
+		move.w	#BHVS_DASH_NE,d1
 		tst.b	d0
-		beq.s	loc_1AE49C
-		bra.s	loc_1AE4C0
-; ---------------------------------------------------------------------------
+		beq.s	_startDash
+		bra.s	_dashMiss
 
-loc_1AE49C:					  ; CODE XREF: sub_1AE41C+32j
-						  ; sub_1AE41C+3Cj ...
+_startDash:
 		move.b	#$21,AIState(a5)
 		move.w	d1,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
@@ -123,356 +126,332 @@ loc_1AE49C:					  ; CODE XREF: sub_1AE41C+32j
 		bset	#$06,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE4C0:					  ; CODE XREF: sub_1AE41C+Ej
-						  ; sub_1AE41C+3Ej ...
+_dashMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AE41C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE4C4:					  ; CODE XREF: ROM:001AE406p
+; 21-in-100: teleport to another pit (state $22, invincible).
+_tryTeleport:
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00020,d7
-		bhi.s	loc_1AE4F4
+		bhi.s	_teleportMiss
 
-loc_1AE4D4:					  ; CODE XREF: ROM:001AE3C4j
+_startTeleport:
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		bset	#$00,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE4F4:					  ; CODE XREF: sub_1AE4C4+Ej
+_teleportMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AE4C4
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE4F8:					  ; CODE XREF: ROM:001AE40Cp
+; The fireball: 75-in-100 a single one (state $23), else fall into
+; the spread of three. Both face the player first.
+_tryFireball:
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00075,d7
-		bcc.s	sub_1AE524
+		bcc.s	_tripleFireball
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
-		bsr.s	sub_1AE550
+		bsr.s	_facePlayer
 		ori	#$01,ccr
 		rts
-; End of function sub_1AE4F8
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE524:					  ; CODE XREF: ROM:001AE412p
-						  ; sub_1AE4F8+Ej
+; The spread of three (state $24). The range-box loads are a dead
+; leftover - nothing checks them.
+_tripleFireball:
 		move.w	#$0040,d5
 		move.w	#$FFF0,d6
 		move.w	#$0010,d7
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
-		bsr.s	sub_1AE550
+		bsr.s	_facePlayer
 		ori	#$01,ccr
 		rts
-; End of function sub_1AE524
 
-; ---------------------------------------------------------------------------
+; Unreachable leftover: an orphaned miss exit.
 		tst.b	d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE550:					  ; CODE XREF: sub_1AE4F8+24p
-						  ; sub_1AE524+20p ...
-		bsr.w	sub_1AC010
+; Turn to face the player (quadrant from GetDirToPlayer).
+_facePlayer:
+		bsr.w	GetDirToPlayer
 		move.b	d2,d1
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		rts
-; End of function sub_1AE550
 
-; ---------------------------------------------------------------------------
-
-loc_1AE562:					  ; CODE XREF: ROM:001AE3B4j
+; States $20+: 0 = nothing, 1 = dash, 2 = teleport, 3 = single
+; fireball, 4+ = the spread of three.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	locret_1AE582
+		beq.s	_stateRts
 		cmpi.b	#$01,d0
-		beq.s	loc_1AE584
+		beq.s	_dash
 		cmpi.b	#$02,d0
-		beq.w	loc_1AE612
+		beq.w	_teleport
 		cmpi.b	#$03,d0
-		beq.w	loc_1AE6A4
-		bra.w	loc_1AE714
-; ---------------------------------------------------------------------------
+		beq.w	_castOne
+		bra.w	_castThree
 
-locret_1AE582:					  ; CODE XREF: ROM:001AE566j
+_stateRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE584:					  ; CODE XREF: ROM:001AE56Cj
+; Dash: invincible in the alternate animation bank while the dash
+; behaviour glides him to the next pit; poses ACT_ATTACK3/4/5 with a
+; Z hop (+$10 at tick $F, back down at $1D), done at tick $27.
+_dash:
 		bset	#$00,CombatFlags(a5)
 		bset	#$06,CombatFlags(a5)
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$05,AICounter(a5)
-		bcs.w	loc_1AE606
+		bcs.w	_dashTick
 		cmpi.b	#$0F,AICounter(a5)
-		bne.s	loc_1AE5BC
+		bne.s	_dashMid
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		addi.w	#$0010,Z(a5)
-		bra.w	loc_1AE606
-; ---------------------------------------------------------------------------
+		bra.w	_dashTick
 
-loc_1AE5BC:					  ; CODE XREF: ROM:001AE5AAj
+_dashMid:
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$10,AICounter(a5)
-		bcs.w	loc_1AE606
+		bcs.w	_dashTick
 		clr.w	QueuedAction(a5)
 		cmpi.b	#$1D,AICounter(a5)
-		bcs.w	loc_1AE606
-		bne.s	loc_1AE5E2
+		bcs.w	_dashTick
+		bne.s	_dashDown
 		subi.w	#$0010,Z(a5)
 
-loc_1AE5E2:					  ; CODE XREF: ROM:001AE5DAj
+_dashDown:
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$22,AICounter(a5)
-		bcs.w	loc_1AE606
+		bcs.w	_dashTick
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		cmpi.b	#$27,AICounter(a5)
-		bcs.w	loc_1AE606
-		bra.w	sub_1AE3C8
-; ---------------------------------------------------------------------------
+		bcs.w	_dashTick
+		bra.w	_reset
 
-loc_1AE606:					  ; CODE XREF: ROM:001AE5A0j
-						  ; ROM:001AE5B8j ...
+_dashTick:
 		bsr.w	j_j_OnTick
 		bclr	#$07,AnimCtrl(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE612:					  ; CODE XREF: ROM:001AE572j
+; Teleport: sink (ACT_ATTACK6, then ACT_ATTACK7 from tick 5),
+; vanish at $F (InteractFlags bit 6) and jump to a random pit from
+; the table - stepping to the next one if it rolled the pit he is
+; already in - centred in the cell (SubX/SubY $0808). Surface at
+; $14, facing the player; hold ACT_ATTACK6 until $1E, then reset.
+_teleport:
 		bset	#$00,CombatFlags(a5)
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$05,AICounter(a5)
-		bcs.w	locret_1AE6A2
+		bcs.w	_teleRts
 		move.w	#ACT_ATTACK7,QueuedAction(a5)
 		cmpi.b	#$0F,AICounter(a5)
-		bcs.s	locret_1AE6A2
-		bhi.s	loc_1AE67A
+		bcs.s	_teleRts
+		bhi.s	_teleSurface
 		bset	#$06,InteractFlags(a5)
 		move.w	#00004,d6
 		jsr	(j_GenerateRandomNumber).l
 		add.b	d7,d7
 		move.w	IfritCoordinates(pc,d7.w),d6
 		cmp.w	X(a5),d6
-		bne.s	loc_1AE660
+		bne.s	_telePlace
 		addq.b	#$02,d7
 		andi.b	#$06,d7
 		move.w	IfritCoordinates(pc,d7.w),d6
 
-loc_1AE660:					  ; CODE XREF: ROM:001AE654j
+_telePlace:
 		move.w	d6,X(a5)
 		move.w	#$0808,SubX(a5)
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		rts
-; ---------------------------------------------------------------------------
-IfritCoordinates:dc.w $1B1D			  ; DATA XREF: ROM:001AE64Er
-						  ; ROM:001AE65Cr
+
+; The four lava pits (X:Y cells).
+IfritCoordinates:dc.w $1B1D
 		dc.w $221D
 		dc.w $1B24
 		dc.w $2224
-; ---------------------------------------------------------------------------
 
-loc_1AE67A:					  ; CODE XREF: ROM:001AE63Aj
+_teleSurface:
 		cmpi.b	#$14,AICounter(a5)
-		bcs.s	locret_1AE6A2
-		bhi.s	loc_1AE690
-		bsr.w	sub_1AE550
+		bcs.s	_teleRts
+		bhi.s	_teleRecover
+		bsr.w	_facePlayer
 		bclr	#$06,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE690:					  ; CODE XREF: ROM:001AE682j
+_teleRecover:
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		cmpi.b	#$1E,AICounter(a5)
-		bcs.s	locret_1AE6A2
-		beq.w	sub_1AE3C8
+		bcs.s	_teleRts
+		beq.w	_reset
 
-locret_1AE6A2:					  ; CODE XREF: ROM:001AE628j
-						  ; ROM:001AE638j ...
+_teleRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE6A4:					  ; CODE XREF: ROM:001AE57Aj
+; Single fireball (state 3): casting pose (ACT_ATTACK1); tick 1 -
+; load the flame graphics (shared with the Magic Sword's burn
+; animation) to VRAM $9880 (tail call); tick 2 - the projectile
+; palette; tick $A - throw (ACT_ATTACK2): one straight-flying
+; fireball; recover until tick $14.
+_castOne:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AE6C6
+		bne.s	_cast1Palette
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jmp	(j_LoadMagicSwordEffect).l
-; ---------------------------------------------------------------------------
 
-loc_1AE6C6:					  ; CODE XREF: ROM:001AE6B4j
+_cast1Palette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AE6D8
+		bne.w	_cast1Throw
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
-; ---------------------------------------------------------------------------
 
-loc_1AE6D8:					  ; CODE XREF: ROM:001AE6CCj
+_cast1Throw:
 		cmpi.b	#$0A,AICounter(a5)
-		bhi.w	loc_1AE6FA
-		bcs.w	locret_1AE70A
+		bhi.w	_cast1Recover
+		bcs.w	_cast1Rts
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
-		move.w	#$0345,d6
-		bsr.w	sub_1AE792
-		bcs.w	loc_1AE70C
+		move.w	#BHVS_PROJECTILE_64,d6
+		bsr.w	_spawnFireball
+		bcs.w	_castDone
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE6FA:					  ; CODE XREF: ROM:001AE6DEj
+_cast1Recover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$14,AICounter(a5)
-		beq.w	loc_1AE70C
+		beq.w	_castDone
 
-locret_1AE70A:					  ; CODE XREF: ROM:001AE6E2j
+_cast1Rts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE70C:					  ; CODE XREF: ROM:001AE6F4j
-						  ; ROM:001AE706j
+_castDone:
 		clr.b	AICounter(a5)
-		bra.w	sub_1AE3C8
-; ---------------------------------------------------------------------------
+		bra.w	_reset
 
-loc_1AE714:					  ; CODE XREF: ROM:001AE57Ej
+; The spread of three (state 4+): as the single cast, but the throw
+; comes at tick $10 - one straight, one weaving clockwise, one
+; anticlockwise, from the three cells ahead - and recovery runs to
+; tick $20.
+_castThree:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AE736
+		bne.s	_cast3Palette
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jmp	(j_LoadMagicSwordEffect).l
-; ---------------------------------------------------------------------------
 
-loc_1AE736:					  ; CODE XREF: ROM:001AE724j
+_cast3Palette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AE748
+		bne.w	_cast3Throw
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
-; ---------------------------------------------------------------------------
 
-loc_1AE748:					  ; CODE XREF: ROM:001AE73Cj
+_cast3Throw:
 		cmpi.b	#$10,AICounter(a5)
-		bhi.w	loc_1AE778
-		bcs.w	locret_1AE788
+		bhi.w	_cast3Recover
+		bcs.w	_cast3Rts
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
-		move.w	#$0345,d6
-		bsr.s	sub_1AE792
-		bcs.w	loc_1AE78A
-		move.w	#$0346,d6
-		bsr.s	sub_1AE792
-		bcs.w	loc_1AE78A
-		move.w	#$0347,d6
-		bsr.s	sub_1AE792
+		move.w	#BHVS_PROJECTILE_64,d6
+		bsr.s	_spawnFireball
+		bcs.w	_cast3Done
+		move.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		bsr.s	_spawnFireball
+		bcs.w	_cast3Done
+		move.w	#BHVS_PROJECTILE_WEAVE_CCW,d6
+		bsr.s	_spawnFireball
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE778:					  ; CODE XREF: ROM:001AE74Ej
+_cast3Recover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$20,AICounter(a5)
-		beq.w	loc_1AE78A
+		beq.w	_cast3Done
 
-locret_1AE788:					  ; CODE XREF: ROM:001AE752j
+_cast3Rts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE78A:					  ; CODE XREF: ROM:001AE762j
-						  ; ROM:001AE76Cj ...
+_cast3Done:
 		clr.b	AICounter(a5)
-		bra.w	sub_1AE3C8
+		bra.w	_reset
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE792:					  ; CODE XREF: ROM:001AE6F0p
-						  ; ROM:001AE760p ...
+; Spawn one medium fireball with behaviour d6. The spawn cell is one
+; ahead of Ifrit's facing; the weave-clockwise one starts one cell
+; further to one side, the anticlockwise one to the other, so the
+; spread fans out. Set up: SPR_IFRITFIREBALL, AttackStrength $F00,
+; $20 above his Z, tiles at $24B4, speed 4, no gravity (FallRate
+; $80), invincible, and InteractFlags bit 7 (kept in the Init copy
+; too). Carry set if no free slot.
+_spawnFireball:
 		move.b	RotationAndSize(a5),d2
 		movem.w	d6,-(sp)
 		movem.w	d2,-(sp)
 		jsr	(j_FindFreeSpriteSlot).l
 		movem.w	(sp)+,d1
 		movem.w	(sp)+,d6
-		bcs.w	loc_1AE876
+		bcs.w	_spawnFail
 		move.w	(a5),d0
 		andi.b	#$C0,d1
-		beq.s	loc_1AE7DA
+		beq.s	_aimNE
 		cmpi.b	#$80,d1
-		bcs.s	loc_1AE7F2
-		beq.s	loc_1AE80C
-		subi.w	#$0100,d0
-		cmpi.w	#$0345,d6
-		beq.s	loc_1AE822
+		bcs.s	_aimSE
+		beq.s	_aimSW
+		subi.w	#$0100,d0	; NW: X - 1
+		cmpi.w	#BHVS_PROJECTILE_64,d6
+		beq.s	_spawn
 		subi.w	#$0001,d0
-		cmpi.w	#$0346,d6
-		beq.s	loc_1AE822
+		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		beq.s	_spawn
 		addi.w	#$0002,d0
-		bra.s	loc_1AE822
-; ---------------------------------------------------------------------------
+		bra.s	_spawn
 
-loc_1AE7DA:					  ; CODE XREF: sub_1AE792+24j
-		subq.b	#$01,d0
-		cmpi.w	#$0345,d6
-		beq.s	loc_1AE822
+_aimNE:
+		subq.b	#$01,d0		; NE: Y - 1
+		cmpi.w	#BHVS_PROJECTILE_64,d6
+		beq.s	_spawn
 		addi.w	#$0100,d0
-		cmpi.w	#$0346,d6
-		beq.s	loc_1AE822
+		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		beq.s	_spawn
 		subi.w	#$0200,d0
-		bra.s	loc_1AE822
-; ---------------------------------------------------------------------------
+		bra.s	_spawn
 
-loc_1AE7F2:					  ; CODE XREF: sub_1AE792+2Aj
-		addi.w	#$0100,d0
-		cmpi.w	#$0345,d6
-		beq.s	loc_1AE822
+_aimSE:
+		addi.w	#$0100,d0	; SE: X + 1
+		cmpi.w	#BHVS_PROJECTILE_64,d6
+		beq.s	_spawn
 		addi.w	#$0001,d0
-		cmpi.w	#$0346,d6
-		beq.s	loc_1AE822
+		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		beq.s	_spawn
 		subi.w	#$0002,d0
-		bra.s	loc_1AE822
-; ---------------------------------------------------------------------------
+		bra.s	_spawn
 
-loc_1AE80C:					  ; CODE XREF: sub_1AE792+2Cj
-		addq.b	#$01,d0
-		cmpi.w	#$0345,d6
-		beq.s	loc_1AE822
+_aimSW:
+		addq.b	#$01,d0		; SW: Y + 1
+		cmpi.w	#BHVS_PROJECTILE_64,d6
+		beq.s	_spawn
 		subi.w	#$0100,d0
-		cmpi.w	#$0346,d6
-		beq.s	loc_1AE822
+		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		beq.s	_spawn
 		addi.w	#$0200,d0
 
-loc_1AE822:					  ; CODE XREF: sub_1AE792+36j
-						  ; sub_1AE792+40j ...
+_spawn:
 		move.w	d0,X(a1)
 		move.b	d1,RotationAndSize(a1)
 		move.b	#SPR_IFRITFIREBALL,d2
@@ -491,10 +470,9 @@ loc_1AE822:					  ; CODE XREF: sub_1AE792+36j
 		bset	#$07,InitInteractFlags(a1)
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE876:					  ; CODE XREF: sub_1AE792+1Aj
+_spawnFail:
 		ori	#$01,ccr
 		rts
-; End of function sub_1AE792
 
+		modend

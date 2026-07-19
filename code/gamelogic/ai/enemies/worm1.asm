@@ -1,25 +1,33 @@
-; ---------------------------------------------------------------------------
+Worm1	module
+; AI for SPR_WORM1 (sand worm). Starts underground: state 0 keeps the
+; hitbox flattened to zero height so it cannot be hit. Once aggroed it
+; chases without jumping (BHVS_CHASE_NO_JUMP). CombatFlags bit 6 set =
+; above ground: it emerges (needing headroom) to attack with its
+; lunging bite, and can burrow back underground at range. Worm2/3 add
+; the poison dust breath.
 
-EnemyAI_Worm1_B:				  ; CODE XREF: ROM:001A84C2j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Worm1_B:
 		bra.s	EnemyAI_Worm1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Worm1_A:				  ; CODE XREF: ROM:001A84BEj
+; A routine, run every tick.
+EnemyAI_Worm1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A5394
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A539A
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A53E0
-		bra.w	loc_1A558A
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A5394:					  ; CODE XREF: ROM:001A5382j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A539A:					  ; CODE XREF: ROM:001A5388j
+; State 0: underground - keep the hitbox flat every tick; aggro when
+; the player enters the detection box ($50 ahead, $10 behind,
+; $20 lateral).
+_idle:
 		move.w	Z(a5),HitBoxZEnd(a5)
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
@@ -30,334 +38,300 @@ loc_1A539A:					  ; CODE XREF: ROM:001A5388j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Worm1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Worm1:					  ; CODE XREF: ROM:EnemyAI_Worm1_Bj
-						  ; ROM:001A53C4j ...
-		move.w	#$0005,BehaviourLUTIndex(a5)
+; Aggro / attack-over / hitstun recovery: chase the player without
+; jumping (BHVS_CHASE_NO_JUMP, AIState $10).
+EnemyAI_Worm1:
+		move.w	#BHVS_CHASE_NO_JUMP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A53E0:					  ; CODE XREF: ROM:001A538Ej
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move. A successful _tryBurrow returns
+; d0 = 1 and branches into _attackStates so the burrow starts this
+; same tick.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A5414
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A5424
-		bcs.s	loc_1A540E
-		bsr.w	sub_1A548A
-		bcs.w	loc_1A558A
-		bsr.w	sub_1A54F4
-		bcs.s	loc_1A540E
-		bsr.w	sub_1A5550
+		bsr.s	_tryEmerge
+		bcs.s	_chaseTick
+		bsr.w	_tryBurrow
+		bcs.w	_attackStates
+		bsr.w	_tryBite
+		bcs.s	_chaseTick
+		bsr.w	_tryBiteClose
 
-loc_1A540E:					  ; CODE XREF: ROM:001A53FAj
-						  ; ROM:001A5408j
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A5414:					  ; CODE XREF: ROM:001A53E6j
-		move.w	#$0005,$00000034(a5)
+_playerHurt:
+		move.w	#BHVS_CHASE_NO_JUMP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A5424:					  ; CODE XREF: ROM:001A53F8p
-
-; FUNCTION CHUNK AT 001A5486 SIZE 00000004 BYTES
-
+; Underground + player in the $28-$38 ring: 32-in-1000 chance per tick
+; to emerge (falls into _startEmerge). Never while airborne.
+_tryEmerge:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
-		bne.w	loc_1A5486
+		bne.w	_emergeMiss
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1A5486
+		bne.s	_emergeMiss
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A5486
+		bcc.s	_emergeMiss
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A5486
+		bcs.s	_emergeMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00031,d7
-		bhi.s	loc_1A5486
-; End of function sub_1A5424
+		bhi.s	_emergeMiss
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A546C:					  ; CODE XREF: sub_1A548A+46j
-						  ; sub_1A54F4+3Aj ...
+; Start the emerge sequence (state $20, BHVS_PAUSE_32_AI); the other
+; checks also jump here when the worm is still underground.
+_startEmerge:
 		move.b	#$20,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; End of function sub_1A546C
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1A5424
-
-loc_1A5486:					  ; CODE XREF: sub_1A5424+8j
-						  ; sub_1A5424+12j ...
+_emergeMiss:
 		tst.b	d0
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1A5424
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A548A:					  ; CODE XREF: ROM:001A53FCp
+; Above ground + player in the $28-$38 ring: 32-in-1000 chance to
+; burrow (state $21); returns d0 = 1 for the immediate dispatch.
+; Never while airborne.
+_tryBurrow:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
-		bne.w	loc_1A54F0
+		bne.w	_burrowMiss
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A54F0
+		bcc.s	_burrowMiss
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A54F0
+		bcs.s	_burrowMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00031,d7
-		bhi.s	loc_1A54F0
+		bhi.s	_burrowMiss
 		btst	#$06,CombatFlags(a5)
-		beq.s	sub_1A546C
+		beq.s	_startEmerge
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$01,d0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A54F0:					  ; CODE XREF: sub_1A548A+8j
-						  ; sub_1A548A+1Cj ...
+_burrowMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A548A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A54F4:					  ; CODE XREF: ROM:001A5404p
+; Player in the $18-$28 ring: 13-in-1000 chance to bite (state $22);
+; emerges first if underground.
+_tryBite:
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A554C
+		bcc.s	_biteMiss
 		move.w	#$0018,d5
 		move.w	#$0018,d6
 		move.w	#$0018,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A554C
+		bcs.s	_biteMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1A554C
+		bhi.s	_biteMiss
 		btst	#$06,CombatFlags(a5)
-		beq.w	sub_1A546C
+		beq.w	_startEmerge
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A554C:					  ; CODE XREF: sub_1A54F4+10j
-						  ; sub_1A54F4+22j ...
+_biteMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A54F4
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A5550:					  ; CODE XREF: ROM:001A540Ap
+; Player point-blank ahead ($18 ahead, $8 lateral): always bite
+; (state $23); emerges first if underground.
+_tryBiteClose:
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A5586
+		bcc.s	_biteCloseMiss
 		btst	#$06,CombatFlags(a5)
-		beq.w	sub_1A546C
+		beq.w	_startEmerge
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A5586:					  ; CODE XREF: sub_1A5550+10j
+_biteCloseMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A5550
 
-; ---------------------------------------------------------------------------
-
-loc_1A558A:					  ; CODE XREF: ROM:001A5390j
-						  ; ROM:001A5400j
+; States $20+: 0 = emerge, 1 = burrow, 2/3+ = bite.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A55A8
+		beq.s	_emerge
 		cmpi.b	#$01,d0
-		beq.w	loc_1A5638
+		beq.w	_burrow
 		cmpi.b	#$02,d0
-		beq.w	loc_1A56BA
+		beq.w	_bite
 		cmpi.b	#$03,d0
-		bra.w	loc_1A56BA
-; ---------------------------------------------------------------------------
+		bra.w	_bite
 
-loc_1A55A8:					  ; CODE XREF: ROM:001A558Ej
-						  ; ROM:001A56C6j
+; State $20 emerge: at phase 0, test the headroom by raising the
+; hitbox top $17 (retry next tick if blocked), then mark the worm
+; above ground and step the dig-up animation frames (Action1 = $FF +
+; PrevAction $40/$80/$C0/$100) at phases 1/$A/$14/$1E; done at $32.
+_emerge:
 		tst.b	AnimPhase(a5)
-		bne.s	loc_1A55CE
+		bne.s	_emergeAnim
 		move.b	#$18,d0
 		subq.b	#$01,d0
 		add.b	d0,HitBoxSubZEnd(a5)
 		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1A55C8
+		bcc.s	_emergeOk
 		move.w	Z(a5),HitBoxZEnd(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A55C8:					  ; CODE XREF: ROM:001A55BEj
+_emergeOk:
 		bset	#$06,CombatFlags(a5)
 
-loc_1A55CE:					  ; CODE XREF: ROM:001A55ACj
+_emergeAnim:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
-		bne.s	loc_1A55E8
+		bne.s	_emergeF2
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A55E8:					  ; CODE XREF: ROM:001A55D8j
+_emergeF2:
 		cmpi.b	#$0A,AnimPhase(a5)
-		bne.s	loc_1A55FE
+		bne.s	_emergeF3
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A55FE:					  ; CODE XREF: ROM:001A55EEj
+_emergeF3:
 		cmpi.b	#$14,AnimPhase(a5)
-		bne.s	loc_1A5614
+		bne.s	_emergeF4
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A5614:					  ; CODE XREF: ROM:001A5604j
+_emergeF4:
 		cmpi.b	#$1E,AnimPhase(a5)
-		bne.s	loc_1A562A
+		bne.s	_emergeEnd
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A562A:					  ; CODE XREF: ROM:001A561Aj
+_emergeEnd:
 		cmpi.b	#$32,AnimPhase(a5)
-		bne.w	locret_1A56B8
+		bne.w	_animRts
 		bra.w	EnemyAI_Worm1
-; ---------------------------------------------------------------------------
 
-loc_1A5638:					  ; CODE XREF: ROM:001A5594j
+; State $21 burrow: clear the above-ground flag, step the dig-down
+; frames ($100/$C0/$140/$180) at phases 1/$A/$14/$1E, then at $28
+; flatten the hitbox again and go back to chasing (underground).
+_burrow:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
-		bne.s	loc_1A5658
+		bne.s	_burrowF2
 		bclr	#$06,CombatFlags(a5)
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A5658:					  ; CODE XREF: ROM:001A5642j
+_burrowF2:
 		cmpi.b	#$0A,AnimPhase(a5)
-		bne.s	loc_1A566E
+		bne.s	_burrowF3
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A566E:					  ; CODE XREF: ROM:001A565Ej
+_burrowF3:
 		cmpi.b	#$14,AnimPhase(a5)
-		bne.s	loc_1A5684
+		bne.s	_burrowF4
 		move.b	#$FF,Action1(a5)
 		move.w	#$0140,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A5684:					  ; CODE XREF: ROM:001A5674j
+_burrowF4:
 		cmpi.b	#$1E,AnimPhase(a5)
-		bne.s	loc_1A569A
+		bne.s	_burrowEnd
 		move.b	#$FF,Action1(a5)
 		move.w	#$0180,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A569A:					  ; CODE XREF: ROM:001A568Aj
+_burrowEnd:
 		cmpi.b	#$28,AnimPhase(a5)
-		bne.s	locret_1A56B8
+		bne.s	_animRts
 		move.b	#$FF,Action1(a5)
 		move.w	#$0020,PrevAction(a5)
 		move.w	Z(a5),HitBoxZEnd(a5)
 		bra.w	EnemyAI_Worm1
-; ---------------------------------------------------------------------------
 
-locret_1A56B8:					  ; CODE XREF: ROM:001A5630j
-						  ; ROM:001A56A0j
+_animRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A56BA:					  ; CODE XREF: ROM:001A559Cj
-						  ; ROM:001A55A4j
+; States $22/$23 bite: emerge first if underground; then ACT_ATTACK3
+; windup for $F ticks, the hit box ($19 ahead, 9 behind, 9 lateral)
+; live with ACT_ATTACK4 until tick $1E, then back to chasing.
+_bite:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1A56CA
-		bsr.w	sub_1A546C
-		bra.w	loc_1A55A8
-; ---------------------------------------------------------------------------
+		bne.s	_biteGo
+		bsr.w	_startEmerge
+		bra.w	_emerge
 
-loc_1A56CA:					  ; CODE XREF: ROM:001A56C0j
+_biteGo:
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1A570C
+		bcs.s	_biteRts
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1A570C
+		bcs.s	_biteRts
 		clr.w	QueuedAction(a5)
 		clr.w	PrevAction(a5)
 		bset	#$06,CombatFlags(a5)
 		bra.w	EnemyAI_Worm1
-; ---------------------------------------------------------------------------
 
-locret_1A570C:					  ; CODE XREF: ROM:001A56DAj
-						  ; ROM:001A56F8j
+_biteRts:
 		rts
+
+		modend

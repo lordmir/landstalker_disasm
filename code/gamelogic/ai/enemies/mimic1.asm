@@ -1,25 +1,35 @@
-; ---------------------------------------------------------------------------
+Mimic1	module
+; AI for SPR_MIMIC1. A chest monster: when nobody is close enough to
+; watch, it transforms into a treasure chest (CombatFlags bit 6 +
+; forced transform frames; while disguised its behaviour is never
+; ticked, so the chest sits perfectly still), popping back up when
+; the player comes near. Its attack latches onto the player at chest
+; height and drains $100 health every $1E ticks until he escapes.
+; Two quirks: the disguise roll's result is never tested (it always
+; disguises), and the hop state never runs its behaviour, freezing
+; the mimic until a hit resets it.
 
-EnemyAI_Mimic1_B:				  ; CODE XREF: ROM:001A8582j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Mimic1_B:
 		bra.s	EnemyAI_Mimic1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mimic1_A:				  ; CODE XREF: ROM:001A857Ej
+; A routine, run every tick.
+EnemyAI_Mimic1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A9B20
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A9B26
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A9B6C
-		bra.w	loc_1A9CD4
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A9B20:					  ; CODE XREF: ROM:001A9B0Ej
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9B26:					  ; CODE XREF: ROM:001A9B14j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($50 ahead, $10 behind, $20 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,302 +39,284 @@ loc_1A9B26:					  ; CODE XREF: ROM:001A9B14j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Mimic1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Mimic1:					  ; CODE XREF: ROM:EnemyAI_Mimic1_Bj
-						  ; ROM:001A9B4Aj ...
+; Aggro / attack-over / hitstun recovery: drop the disguise and start
+; chasing the player (behaviour 6, AIState $10).
+EnemyAI_Mimic1:
 		bclr	#$06,CombatFlags(a5)
-		move.w	#$0006,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9B6C:					  ; CODE XREF: ROM:001A9B1Aj
+; State $10: chasing - try each move in turn. While disguised (bit 6)
+; the behaviour is not ticked, so the chest never moves.
+_chase:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A9B9E
-		bcs.s	loc_1A9B90
-		bsr.w	sub_1A9BF6
-		bcs.s	loc_1A9B90
-		bsr.w	sub_1A9C3E
-		bcs.s	loc_1A9B90
-		bsr.w	sub_1A9C88
+		bsr.s	_tryDisguise
+		bcs.s	_chaseTick
+		bsr.w	_tryHop
+		bcs.s	_chaseTick
+		bsr.w	_tryReveal
+		bcs.s	_chaseTick
+		bsr.w	_tryDrain
 
-loc_1A9B90:					  ; CODE XREF: ROM:001A9B7Ej
-						  ; ROM:001A9B84j ...
+_chaseTick:
 		btst	#$06,CombatFlags(a5)
-		bne.s	locret_1A9B9C
+		bne.s	_chaseEnd
 		bsr.w	j_j_OnTick
 
-locret_1A9B9C:					  ; CODE XREF: ROM:001A9B96j
+_chaseEnd:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A9B9E:					  ; CODE XREF: ROM:001A9B7Cp
+; Not airborne, not already disguised, and the player is *outside*
+; the $80 box (nobody watching): become a chest (state $20). The
+; random roll's result is never tested - the branch is missing - so
+; this always triggers.
+_tryDisguise:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
-		bne.w	loc_1A9BF2
+		bne.w	_disguiseMiss
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1A9BF2
+		bne.s	_disguiseMiss
 		move.w	#$0080,d5
 		move.w	#$0080,d6
 		move.w	#$0080,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A9BF2
+		bcs.s	_disguiseMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.w	#$0002,d7
+		cmpi.w	#$0002,d7	; result unused: no conditional branch follows
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bset	#$06,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9BF2:					  ; CODE XREF: sub_1A9B9E+8j
-						  ; sub_1A9B9E+12j ...
+_disguiseMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A9B9E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A9BF6:					  ; CODE XREF: ROM:001A9B80p
+; Player within $20 all around: 401-in-1000 chance to hop away
+; (state $21, BHVS_HOP_AI). The hop state never ticks the behaviour,
+; so this actually freezes the mimic in place (see _hop).
+_tryHop:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1A9C3A
+		bne.s	_hopMiss
 		move.w	#$0020,d5
 		move.w	#$0020,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A9C3A
+		bcc.s	_hopMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00400,d7
-		bhi.s	loc_1A9C3A
+		bhi.s	_hopMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$001B,BehaviourLUTIndex(a5)
+		move.w	#BHVS_HOP_AI,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9C3A:					  ; CODE XREF: sub_1A9BF6+6j
-						  ; sub_1A9BF6+18j ...
+_hopMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A9BF6
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A9C3E:					  ; CODE XREF: ROM:001A9B86p
+; Disguised, not airborne, and the player is within $30 all around:
+; pop back up to mimic form (state $22).
+_tryReveal:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
-		bne.w	loc_1A9C84
+		bne.w	_revealMiss
 		btst	#$06,CombatFlags(a5)
-		beq.s	loc_1A9C84
+		beq.s	_revealMiss
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A9C84
+		bcc.s	_revealMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		bclr	#$06,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9C84:					  ; CODE XREF: sub_1A9C3E+8j
-						  ; sub_1A9C3E+12j ...
+_revealMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A9C3E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A9C88:					  ; CODE XREF: ROM:001A9B8Cp
+; Not disguised, player within $10 ahead, $8 lateral, and at chest
+; height (hitbox tops within a $20 window): latch on and drain
+; (state $23).
+_tryDrain:
 		btst	#$06,CombatFlags(a5)
-		bne.s	loc_1A9CD0
+		bne.s	_drainMiss
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A9CD0
+		bcc.s	_drainMiss
 		move.b	HitBoxSubZEnd(a5),d0
 		subi.b	#$10,d0
 		sub.b	(Player_HitBoxZEnd+1).l,d0
 		cmpi.b	#$20,d0
-		bcc.s	loc_1A9CD0
+		bcc.s	_drainMiss
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9CD0:					  ; CODE XREF: sub_1A9C88+6j
-						  ; sub_1A9C88+18j ...
+_drainMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A9C88
 
-; ---------------------------------------------------------------------------
-
-loc_1A9CD4:					  ; CODE XREF: ROM:001A9B1Cj
+; States $20+: 0 = become a chest, 1 = hop (inert), 2 = reveal,
+; 3+ = drain.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A9CF6
+		beq.s	_morph
 		cmpi.b	#$01,d0
-		beq.w	locret_1A9DA0
+		beq.w	_hop
 		cmpi.b	#$02,d0
-		beq.w	loc_1A9DA2
+		beq.w	_reveal
 		cmpi.b	#$03,d0
-		beq.w	loc_1A9E4A
-		bra.w	loc_1A9E4A
-; ---------------------------------------------------------------------------
+		beq.w	_drain
+		bra.w	_drain
 
-loc_1A9CF6:					  ; CODE XREF: ROM:001A9CD8j
+; Become a chest: step down through the forced transform frames
+; ($1C0 -> $40, one every 8 ticks); the final frame returns to the
+; chase state still disguised, so the chest sits still.
+_morph:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
-		bne.s	loc_1A9D10
+		bne.s	_morph2
 		move.b	#$FF,Action1(a5)
 		move.w	#$01C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D10:					  ; CODE XREF: ROM:001A9D00j
+_morph2:
 		cmpi.b	#$08,AnimPhase(a5)
-		bne.s	loc_1A9D26
+		bne.s	_morph3
 		move.b	#$FF,Action1(a5)
 		move.w	#$0180,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D26:					  ; CODE XREF: ROM:001A9D16j
+_morph3:
 		cmpi.b	#$10,AnimPhase(a5)
-		bne.s	loc_1A9D3C
+		bne.s	_morph4
 		move.b	#$FF,Action1(a5)
 		move.w	#$0140,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D3C:					  ; CODE XREF: ROM:001A9D2Cj
+_morph4:
 		cmpi.b	#$18,AnimPhase(a5)
-		bne.s	loc_1A9D52
+		bne.s	_morph5
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D52:					  ; CODE XREF: ROM:001A9D42j
+_morph5:
 		cmpi.b	#$20,AnimPhase(a5)
-		bne.w	loc_1A9D6A
+		bne.w	_morph6
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D6A:					  ; CODE XREF: ROM:001A9D58j
+_morph6:
 		cmpi.b	#$28,AnimPhase(a5)
-		bne.w	loc_1A9D82
+		bne.w	_morph7
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9D82:					  ; CODE XREF: ROM:001A9D70j
+_morph7:
 		cmpi.b	#$30,AnimPhase(a5)
-		bne.w	locret_1A9D9E
+		bne.w	_morphRts
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
 		move.b	#$10,AIState(a5)
 
-locret_1A9D9E:					  ; CODE XREF: ROM:001A9D88j
+_morphRts:
 		rts
-; ---------------------------------------------------------------------------
 
-locret_1A9DA0:					  ; CODE XREF: ROM:001A9CDEj
+; Hop state (BHVS_HOP_AI loaded): does nothing - the behaviour is
+; never ticked, so the mimic stands frozen here until it takes a hit
+; (the hitstun behaviour's RunSpecialAI then resets it).
+_hop:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9DA2:					  ; CODE XREF: ROM:001A9CE6j
+; Back to mimic form: step up through the transform frames ($40 ->
+; $1C0, one every 8 ticks), then reset to the chase.
+_reveal:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
-		bne.s	loc_1A9DBC
+		bne.s	_reveal2
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9DBC:					  ; CODE XREF: ROM:001A9DACj
+_reveal2:
 		cmpi.b	#$08,AnimPhase(a5)
-		bne.s	loc_1A9DD2
+		bne.s	_reveal3
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9DD2:					  ; CODE XREF: ROM:001A9DC2j
+_reveal3:
 		cmpi.b	#$10,AnimPhase(a5)
-		bne.s	loc_1A9DE8
+		bne.s	_reveal4
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9DE8:					  ; CODE XREF: ROM:001A9DD8j
+_reveal4:
 		cmpi.b	#$18,AnimPhase(a5)
-		bne.s	loc_1A9DFE
+		bne.s	_reveal5
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9DFE:					  ; CODE XREF: ROM:001A9DEEj
+_reveal5:
 		cmpi.b	#$20,AnimPhase(a5)
-		bne.w	loc_1A9E16
+		bne.w	_reveal6
 		move.b	#$FF,Action1(a5)
 		move.w	#$0140,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9E16:					  ; CODE XREF: ROM:001A9E04j
+_reveal6:
 		cmpi.b	#$28,AnimPhase(a5)
-		bne.w	loc_1A9E2E
+		bne.w	_reveal7
 		move.b	#$FF,Action1(a5)
 		move.w	#$0180,PrevAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9E2E:					  ; CODE XREF: ROM:001A9E1Cj
+_reveal7:
 		cmpi.b	#$30,AnimPhase(a5)
-		bne.w	locret_1A9E48
+		bne.w	_revealRts
 		move.b	#$FF,Action1(a5)
 		move.w	#$01C0,PrevAction(a5)
 		bra.w	EnemyAI_Mimic1
-; ---------------------------------------------------------------------------
 
-locret_1A9E48:					  ; CODE XREF: ROM:001A9E34j
+_revealRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9E4A:					  ; CODE XREF: ROM:001A9CEEj
-						  ; ROM:001A9CF2j
+; Drain: lift so its own hitbox top sits $11 above the player's (the
+; latch pose, ACT_ATTACK1); if the lifted spot is blocked, restore and
+; reset. While latched: abort if the player is in a special animation,
+; hold them in hitstun (g_PlayerHurtTimer = 1), and let go if they
+; escape the small box. On the first tick of each $1E-tick cycle it
+; plays the throw sound and drains $100 health (a5 temporarily points
+; at the player) - repeating until the player escapes or dies.
+_drain:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		move.w	Z(a5),d0
 		move.w	HitBoxZEnd(a5),d1
@@ -338,22 +330,21 @@ loc_1A9E4A:					  ; CODE XREF: ROM:001A9CEEj
 		addq.w	#$01,d0
 		move.w	d0,Z(a5)
 		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1A9E90
+		bcc.s	_drainLifted
 		movem.w	(sp)+,d0-d1
 		move.w	d0,Z(a5)
 		move.w	d1,HitBoxZEnd(a5)
 		bra.w	EnemyAI_Mimic1
-; ---------------------------------------------------------------------------
 
-loc_1A9E90:					  ; CODE XREF: ROM:001A9E7Ej
-		movem.w	(sp)+,d0-d1
+_drainLifted:
+		movem.w	(sp)+,d0-d1	; discard - keep the lifted position
 		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mimic1
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A9EAE
+		bne.s	_drainHold
 		move.b	#$01,(g_PlayerHurtTimer).l
 
-loc_1A9EAE:					  ; CODE XREF: ROM:001A9EA4j
+_drainHold:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0010,d5
@@ -364,26 +355,27 @@ loc_1A9EAE:					  ; CODE XREF: ROM:001A9EA4j
 		move.b	AnimPhase(a5),d0
 		addq.b	#$01,AnimPhase(a5)
 		tst.b	d0
-		bne.s	loc_1A9EF6
+		bne.s	_drainWait
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Throw
-; ---------------------------------------------------------------------------
 		lea	(Player_X).l,a5
 		move.w	#$0100,d0
 		bsr.w	j_j_RemoveHealth
 		tst.w	CurrentHealth(a5)
-		beq.s	loc_1A9F04
+		beq.s	_playerDead
 
-loc_1A9EF6:					  ; CODE XREF: ROM:001A9EDCj
+_drainWait:
 		cmpi.b	#$1E,d0
-		bcs.w	locret_1A9F02
+		bcs.w	_drainRts
 		clr.b	AnimPhase(a5)
 
-locret_1A9F02:					  ; CODE XREF: ROM:001A9EFAj
+_drainRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9F04:					  ; CODE XREF: ROM:001A9EF4j
+; The drain killed the player: clear their blink flag so they are
+; drawn (a5 is the player here) and run the death sequence.
+_playerDead:
 		bclr	#$06,InteractFlags(a5)
 		bra.w	j_j_PlayerDeath
+
+		modend

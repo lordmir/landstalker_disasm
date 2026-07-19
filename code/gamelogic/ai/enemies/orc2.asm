@@ -1,7 +1,7 @@
 Orc2	module
 ; AI for SPR_ORC2. Same skeleton as Orc1, but its mid-range move is an
 ; advance (behaviour $11: walk forward, then reset) during which it
-; swings its sword, and its point-blank moving swing also advances
+; swings its club, and its point-blank moving swing also advances
 ; rather than hopping in place.
 
 ; B routine (behaviour command $2B): back to chasing.
@@ -80,7 +80,7 @@ _tryPounce:
 		cmpi.w	#00008,d7
 		bhi.s	_pounceMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$000E,BehaviourLUTIndex(a5)
+		move.w	#BHVS_POUNCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -108,7 +108,7 @@ _tryAdvance:
 		cmpi.w	#00018,d7
 		bhi.s	_advanceMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -136,7 +136,7 @@ _tryRetreat:
 		cmpi.w	#00018,d7
 		bhi.s	_retreatMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0008,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RETREAT,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -145,7 +145,7 @@ _retreatMiss:
 		tst.b	d0
 		rts
 
-; Player point-blank ahead ($20 ahead, $8 lateral): swing the sword -
+; Player point-blank ahead ($20 ahead, $8 lateral): swing the club -
 ; 60% standing still (state $23, behaviour 0), else advancing
 ; (state $24, behaviour $11).
 _trySwing:
@@ -159,7 +159,7 @@ _trySwing:
 		cmpi.w	#00060,d7
 		bcc.s	_swingAdvance
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
@@ -167,7 +167,7 @@ _trySwing:
 
 _swingAdvance:
 		move.b	#$24,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
@@ -202,7 +202,7 @@ _tick:
 		bsr.w	j_j_OnTick
 		rts
 
-; Sword swing: ACT_ATTACK1 windup for $F ticks, then the hit box
+; Club swing: ACT_ATTACK1 windup for $F ticks, then the hit box
 ; ($19 ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
 ; until tick $1E, then back to chasing.
 _swing:

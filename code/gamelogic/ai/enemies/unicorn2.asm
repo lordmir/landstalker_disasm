@@ -1,26 +1,31 @@
-; ---------------------------------------------------------------------------
+Unicorn2	module
+; AI for SPR_UNICORN2. As Unicorn1, but more cautious: at the
+; stare-down it charges less (51% up front, 50% per re-roll) and it
+; dodges the player's swings more often (51%).
 
-EnemyAI_Unicorn2_B:				  ; CODE XREF: ROM:001A855Aj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Unicorn2_B:
 		bra.s	EnemyAI_Unicorn2
-; ---------------------------------------------------------------------------
 
-EnemyAI_Unicorn2_A:				  ; CODE XREF: ROM:001A8556j
+; A routine, run every tick. The walk-backwards flag only persists
+; while the dodge state re-sets it each tick.
+EnemyAI_Unicorn2_A:
 		bclr	#$01,CombatFlags(a5)
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A8DD2
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A8DD8
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A8E1E
-		bra.w	loc_1A8F8A
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A8DD2:					  ; CODE XREF: ROM:001A8DC0j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8DD8:					  ; CODE XREF: ROM:001A8DC6j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -31,177 +36,165 @@ loc_1A8DD8:					  ; CODE XREF: ROM:001A8DC6j
 		bcs.s	EnemyAI_Unicorn2
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EnemyAI_Unicorn2:				  ; CODE XREF: ROM:EnemyAI_Unicorn2_Bj
-						  ; ROM:001A8DFCj ...
-		move.w	#$0006,BehaviourLUTIndex(a5)
+; Aggro / attack-over / hitstun recovery: start chasing the player
+; (behaviour 6, AIState $10).
+EnemyAI_Unicorn2:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		bclr	#$01,CombatFlags(a5)
 		rts
-; End of function EnemyAI_Unicorn2
 
-; ---------------------------------------------------------------------------
-
-loc_1A8E1E:					  ; CODE XREF: ROM:001A8DCCj
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A8E4A
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A8E5A
-		bcs.s	loc_1A8E44
-		bsr.w	sub_1A8EDE
-		bcs.s	loc_1A8E44
-		bsr.w	sub_1A8F5E
+		bsr.s	_tryConfront
+		bcs.s	_chaseTick
+		bsr.w	_tryDodge
+		bcs.s	_chaseTick
+		bsr.w	_tryThrust
 
-loc_1A8E44:					  ; CODE XREF: ROM:001A8E38j
-						  ; ROM:001A8E3Ej
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8E4A:					  ; CODE XREF: ROM:001A8E24j
-		move.w	#$0006,BehaviourLUTIndex(a5)
+_playerHurt:
+		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8E5A:					  ; CODE XREF: ROM:001A8E36p
+; Player in the mid-range ring (within $40 but not within $30, all
+; around) and the two are facing each other head-on: 51% chance to
+; charge (state $21, BHVS_CHASE_BURST), else rear up for the
+; stare-down (state $20). If not head-on, re-aim (reset re-loads the
+; chase) and report no attack.
+_tryConfront:
 		move.w	#$0040,d5
 		move.w	#$0040,d6
 		move.w	#$0040,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A8EDA
+		bcc.s	_confrontMiss
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A8EDA
+		bcs.s	_confrontMiss
 		move.b	RotationAndSize(a5),d0
 		andi.b	#DIR_MASK,d0
 		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
-		andi.b	#$C0,d1
+		andi.b	#DIR_MASK,d1
 		cmp.b	d0,d1
-		bne.s	loc_1A8ED6
+		bne.s	_confrontReAim
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bls.w	loc_1A8EC0
+		bls.w	_startCharge
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8EC0:					  ; CODE XREF: sub_1A8E5A+4Cj
-						  ; ROM:001A901Cj
+; Charge the player (state $21, BHVS_CHASE_BURST). Also entered from
+; the stare-down's periodic re-roll.
+_startCharge:
 		move.b	#$21,AIState(a5)
-		move.w	#$0018,BehaviourLUTIndex(a5)
+		move.w	#BHVS_CHASE_BURST,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8ED6:					  ; CODE XREF: sub_1A8E5A+3Cj
+_confrontReAim:
 		bsr.w	EnemyAI_Unicorn2
 
-loc_1A8EDA:					  ; CODE XREF: sub_1A8E5A+10j
-						  ; sub_1A8E5A+22j
+_confrontMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A8E5A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8EDE:					  ; CODE XREF: ROM:001A8E3Ap
+; Player within $28 ahead, $10 lateral, facing each other head-on:
+; if the player is not mid-swing, advance with the sword out (state
+; $23, BHVS_ADVANCE); if he is mid-swing, 51% chance to dodge (state
+; $22, BHVS_BACKSTEP + walk-backwards flag).
+_tryDodge:
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A8F44
+		bcc.s	_dodgeMiss
 		move.b	RotationAndSize(a5),d0
 		andi.b	#DIR_MASK,d0
 		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
-		andi.b	#$C0,d1
+		andi.b	#DIR_MASK,d1
 		cmp.b	d0,d1
-		bne.s	loc_1A8F44
+		bne.s	_dodgeMiss
 		move.b	(Player_PrevAction).l,d0
 		andi.b	#$07,d0
-		beq.w	loc_1A8F48
+		beq.w	_advance
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bhi.s	loc_1A8F44
+		bhi.s	_dodgeMiss
 		bset	#$01,CombatFlags(a5)
 		move.b	#$22,AIState(a5)
-		move.w	#$0017,BehaviourLUTIndex(a5)
+		move.w	#BHVS_BACKSTEP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8F44:					  ; CODE XREF: sub_1A8EDE+10j
-						  ; sub_1A8EDE+2Aj ...
+_dodgeMiss:
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8F48:					  ; CODE XREF: sub_1A8EDE+36j
+_advance:
 		move.b	#$23,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; End of function sub_1A8EDE
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8F5E:					  ; CODE XREF: ROM:001A8E40p
+; Player point-blank ahead ($20 ahead, $10 lateral): standing sword
+; thrust (state $24).
+_tryThrust:
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A8F86
+		bcc.s	_thrustMiss
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8F86:					  ; CODE XREF: sub_1A8F5E+10j
+_thrustMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A8F5E
 
-; ---------------------------------------------------------------------------
-
-loc_1A8F8A:					  ; CODE XREF: ROM:001A8DCEj
+; States $20+: 0 = stare-down, 1 = charge, 2 = dodge, 3/4 = thrust.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A8FAC
+		beq.s	_stareDown
 		cmpi.b	#$01,d0
-		beq.w	loc_1A9034
+		beq.w	_charge
 		cmpi.b	#$02,d0
-		beq.w	loc_1A9066
+		beq.w	_dodge
 		cmpi.b	#$03,d0
-		beq.w	loc_1A903A
-		bra.w	loc_1A903A
-; ---------------------------------------------------------------------------
+		beq.w	_thrust
+		bra.w	_thrust
 
-loc_1A8FAC:					  ; CODE XREF: ROM:001A8F8Ej
+; Stare-down: only holds while the player stays in the mid-range ring
+; and the two remain head-on (otherwise reset). Alternates the two
+; threat poses (ACT_ATTACK3/ACT_ATTACK4) every $10 ticks, and on each
+; pose flip rolls a 50% chance to break into the charge.
+_stareDown:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0040,d5
@@ -218,34 +211,37 @@ loc_1A8FAC:					  ; CODE XREF: ROM:001A8F8Ej
 		andi.b	#DIR_MASK,d0
 		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
-		andi.b	#$C0,d1
+		andi.b	#DIR_MASK,d1
 		cmp.b	d0,d1
 		bne.w	EnemyAI_Unicorn2
 		addq.b	#$01,AnimPhase(a5)
 		move.b	AnimPhase(a5),d0
 		andi.b	#$0F,d0
-		bne.s	loc_1A9020
+		bne.s	_starePose
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bcs.w	loc_1A8EC0
+		bcs.w	_startCharge
 
-loc_1A9020:					  ; CODE XREF: ROM:001A900Cj
+_starePose:
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0010,d0
 		lsl.w	#$04,d0
-		addi.w	#$0300,d0
+		addi.w	#ACT_ATTACK3,d0
 		move.w	d0,QueuedAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9034:					  ; CODE XREF: ROM:001A8F94j
+; Charge: the burst behaviour does the running; contact does the
+; damage. Its RunSpecialAI resets to the chase when done.
+_charge:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A903A:					  ; CODE XREF: ROM:001A8FA4j
-						  ; ROM:001A8FA8j
+; Thrust: the hit box ($19 ahead, 9 behind, 9 lateral) is live every
+; tick with the thrust pose (ACT_ATTACK1) - no windup - until
+; AnimPhase reaches $10 (it is not cleared on entry, so a leftover
+; count can cut this short). The advance variant keeps moving.
+_thrust:
 		addq.b	#$01,AnimPhase(a5)
 		move.w	#$0019,d1
 		move.w	#$0009,d2
@@ -253,16 +249,19 @@ loc_1A903A:					  ; CODE XREF: ROM:001A8FA4j
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		cmpi.b	#$10,AnimPhase(a5)
-		bcs.s	loc_1A9060
+		bcs.s	_thrustTick
 		bra.w	EnemyAI_Unicorn2
-; ---------------------------------------------------------------------------
 
-loc_1A9060:					  ; CODE XREF: ROM:001A905Aj
+_thrustTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A9066:					  ; CODE XREF: ROM:001A8F9Cj
+; Dodge: re-set the walk-backwards flag (cleared at the top of every
+; tick) while the backstep behaviour carries it away still facing the
+; player; the behaviour's RunSpecialAI resets to the chase.
+_dodge:
 		bset	#$01,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
+
+		modend

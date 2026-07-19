@@ -1,25 +1,31 @@
-; ---------------------------------------------------------------------------
+Giant1	module
+; AI for SPR_GIANT1. Chases the player; at long range it either stops
+; and threatens with its club raised or pounces, at mid range it
+; advances while swinging, and point-blank it swings the club - 70% a
+; quick swing, otherwise a slow heavy one. All swings share a $21-deep
+; hit box.
 
-EnemyAI_Giant1_B:				  ; CODE XREF: ROM:001A85B2j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Giant1_B:
 		bra.s	EnemyAI_Giant1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Giant1_A:				  ; CODE XREF: ROM:001A85AEj
+; A routine, run every tick.
+EnemyAI_Giant1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AB27C
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AB282
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AB2AE
-		bra.w	loc_1AB3F0
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AB27C:					  ; CODE XREF: ROM:001AB26Aj
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB282:					  ; CODE XREF: ROM:001AB270j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,216 +35,198 @@ loc_1AB282:					  ; CODE XREF: ROM:001AB270j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Giant1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Giant1:					  ; CODE XREF: ROM:EnemyAI_Giant1_Bj
-						  ; ROM:001AB2A6j ...
+; Aggro / attack-over / hitstun recovery: start chasing the player
+; (behaviour 6, AIState $10).
+EnemyAI_Giant1:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1AB2AE:					  ; CODE XREF: ROM:001AB276j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each attack in turn, farthest range first.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1AB2DE
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1AB2E2
-		bcs.s	loc_1AB2D8
-		bsr.s	sub_1AB31E
-		bcs.s	loc_1AB2D8
-		bsr.w	sub_1AB35A
-		bcs.s	loc_1AB2D8
-		bsr.w	sub_1AB396
+		bsr.s	_tryThreaten
+		bcs.s	_chaseTick
+		bsr.s	_tryPounce
+		bcs.s	_chaseTick
+		bsr.w	_tryAdvance
+		bcs.s	_chaseTick
+		bsr.w	_trySwing
 
-loc_1AB2D8:					  ; CODE XREF: ROM:001AB2C8j
-						  ; ROM:001AB2CCj ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB2DE:					  ; CODE XREF: ROM:001AB2B4j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB2E2:					  ; CODE XREF: ROM:001AB2C6p
+; Player in the $48-$50 band ahead, $20 lateral: 26-in-1000 chance to
+; stop and threaten, club raised (state $20, BHVS_PAUSE_32_AI).
+_tryThreaten:
 		move.w	#$0050,d5
 		move.w	#$FFB8,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB31A
+		bcc.s	_threatenMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
-		bhi.s	loc_1AB31A
+		bhi.s	_threatenMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB31A:					  ; CODE XREF: sub_1AB2E2+10j
-						  ; sub_1AB2E2+20j
+_threatenMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB2E2
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB31E:					  ; CODE XREF: ROM:001AB2CAp
+; Player in the $40-$58 band ahead, $20 lateral: 9-in-1000 chance to
+; pounce (state $21, BHVS_POUNCE: jump + run forward).
+_tryPounce:
 		move.w	#$0058,d5
 		move.w	#$FFC0,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB356
+		bcc.s	_pounceMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00008,d7
-		bhi.s	loc_1AB356
+		bhi.s	_pounceMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$000E,BehaviourLUTIndex(a5)
+		move.w	#BHVS_POUNCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB356:					  ; CODE XREF: sub_1AB31E+10j
-						  ; sub_1AB31E+20j
+_pounceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB31E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB35A:					  ; CODE XREF: ROM:001AB2CEp
+; Player in the $20-$38 band ahead, $10 lateral: 5-in-1000 chance to
+; advance swinging (state $22, BHVS_ADVANCE).
+_tryAdvance:
 		move.w	#$0038,d5
 		move.w	#$FFE0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB392
+		bcc.s	_advanceMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00004,d7
-		bhi.s	loc_1AB392
+		bhi.s	_advanceMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB392:					  ; CODE XREF: sub_1AB35A+10j
-						  ; sub_1AB35A+20j
+_advanceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB35A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AB396:					  ; CODE XREF: ROM:001AB2D4p
+; Player within $28 ahead, $10 lateral: swing the club standing still
+; - 70% the quick swing (state $23), else the slow heavy swing
+; (state $24).
+_trySwing:
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AB3EC
+		bcc.s	_swingMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00070,d7
-		bcc.s	loc_1AB3D2
+		bcc.s	_swingSlowStart
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB3D2:					  ; CODE XREF: sub_1AB396+20j
+_swingSlowStart:
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB3EC:					  ; CODE XREF: sub_1AB396+10j
+_swingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AB396
 
-; ---------------------------------------------------------------------------
-
-loc_1AB3F0:					  ; CODE XREF: ROM:001AB278j
+; States $20+: 0 = threaten, 1 = pounce, 2/3 = quick swing,
+; 4 = slow swing.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1AB40C
+		beq.s	_threaten
 		cmpi.b	#$01,d0
-		beq.s	loc_1AB418
+		beq.s	_pounceTick
 		cmpi.b	#$02,d0
-		beq.s	loc_1AB42A
+		beq.s	_swing
 		cmpi.b	#$03,d0
-		beq.s	loc_1AB42A
-		bra.w	loc_1AB464
-; ---------------------------------------------------------------------------
+		beq.s	_swing
+		bra.w	_swingSlow
 
-loc_1AB40C:					  ; CODE XREF: ROM:001AB3F4j
+; Threatening: hold the club-raised pose (ACT_ATTACK1) while the
+; pause behaviour runs.
+_threaten:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB418:					  ; CODE XREF: ROM:001AB3FAj
+; Pounce: back to chasing once no longer airborne.
+_pounceTick:
 		move.b	Action1(a5),d0
-		andi.b	#$30,d0
+		andi.b	#$30,d0			; ACT_JUMP|ACT_FALL bits
 		beq.w	EnemyAI_Giant1
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB42A:					  ; CODE XREF: ROM:001AB400j
-						  ; ROM:001AB406j
+; Quick club swing: ACT_ATTACK1 windup for $F ticks, then the hit box
+; ($21 ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing.
+_swing:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1AB45E
+		bcs.s	_swingTick
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	loc_1AB45E
+		bcs.s	_swingTick
 		bra.w	EnemyAI_Giant1
-; ---------------------------------------------------------------------------
 
-loc_1AB45E:					  ; CODE XREF: ROM:001AB43Aj
-						  ; ROM:001AB458j
+_swingTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB464:					  ; CODE XREF: ROM:001AB408j
+; Slow heavy swing: the same hit box but a $1E-tick windup, live until
+; tick $2D.
+_swingSlow:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1AB498
+		bcs.s	_swingSlowRts
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$2D,AnimPhase(a5)
-		bcs.s	locret_1AB498
+		bcs.s	_swingSlowRts
 		bra.w	EnemyAI_Giant1
-; ---------------------------------------------------------------------------
 
-locret_1AB498:					  ; CODE XREF: ROM:001AB474j
-						  ; ROM:001AB492j
+_swingSlowRts:
 		rts
+
+		modend

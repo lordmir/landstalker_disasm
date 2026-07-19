@@ -1,49 +1,55 @@
-; ---------------------------------------------------------------------------
+GhostGen	module
+; The ghost generator (shared by SPR_GHOSTGEN1/2/3): a stationary
+; object whose only job is to exist - while one is alive in the room,
+; vanished ghosts respawn (CheckRespawnGhost below). Destroying the
+; generator stops the respawning.
 
-EnemyAI_GhostGen_B:				  ; CODE XREF: ROM:001A860Aj
-						  ; ROM:001A8612j ...
+; B routine (behaviour command $2B): reset to idle.
+EnemyAI_GhostGen_B:
 		bra.s	EnemyAI_GhostGen
-; ---------------------------------------------------------------------------
 
-EnemyAI_GhostGen_A:				  ; CODE XREF: ROM:001A8606j
-						  ; ROM:001A860Ej ...
+; A routine, run every tick: pinned in place (Speed cleared every
+; tick).
+EnemyAI_GhostGen_A:
 		clr.b	Speed(a5)
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_GhostGen:				  ; CODE XREF: ROM:EnemyAI_GhostGen_Bj
-		move.w	#$0000,BehaviourLUTIndex(a5)
+EnemyAI_GhostGen:
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR RunEnemyAI
 
-CheckRespawnGhost:				  ; CODE XREF: RunEnemyAI+4j
+; Chunk of RunEnemyAI, entered for hidden ($7F7F) enemy slots: if the
+; hidden sprite is a ghost and a live ghost generator is present in
+; the room, restore the ghost from its Init* fields at its spawn
+; point with full health. If the spawn spot validates, continue with
+; FinishGhostRespawn (enemyai2) to start the materialise; if it is
+; blocked, fall through into enemyai2's MoveSpriteOffscreen (this
+; file is included directly before it) to stay hidden and retry.
+CheckRespawnGhost:
 		cmpi.b	#SpriteB_Ghost,InitSpriteGraphic(a5)
-		beq.s	loc_1A8718
+		beq.s	_findGenerator
 
-locret_1A8716:					  ; CODE XREF: RunEnemyAI+33Aj
-						  ; RunEnemyAI+34Ej
+_noRespawn:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8718:					  ; CODE XREF: RunEnemyAI+32Ej
+_findGenerator:
 		lea	(Sprite1_X).l,a0
 
-loc_1A871E:					  ; CODE XREF: RunEnemyAI+348j
+_genScan:
 		move.w	(a0),d0
-		bmi.s	locret_1A8716
+		bmi.s	_noRespawn
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a0)
-		beq.s	loc_1A8730
+		beq.s	_genFound
 		lea	SPRITE_SIZE(a0),a0
-		bra.s	loc_1A871E
-; ---------------------------------------------------------------------------
+		bra.s	_genScan
 
-loc_1A8730:					  ; CODE XREF: RunEnemyAI+342j
+; Found a generator: no respawn if it is itself hidden (destroyed).
+_genFound:
 		cmpi.b	#$7F,d0
-		beq.s	locret_1A8716
+		beq.s	_noRespawn
 		move.w	InitX(a5),X(a5)
 		move.w	InitSubX(a5),SubX(a5)
 		move.w	InitRotAndSize(a5),RotationAndSize(a5)
@@ -66,4 +72,6 @@ loc_1A8730:					  ; CODE XREF: RunEnemyAI+342j
 		bsr.w	j_j_CalcSpriteHitbox
 		jsr	(j_ValidateSpritePosition).l
 		bcc.s	FinishGhostRespawn
-; END OF FUNCTION CHUNK	FOR RunEnemyAI
+		; falls through into enemyai2's MoveSpriteOffscreen
+
+		modend

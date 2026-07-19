@@ -1635,7 +1635,7 @@ CSA_0076:					  ; CODE XREF: ROM:000122D4j
 CSA_0077:					  ; CODE XREF: ROM:000122D8j
 		movem.l	a5,-(sp)
 		lea	(Sprite1_X).l,a5
-		move.w	#00333,BehaviourLUTIndex(a5)
+		move.w	#BHVS_WALK_START_CUTSCENE,BehaviourLUTIndex(a5)
 		jsr	(j_LoadSpriteBehaviour).l
 		movem.l	(sp)+,a5
 		rts

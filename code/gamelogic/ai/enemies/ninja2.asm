@@ -1,25 +1,30 @@
-; ---------------------------------------------------------------------------
+Ninja2	module
+; AI for SPR_NINJA2. As Ninja1, but it adds the teleport: from the
+; $30-$38 ring it can vanish and reappear $18 in front of the player,
+; facing him, dropping out of the air straight into a slash.
+; Point-blank it slashes 50% leaping / 50% advancing.
 
-EnemyAI_Ninja2_B:				  ; CODE XREF: ROM:001A84E2j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Ninja2_B:
 		bra.s	EnemyAI_Ninja2
-; ---------------------------------------------------------------------------
 
-EnemyAI_Ninja2_A:				  ; CODE XREF: ROM:001A84DEj
-		btst	#$01,$0000000C(a5)
-		bne.s	loc_1A61AC
+; A routine, run every tick.
+EnemyAI_Ninja2_A:
+		btst	#$01,InteractFlags(a5)
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A61B2
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A61DE
-		bra.w	loc_1A633A
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A61AC:					  ; CODE XREF: ROM:001A619Aj
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A61B2:					  ; CODE XREF: ROM:001A61A0j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,173 +34,155 @@ loc_1A61B2:					  ; CODE XREF: ROM:001A61A0j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Ninja2
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Ninja2:					  ; CODE XREF: ROM:EnemyAI_Ninja2_Bj
-						  ; ROM:001A61D6j ...
+; Aggro / attack-over / hitstun recovery: chase (behaviour 6,
+; AIState $10).
+EnemyAI_Ninja2:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1A61DE:					  ; CODE XREF: ROM:001A61A6j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A620E
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A6212
-		bcs.s	loc_1A6208
-		bsr.s	sub_1A6252
-		bcs.s	loc_1A6208
-		bsr.w	sub_1A628E
-		bcs.s	loc_1A6208
-		bsr.w	sub_1A62E0
+		bsr.s	_tryStance
+		bcs.s	_chaseTick
+		bsr.s	_tryRetreat
+		bcs.s	_chaseTick
+		bsr.w	_tryTeleport
+		bcs.s	_chaseTick
+		bsr.w	_tryMelee
 
-loc_1A6208:					  ; CODE XREF: ROM:001A61F8j
-						  ; ROM:001A61FCj ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A620E:					  ; CODE XREF: ROM:001A61E4j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6212:					  ; CODE XREF: ROM:001A61F6p
+; Player in the $38-$40 band ahead, $20 lateral: 38-in-1000 chance to
+; square up in the stance (state $20).
+_tryStance:
 		move.w	#$0040,d5
 		move.w	#$FFC8,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A624E
+		bcc.s	_stanceMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
-		bhi.s	loc_1A624E
+		bhi.s	_stanceMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A624E:					  ; CODE XREF: sub_1A6212+10j
-						  ; sub_1A6212+20j
+_stanceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6212
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6252:					  ; CODE XREF: ROM:001A61FAp
+; Player in the $30-$38 band ahead, $38 lateral: 13-in-1000 chance to
+; back away (state $21, BHVS_RETREAT).
+_tryRetreat:
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
 		move.w	#$0038,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A628A
+		bcc.s	_retreatMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#$000C,d7
-		bhi.s	loc_1A628A
+		bhi.s	_retreatMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0008,BehaviourLUTIndex(a5)
+		move.w	#BHVS_RETREAT,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A628A:					  ; CODE XREF: sub_1A6252+10j
-						  ; sub_1A6252+20j
+_retreatMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6252
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A628E:					  ; CODE XREF: ROM:001A61FEp
+; Player in the mid-range ring (within $38 but not within $30, all
+; around): 13-in-1000 chance to teleport to him (state $22).
+_tryTeleport:
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A62DC
+		bcc.s	_teleportMiss
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	loc_1A62DC
+		bcs.s	_teleportMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1A62DC
+		bhi.s	_teleportMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A62DC:					  ; CODE XREF: sub_1A628E+10j
-						  ; sub_1A628E+22j ...
+_teleportMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A628E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A62E0:					  ; CODE XREF: ROM:001A6204p
+; Player within $30 all around: 50% slash leaping (state $23,
+; BHVS_LEAP_ADVANCE), else advancing (state $24, BHVS_ADVANCE).
+_tryMelee:
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A6336
+		bcc.s	_meleeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bcc.s	loc_1A631C
+		bcc.s	_meleeAdvance
 		move.b	#$23,AIState(a5)
-		move.w	#$0012,BehaviourLUTIndex(a5)
+		move.w	#BHVS_LEAP_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A631C:					  ; CODE XREF: sub_1A62E0+20j
+_meleeAdvance:
 		move.b	#$24,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6336:					  ; CODE XREF: sub_1A62E0+10j
+_meleeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A62E0
 
-; ---------------------------------------------------------------------------
-
-loc_1A633A:					  ; CODE XREF: ROM:001A61A8j
+; States $20+: 0 = stance, 1 = retreat (behaviour ticks), 2 =
+; teleport, 3/4 = slash (leaping or advancing).
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A6358
+		beq.s	_stance
 		cmpi.b	#$01,d0
-		beq.s	loc_1A63B0
+		beq.s	_behaviourTick
 		cmpi.b	#$02,d0
-		beq.s	loc_1A63B6
+		beq.s	_teleport
 		cmpi.b	#$03,d0
-		beq.w	loc_1A645C
-		bra.w	loc_1A645C
-; ---------------------------------------------------------------------------
+		beq.w	_slash
+		bra.w	_slash
 
-loc_1A6358:					  ; CODE XREF: ROM:001A633Ej
+; Stance: hold facing the player while he stays in the $38-$40 band,
+; alternating two forced frames ($40/$80) every $10 ticks; give up
+; after $80 ticks or when he leaves the band.
+_stance:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0040,d5
@@ -209,7 +196,7 @@ loc_1A6358:					  ; CODE XREF: ROM:001A633Ej
 		beq.w	EnemyAI_Ninja2
 		andi.b	#$0F,d0
 		cmpi.b	#$01,d0
-		bne.s	locret_1A63AE
+		bne.s	_stanceRts
 		move.b	#$FF,Action1(a5)
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0010,d0
@@ -217,45 +204,45 @@ loc_1A6358:					  ; CODE XREF: ROM:001A633Ej
 		lsl.b	#$02,d0
 		move.w	d0,PrevAction(a5)
 
-locret_1A63AE:					  ; CODE XREF: ROM:001A6394j
+_stanceRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A63B0:					  ; CODE XREF: ROM:001A6344j
+_behaviourTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A63B6:					  ; CODE XREF: ROM:001A634Aj
+; Teleport: reappear $18 along the player's facing from his centre -
+; right in front of him - staying at ground level. Saves the position
+; (X, Y and subpixels); if the spot is blocked, restore it and reset.
+; Clear: drop in with the ACT_JUMP bit, face him (his facing flipped
+; 180) and go straight to the slash (state $23 - the idle behaviour
+; is still loaded, so it is a standing slash).
+_teleport:
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.w	(Player_CentreX).l,d1
 		move.w	(Player_CentreY).l,d2
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
-		beq.s	loc_1A63E2
+		beq.s	_spotNE
 		cmpi.b	#$80,d0
-		beq.s	loc_1A63E8
-		bhi.s	loc_1A63EE
-		addi.w	#$0018,d1
-		bra.s	loc_1A63F2
-; ---------------------------------------------------------------------------
+		beq.s	_spotSW
+		bhi.s	_spotNW
+		addi.w	#$0018,d1	; SE: X + $18
+		bra.s	_applySpot
 
-loc_1A63E2:					  ; CODE XREF: ROM:001A63D2j
-		subi.w	#$0018,d2
-		bra.s	loc_1A63F2
-; ---------------------------------------------------------------------------
+_spotNE:
+		subi.w	#$0018,d2	; NE: Y - $18
+		bra.s	_applySpot
 
-loc_1A63E8:					  ; CODE XREF: ROM:001A63D8j
-		addi.w	#$0018,d2
-		bra.s	loc_1A63F2
-; ---------------------------------------------------------------------------
+_spotSW:
+		addi.w	#$0018,d2	; SW: Y + $18
+		bra.s	_applySpot
 
-loc_1A63EE:					  ; CODE XREF: ROM:001A63DAj
-		subi.w	#$0018,d1
+_spotNW:
+		subi.w	#$0018,d1	; NW: X - $18
 
-loc_1A63F2:					  ; CODE XREF: ROM:001A63E0j
-						  ; ROM:001A63E6j ...
+_applySpot:
 		move.w	d1,d0
 		lsr.w	#$04,d1
 		move.b	d1,X(a5)
@@ -269,16 +256,15 @@ loc_1A63F2:					  ; CODE XREF: ROM:001A63E0j
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1A6432
+		bcc.s	_landed
 		movem.l	(sp)+,d0
 		move.l	d0,(a5)
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		bra.w	EnemyAI_Ninja2
-; ---------------------------------------------------------------------------
 
-loc_1A6432:					  ; CODE XREF: ROM:001A641Ej
-		bset	#$05,Action1(a5)
+_landed:
+		bset	#$05,Action1(a5)	; ACT_JUMP bit - drop in from the air
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eori.b	#DIR_FLIP,d0
@@ -287,24 +273,27 @@ loc_1A6432:					  ; CODE XREF: ROM:001A641Ej
 		movem.l	(sp)+,d0
 		move.b	#$23,AIState(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A645C:					  ; CODE XREF: ROM:001A6350j
-						  ; ROM:001A6354j
+; Slash: ACT_ATTACK1 windup for $F ticks, then the hit box ($19
+; ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing. Runs the behaviour, so the
+; leap and advance variants keep moving.
+_slash:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1A6490
+		bcs.s	_slashTick
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	loc_1A6490
+		bcs.s	_slashTick
 		beq.w	EnemyAI_Ninja2
 
-loc_1A6490:					  ; CODE XREF: ROM:001A646Cj
-						  ; ROM:001A648Aj
+_slashTick:
 		bsr.w	j_j_OnTick
 		rts
+
+		modend

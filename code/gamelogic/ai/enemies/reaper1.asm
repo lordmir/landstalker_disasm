@@ -1,25 +1,36 @@
-; ---------------------------------------------------------------------------
+Reaper1	module
+; AI for SPR_REAPER1. An ambusher that never walks: once aggro'd (a
+; huge $100 detection box) it stays hidden (InteractFlags bit 6) and
+; frozen at the floating height, and every $3C ticks it acts - if the
+; player is in the $48-$60 band ahead it appears on the spot and
+; casts; otherwise it may teleport in, $68 behind the player facing
+; his back, or $68 in front facing him (201-in-1000 each), dropping
+; out of the air onto the floor and casting a fireball
+; (AttackStrength $300 - its own entity, though it shares its flame
+; graphics with the Magic Sword's burn animation). No melee -
+; contact and fireballs do the damage.
 
-EnemyAI_Reaper1_B:				  ; CODE XREF: ROM:001A85F2j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Reaper1_B:
 		bra.s	EnemyAI_Reaper1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Reaper1_A:				  ; CODE XREF: ROM:001A85EEj
+; A routine, run every tick.
+EnemyAI_Reaper1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AC13A
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AC140
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AC16C
-		bra.w	loc_1AC258
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AC13A:					  ; CODE XREF: ROM:001AC128j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC140:					  ; CODE XREF: ROM:001AC12Ej
+; State 0: run the placed behaviour until the player comes within
+; $100 in every direction, then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,171 +40,164 @@ loc_1AC140:					  ; CODE XREF: ROM:001AC12Ej
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Reaper1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Reaper1:				  ; CODE XREF: ROM:EnemyAI_Reaper1_Bj
-						  ; ROM:001AC164j ...
+; Aggro / attack-over / hitstun recovery: chase (behaviour 6,
+; AIState $10).
+EnemyAI_Reaper1:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1AC16C:					  ; CODE XREF: ROM:001AC134j
+; State $10: hidden and frozen (no behaviour tick) while AICounter
+; runs up to $3C; then act - appear and cast if the player is ahead,
+; else roll the two teleports.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1AC1CC
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$3C,AICounter(a5)
-		bcs.s	loc_1AC1B8
+		bcs.s	_stayHidden
 		clr.b	AICounter(a5)
-		bsr.s	sub_1AC1D0
-		bcs.s	loc_1AC1B2
+		bsr.s	_tryCastInPlace
+		bcs.s	_chaseTick
 		ori.b	#$40,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
-		bsr.s	sub_1AC200
-		bcs.s	loc_1AC1B2
-		bsr.w	sub_1AC22A
+		bsr.s	_tryTeleportBehind
+		bcs.s	_chaseTick
+		bsr.w	_tryTeleportFront
 
-loc_1AC1B2:					  ; CODE XREF: ROM:001AC196j
-						  ; ROM:001AC1ACj
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC1B8:					  ; CODE XREF: ROM:001AC18Ej
+; Countdown tick: keep hidden (InteractFlags bit 6) at the floating
+; height, without running the behaviour.
+_stayHidden:
 		ori.b	#$40,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC1CC:					  ; CODE XREF: ROM:001AC172j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AC1D0:					  ; CODE XREF: ROM:001AC194p
+; Player in the $48-$60 band ahead, $10 lateral: appear right here
+; and cast (state $20).
+_tryCastInPlace:
 		move.w	#$0060,d5
 		move.w	#$FFB8,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AC1FC
+		bcc.s	_castInPlaceMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC1FC:					  ; CODE XREF: sub_1AC1D0+10j
+_castInPlaceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AC1D0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AC200:					  ; CODE XREF: ROM:001AC1AAp
+; 201-in-1000 chance to teleport in behind the player (state $21).
+_tryTeleportBehind:
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00200,d7
-		bhi.s	loc_1AC226
+		bhi.s	_teleBehindMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC226:					  ; CODE XREF: sub_1AC200+Ej
+_teleBehindMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AC200
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AC22A:					  ; CODE XREF: ROM:001AC1AEp
+; 201-in-1000 chance to teleport in facing the player (state $22).
+_tryTeleportFront:
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00200,d7
-		bhi.s	loc_1AC254
+		bhi.s	_teleFrontMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC254:					  ; CODE XREF: sub_1AC22A+Ej
+_teleFrontMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AC22A
 
-; ---------------------------------------------------------------------------
-
-loc_1AC258:					  ; CODE XREF: ROM:001AC136j
+; States $20+: 0 = appear and cast, 1 = teleport behind the player,
+; 2+ = teleport in front of him.
+_attackStates:
 		clr.b	AnimPhase(a5)
 		andi.b	#$0F,d0
-		beq.w	loc_1AC368
+		beq.w	_cast
 		cmpi.b	#$01,d0
-		beq.s	loc_1AC27E
+		beq.s	_teleportBehind
 		cmpi.b	#$02,d0
-		beq.w	loc_1AC292
+		beq.w	_teleportFront
 		cmpi.b	#$03,d0
-		beq.w	loc_1AC292
-		bra.w	loc_1AC292
-; ---------------------------------------------------------------------------
+		beq.w	_teleportFront
+		bra.w	_teleportFront
 
-loc_1AC27E:					  ; CODE XREF: ROM:001AC268j
+; Teleport behind: the spot is $68 in the direction the player is
+; facing *away* from (his facing flipped 180), and the reaper will
+; face the same way as him - at his back. Saves the position (X, Y
+; and subpixels) in case the spot is blocked.
+_teleportBehind:
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.b	(Player_RotationAndSize).l,d0
 		eori.b	#DIR_FLIP,d0
 		clr.b	d1
-		bra.s	loc_1AC2A2
-; ---------------------------------------------------------------------------
+		bra.s	_teleportPlace
 
-loc_1AC292:					  ; CODE XREF: ROM:001AC26Ej
-						  ; ROM:001AC276j ...
+; Teleport in front: the spot is $68 in the player's facing
+; direction, and the reaper will face him (d1 = $80 flips the facing
+; below).
+_teleportFront:
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.b	(Player_RotationAndSize).l,d0
 		move.b	#$80,d1
 
-loc_1AC2A2:					  ; CODE XREF: ROM:001AC290j
+; Compute the spot (player centre + $68 in direction d0), drop to
+; the floor there and validate. Blocked: restore the old position
+; and the floating height, and go back to waiting. Clear: land with
+; a hop (ACT_JUMP bit), set the facing (player's facing eor d1) and
+; cast (state $20).
+_teleportPlace:
 		movem.w	d1,-(sp)
 		move.w	(Player_CentreX).l,d1
 		move.w	(Player_CentreY).l,d2
 		andi.b	#$C0,d0
-		beq.s	loc_1AC2C6
+		beq.s	_spotNE
 		cmpi.b	#$80,d0
-		beq.s	loc_1AC2CC
-		bhi.s	loc_1AC2D2
-		addi.w	#$0068,d1
-		bra.s	loc_1AC2D6
-; ---------------------------------------------------------------------------
+		beq.s	_spotSW
+		bhi.s	_spotNW
+		addi.w	#$0068,d1	; SE: X + $68
+		bra.s	_applySpot
 
-loc_1AC2C6:					  ; CODE XREF: ROM:001AC2B6j
-		subi.w	#$0068,d2
-		bra.s	loc_1AC2D6
-; ---------------------------------------------------------------------------
+_spotNE:
+		subi.w	#$0068,d2	; NE: Y - $68
+		bra.s	_applySpot
 
-loc_1AC2CC:					  ; CODE XREF: ROM:001AC2BCj
-		addi.w	#$0068,d2
-		bra.s	loc_1AC2D6
-; ---------------------------------------------------------------------------
+_spotSW:
+		addi.w	#$0068,d2	; SW: Y + $68
+		bra.s	_applySpot
 
-loc_1AC2D2:					  ; CODE XREF: ROM:001AC2BEj
-		subi.w	#$0068,d1
+_spotNW:
+		subi.w	#$0068,d1	; NW: X - $68
 
-loc_1AC2D6:					  ; CODE XREF: ROM:001AC2C4j
-						  ; ROM:001AC2CAj ...
+_applySpot:
 		move.w	d1,d0
 		lsr.w	#$04,d1
 		move.b	d1,X(a5)
@@ -212,7 +216,7 @@ loc_1AC2D6:					  ; CODE XREF: ROM:001AC2C4j
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		jsr	(j_ValidateSpritePosition).l
-		bcc.s	loc_1AC338
+		bcc.s	_landed
 		movem.w	(sp)+,d1
 		movem.l	(sp)+,d0
 		move.l	d0,(a5)
@@ -221,11 +225,10 @@ loc_1AC2D6:					  ; CODE XREF: ROM:001AC2C4j
 		move.w	#$0120,HitBoxZEnd(a5)
 		jsr	(j_j_CalcSpriteHitbox).l
 		bra.w	EnemyAI_Reaper1
-; ---------------------------------------------------------------------------
 
-loc_1AC338:					  ; CODE XREF: ROM:001AC314j
+_landed:
 		movem.w	(sp)+,d1
-		bset	#$05,Action1(a5)
+		bset	#$05,Action1(a5)	; ACT_JUMP bit - drop in from the air
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eor.b	d1,d0
@@ -235,9 +238,15 @@ loc_1AC338:					  ; CODE XREF: ROM:001AC314j
 		move.b	#$20,AIState(a5)
 		clr.b	AICounter(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC368:					  ; CODE XREF: ROM:001AC260j
+; Cast: become visible again (clear bit 6) pinned to the floor, then
+; the fireball sequence driven by AICounter: tick 1 - casting pose
+; (ACT_ATTACK1) and load the fireball's flame graphics (shared
+; with the Magic Sword's burn animation) to VRAM $9880 (tail call); tick 2 - load the
+; projectile palette; tick $2D - throwing pose (ACT_ATTACK2) and
+; spawn the fireball (type 1, AttackStrength $300; abort if no free
+; slot); then recover until tick $46.
+_cast:
 		andi.b	#$BF,InteractFlags(a5)
 		clr.w	d0
 		move.b	FloorHeight(a5),d0
@@ -246,42 +255,39 @@ loc_1AC368:					  ; CODE XREF: ROM:001AC260j
 		move.w	d0,HitBoxZEnd(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AC3A2
+		bne.s	_castPalette
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jmp	(j_LoadMagicSwordEffect).l
-; ---------------------------------------------------------------------------
 
-loc_1AC3A2:					  ; CODE XREF: ROM:001AC38Aj
+_castPalette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AC3B4
+		bne.w	_castThrow
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
-; ---------------------------------------------------------------------------
 
-loc_1AC3B4:					  ; CODE XREF: ROM:001AC3A8j
+_castThrow:
 		cmpi.b	#$2D,AICounter(a5)
-		bhi.w	loc_1AC3DA
-		bcs.w	locret_1AC3EA
+		bhi.w	_castRecover
+		bcs.w	_castWait
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1
 		bsr.w	SpawnSmallProjectile
-		bcs.w	loc_1AC3EC
+		bcs.w	_castDone
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC3DA:					  ; CODE XREF: ROM:001AC3BAj
+_castRecover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$46,AICounter(a5)
-		beq.w	loc_1AC3EC
+		beq.w	_castDone
 
-locret_1AC3EA:					  ; CODE XREF: ROM:001AC3BEj
+_castWait:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC3EC:					  ; CODE XREF: ROM:001AC3D4j
-						  ; ROM:001AC3E6j
+_castDone:
 		clr.b	AICounter(a5)
 		bra.w	EnemyAI_Reaper1
+
+		modend

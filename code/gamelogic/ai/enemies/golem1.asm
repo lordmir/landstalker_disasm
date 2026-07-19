@@ -1,25 +1,31 @@
-; ---------------------------------------------------------------------------
+Golem1	module
+; AI for SPR_GOLEM1. The simplest enemy kit in the game: it chases,
+; may stop to menace on the approach (BHVS_PAUSE_32_AI), and once the
+; player is within $20 it always attacks - raising its fist
+; (ACT_ATTACK3) and bringing it down on the player's head
+; (ACT_ATTACK2, $19 box).
 
-EnemyAI_Golem1_B:				  ; CODE XREF: ROM:001A862Aj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Golem1_B:
 		bra.s	EnemyAI_Golem1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Golem1_A:				  ; CODE XREF: ROM:001A8626j
+; A routine, run every tick.
+EnemyAI_Golem1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AD0CA
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AD0D0
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AD0FC
-		bra.w	loc_1AD194
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AD0CA:					  ; CODE XREF: ROM:001AD0B8j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD0D0:					  ; CODE XREF: ROM:001AD0BEj
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $40 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,104 +35,97 @@ loc_1AD0D0:					  ; CODE XREF: ROM:001AD0BEj
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Golem1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Golem1:					  ; CODE XREF: ROM:EnemyAI_Golem1_Bj
-						  ; ROM:001AD0F4j ...
+; Aggro / attack-over / hitstun recovery: chase (behaviour 6,
+; AIState $10).
+EnemyAI_Golem1:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1AD0FC:					  ; CODE XREF: ROM:001AD0C4j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try the pause, then the smash.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1AD120
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1AD124
-		bcs.s	loc_1AD11A
-		bsr.s	sub_1AD164
+		bsr.s	_tryPause
+		bcs.s	_chaseTick
+		bsr.s	_trySmash
 
-loc_1AD11A:					  ; CODE XREF: ROM:001AD116j
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD120:					  ; CODE XREF: ROM:001AD102j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD124:					  ; CODE XREF: ROM:001AD114p
+; Player in the $28-$50 band ahead, $8 lateral: 18-in-1000 chance to
+; stop and menace for a moment (state $22, BHVS_PAUSE_32_AI).
+_tryPause:
 		move.w	#$0050,d5
 		move.w	#$FFD8,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD160
+		bcc.s	_pauseMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bcc.s	loc_1AD160
+		bcc.s	_pauseMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD160:					  ; CODE XREF: sub_1AD124+10j
-						  ; sub_1AD124+20j
+_pauseMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD124
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AD164:					  ; CODE XREF: ROM:001AD118p
+; Player within $20 all around: smash, always (state $23).
+_trySmash:
 		move.w	#$0020,d5
 		move.w	#$0020,d6
 		move.w	#$0020,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AD190
+		bcc.s	_smashMiss
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD190:					  ; CODE XREF: sub_1AD164+10j
+_smashMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AD164
 
-; ---------------------------------------------------------------------------
-
-loc_1AD194:					  ; CODE XREF: ROM:001AD0C6j
+; States $20+: below 3 = behaviour ticks (the pause), 3+ = the fist
+; smash: raise the fist (ACT_ATTACK3) for $F ticks, then the hit box
+; ($19 ahead, 9 behind, 9 lateral) is live with the downward blow
+; (ACT_ATTACK2) each tick until tick $1E, then back to chasing.
+_attackStates:
 		andi.b	#$0F,d0
 		cmpi.b	#$03,d0
-		bcs.s	loc_1AD1D4
+		bcs.s	_behaviourTick
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1AD1D2
+		bcs.s	_smashRts
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1AD1D2
+		bcs.s	_smashRts
 		beq.w	EnemyAI_Golem1
 
-locret_1AD1D2:					  ; CODE XREF: ROM:001AD1AEj
-						  ; ROM:001AD1CCj
+_smashRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AD1D4:					  ; CODE XREF: ROM:001AD19Cj
+_behaviourTick:
 		bsr.w	j_j_OnTick
 		rts
+
+		modend

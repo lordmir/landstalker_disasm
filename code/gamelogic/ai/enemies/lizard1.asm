@@ -1,25 +1,32 @@
-; ---------------------------------------------------------------------------
+Lizard1	module
+; AI for SPR_LIZARD1. A sword fighter: on the approach it may pause
+; menacingly (BHVS_PAUSE_32_AI), pounce at the player (BHVS_POUNCE,
+; contact damage, resetting on landing), or advance with the deep
+; slash (ACT_ATTACK1/2, $29 box). Point-blank it swings: 60% the deep
+; slash standing, 40% the second, shorter slash (ACT_ATTACK3/4, $19
+; box).
 
-EnemyAI_Lizard1_B:				  ; CODE XREF: ROM:001A84F2j
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Lizard1_B:
 		bra.s	EnemyAI_Lizard1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Lizard1_A:				  ; CODE XREF: ROM:001A84EEj
+; A routine, run every tick.
+EnemyAI_Lizard1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A67BE
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A67C4
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A67F0
-		bra.w	loc_1A6932
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A67BE:					  ; CODE XREF: ROM:001A67ACj
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A67C4:					  ; CODE XREF: ROM:001A67B2j
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $30 behind, $40 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -29,234 +36,214 @@ loc_1A67C4:					  ; CODE XREF: ROM:001A67B2j
 		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Lizard1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Lizard1:				  ; CODE XREF: ROM:EnemyAI_Lizard1_Bj
-						  ; ROM:001A67E8j ...
+; Aggro / attack-over / hitstun recovery: chase (behaviour 6,
+; AIState $10).
+EnemyAI_Lizard1:
 		bra.w	StartEnemyChase
-; ---------------------------------------------------------------------------
 
-loc_1A67F0:					  ; CODE XREF: ROM:001A67B8j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each move in turn.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A6820
+		bne.s	_playerHurt
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.s	sub_1A6824
-		bcs.s	loc_1A681A
-		bsr.s	sub_1A6860
-		bcs.s	loc_1A681A
-		bsr.w	sub_1A689C
-		bcs.s	loc_1A681A
-		bsr.w	sub_1A68D8
+		bsr.s	_tryPause
+		bcs.s	_chaseTick
+		bsr.s	_tryPounce
+		bcs.s	_chaseTick
+		bsr.w	_tryAdvanceSlash
+		bcs.s	_chaseTick
+		bsr.w	_tryMelee
 
-loc_1A681A:					  ; CODE XREF: ROM:001A680Aj
-						  ; ROM:001A680Ej ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6820:					  ; CODE XREF: ROM:001A67F6j
+_playerHurt:
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6824:					  ; CODE XREF: ROM:001A6808p
+; Player in the $40-$48 band ahead, $10 lateral: 13-in-1000 chance to
+; stop and menace for a moment (state $20, BHVS_PAUSE_32_AI).
+_tryPause:
 		move.w	#$0048,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A685C
+		bcc.s	_pauseMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1A685C
+		bhi.s	_pauseMiss
 		move.b	#$20,AIState(a5)
-		move.w	#$0013,BehaviourLUTIndex(a5)
+		move.w	#BHVS_PAUSE_32_AI,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A685C:					  ; CODE XREF: sub_1A6824+10j
-						  ; sub_1A6824+20j
+_pauseMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6824
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A6860:					  ; CODE XREF: ROM:001A680Cp
+; Player in the $38-$50 band ahead, $10 lateral: 26-in-1000 chance to
+; pounce (state $21, BHVS_POUNCE).
+_tryPounce:
 		move.w	#$0050,d5
 		move.w	#$FFC8,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A6898
+		bcc.s	_pounceMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
-		bhi.s	loc_1A6898
+		bhi.s	_pounceMiss
 		move.b	#$21,AIState(a5)
-		move.w	#$000E,BehaviourLUTIndex(a5)
+		move.w	#BHVS_POUNCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6898:					  ; CODE XREF: sub_1A6860+10j
-						  ; sub_1A6860+20j
+_pounceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A6860
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A689C:					  ; CODE XREF: ROM:001A6810p
+; Player in the $30-$40 band ahead, $10 lateral: 19-in-1000 chance to
+; advance with the deep slash (state $22, BHVS_ADVANCE).
+_tryAdvanceSlash:
 		move.w	#$0040,d5
 		move.w	#$FFD0,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A68D4
+		bcc.s	_advSlashMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bhi.s	loc_1A68D4
+		bhi.s	_advSlashMiss
 		move.b	#$22,AIState(a5)
-		move.w	#$0011,BehaviourLUTIndex(a5)
+		move.w	#BHVS_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A68D4:					  ; CODE XREF: sub_1A689C+10j
-						  ; sub_1A689C+20j
+_advSlashMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A689C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A68D8:					  ; CODE XREF: ROM:001A6816p
+; Player within $20 ahead, $10 lateral: 60% the deep slash standing
+; (state $23), else the second slash (state $24).
+_tryMelee:
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1A692E
+		bcc.s	_meleeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00060,d7
-		bcc.s	loc_1A6914
+		bcc.s	_meleeSlash2
 		move.b	#$23,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6914:					  ; CODE XREF: sub_1A68D8+20j
+_meleeSlash2:
 		move.b	#$24,AIState(a5)
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A692E:					  ; CODE XREF: sub_1A68D8+10j
+_meleeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A68D8
 
-; ---------------------------------------------------------------------------
-
-loc_1A6932:					  ; CODE XREF: ROM:001A67BAj
+; States $20+: 0 = pause (behaviour ticks), 1 = pounce, 2 = advancing
+; slash, 3 = standing slash, 4+ = second slash.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A694E
+		beq.s	_behaviourTick
 		cmpi.b	#$01,d0
-		beq.s	loc_1A6954
+		beq.s	_pounce
 		cmpi.b	#$02,d0
-		beq.s	loc_1A6966
+		beq.s	_advanceSlash
 		cmpi.b	#$03,d0
-		beq.s	loc_1A69A0
-		bra.w	loc_1A69D6
-; ---------------------------------------------------------------------------
+		beq.s	_slash
+		bra.w	_slash2
 
-loc_1A694E:					  ; CODE XREF: ROM:001A6936j
+_behaviourTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6954:					  ; CODE XREF: ROM:001A693Cj
+; Pounce: ride the pounce behaviour while airborne (Action1 bits
+; 4/5); contact does the damage. Reset on landing.
+_pounce:
 		move.b	Action1(a5),d0
 		andi.b	#$30,d0
 		beq.w	EnemyAI_Lizard1
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A6966:					  ; CODE XREF: ROM:001A6942j
+; Advancing deep slash: ACT_ATTACK1 windup for $F ticks, then the
+; deep hit box ($29 ahead, 9 behind, 9 lateral) is live with
+; ACT_ATTACK2 each tick until $1E; the advance behaviour keeps it
+; moving.
+_advanceSlash:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	loc_1A699A
+		bcs.s	_advSlashTick
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	loc_1A699A
+		bcs.s	_advSlashTick
 		bra.w	EnemyAI_Lizard1
-; ---------------------------------------------------------------------------
 
-loc_1A699A:					  ; CODE XREF: ROM:001A6976j
-						  ; ROM:001A6994j
+_advSlashTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A69A0:					  ; CODE XREF: ROM:001A6948j
+; The same deep slash, standing still (no behaviour tick).
+_slash:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1A69D4
+		bcs.s	_slashRts
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1A69D4
+		bcs.s	_slashRts
 		bra.w	EnemyAI_Lizard1
-; ---------------------------------------------------------------------------
 
-locret_1A69D4:					  ; CODE XREF: ROM:001A69B0j
-						  ; ROM:001A69CEj
+_slashRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A69D6:					  ; CODE XREF: ROM:001A694Aj
+; The second slash (ACT_ATTACK3 windup, ACT_ATTACK4 strike): shorter
+; reach ($19 ahead), standing.
+_slash2:
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1A6A0A
+		bcs.s	_slash2Rts
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1A6A0A
+		bcs.s	_slash2Rts
 		bra.w	EnemyAI_Lizard1
-; ---------------------------------------------------------------------------
 
-locret_1A6A0A:					  ; CODE XREF: ROM:001A69E6j
-						  ; ROM:001A6A04j
+_slash2Rts:
 		rts
+
+		modend

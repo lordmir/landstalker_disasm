@@ -23,7 +23,7 @@ _hurtTick:
 ; Hitstun recovery entry: back to idle (behaviour 0, AIState 0, hurt
 ; flag cleared).
 EnemyAI_Bubble2:
-		move.w	#$0000,BehaviourLUTIndex(a5)
+		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
@@ -43,14 +43,15 @@ _idle:
 		bcs.s	_startWobble
 		rts
 
-; Pick a hop pattern: behaviour $22 80% of the time, $21 otherwise.
+; Pick a hop pattern: BHVS_HOP_CHASE 80% of the time, BHVS_CHASE_BRIEF
+; otherwise.
 _pickHop:
-		move.b	#$22,d0
+		move.b	#BHVS_HOP_CHASE,d0
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.b	#00080,d7
 		bcs.s	_startHop
-		move.b	#$21,d0
+		move.b	#BHVS_CHASE_BRIEF,d0
 
 _startHop:
 		move.w	d0,BehaviourLUTIndex(a5)
