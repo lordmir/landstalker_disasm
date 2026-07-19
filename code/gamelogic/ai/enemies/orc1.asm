@@ -1,234 +1,223 @@
-; ---------------------------------------------------------------------------
+Orc1	module
+; AI for SPR_ORC1. Idles until the player enters its detection box,
+; then chases (behaviour 6); each tick of the chase it rolls for one
+; of four range-based moves: a pounce from afar, a brief standoff, a
+; retreat, or a point-blank swing.
 
-EnemyAI_Orc1_B:					  ; CODE XREF: ROM:001A84AAj
+; B routine (behaviour command $2B): back to chasing.
+EnemyAI_Orc1_B:
 		bra.s	EnemyAI_Orc1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Orc1_A:					  ; CODE XREF: ROM:loc_1A84A6j
+; A routine, run every tick.
+EnemyAI_Orc1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1A4CA8
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1A4CAE
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1A4CDA
-		bra.w	loc_1A4E52
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1A4CA8:					  ; CODE XREF: ROM:001A4C96j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4CAE:					  ; CODE XREF: ROM:001A4C9Cj
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $20 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0060,d5
 		move.w	#$0020,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Orc1
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Orc1:					  ; CODE XREF: ROM:EnemyAI_Orc1_Bj
-						  ; ROM:001A4CD2j ...
-		bra.w	loc_1A8AB6
-; ---------------------------------------------------------------------------
+; Aggro / attack-over / hitstun recovery: start chasing the player
+; (behaviour 6, AIState $10).
+EnemyAI_Orc1:
+		bra.w	StartEnemyChase
 
-loc_1A4CDA:					  ; CODE XREF: ROM:001A4CA2j
+; State $10: chasing. If the player is already in hitstun just keep
+; chasing; otherwise try each attack in turn, farthest range first.
+_chase:
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1A4D0A
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
-		bsr.s	sub_1A4D0E
-		bcs.s	loc_1A4D04
-		bsr.s	sub_1A4D5C
-		bcs.s	loc_1A4D04
-		bsr.w	sub_1A4DAA
-		bcs.s	loc_1A4D04
-		bsr.w	sub_1A4DF8
+		bne.s	_playerHurt
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
+		bsr.s	_tryPounce
+		bcs.s	_chaseTick
+		bsr.s	_tryStandoff
+		bcs.s	_chaseTick
+		bsr.w	_tryRetreat
+		bcs.s	_chaseTick
+		bsr.w	_trySwing
 
-loc_1A4D04:					  ; CODE XREF: ROM:001A4CF4j
-						  ; ROM:001A4CF8j ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4D0A:					  ; CODE XREF: ROM:001A4CE0j
-		bra.w	loc_1A8AA6
+_playerHurt:
+		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A4D0E:					  ; CODE XREF: ROM:001A4CF2p
+; Player inside the $50 ring but not the $38 ring: 13-in-1000 chance
+; per tick to pounce (state $20, behaviour $E: jump + run forward).
+_tryPounce:
 		move.w	#$0050,d5
 		move.w	#$0050,d6
 		move.w	#$0050,d7
-		bsr.w	sub_1A8964
-		bcc.s	loc_1A4D58
+		bsr.w	CheckPlayerInRange
+		bcc.s	_pounceMiss
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
-		bsr.w	sub_1A8964
-		bcs.s	loc_1A4D58
+		bsr.w	CheckPlayerInRange
+		bcs.s	_pounceMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1A4D58
+		bhi.s	_pounceMiss
 		move.b	#$20,AIState(a5)
 		move.w	#$000E,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4D58:					  ; CODE XREF: sub_1A4D0E+10j
-						  ; sub_1A4D0E+22j ...
+_pounceMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A4D0E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A4D5C:					  ; CODE XREF: ROM:001A4CF6p
+; Player roughly in line ($38 ahead/behind, $10 lateral) but not
+; within $28: 19-in-1000 chance to stand off (state $21, behaviour 7:
+; stop for a second, then reset).
+_tryStandoff:
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
-		bcc.s	loc_1A4DA6
+		bsr.w	CheckPlayerInRange
+		bcc.s	_standoffMiss
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
-		bsr.w	sub_1A8964
-		bcs.s	loc_1A4DA6
+		bsr.w	CheckPlayerInRange
+		bcs.s	_standoffMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
-		bhi.s	loc_1A4DA6
+		bhi.s	_standoffMiss
 		move.b	#$21,AIState(a5)
 		move.w	#$0007,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4DA6:					  ; CODE XREF: sub_1A4D5C+10j
-						  ; sub_1A4D5C+22j ...
+_standoffMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A4D5C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A4DAA:					  ; CODE XREF: ROM:001A4CFAp
+; Player in line within $30 but not within $28: 13-in-1000 chance to
+; retreat (state $22, behaviour 8: turn 180 and walk away, then
+; reset).
+_tryRetreat:
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
-		bcc.s	loc_1A4DF4
+		bsr.w	CheckPlayerInRange
+		bcc.s	_retreatMiss
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
-		bsr.w	sub_1A8964
-		bcs.s	loc_1A4DF4
+		bsr.w	CheckPlayerInRange
+		bcs.s	_retreatMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
-		bhi.s	loc_1A4DF4
+		bhi.s	_retreatMiss
 		move.b	#$22,AIState(a5)
 		move.w	#$0008,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4DF4:					  ; CODE XREF: sub_1A4DAA+10j
-						  ; sub_1A4DAA+22j ...
+_retreatMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A4DAA
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A4DF8:					  ; CODE XREF: ROM:001A4D00p
+; Player point-blank ahead ($20 ahead, $8 lateral): swing -
+; 50/50 standing still (state $23, behaviour 0) or with a hop in
+; place (state $24, behaviour 9: jump then pause).
+_trySwing:
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
-		bcc.s	loc_1A4E4E
+		bsr.w	CheckPlayerInRange
+		bcc.s	_swingMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bcc.s	loc_1A4E34
+		bcc.s	_swingHop
 		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4E34:					  ; CODE XREF: sub_1A4DF8+20j
+_swingHop:
 		move.b	#$24,AIState(a5)
 		move.w	#$0009,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4E4E:					  ; CODE XREF: sub_1A4DF8+10j
+_swingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A4DF8
 
-; ---------------------------------------------------------------------------
-
-loc_1A4E52:					  ; CODE XREF: ROM:001A4CA4j
+; States $20+: 0 = pounce, 1/2 = behaviour-driven standoff/retreat,
+; 3/4 = sword swing.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1A4E6C
+		beq.s	_pounceTick
 		cmpi.b	#$01,d0
-		beq.s	loc_1A4E78
+		beq.s	_tick
 		cmpi.b	#$02,d0
-		beq.s	loc_1A4E78
+		beq.s	_tick
 		cmpi.b	#$03,d0
-		beq.s	loc_1A4E7E
-		bra.s	loc_1A4E7E
-; ---------------------------------------------------------------------------
+		beq.s	_swing
+		bra.s	_swing
 
-loc_1A4E6C:					  ; CODE XREF: ROM:001A4E56j
+; Pounce: back to chasing once no longer airborne.
+_pounceTick:
 		move.b	Action1(a5),d0
-		andi.b	#$30,d0
+		andi.b	#$30,d0			; ACT_JUMP|ACT_FALL bits
 		beq.w	EnemyAI_Orc1
 
-loc_1A4E78:					  ; CODE XREF: ROM:001A4E5Cj
-						  ; ROM:001A4E62j
+_tick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4E7E:					  ; CODE XREF: ROM:001A4E68j
-						  ; ROM:001A4E6Aj
+; Sword swing: ACT_ATTACK1 windup for $F ticks, then the hit box
+; ($19 ahead, 9 behind, 9 lateral) is live with ACT_ATTACK2 each tick
+; until tick $1E, then back to chasing.
+_swing:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)
-		bcs.s	locret_1A4EB2
+		bcs.s	_swingRts
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
-		bcs.s	locret_1A4EB2
+		bcs.s	_swingRts
 		beq.w	EnemyAI_Orc1
 
-locret_1A4EB2:					  ; CODE XREF: ROM:001A4E8Ej
-						  ; ROM:001A4EACj
+_swingRts:
 		rts
+
+		modend

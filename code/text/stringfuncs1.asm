@@ -513,7 +513,7 @@ HandleNewLineAndPrompt:				  ; CODE XREF: HandleControlChars+34j
 
 HandleContinuePrompt:				  ; CODE XREF: HandleControlChars+3Cj
 		bsr.w	sub_2339E
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		movem.w	d2,-(sp)
 
 loc_232AC:					  ; CODE XREF: HandleControlChars+166j
@@ -550,8 +550,8 @@ sub_232CE:					  ; CODE XREF: HandleControlChars+13Ap
 sub_232E0:					  ; CODE XREF: HandleControlChars+162p
 						  ; HandleControlChars+16Ep
 		move.w	#$0148,d0
-		addq.b	#$08,(word_FF1800).l
-		tst.b	(word_FF1800).l
+		addq.b	#$08,(g_Scratch1800).l
+		tst.b	(g_Scratch1800).l
 		bpl.s	loc_232F4
 		clr.w	d0
 

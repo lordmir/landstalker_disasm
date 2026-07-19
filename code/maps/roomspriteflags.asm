@@ -210,7 +210,7 @@ _psScan:
 		btst	d0,(a1,d1.w)
 		beq.s	_psNext
 		andi.b	#$3F,RotationAndSize(a0,d2.w)
-		ori.b	#$80,RotationAndSize(a0,d2.w)
+		ori.b	#DIR_SW,RotationAndSize(a0,d2.w)
 		move.w	#$0004,AnimationIndex(a0,d2.w)
 		bclr	#$00,StateFlags(a0,d2.w)
 		clr.w	BehavParam(a0,d2.w)

@@ -48,8 +48,8 @@ loc_1A7560:					  ; CODE XREF: ROM:001A7542j
 ; ---------------------------------------------------------------------------
 
 loc_1A757C:					  ; CODE XREF: ROM:001A7530j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.w	sub_1A7596
 		bsr.w	j_j_OnTick
 		rts
@@ -61,7 +61,7 @@ sub_1A7596:					  ; CODE XREF: ROM:001A758Cp
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A75E0
 		move.w	HitBoxZEnd(a5),d0
 		sub.w	(Player_Z).l,d0
@@ -125,12 +125,12 @@ loc_1A7642:					  ; CODE XREF: ROM:001A75EEj
 		move.b	#$01,(g_PlayerHurtTimer).l
 
 loc_1A765C:					  ; CODE XREF: ROM:001A7652j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	loc_1A7560
 		move.b	AICounter(a5),d0
 		addq.b	#$01,AICounter(a5)
@@ -154,4 +154,4 @@ loc_1A76A4:					  ; CODE XREF: ROM:001A768Aj
 
 loc_1A76AE:					  ; CODE XREF: ROM:001A76A2j
 		bclr	#$06,InteractFlags(a5)
-		bra.w	loc_1A8AEC
+		bra.w	j_j_PlayerDeath

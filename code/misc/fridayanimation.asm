@@ -1,78 +1,93 @@
+FridayAnim	module
+; Friday overlay animation, run every frame from WaitUntilVBlank.
+; Friday here is not an entity but a single hardware sprite
+; (gVDPSprFriday_*, tiles at VRAM $7F0) drawn over the scene during
+; cutscenes. Dialogue script actions and the Eke-Eke revival drive her
+; by writing a state to g_FridayAnimation1; g_FridayAnimation2 holds
+; the state to enter when the current move finishes. Callers use the
+; FRIDAY_* constants (constants/fridayanim.inc). States (an odd value
+; starts the move and is bumped to the even running value):
+;   $00      hidden/off (also skipped while the screen is blanked or
+;            the inventory window is open)
+;   $01-$10  fly up from the bottom of the screen, swaying
+;   $11-$20  hover: one figure-of-eight circuit
+;   $21      snap to the perch position (cutscene code polls for $21
+;            as "Friday has arrived/finished")
+;   $22      flap wings in place
+;   $23-$24  frozen
+;   $25-$30  shake: jitter one pixel diagonally
+;   $31-$40  fly down, swaying, then hide (sprite Y cleared)
+;   $41-$50  cast spell: sparkle frames, SND_FridayMagic at $1E, then
+;            strobe CRAM colours 0/$1E white; ends at the perch
+;   $51-$6E  waypoint-path playback, one state pair per path:
+;            $51/$52 = FridayAnimation1 ... $6D/$6E = FridayAnimation15.
+;            Path data: {startY.w, startX.w} then records of
+;            {steps.w, targetX.w, targetY.w}, negative steps = end.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdateFridayAnimation:				  ; CODE XREF: WaitUntilVBlank+4p
-
-; FUNCTION CHUNK AT 000036C2 SIZE 00000172 BYTES
-; FUNCTION CHUNK AT 0000383C SIZE 00000050 BYTES
-; FUNCTION CHUNK AT 000038A2 SIZE 0000011C BYTES
-; FUNCTION CHUNK AT 000039F6 SIZE 0000000E BYTES
+UpdateFridayAnimation:
 
 		movem.l	d0-a6,-(sp)
 		move.b	(g_FridayAnimation1).l,d0
-		beq.w	loc_3632
+		beq.w	_done
 		cmpi.w	#$8A18,(g_VDPReg10_HIntLine).l ; Screen	Blanked
-		beq.w	loc_3632
+		beq.w	_done
 		cmpi.w	#$921C,(g_VDPReg18_WindowVPos).l ; Inventory open
-		beq.w	loc_3632
+		beq.w	_done
 		cmpi.b	#$10,d0
-		bls.w	loc_3638
+		bls.w	_flyUp
 		cmpi.b	#$20,d0
-		bls.w	loc_36C2
+		bls.w	_hover
 		cmpi.b	#$21,d0
-		bls.w	loc_3776
+		bls.w	_perch
 		cmpi.b	#$22,d0
-		bls.w	loc_379C
+		bls.w	_flapWings
 		cmpi.b	#$24,d0
-		bls.w	loc_3632
+		bls.w	_done
 		cmpi.b	#$30,d0
-		bls.w	loc_3746
+		bls.w	_shake
 		cmpi.b	#$40,d0
-		bls.w	loc_37AE
+		bls.w	_flyDown
 		cmpi.b	#$50,d0
-		bls.w	loc_37EE
+		bls.w	_spell
 		cmpi.b	#$52,d0
-		bls.w	loc_38A2
+		bls.w	_path1
 		cmpi.b	#$54,d0
-		bls.w	loc_38AE
+		bls.w	_path2
 		cmpi.b	#$56,d0
-		bls.w	loc_38BA
+		bls.w	_path3
 		cmpi.b	#$58,d0
-		bls.w	loc_38C4
+		bls.w	_path4
 		cmpi.b	#$5A,d0
-		bls.w	loc_38CE
+		bls.w	_path5
 		cmpi.b	#$5C,d0
-		bls.w	loc_38D8
+		bls.w	_path6
 		cmpi.b	#$5E,d0
-		bls.w	loc_38E2
+		bls.w	_path7
 		cmpi.b	#$60,d0
-		bls.w	loc_38EC
+		bls.w	_path8
 		cmpi.b	#$62,d0
-		bls.w	loc_38F6
+		bls.w	_path9
 		cmpi.b	#$64,d0
-		bls.w	loc_3900
+		bls.w	_path10
 		cmpi.b	#$66,d0
-		bls.w	loc_390A
+		bls.w	_path11
 		cmpi.b	#$68,d0
-		bls.w	loc_3914
+		bls.w	_path12
 		cmpi.b	#$6A,d0
-		bls.w	loc_391E
+		bls.w	_path13
 		cmpi.b	#$6C,d0
-		bls.w	loc_3928
+		bls.w	_path14
 		cmpi.b	#$6E,d0
-		bls.w	loc_3932
+		bls.w	_path15
 		clr.b	(g_FridayAnimation1).l
 
-loc_3632:					  ; CODE XREF: UpdateFridayAnimation+Aj
-						  ; UpdateFridayAnimation+16j ...
+_done:
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3638:					  ; CODE XREF: UpdateFridayAnimation+2Aj
+_flyUp:
 		cmpi.b	#$01,d0
-		bhi.s	loc_3664
+		bhi.s	_flyUpStep
 		clr.b	(g_FridayAnimFramecount).l
 		move.b	#$02,(g_FridayAnimation1).l
 		lea	(gVDPSprFriday_Y).l,a0
@@ -80,129 +95,112 @@ loc_3638:					  ; CODE XREF: UpdateFridayAnimation+2Aj
 		move.w	#$0A08,(a0)+
 		move.w	#$C7F0,(a0)+
 		move.w	#$0118,(a0)+
-		bra.s	loc_3632
-; ---------------------------------------------------------------------------
+		bra.s	_done
 
-loc_3664:					  ; CODE XREF: UpdateFridayAnimation+EEj
+_flyUpStep:
 		subq.w	#$02,(gVDPSprFriday_Y).l
-		bsr.s	sub_3672
-		bsr.s	sub_3692
-		bra.w	loc_379C
-; End of function UpdateFridayAnimation
+		bsr.s	CalcFridaySway
+		bsr.s	ApplyFridaySwayX
+		bra.w	_flapWings
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3672:					  ; CODE XREF: UpdateFridayAnimation+11Cp
-						  ; UpdateFridayAnimation+282p
+; d0 = signed X sway offset for this tick (triangle wave over
+; FridaySwayTable, one full swing per $40 framecount ticks);
+; advances the framecount by 4.
+CalcFridaySway:
 		clr.w	d0
 		move.b	(g_FridayAnimFramecount).l,d0
 		addq.b	#$04,(g_FridayAnimFramecount).l
 		lsr.b	#$02,d0
 		cmpi.b	#$08,d0
-		bcs.s	loc_368C
+		bcs.s	_swayLookup
 		eori.b	#$0F,d0
 
-loc_368C:					  ; CODE XREF: sub_3672+14j
-		move.b	byte_36BA(pc,d0.w),d0
+_swayLookup:
+		move.b	FridaySwayTable(pc,d0.w),d0
 		rts
-; End of function sub_3672
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3692:					  ; CODE XREF: UpdateFridayAnimation+11Ep
-						  ; UpdateFridayAnimation+288p
+; Applies the sway: X = $118 + d0. After $40 framecount ticks the
+; move is over and the next state is taken from g_FridayAnimation2.
+ApplyFridaySwayX:
 		ext.w	d0
 		addi.w	#$0118,d0
 		move.w	d0,(gVDPSprFriday_X).l
 		cmpi.b	#$40,(g_FridayAnimFramecount).l
-		bls.s	locret_36B8
+		bls.s	_swayRts
 		clr.b	(g_FridayAnimation1).l
 		move.b	(g_FridayAnimation2).l,(g_FridayAnimation1).l
 
-locret_36B8:					  ; CODE XREF: sub_3692+14j
+_swayRts:
 		rts
-; End of function sub_3692
 
-; ---------------------------------------------------------------------------
-byte_36BA:	dc.b -$03,-$07,-$0A,-$0C,-$0D,-$0E,-$0F,-$10
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR UpdateFridayAnimation
+; Quarter-wave of X offsets for the sway/hover movement.
+FridaySwayTable:	dc.b -$03,-$07,-$0A,-$0C,-$0D,-$0E,-$0F,-$10
 
-loc_36C2:					  ; CODE XREF: UpdateFridayAnimation+32j
+_hover:
 		cmpi.b	#$11,d0
-		bhi.s	loc_36D6
+		bhi.s	_hoverStep
 		clr.b	(g_FridayAnimFramecount).l
 		move.b	#$12,(g_FridayAnimation1).l
 
-loc_36D6:					  ; CODE XREF: UpdateFridayAnimation+178j
+_hoverStep:
 		move.b	(g_FridayAnimFramecount).l,d0
 		addq.b	#$04,(g_FridayAnimFramecount).l
 		lsr.b	#$02,d0
 		cmpi.b	#$20,d0
-		bcc.s	loc_3738
+		bcc.s	_hoverEnd
 		andi.w	#$001F,d0
 		cmpi.b	#$08,d0
-		bcs.s	loc_370A
+		bcs.s	_hoverDescend
 		cmpi.b	#$10,d0
-		bcs.s	loc_3702
+		bcs.s	_hoverMirror1
 		cmpi.b	#$18,d0
-		bcs.s	loc_371C
-		bra.s	loc_3718
-; ---------------------------------------------------------------------------
+		bcs.s	_hoverAscend
+		bra.s	_hoverMirror2
 
-loc_3702:					  ; CODE XREF: UpdateFridayAnimation+1AAj
+_hoverMirror1:
 		andi.b	#$07,d0
 		eori.b	#$07,d0
 
-loc_370A:					  ; CODE XREF: UpdateFridayAnimation+1A4j
+_hoverDescend:
 		addq.w	#$01,(gVDPSprFriday_Y).l
-		move.b	byte_36BA(pc,d0.w),d0
+		move.b	FridaySwayTable(pc,d0.w),d0
 		neg.b	d0
-		bra.s	loc_372A
-; ---------------------------------------------------------------------------
+		bra.s	_hoverSetX
 
-loc_3718:					  ; CODE XREF: UpdateFridayAnimation+1B2j
+_hoverMirror2:
 		eori.b	#$0F,d0
 
-loc_371C:					  ; CODE XREF: UpdateFridayAnimation+1B0j
+_hoverAscend:
 		andi.b	#$07,d0
 		subq.w	#$01,(gVDPSprFriday_Y).l
-		move.b	byte_36BA(pc,d0.w),d0
+		move.b	FridaySwayTable(pc,d0.w),d0
 
-loc_372A:					  ; CODE XREF: UpdateFridayAnimation+1C8j
+_hoverSetX:
 		ext.w	d0
 		addi.w	#$0118,d0
 		move.w	d0,(gVDPSprFriday_X).l
-		bra.s	loc_379C
-; ---------------------------------------------------------------------------
+		bra.s	_flapWings
 
-loc_3738:					  ; CODE XREF: UpdateFridayAnimation+19Aj
+_hoverEnd:
 		move.b	(g_FridayAnimation2).l,(g_FridayAnimation1).l
-		bra.w	loc_3632
-; ---------------------------------------------------------------------------
+		bra.w	_done
 
-loc_3746:					  ; CODE XREF: UpdateFridayAnimation+52j
+_shake:
 		move.b	(g_FridayAnimation2).l,(g_FridayAnimation1).l
 		addq.b	#$01,(g_FridayAnimFramecount).l
 		lea	(gVDPSprFriday_Y).l,a0
 		btst	#$00,(g_FridayAnimFramecount).l
-		beq.s	loc_376E
+		beq.s	_shakeBack
 		addq.w	#$01,(a0)
-		addq.w	#$01,$00000006(a0)
-		bra.s	loc_379C
-; ---------------------------------------------------------------------------
+		addq.w	#$01,6(a0)		; gVDPSprFriday_X
+		bra.s	_flapWings
 
-loc_376E:					  ; CODE XREF: UpdateFridayAnimation+216j
+_shakeBack:
 		subq.w	#$01,(a0)
-		subq.w	#$01,$00000006(a0)
-		bra.s	loc_379C
-; ---------------------------------------------------------------------------
+		subq.w	#$01,6(a0)		; gVDPSprFriday_X
+		bra.s	_flapWings
 
-loc_3776:					  ; CODE XREF: UpdateFridayAnimation+3Aj
+_perch:
 		lea	(gVDPSprFriday_Y).l,a0
 		move.w	#$00A6,(a0)+
 		move.w	#$0A08,(a0)+
@@ -211,214 +209,177 @@ loc_3776:					  ; CODE XREF: UpdateFridayAnimation+3Aj
 		move.b	(g_FridayAnimation2).l,(g_FridayAnimation1).l
 		addq.b	#$01,(g_FridayAnimFramecount).l
 
-loc_379C:					  ; CODE XREF: UpdateFridayAnimation+42j
-						  ; UpdateFridayAnimation+120j	...
+_flapWings:
 		move.b	(g_FridayAnimFramecount).l,d3
 		andi.w	#$000C,d3
-		bsr.w	sub_388C
-		bra.w	loc_3632
-; ---------------------------------------------------------------------------
+		bsr.w	LoadFridayFrame
+		bra.w	_done
 
-loc_37AE:					  ; CODE XREF: UpdateFridayAnimation+5Aj
+_flyDown:
 		cmpi.b	#$31,d0
-		bhi.w	loc_37CA
+		bhi.w	_flyDownStep
 		clr.b	(g_FridayAnimFramecount).l
 		move.b	#$32,(g_FridayAnimation1).l
 		clr.b	(g_FridayAnimation2).l
 
-loc_37CA:					  ; CODE XREF: UpdateFridayAnimation+264j
+_flyDownStep:
 		addq.w	#$02,(gVDPSprFriday_Y).l
-		bsr.w	sub_3672
+		bsr.w	CalcFridaySway
 		neg.b	d0
-		bsr.w	sub_3692
+		bsr.w	ApplyFridaySwayX
 		tst.b	(g_FridayAnimation1).l
-		bne.s	loc_37EC
+		bne.s	_flyDownFlap
 		clr.w	(gVDPSprFriday_Y).l
-		bra.w	loc_3632
-; ---------------------------------------------------------------------------
+		bra.w	_done
 
-loc_37EC:					  ; CODE XREF: UpdateFridayAnimation+292j
-		bra.s	loc_379C
-; ---------------------------------------------------------------------------
+_flyDownFlap:
+		bra.s	_flapWings
 
-loc_37EE:					  ; CODE XREF: UpdateFridayAnimation+62j
+_spell:
 		cmpi.b	#$41,d0
-		bhi.w	loc_3804
+		bhi.w	_spellStep
 		clr.b	(g_FridayAnimFramecount).l
 		move.b	#$42,(g_FridayAnimation1).l
 
-loc_3804:					  ; CODE XREF: UpdateFridayAnimation+2A4j
+_spellStep:
 		move.b	(g_FridayAnimFramecount).l,d0
 		addq.b	#$01,(g_FridayAnimFramecount).l
 		move.w	#$0008,d2
 		tst.b	d0
-		bne.s	loc_381C
+		bne.s	_spellMid
 		clr.w	d3
-		bra.s	loc_3886
-; ---------------------------------------------------------------------------
+		bra.s	_spellFrame
 
-loc_381C:					  ; CODE XREF: UpdateFridayAnimation+2C8j
+_spellMid:
 		cmpi.b	#$0A,d0
-		bne.s	loc_3828
+		bne.s	_spellChk
 		move.w	#$0004,d3
-		bra.s	loc_3886
-; ---------------------------------------------------------------------------
+		bra.s	_spellFrame
 
-loc_3828:					  ; CODE XREF: UpdateFridayAnimation+2D2j
+_spellChk:
 		cmpi.b	#$1E,d0
-		bcs.w	loc_3632
-		bne.s	loc_383C
+		bcs.w	_done
+		bne.s	_spellFlash
 		trap	#$00			  ; Trap00Handler
-; END OF FUNCTION CHUNK	FOR UpdateFridayAnimation
-; ---------------------------------------------------------------------------
 		dc.w SND_FridayMagic
-; ---------------------------------------------------------------------------
 		move.w	#$0008,d3
-		bra.s	loc_3886
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR UpdateFridayAnimation
+		bra.s	_spellFrame
 
-loc_383C:					  ; CODE XREF: UpdateFridayAnimation+2E2j
+_spellFlash:
 		cmpi.b	#$3C,d0
-		bcc.s	loc_3872
+		bcc.s	_spellEnd
 		clr.w	d1
 		btst	#$00,d0
-		bne.s	loc_384E
+		bne.s	_flashWrite
 		move.w	#$0EEE,d1
 
-loc_384E:					  ; CODE XREF: UpdateFridayAnimation+2FAj
+_flashWrite:
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	d1,(VDP_DATA_REG).l
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
 		move.w	d1,(VDP_DATA_REG).l
-		bra.w	loc_3632
-; ---------------------------------------------------------------------------
+		bra.w	_done
 
-loc_3872:					  ; CODE XREF: UpdateFridayAnimation+2F2j
-		move.b	#$21,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
-		bra.w	loc_3632
-; ---------------------------------------------------------------------------
+_spellEnd:
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
+		bra.w	_done
 
-loc_3886:					  ; CODE XREF: UpdateFridayAnimation+2CCj
-						  ; UpdateFridayAnimation+2D8j	...
-		bsr.s	sub_3890
-		bra.w	loc_3632
-; END OF FUNCTION CHUNK	FOR UpdateFridayAnimation
+_spellFrame:
+		bsr.s	LoadFridayTiles
+		bra.w	_done
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_388C:					  ; CODE XREF: UpdateFridayAnimation+258p
+; Queues Friday's 4-tile wing frame d3 (falls through with d2 = 4;
+; the spell states call LoadFridayTiles with d2 = 8 for the
+; double-size sparkle frames).
+LoadFridayFrame:
 		move.w	#$0004,d2
-; End of function sub_388C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3890:					  ; CODE XREF: UpdateFridayAnimation:loc_3886p
-		move.l	#$00000063,d0
+; DMA-queues d2 tiles of Friday graphic $63, frame offset d3, into
+; the overlay sprite's VRAM slot ($7F0).
+LoadFridayTiles:
+		move.l	#$63,d0
 		move.w	#$07F0,d1
 		bsr.w	LoadSpriteTilesQueued
 		bra.w	EnableDMAQueueProcessing
-; End of function sub_3890
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR UpdateFridayAnimation
-
-loc_38A2:					  ; CODE XREF: UpdateFridayAnimation+6Aj
+_path1:
 		lea	FridayAnimation1(pc),a1
 		move.b	#$51,d1
-		bra.w	loc_393A
-; ---------------------------------------------------------------------------
+		bra.w	_pathInit
 
-loc_38AE:					  ; CODE XREF: UpdateFridayAnimation+72j
+_path2:
 		lea	FridayAnimation2(pc),a1
 		move.b	#$53,d1
-		bra.w	loc_393A
-; ---------------------------------------------------------------------------
+		bra.w	_pathInit
 
-loc_38BA:					  ; CODE XREF: UpdateFridayAnimation+7Aj
+_path3:
 		lea	FridayAnimation3(pc),a1
 		move.b	#$55,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38C4:					  ; CODE XREF: UpdateFridayAnimation+82j
+_path4:
 		lea	FridayAnimation4(pc),a1
 		move.b	#$57,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38CE:					  ; CODE XREF: UpdateFridayAnimation+8Aj
+_path5:
 		lea	FridayAnimation5(pc),a1
 		move.b	#$59,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38D8:					  ; CODE XREF: UpdateFridayAnimation+92j
+_path6:
 		lea	FridayAnimation6(pc),a1
 		move.b	#$5B,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38E2:					  ; CODE XREF: UpdateFridayAnimation+9Aj
+_path7:
 		lea	FridayAnimation7(pc),a1
 		move.b	#$5D,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38EC:					  ; CODE XREF: UpdateFridayAnimation+A2j
+_path8:
 		lea	FridayAnimation8(pc),a1
 		move.b	#$5F,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_38F6:					  ; CODE XREF: UpdateFridayAnimation+AAj
+_path9:
 		lea	FridayAnimation9(pc),a1
 		move.b	#$61,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_3900:					  ; CODE XREF: UpdateFridayAnimation+B2j
+_path10:
 		lea	FridayAnimation10(pc),a1
 		move.b	#$63,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_390A:					  ; CODE XREF: UpdateFridayAnimation+BAj
+_path11:
 		lea	FridayAnimation11(pc),a1
 		move.b	#$65,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_3914:					  ; CODE XREF: UpdateFridayAnimation+C2j
+_path12:
 		lea	FridayAnimation12(pc),a1
 		move.b	#$67,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_391E:					  ; CODE XREF: UpdateFridayAnimation+CAj
+_path13:
 		lea	FridayAnimation13(pc),a1
 		move.b	#$69,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_3928:					  ; CODE XREF: UpdateFridayAnimation+D2j
+_path14:
 		lea	FridayAnimation14(pc),a1
 		move.b	#$6B,d1
-		bra.s	loc_393A
-; ---------------------------------------------------------------------------
+		bra.s	_pathInit
 
-loc_3932:					  ; CODE XREF: UpdateFridayAnimation+DAj
+_path15:
 		lea	FridayAnimation15(pc),a1
 		move.b	#$6D,d1
 
-loc_393A:					  ; CODE XREF: UpdateFridayAnimation+35Cj
-						  ; UpdateFridayAnimation+368j	...
+_pathInit:
 		cmp.b	d1,d0
-		bhi.s	loc_3968
+		bhi.s	_pathRun
 		clr.b	(g_FridayAnimFramecount).l
 		addq.b	#$01,(g_FridayAnimation1).l
 		lea	(gVDPSprFriday_Y).l,a0
@@ -427,58 +388,52 @@ loc_393A:					  ; CODE XREF: UpdateFridayAnimation+35Cj
 		move.w	#$C7F0,(a0)+
 		move.w	(a1)+,(a0)+
 		move.l	a1,(g_FridayAnimPtr).l
-		clr.w	(word_FF12E6).l
+		clr.w	(g_FridayPathSteps).l
 
-loc_3968:					  ; CODE XREF: UpdateFridayAnimation+3EEj
+_pathRun:
 		movea.l	(g_FridayAnimPtr).l,a1
-		tst.w	(word_FF12E6).l
-		bne.s	loc_398E
+		tst.w	(g_FridayPathSteps).l
+		bne.s	_pathStep
 		move.w	(a1)+,d0
-		bmi.s	loc_39F6
-		move.w	d0,(word_FF12E6).l
-		addq.w	#$01,(word_FF12E6).l
+		bmi.s	_pathEnd
+		move.w	d0,(g_FridayPathSteps).l
+		addq.w	#$01,(g_FridayPathSteps).l
 		addq.w	#$04,a1
 		move.l	a1,(g_FridayAnimPtr).l
 
-loc_398E:					  ; CODE XREF: UpdateFridayAnimation+426j
-		bsr.s	sub_39BE
-		subq.w	#$01,(word_FF12E6).l
-		move.w	(word_FF12E8).l,d0
+_pathStep:
+		bsr.s	CalcFridayPathDeltas
+		subq.w	#$01,(g_FridayPathSteps).l
+		move.w	(g_FridayPathDX).l,d0
 		add.w	d0,(gVDPSprFriday_X).l
-		move.w	(word_FF12EA).l,d0
+		move.w	(g_FridayPathDY).l,d0
 		add.w	d0,(gVDPSprFriday_Y).l
 		move.b	(g_FridayAnimFramecount).l,d0
 		addq.b	#$04,(g_FridayAnimFramecount).l
-		bra.w	loc_379C
-; END OF FUNCTION CHUNK	FOR UpdateFridayAnimation
+		bra.w	_flapWings
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39BE:					  ; CODE XREF: UpdateFridayAnimation:loc_398Ep
-		move.w	(word_FF12E6).l,d0
-		move.w	-$00000004(a1),d2
+; From the current waypoint record (a1 points just past it):
+; g_FridayPathDX/DY = (target - current position) / steps.
+CalcFridayPathDeltas:
+		move.w	(g_FridayPathSteps).l,d0
+		move.w	-4(a1),d2
 		move.w	(gVDPSprFriday_X).l,d1
 		sub.w	d2,d1
 		ext.l	d1
 		divs.w	d0,d1
 		neg.w	d1
-		move.w	d1,(word_FF12E8).l
-		move.w	-$00000002(a1),d2
+		move.w	d1,(g_FridayPathDX).l
+		move.w	-2(a1),d2
 		move.w	(gVDPSprFriday_Y).l,d1
 		sub.w	d2,d1
 		ext.l	d1
 		divs.w	d0,d1
 		neg.w	d1
-		move.w	d1,(word_FF12EA).l
+		move.w	d1,(g_FridayPathDY).l
 		rts
-; End of function sub_39BE
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR UpdateFridayAnimation
-
-loc_39F6:					  ; CODE XREF: UpdateFridayAnimation+42Aj
+_pathEnd:
 		move.b	(g_FridayAnimation2).l,(g_FridayAnimation1).l
-		bra.w	loc_379C
-; END OF FUNCTION CHUNK	FOR UpdateFridayAnimation
-; ---------------------------------------------------------------------------
+		bra.w	_flapWings
+
+		modend

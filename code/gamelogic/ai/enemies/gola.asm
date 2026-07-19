@@ -109,7 +109,7 @@ sub_1AEFAC:					  ; CODE XREF: j_InitSpritePalettes+AB44p
 		move.b	(Player_X).l,(a5)
 		move.b	#$16,Y(a5)
 		andi.b	#$3F,RotationAndSize(a5)
-		ori.b	#$80,RotationAndSize(a5)
+		ori.b	#DIR_SW,RotationAndSize(a5)
 		bclr	#$03,TileSource(a5)
 		bra.s	loc_1AF000
 ; ---------------------------------------------------------------------------
@@ -118,14 +118,14 @@ loc_1AEFE2:					  ; CODE XREF: sub_1AEFAC+14j
 		move.b	#$19,X(a5)
 		move.b	(Player_Y).l,Y(a5)
 		andi.b	#$3F,RotationAndSize(a5)
-		ori.b	#$40,RotationAndSize(a5)
+		ori.b	#DIR_SE,RotationAndSize(a5)
 		bset	#$03,TileSource(a5)
 
 loc_1AF000:					  ; CODE XREF: sub_1AEFAC+34j
 		bset	#$07,RenderFlags(a5)
 		clr.w	SubX(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		bra.w	loc_1AF0BE
 ; ---------------------------------------------------------------------------
 
@@ -268,7 +268,7 @@ loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
 		bset	#$07,RenderFlags(a5)
 		bset	#$07,AnimCtrl(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		movem.l	(sp)+,d0
 		bcs.s	loc_1AF184
 		move.b	#$26,AIState(a5)

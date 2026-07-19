@@ -196,7 +196,7 @@ InitCombatFlags:      equ $68
 SavedBehavCmd:        equ $69
 ; InitBehavParam/InitBehavCmd: initial BehavParam+BehavCmd pair, saved
 ; as one word at spawn (InitialiseSprites) and restored as one word by
-; RespawnGhost to restart the behaviour script from its initial state.
+; CheckRespawnGhost to restart the behaviour script from its initial state.
 InitBehavParam:       equ $6A
 InitBehavCmd:         equ $6B
 ; MovedDirFlags: bits 0-3 are set when the entity moves in each of the

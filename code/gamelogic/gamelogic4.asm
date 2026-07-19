@@ -746,7 +746,7 @@ _dropDone:
 		andi.w	#$000F,d0
 		move.b	d0,Speed(a1,d1.w)
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		andi.b	#$3F,RotationAndSize(a1,d1.w)
 		or.b	d0,RotationAndSize(a1,d1.w)
 		move.w	#BHV_PUT_DOWN_OBJECT,d2
@@ -758,7 +758,7 @@ _dropParam:
 		move.w	d2,BehavParam(a1,d1.w)
 		move.b	(Player_RotationAndSize).l,d2
 		andi.b	#$C0,d2
-		eori.b	#$80,d2
+		eori.b	#DIR_FLIP,d2
 		cmp.b	d0,d2
 		bne.s	_putDone
 		move.b	#$FF,BehavParam(a1,d1.w)
@@ -986,9 +986,9 @@ _swordWallCheck:
 		move.l	HitBoxYStart(a0),d1
 		movem.l	d0-d1,-(sp)
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_swcNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		bls.s	_swcSESW
 		subi.w	#$0010,HitBoxXStart(a0)
 		addi.w	#$0010,HitBoxYEnd(a0)
@@ -1030,7 +1030,7 @@ _swcClink:
 _interactScanInit:
 		lea	(Player_X).l,a0
 		move.b	RotationAndSize(a0),d0
-		andi.w	#$00C0,d0		  ; Orientation
+		andi.w	#DIR_MASK,d0
 		lsr.b	#$03,d0
 		move.w	_InteractOffsets(pc,d0.w),d1
 		move.w	(a0,d1.w),d2
@@ -1119,8 +1119,8 @@ _puFacing:
 		beq.s	_puBox
 		movem.w	d0-d1,-(sp)
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
-		eori.b	#$80,d0
+		andi.b	#DIR_MASK,d0
+		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
@@ -1289,7 +1289,7 @@ _talkStart:
 		andi.b	#$3F,RotationAndSize(a0)
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 		or.b	d0,RotationAndSize(a0)
 		bsr.w	_setNpcTalkPose
 		bsr.w	LoadSprites
@@ -1639,9 +1639,9 @@ _idle:
 SetPlayerIdlePose:
 		clr.w	AnimationFrame(a0)
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_idleNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		beq.s	_idleSW
 		bhi.s	_idleNW
 		move.w	#$0004,AnimationIndex(a0)
@@ -1675,9 +1675,9 @@ PlayerPickUp:
 
 _puFace:
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_puFaceNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		beq.s	_puFaceSW
 		bhi.s	_puFaceNW
 		move.w	#$0014,AnimationIndex(a0)
@@ -1764,7 +1764,7 @@ _walkFacing:
 		move.b	RotationAndSize(a0),d0
 		btst	#$01,CombatFlags(a0)
 		beq.s	_walkFace
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 
 _walkFace:
 		andi.b	#$C0,d0
@@ -1818,9 +1818,9 @@ _jumpCarryBoth:
 
 _jumpFace:
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_jumpNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		beq.s	_jumpSW
 		bhi.s	_jumpNW
 		addi.w	#$0024,AnimationIndex(a0)
@@ -1857,9 +1857,9 @@ PlayerAttack:
 
 _atkFace:
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_atkNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		beq.s	_atkSW
 		bhi.s	_atkNW
 		move.w	#$003C,AnimationIndex(a0)
@@ -1910,9 +1910,9 @@ PlayerTakeDamage:
 		bsr.w	_markFrameDirty
 		clr.w	AnimationFrame(a0)
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_dmgNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		beq.s	_dmgSW
 		bcs.s	_dmgNW
 		move.w	#$0044,AnimationIndex(a0)

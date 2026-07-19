@@ -760,13 +760,13 @@ _vspFloorBlock:
 ; Finds the sprite whose top is exactly one unit under a5's feet:
 ; returns d0 = struct offset (or -1). A sprite overlapping at least
 ; the entity's size (RotationAndSize & $3E) wins outright; otherwise
-; the largest X+Y overlap wins (scratch at word_FF1800/dword_FF1804).
+; the largest X+Y overlap wins (scratch at g_Scratch1800/g_Scratch1804).
 FindSpriteUnderneath:
 		lea	(Player_X).l,a0
 		move.w	Z(a5),d0
 		subq.w	#$01,d0
-		clr.w	(word_FF1800).l
-		clr.l	(dword_FF1804).l
+		clr.w	(g_Scratch1800).l
+		clr.l	(g_Scratch1804).l
 		moveq	#$F,d7
 
 _fsLoop:
@@ -813,16 +813,16 @@ _fsSizeChk:
 _fsScore:
 		move.w	HitBoxYEnd(a5),d4
 		add.w	d5,d6
-		cmp.w	(word_FF1800).l,d6
+		cmp.w	(g_Scratch1800).l,d6
 		bls.s	_fsNext
-		move.w	d6,(word_FF1800).l
-		move.l	a0,(dword_FF1804).l
+		move.w	d6,(g_Scratch1800).l
+		move.l	a0,(g_Scratch1804).l
 
 _fsNext:
 		lea	SPRITE_SIZE(a0),a0
 		tst.b	(a0)
 		dbmi	d7,_fsLoop
-		move.l	(dword_FF1804).l,d0
+		move.l	(g_Scratch1804).l,d0
 		beq.s	_fsNone
 
 _fsFound:

@@ -21,26 +21,26 @@ loc_1AC13A:					  ; CODE XREF: ROM:001AC128j
 
 loc_1AC140:					  ; CODE XREF: ROM:001AC12Ej
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0100,d5
 		move.w	#$0100,d6
 		move.w	#$0100,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Reaper1
 		rts
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Reaper1:				  ; CODE XREF: ROM:EnemyAI_Reaper1_Bj
 						  ; ROM:001AC164j ...
-		bra.w	loc_1A8AB6
+		bra.w	StartEnemyChase
 ; ---------------------------------------------------------------------------
 
 loc_1AC16C:					  ; CODE XREF: ROM:001AC134j
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AC1CC
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$3C,AICounter(a5)
 		bcs.s	loc_1AC1B8
@@ -68,7 +68,7 @@ loc_1AC1B8:					  ; CODE XREF: ROM:001AC18Ej
 ; ---------------------------------------------------------------------------
 
 loc_1AC1CC:					  ; CODE XREF: ROM:001AC172j
-		bra.w	loc_1A8AA6
+		bra.w	RunChaseBehaviour
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -77,7 +77,7 @@ sub_1AC1D0:					  ; CODE XREF: ROM:001AC194p
 		move.w	#$0060,d5
 		move.w	#$FFB8,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AC1FC
 		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
@@ -154,7 +154,7 @@ loc_1AC27E:					  ; CODE XREF: ROM:001AC268j
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.b	(Player_RotationAndSize).l,d0
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 		clr.b	d1
 		bra.s	loc_1AC2A2
 ; ---------------------------------------------------------------------------
@@ -210,7 +210,7 @@ loc_1AC2D6:					  ; CODE XREF: ROM:001AC2C4j
 		addi.w	#$001F,d0
 		move.w	d0,HitBoxZEnd(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1AC338
 		movem.w	(sp)+,d1
@@ -219,7 +219,7 @@ loc_1AC2D6:					  ; CODE XREF: ROM:001AC2C4j
 		movea.l	a5,a1
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		bra.w	EnemyAI_Reaper1
 ; ---------------------------------------------------------------------------
 

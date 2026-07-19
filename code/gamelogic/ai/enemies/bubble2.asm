@@ -1,93 +1,101 @@
-; ---------------------------------------------------------------------------
+Bubble2	module
+; AI for SPR_BUBBLE2. Like Bubble1 but its moves are hops (behaviour
+; $22 80% of the time, $21 20%), and while airborne it shows squash/
+; stretch poses (ACT_ATTACK1 rising, ACT_ATTACK2 falling).
 
-EnemyAI_Bubble2_B:				  ; CODE XREF: ROM:001A85D2j
+; B routine (behaviour command $2B): reset to idle.
+EnemyAI_Bubble2_B:
 		bra.s	EnemyAI_Bubble2
-; ---------------------------------------------------------------------------
 
-EnemyAI_Bubble2_A:				  ; CODE XREF: ROM:001A85CEj
+; A routine, run every tick.
+EnemyAI_Bubble2_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1ABA52
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1ABA70
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.w	loc_1ABAE8
+		beq.w	_wobble
 
-loc_1ABA52:					  ; CODE XREF: ROM:001ABA42j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Bubble2:				  ; CODE XREF: ROM:EnemyAI_Bubble2_Bj
+; Hitstun recovery entry: back to idle (behaviour 0, AIState 0, hurt
+; flag cleared).
+EnemyAI_Bubble2:
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABA70:					  ; CODE XREF: ROM:001ABA48j
+; Idle: if not mid behaviour record, roll 0-999 and test the low byte
+; (cmpi.b, so 4 outcomes in 1000 each): 0 = start a hop, 1 = start the
+; wobble, anything else = do nothing this tick.
+_idle:
 		tst.w	BehavParam(a5)
-		bne.s	loc_1ABAAE
+		bne.s	_airPose
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.b	#$01,d7
-		bcs.s	loc_1ABA8E
+		bcs.s	_pickHop
 		cmpi.b	#$02,d7
-		bcs.s	loc_1ABAC4
+		bcs.s	_startWobble
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABA8E:					  ; CODE XREF: ROM:001ABA84j
+; Pick a hop pattern: behaviour $22 80% of the time, $21 otherwise.
+_pickHop:
 		move.b	#$22,d0
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.b	#080,d7
-		bcs.s	loc_1ABAA6
+		cmpi.b	#00080,d7
+		bcs.s	_startHop
 		move.b	#$21,d0
 
-loc_1ABAA6:					  ; CODE XREF: ROM:001ABAA0j
+_startHop:
 		move.w	d0,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 
-loc_1ABAAE:					  ; CODE XREF: ROM:001ABA74j
-		btst	#$05,Action1(a5)
-		bne.s	loc_1ABAD0
-		btst	#$04,Action1(a5)
-		bne.s	loc_1ABADC
+; Run the behaviour; while airborne queue the squash/stretch poses.
+_airPose:
+		btst	#$05,Action1(a5)	; ACT_JUMP bit
+		bne.s	_jumpPose
+		btst	#$04,Action1(a5)	; ACT_FALL bit
+		bne.s	_fallPose
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABAC4:					  ; CODE XREF: ROM:001ABA8Aj
+_startWobble:
 		move.b	#$10,AIState(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABAD0:					  ; CODE XREF: ROM:001ABAB4j
+_jumpPose:
 		bsr.w	j_j_OnTick
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABADC:					  ; CODE XREF: ROM:001ABABCj
+_fallPose:
 		bsr.w	j_j_OnTick
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABAE8:					  ; CODE XREF: ROM:001ABA4Ej
+; State $10: stand and wobble - alternate ACT_ATTACK3/ACT_ATTACK4 every
+; 4 ticks; after $40 ticks clear the action and return to idle.
+_wobble:
 		addq.b	#$01,AnimPhase(a5)
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
-		addi.w	#$0300,d0
+		addi.w	#ACT_ATTACK3,d0
 		move.w	d0,QueuedAction(a5)
 		cmpi.b	#$40,AnimPhase(a5)
-		bcs.s	locret_1ABB14
+		bcs.s	_wobbleRts
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.b	AIState(a5)
 
-locret_1ABB14:					  ; CODE XREF: ROM:001ABB04j
+_wobbleRts:
 		rts
+
+		modend

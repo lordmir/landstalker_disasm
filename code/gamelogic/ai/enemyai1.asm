@@ -1,45 +1,41 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RespawnGhost:					  ; DATA XREF: j_RespawnGhostt
-
-; FUNCTION CHUNK AT 001A870E SIZE 00000098 BYTES
-; FUNCTION CHUNK AT 001A87D2 SIZE 0000003A BYTES
-
+EnemyAI1	module
+; Per-tick AI entry for initially-hostile sprites (called from
+; UpdateEntities whenever InitInteractFlags bit 7 is set, even while
+; the slot is hidden). A hidden slot ($7F) may be a dead ghost
+; waiting to respawn (CheckRespawnGhost); otherwise falls through to
+; run the sprite's EnemyAI_*_A routine (d1 = 0).
+RunEnemyAI:
 		cmpi.b	#$7F,X(a5)
 		beq.w	CheckRespawnGhost
-		clr.w	d1
-; End of function RespawnGhost
+		clr.w	d1			; falls through - A routine
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A83F0:					  ; CODE XREF: RunEnemyAI_B+4p
+; Dispatches to the sprite's AI pair: looks up the sprite id
+; (Dialogue bits 0-9) in EnemyTable and jumps to its bra.w pair in
+; EnemyAIHandlers, offset by d1 (0 = A routine, run every tick;
+; 4 = B routine, run by behaviour command $2B / RunEnemyAI_B).
+; Sprite ids not in the table just run the default OnTick.
+DispatchEnemyAI:
 		move.w	Dialogue(a5),d0
 		andi.w	#$03FF,d0
 		lea	EnemyTable(pc),a0
 
-loc_1A83FC:					  ; CODE XREF: sub_1A83F0+16j
+_findType:
 		cmp.w	(a0),d0
-		beq.s	loc_1A840E
+		beq.s	_jump
 		addq.w	#$08,d1
 		cmpi.w	#$FFFF,(a0)+
-		bne.s	loc_1A83FC
+		bne.s	_findType
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A840E:					  ; CODE XREF: sub_1A83F0+Ej
-		lea	loc_1A84A6(pc),a0
+_jump:
+		lea	EnemyAIHandlers(pc),a0
 		nop
 		jmp	(a0,d1.w)
-; End of function sub_1A83F0
 
-; ---------------------------------------------------------------------------
-EnemyTable:	dc.w SPR_ORC1			  ; DATA XREF: sub_1A83F0+8t
-						  ; ROM:EnemyTable+2o ...
+; Sprite ids with AI, terminated $FFFF; the Nth entry pairs with the
+; Nth {A, B} pair in EnemyAIHandlers.
+EnemyTable:	dc.w SPR_ORC1
 		dc.w SPR_ORC2
 		dc.w SPR_ORC3
 		dc.w SPR_WORM1
@@ -110,298 +106,155 @@ EnemyTable:	dc.w SPR_ORC1			  ; DATA XREF: sub_1A83F0+8t
 		dc.w SPR_SPINNER2
 		dc.w SPR_STONEWARRIOR2
 		dc.w $FFFF
-; ---------------------------------------------------------------------------
 
-loc_1A84A6:					  ; DATA XREF: sub_1A83F0:loc_1A840Et
-		bra.w	EnemyAI_Orc1_A
-; ---------------------------------------------------------------------------
+; One {A routine, B routine} bra.w pair per EnemyTable entry.
+EnemyAIHandlers:
+		bra.w	EnemyAI_Orc1_A			; SPR_ORC1
 		bra.w	EnemyAI_Orc1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Orc2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Orc2_A			; SPR_ORC2
 		bra.w	EnemyAI_Orc2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Orc3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Orc3_A			; SPR_ORC3
 		bra.w	EnemyAI_Orc3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Worm1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Worm1_A			; SPR_WORM1
 		bra.w	EnemyAI_Worm1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Worm2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Worm2_A			; SPR_WORM2
 		bra.w	EnemyAI_Worm2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Worm3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Worm3_A			; SPR_WORM3
 		bra.w	EnemyAI_Worm3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ninja1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ninja1_A		; SPR_NINJA1
 		bra.w	EnemyAI_Ninja1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ninja2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ninja2_A		; SPR_NINJA2
 		bra.w	EnemyAI_Ninja2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ninja3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ninja3_A		; SPR_NINJA3
 		bra.w	EnemyAI_Ninja3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Lizard1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Lizard1_A		; SPR_LIZARD1
 		bra.w	EnemyAI_Lizard1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Lizard2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Lizard2_A		; SPR_LIZARD2
 		bra.w	EnemyAI_Lizard2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Lizard3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Lizard3_A		; SPR_LIZARD3
 		bra.w	EnemyAI_Lizard3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Knight1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Knight1_A		; SPR_KNIGHT1
 		bra.w	EnemyAI_Knight1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Knight2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Knight2_A		; SPR_KNIGHT2
 		bra.w	EnemyAI_Knight2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Knight3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Knight3_A		; SPR_KNIGHT3
 		bra.w	EnemyAI_Knight3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ghost1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ghost1_A		; SPR_GHOST1
 		bra.w	EnemyAI_Ghost1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ghost2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ghost2_A		; SPR_GHOST2
 		bra.w	EnemyAI_Ghost2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ghost3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ghost3_A		; SPR_GHOST3
 		bra.w	EnemyAI_Ghost3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mummy1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mummy1_A		; SPR_MUMMY1
 		bra.w	EnemyAI_Mummy1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mummy2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mummy2_A		; SPR_MUMMY2
 		bra.w	EnemyAI_Mummy2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mummy3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mummy3_A		; SPR_MUMMY3
 		bra.w	EnemyAI_Mummy3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Unicorn1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Unicorn1_A		; SPR_UNICORN1
 		bra.w	EnemyAI_Unicorn1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Unicorn2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Unicorn2_A		; SPR_UNICORN2
 		bra.w	EnemyAI_Unicorn2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Unicorn3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Unicorn3_A		; SPR_UNICORN3
 		bra.w	EnemyAI_Unicorn3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Skeleton1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Skeleton1_A		; SPR_SKELETON1
 		bra.w	EnemyAI_Skeleton1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Skeleton2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Skeleton2_A		; SPR_SKELETON2
 		bra.w	EnemyAI_Skeleton2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Skeleton3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Skeleton3_A		; SPR_SKELETON3
 		bra.w	EnemyAI_Skeleton3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mimic1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mimic1_A		; SPR_MIMIC1
 		bra.w	EnemyAI_Mimic1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mimic2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mimic2_A		; SPR_MIMIC2
 		bra.w	EnemyAI_Mimic2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mimic3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mimic3_A		; SPR_MIMIC3
 		bra.w	EnemyAI_Mimic3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mushroom1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mushroom1_A		; SPR_MUSHROOM1
 		bra.w	EnemyAI_Mushroom1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mushroom2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mushroom2_A		; SPR_MUSHROOM2
 		bra.w	EnemyAI_Mushroom2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mushroom3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mushroom3_A		; SPR_MUSHROOM3
 		bra.w	EnemyAI_Mushroom3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Giant1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Giant1_A		; SPR_GIANT1
 		bra.w	EnemyAI_Giant1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Giant2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Giant2_A		; SPR_GIANT2
 		bra.w	EnemyAI_Giant2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Giant3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Giant3_A		; SPR_GIANT3
 		bra.w	EnemyAI_Giant3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble1_A		; SPR_BUBBLE1
 		bra.w	EnemyAI_Bubble1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble2_A		; SPR_BUBBLE2
 		bra.w	EnemyAI_Bubble2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble3_A		; SPR_BUBBLE3
 		bra.w	EnemyAI_Bubble3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Miro_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Miro_A			; SPR_NIGEL
 		bra.w	EnemyAI_Miro_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Mir_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Mir_A			; SPR_MIR
 		bra.w	EnemyAI_Mir_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Reaper1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Reaper1_A		; SPR_REAPER1
 		bra.w	EnemyAI_Reaper1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_SmallFireball_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_SmallFireball_A		; SPR_SMLFIREBALL
 		bra.w	EnemyAI_SmallFireball_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Duke_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Duke_A			; SPR_DUKE
 		bra.w	EnemyAI_Duke_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_GhostGen_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_GhostGen_A		; SPR_GHOSTGEN1
 		bra.w	EnemyAI_GhostGen_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_GhostGen_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_GhostGen_A		; SPR_GHOSTGEN2
 		bra.w	EnemyAI_GhostGen_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_GhostGen_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_GhostGen_A		; SPR_GHOSTGEN3
 		bra.w	EnemyAI_GhostGen_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Zak_A_0
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Zak_A_0			; SPR_ZAK
 		bra.w	EnemyAI_Zak_B_0
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Golem1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Golem1_A		; SPR_GOLEM1
 		bra.w	EnemyAI_Golem1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Golem2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Golem2_A		; SPR_GOLEM2
 		bra.w	EnemyAI_Golem2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Golem2_A	  ; Golem3
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Golem2_A		; SPR_GOLEM3
 		bra.w	EnemyAI_Golem2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Reaper2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Reaper2_A		; SPR_REAPER2
 		bra.w	EnemyAI_Reaper2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Reaper3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Reaper3_A		; SPR_UNUSEDREAPER3
 		bra.w	EnemyAI_Reaper3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Spectre1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Spectre1_A		; SPR_SPECTRE1
 		bra.w	EnemyAI_Spectre1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Spectre2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Spectre2_A		; SPR_SPECTRE2
 		bra.w	EnemyAI_Spectre2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Spectre3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Spectre3_A		; SPR_SPECTRE3
 		bra.w	EnemyAI_Spectre3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Harpy1_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Harpy1_A		; SPR_UNUSEDBIRD1
 		bra.w	EnemyAI_Harpy1_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Harpy2_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Harpy2_A		; SPR_UNUSEDBIRD2
 		bra.w	EnemyAI_Harpy2_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Harpy3_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Harpy3_A		; SPR_UNUSEDBIRD3
 		bra.w	EnemyAI_Harpy3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Spinner_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Spinner_A		; SPR_SPINNER1
 		bra.w	EnemyAI_Spinner_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Miro_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Miro_A			; SPR_MIRO
 		bra.w	EnemyAI_Miro_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Ifrit_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Ifrit_A			; SPR_IFRIT
 		bra.w	EnemyAI_Ifrit_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Gola_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Gola_A			; SPR_GOLA
 		bra.w	EnemyAI_Gola_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Nole_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Nole_A			; SPR_NOLE
 		bra.w	EnemyAI_Nole_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_StoneWarrior_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_StoneWarrior_A		; SPR_STONEWARRIOR1
 		bra.w	EnemyAI_StoneWarrior_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble3_A	  ; Bubble4
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble3_A		; SPR_BUBBLE4
 		bra.w	EnemyAI_Bubble3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble3_A	  ; Bubble5
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble3_A		; SPR_BUBBLE5
 		bra.w	EnemyAI_Bubble3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Bubble3_A	  ; Bubble6
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Bubble3_A		; SPR_BUBBLE6
 		bra.w	EnemyAI_Bubble3_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_Spinner_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_Spinner_A		; SPR_SPINNER2
 		bra.w	EnemyAI_Spinner_B
-; ---------------------------------------------------------------------------
-		bra.w	EnemyAI_StoneWarrior_A
-; ---------------------------------------------------------------------------
+		bra.w	EnemyAI_StoneWarrior_A		; SPR_STONEWARRIOR2
 		bra.w	EnemyAI_StoneWarrior_B
-
-; =============== S U B	R O U T	I N E =======================================
-
 
 ; Runs the sprite's EnemyAI_*_B routine (the second entry of its
 ; pair in the AI dispatch ladder), then the default OnTick.
-RunEnemyAI_B:					  ; CODE XREF: RespawnGhost+414p
-						  ; DATA XREF: j_RunEnemyAI_Bt
+RunEnemyAI_B:
 		move.w	#$0004,d1
-		bsr.w	sub_1A83F0
+		bsr.w	DispatchEnemyAI
 		bra.w	j_j_OnTick
-; End of function RunEnemyAI_B
 
+		modend

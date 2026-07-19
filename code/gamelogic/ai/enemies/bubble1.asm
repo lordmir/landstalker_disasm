@@ -1,69 +1,78 @@
-; ---------------------------------------------------------------------------
+Bubble1	module
+; AI for SPR_BUBBLE1. Mostly sits still: each idle tick it rolls a
+; random 0-999 and may start a short move (behaviour $20) or a
+; stationary wobble; being hurt just runs the behaviour until the
+; hitstun recovery resets it to idle.
 
-EnemyAI_Bubble1_B:				  ; CODE XREF: ROM:001A85CAj
+; B routine (behaviour command $2B): reset to idle.
+EnemyAI_Bubble1_B:
 		bra.s	EnemyAI_Bubble1
-; ---------------------------------------------------------------------------
 
-EnemyAI_Bubble1_A:				  ; CODE XREF: ROM:001A85C6j
+; A routine, run every tick.
+EnemyAI_Bubble1_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AB9B4
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AB9BA
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1ABA0C
+		beq.s	_wobble
 
-loc_1AB9B4:					  ; CODE XREF: ROM:001AB9A6j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB9BA:					  ; CODE XREF: ROM:001AB9ACj
+; Idle: if not mid behaviour record, roll 0-999 and test the low byte
+; (cmpi.b, so 4 outcomes in 1000 each): 0 = start a move (behaviour
+; $20), 1 = start the wobble, anything else = do nothing this tick.
+_idle:
 		tst.w	BehavParam(a5)
-		bne.s	loc_1AB9E2
+		bne.s	_tick
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.b	#$01,d7
-		bcs.s	loc_1AB9D8
+		bcs.s	_startMove
 		cmpi.b	#$02,d7
-		bcs.s	loc_1AB9E8
+		bcs.s	_startWobble
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB9D8:					  ; CODE XREF: ROM:001AB9CEj
+_startMove:
 		move.w	#$0020,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 
-loc_1AB9E2:					  ; CODE XREF: ROM:001AB9BEj
+_tick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AB9E8:					  ; CODE XREF: ROM:001AB9D4j
+_startWobble:
 		move.b	#$10,AIState(a5)
 		clr.b	AnimPhase(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Bubble1:				  ; CODE XREF: ROM:EnemyAI_Bubble1_Bj
+; Hitstun recovery entry: back to idle (behaviour 0, AIState 0, hurt
+; flag cleared).
+EnemyAI_Bubble1:
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1ABA0C:					  ; CODE XREF: ROM:001AB9B2j
+; State $10: stand and wobble - alternate ACT_ATTACK3/ACT_ATTACK4 every
+; 4 ticks; after $40 ticks clear the action and return to idle.
+_wobble:
 		addq.b	#$01,AnimPhase(a5)
 		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
-		addi.w	#$0300,d0
+		addi.w	#ACT_ATTACK3,d0
 		move.w	d0,QueuedAction(a5)
 		cmpi.b	#$40,AnimPhase(a5)
-		bcs.s	locret_1ABA38
+		bcs.s	_wobbleRts
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.b	AIState(a5)
 
-locret_1ABA38:					  ; CODE XREF: ROM:001ABA28j
+_wobbleRts:
 		rts
+
+		modend

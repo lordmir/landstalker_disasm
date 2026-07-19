@@ -43,8 +43,8 @@ sub_1AE3C8:					  ; CODE XREF: ROM:EnemyAI_Ifritp
 
 loc_1AE3EC:					  ; CODE XREF: ROM:001AE3B2j
 		bclr	#$00,CombatFlags(a5)
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1AE41C
 		bcs.s	loc_1AE416
 		bsr.w	sub_1AE4C4
@@ -67,7 +67,7 @@ sub_1AE41C:					  ; CODE XREF: ROM:001AE402p
 		cmpi.w	#00010,d7
 		bhi.w	loc_1AE4C0
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		cmpi.w	#$1B1D,X(a5)
 		beq.s	loc_1AE45C
 		cmpi.w	#$221D,X(a5)
@@ -292,7 +292,7 @@ loc_1AE660:					  ; CODE XREF: ROM:001AE654j
 		move.w	d6,X(a5)
 		move.w	#$0808,SubX(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		rts
 ; ---------------------------------------------------------------------------
 IfritCoordinates:dc.w $1B1D			  ; DATA XREF: ROM:001AE64Er

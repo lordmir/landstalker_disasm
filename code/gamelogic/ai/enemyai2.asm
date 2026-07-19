@@ -1,9 +1,12 @@
+EnemyAI2	module
+; Shared helpers for the enemy AI bank: hide/despawn, the ghost
+; respawn tail, melee hit and player-detection box tests, the
+; chase-state resets, and local thunks.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-MoveSpriteOffscreen:				  ; CODE XREF: ROM:loc_1A78B4p
-						  ; ROM:loc_1A7AB8p ...
+; Parks the sprite in the hidden $7F7F state: $7F into X/Y and the
+; high bytes of the Centre and hitbox-X words, so the slot reads as
+; $7F7F (skipped by most scans, reclaimable by FindFreeSpriteSlot).
+MoveSpriteOffscreen:
 		move.b	#$7F,X(a5)
 		move.b	#$7F,Y(a5)
 		move.b	#$7F,CentreX(a5)
@@ -11,69 +14,61 @@ MoveSpriteOffscreen:				  ; CODE XREF: ROM:loc_1A78B4p
 		move.b	#$7F,HitBoxXStart(a5)
 		move.b	#$7F,HitBoxXEnd(a5)
 		rts
-; End of function MoveSpriteOffscreen
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-HideSprite:					  ; DATA XREF: j_HideSpritet
+; Fully hides the sprite: hidden flag (StateFlags bit 0) + parked
+; offscreen.
+HideSprite:
 		ori.b	#$01,StateFlags(a5)
 		bra.s	MoveSpriteOffscreen
-; End of function HideSprite
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR RespawnGhost
-
-loc_1A87D2:					  ; CODE XREF: RespawnGhost+3BEj
+; Tail of the ghost respawn (CheckRespawnGhost): the spawn spot is
+; clear, so reset actions and animation; a ghost graphic starts its
+; materialise animation (anim 8) and runs its AI B routine once.
+FinishGhostRespawn:
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
 		ori.b	#$80,AnimCtrl(a5)
-		cmpi.b	#$18,SpriteGraphic(a5)
-		bne.s	loc_1A8800
+		cmpi.b	#SpriteB_Ghost,SpriteGraphic(a5)
+		bne.s	_ghostPlainAnim
 		move.w	#$0008,AnimationIndex(a5)
 		bset	#$07,RenderFlags(a5)
 		bsr.w	RunEnemyAI_B
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8800:					  ; CODE XREF: RespawnGhost+406j
+_ghostPlainAnim:
 		bset	#$07,RenderFlags(a5)
 		clr.w	AnimationIndex(a5)
 		rts
-; END OF FUNCTION CHUNK	FOR RespawnGhost
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A880C:					  ; CODE XREF: ROM:001A4E9Cp
-						  ; ROM:001A50C8p ...
-		bsr.s	sub_1A8824
-		bcc.s	locret_1A8822
+; Enemy melee hit check: if the facing-relative attack box (d1 = reach
+; ahead, d2 = extent behind, d3 = lateral half-width, from CentreX/Y)
+; touches the player, queue the pending hit (direction code $40 +
+; facing 0-3) with this enemy's AttackStrength. Carry set = hit landed.
+TryHitPlayer:
+		bsr.s	CheckAttackBoxVsPlayer
+		bcc.s	_hitRts
 		move.b	d0,(g_PlayerPendingHit).l
 		move.w	AttackStrength(a5),(Player_AttackStrength).l
 		ori	#$01,ccr
 
-locret_1A8822:					  ; CODE XREF: sub_1A880C+2j
+_hitRts:
 		rts
-; End of function sub_1A880C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8824:					  ; CODE XREF: sub_1A880Cp
+; The box test for TryHitPlayer: rotates the d1-d3 box by facing,
+; compares it plus the Z span against the player's hitbox. Carry set
+; = overlap, d0 = pending-hit direction code.
+CheckAttackBoxVsPlayer:
 		move.w	d3,d4
 		move.w	Z(a5),d5
 		move.w	HitBoxZEnd(a5),d6
 		lea	(Player_X).l,a1
 		move.b	RotationAndSize(a5),d7
-		andi.b	#$C0,d7
-		beq.s	loc_1A8890
-		cmpi.b	#$80,d7
-		beq.w	loc_1A88D8
-		bcs.w	loc_1A891E
+		andi.b	#DIR_MASK,d7
+		beq.s	_boxNE
+		cmpi.b	#DIR_SW,d7
+		beq.w	_boxSW
+		bcs.w	_boxSE
 		neg.w	d1
 		add.w	CentreX(a5),d1
 		add.w	CentreX(a5),d2
@@ -81,29 +76,26 @@ sub_1A8824:					  ; CODE XREF: sub_1A880Cp
 		add.w	CentreY(a5),d3
 		add.w	CentreY(a5),d4
 		cmp.w	HitBoxXEnd(a1),d1
-		bhi.s	loc_1A888C
+		bhi.s	_missNW
 		cmp.w	HitBoxXStart(a1),d2
-		bcs.s	loc_1A888C
+		bcs.s	_missNW
 		cmp.w	HitBoxYEnd(a1),d3
-		bhi.s	loc_1A888C
+		bhi.s	_missNW
 		cmp.w	HitBoxYStart(a1),d4
-		bcs.s	loc_1A888C
+		bcs.s	_missNW
 		cmp.w	HitBoxZEnd(a1),d5
-		bhi.s	loc_1A888C
+		bhi.s	_missNW
 		cmp.w	Z(a1),d6
-		bcs.s	loc_1A888C
+		bcs.s	_missNW
 		move.b	#$43,d0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A888C:					  ; CODE XREF: sub_1A8824+3Ej
-						  ; sub_1A8824+44j ...
+_missNW:
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8890:					  ; CODE XREF: sub_1A8824+18j
+_boxNE:
 		neg.w	d1
 		add.w	CentreY(a5),d1
 		add.w	CentreY(a5),d2
@@ -111,29 +103,26 @@ loc_1A8890:					  ; CODE XREF: sub_1A8824+18j
 		neg.w	d4
 		add.w	CentreX(a5),d4
 		cmp.w	HitBoxYEnd(a1),d1
-		bhi.s	loc_1A88D4
+		bhi.s	_missNE
 		cmp.w	HitBoxYStart(a1),d2
-		bcs.s	loc_1A88D4
+		bcs.s	_missNE
 		cmp.w	HitBoxXStart(a1),d3
-		bcs.w	loc_1A88D4
+		bcs.w	_missNE
 		cmp.w	HitBoxXEnd(a1),d4
-		bhi.s	loc_1A88D4
+		bhi.s	_missNE
 		cmp.w	HitBoxZEnd(a1),d5
-		bhi.s	loc_1A88D4
+		bhi.s	_missNE
 		cmp.w	Z(a1),d6
-		bcs.s	loc_1A88D4
+		bcs.s	_missNE
 		move.b	#$40,d0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A88D4:					  ; CODE XREF: sub_1A8824+84j
-						  ; sub_1A8824+8Aj ...
+_missNE:
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A88D8:					  ; CODE XREF: sub_1A8824+1Ej
+_boxSW:
 		add.w	CentreY(a5),d1
 		neg.w	d2
 		add.w	CentreY(a5),d2
@@ -141,29 +130,26 @@ loc_1A88D8:					  ; CODE XREF: sub_1A8824+1Ej
 		add.w	CentreX(a5),d3
 		add.w	CentreX(a5),d4
 		cmp.w	HitBoxYStart(a1),d1
-		bcs.s	loc_1A891A
+		bcs.s	_missSW
 		cmp.w	HitBoxYEnd(a1),d2
-		bhi.s	loc_1A891A
+		bhi.s	_missSW
 		cmp.w	HitBoxXEnd(a1),d3
-		bhi.s	loc_1A891A
+		bhi.s	_missSW
 		cmp.w	HitBoxXStart(a1),d4
-		bcs.s	loc_1A891A
+		bcs.s	_missSW
 		cmp.w	HitBoxZEnd(a1),d5
-		bhi.s	loc_1A891A
+		bhi.s	_missSW
 		cmp.w	Z(a1),d6
-		bcs.s	loc_1A891A
+		bcs.s	_missSW
 		move.b	#$42,d0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A891A:					  ; CODE XREF: sub_1A8824+CCj
-						  ; sub_1A8824+D2j ...
+_missSW:
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A891E:					  ; CODE XREF: sub_1A8824+22j
+_boxSE:
 		add.w	CentreX(a5),d1
 		neg.w	d2
 		add.w	CentreX(a5),d2
@@ -171,200 +157,154 @@ loc_1A891E:					  ; CODE XREF: sub_1A8824+22j
 		neg.w	d4
 		add.w	CentreY(a5),d4
 		cmp.w	HitBoxXStart(a1),d1
-		bcs.s	loc_1A8960
+		bcs.s	_missSE
 		cmp.w	HitBoxXEnd(a1),d2
-		bhi.s	loc_1A8960
+		bhi.s	_missSE
 		cmp.w	HitBoxYStart(a1),d3
-		bcs.s	loc_1A8960
+		bcs.s	_missSE
 		cmp.w	HitBoxYEnd(a1),d4
-		bhi.s	loc_1A8960
+		bhi.s	_missSE
 		cmp.w	HitBoxZEnd(a1),d5
-		bhi.s	loc_1A8960
+		bhi.s	_missSE
 		cmp.w	Z(a1),d6
-		bcs.s	loc_1A8960
+		bcs.s	_missSE
 		move.b	#$41,d0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8960:					  ; CODE XREF: sub_1A8824+112j
-						  ; sub_1A8824+118j ...
+_missSE:
 		tst.b	d0
 		rts
-; End of function sub_1A8824
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A8964:					  ; CODE XREF: ROM:001A4CCEp
-						  ; sub_1A4D0E+Cp ...
+; Is the player inside this enemy's facing-relative detection box?
+; The enemy's CentreX/CentreY are passed in g_Scratch1800/g_Scratch1804;
+; d5 = range ahead, d6 = range behind, d7 = lateral half-range.
+; Carry set = player in range.
+CheckPlayerInRange:
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
-		beq.s	loc_1A89C8
-		cmpi.b	#$80,d0
-		bcs.w	loc_1A8A16
-		beq.w	loc_1A8A5C
-		move.w	(word_FF1800).l,d1
+		andi.b	#DIR_MASK,d0
+		beq.s	_rangeNE
+		cmpi.b	#DIR_SW,d0
+		bcs.w	_rangeSE
+		beq.w	_rangeSW
+		move.w	(g_Scratch1800).l,d1
 		sub.w	d5,d1
 		cmp.w	(Player_CentreX).l,d1
-		bhi.w	loc_1A8AA2
-		move.w	(word_FF1800).l,d1
+		bhi.w	_rangeMiss
+		move.w	(g_Scratch1800).l,d1
 		add.w	d6,d1
 		cmp.w	(Player_CentreX).l,d1
-		bcs.w	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bcs.w	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		sub.w	d7,d2
 		cmp.w	(Player_CentreY).l,d2
-		bhi.w	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bhi.w	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		add.w	d7,d2
 		cmp.w	(Player_CentreY).l,d2
-		bcs.w	loc_1A8AA2
+		bcs.w	_rangeMiss
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A89C8:					  ; CODE XREF: sub_1A8964+8j
-		move.w	(word_FF1800).l,d1
+_rangeNE:
+		move.w	(g_Scratch1800).l,d1
 		sub.w	d7,d1
 		cmp.w	(Player_CentreX).l,d1
-		bhi.w	loc_1A8AA2
-		move.w	(word_FF1800).l,d1
+		bhi.w	_rangeMiss
+		move.w	(g_Scratch1800).l,d1
 		add.w	d7,d1
 		cmp.w	(Player_CentreX).l,d1
-		bcs.w	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bcs.w	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		sub.w	d5,d2
 		cmp.w	(Player_CentreY).l,d2
-		bhi.w	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bhi.w	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		add.w	d6,d2
 		cmp.w	(Player_CentreY).l,d2
-		bcs.w	loc_1A8AA2
+		bcs.w	_rangeMiss
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8A16:					  ; CODE XREF: sub_1A8964+Ej
-		move.w	(word_FF1800).l,d1
+_rangeSE:
+		move.w	(g_Scratch1800).l,d1
 		add.w	d5,d1
 		cmp.w	(Player_CentreX).l,d1
-		bcs.s	loc_1A8AA2
-		move.w	(word_FF1800).l,d1
+		bcs.s	_rangeMiss
+		move.w	(g_Scratch1800).l,d1
 		sub.w	d6,d1
 		cmp.w	(Player_CentreX).l,d1
-		bhi.s	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bhi.s	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		sub.w	d7,d2
 		cmp.w	(Player_CentreY).l,d2
-		bhi.s	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bhi.s	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		add.w	d7,d2
 		cmp.w	(Player_CentreY).l,d2
-		bcs.s	loc_1A8AA2
+		bcs.s	_rangeMiss
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8A5C:					  ; CODE XREF: sub_1A8964+12j
-		move.w	(word_FF1800).l,d1
+_rangeSW:
+		move.w	(g_Scratch1800).l,d1
 		sub.w	d7,d1
 		cmp.w	(Player_CentreX).l,d1
-		bhi.s	loc_1A8AA2
-		move.w	(word_FF1800).l,d1
+		bhi.s	_rangeMiss
+		move.w	(g_Scratch1800).l,d1
 		add.w	d7,d1
 		cmp.w	(Player_CentreX).l,d1
-		bcs.s	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bcs.s	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		add.w	d5,d2
 		cmp.w	(Player_CentreY).l,d2
-		bcs.s	loc_1A8AA2
-		move.w	(dword_FF1804).l,d2
+		bcs.s	_rangeMiss
+		move.w	(g_Scratch1804).l,d2
 		sub.w	d6,d2
 		cmp.w	(Player_CentreY).l,d2
-		bhi.s	loc_1A8AA2
+		bhi.s	_rangeMiss
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A8AA2:					  ; CODE XREF: sub_1A8964+24j
-						  ; sub_1A8964+36j ...
+_rangeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1A8964
 
-; ---------------------------------------------------------------------------
-
-loc_1A8AA6:					  ; CODE XREF: ROM:loc_1A4D0Aj
-						  ; ROM:loc_1A4F30j ...
+; Switch to behaviour script 6 (follow the player with ledge jumps,
+; looped forever) and run this tick's OnTick.
+RunChaseBehaviour:
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1ACD54
 
-loc_1A8AB6:					  ; CODE XREF: ROM:EnemyAI_Orc1j
-						  ; ROM:EnemyAI_Orc2j ...
+; Reset to the chase state: behaviour script 6 (follow the player),
+; AIState $10, hurt flag cleared (the EnemyAI_* hitstun-recovery
+; entries jump here).
+StartEnemyChase:
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
 		bclr	#$01,InteractFlags(a5)
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1ACD54
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_j_RemoveHealth:				  ; CODE XREF: ROM:001A769Ap
-						  ; ROM:001A7864p ...
+; Short-callable thunks for the AI bank.
+j_j_RemoveHealth:
 		jmp	(j_RemoveHealth).l
-; End of function j_j_RemoveHealth
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_j_AddStatusEffect:				  ; CODE XREF: ROM:001A5AA6p
-						  ; ROM:loc_1A5EC2p ...
+j_j_AddStatusEffect:
 		jmp	(j_AddStatusEffect).l
-; End of function j_j_AddStatusEffect
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_j_OnTick:					  ; CODE XREF: ROM:loc_1A4CA8p
-						  ; ROM:loc_1A4CAEp ...
+j_j_OnTick:
 		jmp	(j_OnTick).l
-; End of function j_j_OnTick
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_j_LoadSpriteBehaviour:			  ; CODE XREF: sub_1A4D0E+40p
-						  ; sub_1A4D5C+40p ...
+j_j_LoadSpriteBehaviour:
 		jmp	(j_LoadSpriteBehaviour).l
-; End of function j_j_LoadSpriteBehaviour
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_1A8AE6:					  ; CODE XREF: RespawnGhost+3B4p
-						  ; DATA XREF: ROM:001A6412t ...
+j_j_CalcSpriteHitbox:
 		jmp	(j_CalcSpriteHitbox).l
-; End of function sub_1A8AE6
 
-; ---------------------------------------------------------------------------
-
-loc_1A8AEC:					  ; CODE XREF: ROM:001A76B4j
-						  ; ROM:001A787Ej ...
+j_j_PlayerDeath:
 		jmp	(j_PlayerDeath).l
+
+		modend

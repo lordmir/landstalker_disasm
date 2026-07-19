@@ -171,7 +171,7 @@ _decDone:
 		rts
 
 
-; Runs OnTick for every active sprite (enemies get j_RespawnGhost instead
+; Runs OnTick for every active sprite (enemies get j_RunEnemyAI instead
 ; when InitInteractFlags bit 7 is set).
 UpdateEntities:
 		lea	(Sprite1_X).l,a5
@@ -196,7 +196,7 @@ _entDone:
 		rts
 
 _entEnemy:
-		jsr	(j_RespawnGhost).l
+		jsr	(j_RunEnemyAI).l
 		bra.s	_entNext
 
 		modend

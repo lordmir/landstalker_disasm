@@ -35,8 +35,8 @@ BHV_TURN_NW_IMM:               equ $1D
 BHV_FREEZE:                    equ $1E
 BHV_SET_SPEED_1:               equ $1F
 BHV_SET_SPEED_2:               equ $20
-BHV_SET_SPEED_3:               equ $21
-BHV_SET_SPEED_4:               equ $22
+BHV_SET_SPEED_4:               equ $21
+BHV_SET_SPEED_8:               equ $22
 BHV_TURN_180:                  equ $23
 BHV_SET_DIR_180:               equ $24
 BHV_TURN_180_IMM:              equ $25
@@ -65,7 +65,7 @@ BHV_MOVE_DOWN_TIMED:           equ $3B
 BHV_MOVE_UP_ABSOLUTE:          equ $3C
 BHV_MOVE_DOWN_ABSOLUTE:        equ $3D
 BHV_DESPAWN_ENTITY:            equ $3E
-BHV_NUDGE_UP:                  equ $3F
+BHV_MOVE_UP_UNTIL_COLLISION:   equ $3F
 BHV_MOVE_DOWN_UNTIL_COLLISION: equ $40
 BHV_SET_FLAG:                  equ $41
 BHV_WAIT_FOR_FLAG_SET:         equ $42

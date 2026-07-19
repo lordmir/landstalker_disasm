@@ -6,3 +6,4 @@ DIR_SE:           equ 1<<6 ; $40
 DIR_SW:           equ 2<<6 ; $80
 DIR_NW:           equ 3<<6 ; $C0
 DIR_MASK:         equ 3<<6 ; $C0
+DIR_FLIP:         equ 2<<6 ; $80 - eor with a direction to turn it 180 degrees

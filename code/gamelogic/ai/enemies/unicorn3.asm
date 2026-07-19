@@ -22,12 +22,12 @@ loc_1A9092:					  ; CODE XREF: ROM:001A9080j
 
 loc_1A9098:					  ; CODE XREF: ROM:001A9086j
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0060,d5
 		move.w	#$0030,d6
 		move.w	#$0040,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Unicorn3
 		rts
 
@@ -49,8 +49,8 @@ EnemyAI_Unicorn3:				  ; CODE XREF: ROM:EnemyAI_Unicorn3_Bj
 loc_1A90DE:					  ; CODE XREF: ROM:001A908Cj
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A910A
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1A911A
 		bcs.s	loc_1A9104
 		bsr.w	sub_1A919E
@@ -76,16 +76,16 @@ sub_1A911A:					  ; CODE XREF: ROM:001A90F6p
 		move.w	#$0040,d5
 		move.w	#$0040,d6
 		move.w	#$0040,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A919A
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	loc_1A919A
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
-		eori.b	#$80,d0
+		andi.b	#DIR_MASK,d0
+		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
@@ -127,11 +127,11 @@ sub_1A919E:					  ; CODE XREF: ROM:001A90FAp
 		move.w	#$0028,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A9204
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
-		eori.b	#$80,d0
+		andi.b	#DIR_MASK,d0
+		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
@@ -173,7 +173,7 @@ sub_1A921E:					  ; CODE XREF: ROM:001A9100p
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A9246
 		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
@@ -202,21 +202,21 @@ loc_1A924A:					  ; CODE XREF: ROM:001A908Ej
 ; ---------------------------------------------------------------------------
 
 loc_1A926C:					  ; CODE XREF: ROM:001A924Ej
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0040,d5
 		move.w	#$0040,d6
 		move.w	#$0040,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	EnemyAI_Unicorn3
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.w	EnemyAI_Unicorn3
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
-		eori.b	#$80,d0
+		andi.b	#DIR_MASK,d0
+		eori.b	#DIR_FLIP,d0
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
@@ -250,7 +250,7 @@ loc_1A92FA:					  ; CODE XREF: ROM:001A9264j
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		cmpi.b	#$10,AnimPhase(a5)
 		bcs.s	loc_1A9320

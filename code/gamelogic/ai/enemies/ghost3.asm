@@ -48,8 +48,8 @@ loc_1A7900:					  ; CODE XREF: ROM:001A78E2j
 ; ---------------------------------------------------------------------------
 
 loc_1A791C:					  ; CODE XREF: ROM:001A78D0j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.w	sub_1A7936
 		bsr.w	j_j_OnTick
 		rts
@@ -61,7 +61,7 @@ sub_1A7936:					  ; CODE XREF: ROM:001A792Cp
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A79A0
 		move.w	HitBoxZEnd(a5),d0
 		sub.w	(Player_Z).l,d0
@@ -141,12 +141,12 @@ loc_1A7A0A:					  ; CODE XREF: ROM:001A79AEj
 
 loc_1A7A2A:					  ; CODE XREF: ROM:001A7A1Aj
 						  ; ROM:001A7A26j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0019,d5
 		move.w	#$0009,d6
 		move.w	#$0009,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	loc_1A7900
 		move.b	AICounter(a5),d0
 		addq.b	#$01,AICounter(a5)
@@ -170,14 +170,14 @@ loc_1A7A72:					  ; CODE XREF: ROM:001A7A58j
 
 loc_1A7A7C:					  ; CODE XREF: ROM:001A7A70j
 		bclr	#$06,InteractFlags(a5)
-		bra.w	loc_1A8AEC
+		bra.w	j_j_PlayerDeath
 ; ---------------------------------------------------------------------------
 
 loc_1A7A86:					  ; CODE XREF: ROM:001A79B4j
 		move.w	#$0029,d1
 		move.w	#$0029,d2
 		move.w	#$0019,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$0F,AnimPhase(a5)

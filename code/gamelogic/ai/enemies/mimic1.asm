@@ -21,12 +21,12 @@ loc_1A9B20:					  ; CODE XREF: ROM:001A9B0Ej
 
 loc_1A9B26:					  ; CODE XREF: ROM:001A9B14j
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0050,d5
 		move.w	#$0010,d6
 		move.w	#$0020,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Mimic1
 		rts
 ; ---------------------------------------------------------------------------
@@ -42,8 +42,8 @@ EnemyAI_Mimic1:					  ; CODE XREF: ROM:EnemyAI_Mimic1_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1A9B6C:					  ; CODE XREF: ROM:001A9B1Aj
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1A9B9E
 		bcs.s	loc_1A9B90
 		bsr.w	sub_1A9BF6
@@ -73,7 +73,7 @@ sub_1A9B9E:					  ; CODE XREF: ROM:001A9B7Cp
 		move.w	#$0080,d5
 		move.w	#$0080,d6
 		move.w	#$0080,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	loc_1A9BF2
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -103,7 +103,7 @@ sub_1A9BF6:					  ; CODE XREF: ROM:001A9B80p
 		move.w	#$0020,d5
 		move.w	#$0020,d6
 		move.w	#$0020,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A9C3A
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -136,7 +136,7 @@ sub_1A9C3E:					  ; CODE XREF: ROM:001A9B86p
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A9C84
 		move.b	#$22,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
@@ -163,7 +163,7 @@ sub_1A9C88:					  ; CODE XREF: ROM:001A9B8Cp
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A9CD0
 		move.b	HitBoxSubZEnd(a5),d0
 		subi.b	#$10,d0
@@ -354,12 +354,12 @@ loc_1A9E90:					  ; CODE XREF: ROM:001A9E7Ej
 		move.b	#$01,(g_PlayerHurtTimer).l
 
 loc_1A9EAE:					  ; CODE XREF: ROM:001A9EA4j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0010,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	EnemyAI_Mimic1
 		move.b	AnimPhase(a5),d0
 		addq.b	#$01,AnimPhase(a5)
@@ -386,4 +386,4 @@ locret_1A9F02:					  ; CODE XREF: ROM:001A9EFAj
 
 loc_1A9F04:					  ; CODE XREF: ROM:001A9EF4j
 		bclr	#$06,InteractFlags(a5)
-		bra.w	loc_1A8AEC
+		bra.w	j_j_PlayerDeath

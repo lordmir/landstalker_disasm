@@ -21,26 +21,26 @@ loc_1A64B0:					  ; CODE XREF: ROM:001A649Ej
 
 loc_1A64B6:					  ; CODE XREF: ROM:001A64A4j
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0060,d5
 		move.w	#$0030,d6
 		move.w	#$0040,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Ninja3
 		rts
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Ninja3:					  ; CODE XREF: ROM:EnemyAI_Ninja3_Bj
 						  ; ROM:001A64DAj ...
-		bra.w	loc_1A8AB6
+		bra.w	StartEnemyChase
 ; ---------------------------------------------------------------------------
 
 loc_1A64E2:					  ; CODE XREF: ROM:001A64AAj
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A6512
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1A6516
 		bcs.s	loc_1A650C
 		bsr.s	sub_1A6556
@@ -56,7 +56,7 @@ loc_1A650C:					  ; CODE XREF: ROM:001A64FCj
 ; ---------------------------------------------------------------------------
 
 loc_1A6512:					  ; CODE XREF: ROM:001A64E8j
-		bra.w	loc_1A8AA6
+		bra.w	RunChaseBehaviour
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -65,7 +65,7 @@ sub_1A6516:					  ; CODE XREF: ROM:001A64FAp
 		move.w	#$0040,d5
 		move.w	#$FFC8,d6
 		move.w	#$0020,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A6552
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -93,7 +93,7 @@ sub_1A6556:					  ; CODE XREF: ROM:001A64FEp
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
 		move.w	#$0038,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A658E
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -120,7 +120,7 @@ sub_1A6592:					  ; CODE XREF: ROM:001A6502p
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
 		move.w	#$0038,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A65CE
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -148,7 +148,7 @@ sub_1A65D2:					  ; CODE XREF: ROM:001A6508p
 		move.w	#$0030,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A6628
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -191,12 +191,12 @@ loc_1A662C:					  ; CODE XREF: ROM:001A64ACj
 ; ---------------------------------------------------------------------------
 
 loc_1A664A:					  ; CODE XREF: ROM:001A6630j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0040,d5
 		move.w	#$FFC8,d6
 		move.w	#$0020,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	EnemyAI_Ninja3
 		addq.b	#$01,AnimPhase(a5)
 		move.b	AnimPhase(a5),d0
@@ -220,7 +220,7 @@ loc_1A66A2:					  ; CODE XREF: ROM:001A6636j
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.b	(Player_RotationAndSize).l,d0
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 		clr.b	d1
 		bra.s	loc_1A66C6
 ; ---------------------------------------------------------------------------
@@ -270,14 +270,14 @@ loc_1A66FA:					  ; CODE XREF: ROM:001A66E8j
 		andi.b	#$0F,d0
 		move.b	d0,SubY(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1A673E
 		movem.w	(sp)+,d1
 		movem.l	(sp)+,d0
 		move.l	d0,(a5)
 		movea.l	a5,a1
-		jsr	(sub_1A8AE6).l
+		jsr	(j_j_CalcSpriteHitbox).l
 		bra.w	EnemyAI_Ninja3
 ; ---------------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ loc_1A676A:					  ; CODE XREF: ROM:001A6642j
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	loc_1A679E

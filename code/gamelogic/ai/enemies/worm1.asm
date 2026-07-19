@@ -22,12 +22,12 @@ loc_1A5394:					  ; CODE XREF: ROM:001A5382j
 loc_1A539A:					  ; CODE XREF: ROM:001A5388j
 		move.w	Z(a5),HitBoxZEnd(a5)
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0050,d5
 		move.w	#$0010,d6
 		move.w	#$0020,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Worm1
 		rts
 ; ---------------------------------------------------------------------------
@@ -44,8 +44,8 @@ EnemyAI_Worm1:					  ; CODE XREF: ROM:EnemyAI_Worm1_Bj
 loc_1A53E0:					  ; CODE XREF: ROM:001A538Ej
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A5414
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1A5424
 		bcs.s	loc_1A540E
 		bsr.w	sub_1A548A
@@ -81,12 +81,12 @@ sub_1A5424:					  ; CODE XREF: ROM:001A53F8p
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A5486
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	loc_1A5486
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -127,12 +127,12 @@ sub_1A548A:					  ; CODE XREF: ROM:001A53FCp
 		move.w	#$0038,d5
 		move.w	#$0038,d6
 		move.w	#$0038,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A54F0
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	loc_1A54F0
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -163,12 +163,12 @@ sub_1A54F4:					  ; CODE XREF: ROM:001A5404p
 		move.w	#$0028,d5
 		move.w	#$0028,d6
 		move.w	#$0028,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A554C
 		move.w	#$0018,d5
 		move.w	#$0018,d6
 		move.w	#$0018,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	loc_1A554C
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -198,7 +198,7 @@ sub_1A5550:					  ; CODE XREF: ROM:001A540Ap
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A5586
 		btst	#$06,CombatFlags(a5)
 		beq.w	sub_1A546C
@@ -348,7 +348,7 @@ loc_1A56CA:					  ; CODE XREF: ROM:001A56C0j
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	locret_1A570C

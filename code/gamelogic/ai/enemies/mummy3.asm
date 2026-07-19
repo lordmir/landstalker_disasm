@@ -21,12 +21,12 @@ loc_1A814E:					  ; CODE XREF: ROM:001A813Cj
 
 loc_1A8154:					  ; CODE XREF: ROM:001A8142j
 		bsr.w	j_j_OnTick
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0070,d5
 		move.w	#$0030,d6
 		move.w	#$0030,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcs.s	EnemyAI_Mummy3
 		rts
 ; ---------------------------------------------------------------------------
@@ -53,8 +53,8 @@ loc_1A8198:					  ; CODE XREF: ROM:001A83A0j
 loc_1A81B4:					  ; CODE XREF: ROM:001A8148j
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A81E0
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1A822C
 		bcs.s	loc_1A81DA
 		bsr.w	sub_1A8268
@@ -76,7 +76,7 @@ loc_1A81E0:					  ; CODE XREF: ROM:001A81BAj
 		move.w	#$0050,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A8228
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -101,7 +101,7 @@ sub_1A822C:					  ; CODE XREF: ROM:001A81CCp
 		move.w	#$0050,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A8264
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -128,7 +128,7 @@ sub_1A8268:					  ; CODE XREF: ROM:001A81D0p
 		move.w	#$0048,d5
 		move.w	#$FFC8,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A82A0
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -155,7 +155,7 @@ sub_1A82A4:					  ; CODE XREF: ROM:001A81D6p
 		move.w	#$0018,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1A830A
 		move.w	HitBoxZEnd(a5),d0
 		sub.w	(Player_Z).l,d0
@@ -219,12 +219,12 @@ loc_1A8334:					  ; CODE XREF: ROM:001A832Aj
 
 loc_1A8354:					  ; CODE XREF: ROM:001A8344j
 						  ; ROM:001A8350j
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		move.w	#$0015,d5
 		move.w	#$0009,d6
 		move.w	#$0009,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.w	EnemyAI_Mummy3
 		move.b	AnimPhase(a5),d0
 		addq.b	#$01,AnimPhase(a5)
@@ -248,7 +248,7 @@ loc_1A839C:					  ; CODE XREF: ROM:001A8382j
 
 loc_1A83A6:					  ; CODE XREF: ROM:001A839Aj
 		bclr	#$06,InteractFlags(a5)
-		bra.w	loc_1A8AEC
+		bra.w	j_j_PlayerDeath
 ; ---------------------------------------------------------------------------
 
 loc_1A83B0:					  ; CODE XREF: ROM:001A8326j
@@ -259,7 +259,7 @@ loc_1A83B0:					  ; CODE XREF: ROM:001A8326j
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0011,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$1E,AnimPhase(a5)
 		bcc.w	EnemyAI_Mummy3

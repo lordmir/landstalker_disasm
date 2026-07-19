@@ -49,7 +49,7 @@ CSA_0004:					  ; CODE XREF: ROM:0001210Cj
 		bsr.w	CSA_015A
 		move.w	#$000E,d0		  ; Cutscene 0x00E: 0x02544A
 		bsr.s	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ CSA_0007:					  ; CODE XREF: ROM:00012118j
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_CurrentRoom).l
 		jsr	(j_WarpToRoom).l
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		movem.l	(sp)+,d0
 		movem.l	(sp)+,a5
 		movem.l	(sp)+,d0
@@ -78,14 +78,14 @@ CSA_0007:					  ; CODE XREF: ROM:00012118j
 ; ---------------------------------------------------------------------------
 
 CSA_0008:					  ; CODE XREF: ROM:0001211Cj
-		move.b	#$01,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_UP,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		move.w	#$000B,d0		  ; Cutscene 0x00B: 0x025444
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$11,(g_FridayAnimation2).l
+		move.b	#FRIDAY_HOVER,(g_FridayAnimation2).l
 		move.w	#$000C,d0		  ; Cutscene 0x00C: 0x025446
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -183,16 +183,16 @@ loc_1281E:					  ; CODE XREF: ROM:00012852j
 		dbf	d7,loc_1281E
 		move.w	#$0008,d0		  ; Cutscene 0x008: 0x02543E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_0011:					  ; CODE XREF: ROM:00012140j
-		move.b	#$01,(g_FridayAnimation1).l
-		move.b	#$11,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_UP,(g_FridayAnimation1).l
+		move.b	#FRIDAY_HOVER,(g_FridayAnimation2).l
 		move.w	#$0000,d0		  ; Cutscene 0x000: 0x02542E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		bset	#$05,(g_Flags).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ CSA_0016:					  ; CODE XREF: ROM:00012154j
 		bsr.w	CSA_015A
 		move.w	#$001B,d0		  ; Cutscene 0x01B: 0x025464
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	loc_12906
 		move.b	#$08,d0
@@ -252,7 +252,7 @@ CSA_0018:					  ; CODE XREF: ROM:0001215Cj
 		bsr.w	CSA_015A
 		move.w	#$001C,d0		  ; Cutscene 0x01C: 0x025466
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	loc_1294A
 		move.b	#$08,d0
@@ -284,7 +284,7 @@ CSA_001B:					  ; CODE XREF: ROM:00012168j
 CSA_001C:					  ; CODE XREF: ROM:0001216Cj
 		move.w	#$0003,d0
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		move.w	#$0004,d0		  ; Cutscene 0x004: 0x025436
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -301,7 +301,7 @@ CSA_001D:					  ; CODE XREF: ROM:00012170j
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitRoomDisplayAndFadeIn).l
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		clr.w	(g_ControllerPlayback).l
 		bset	#$04,(g_Flags).l
 		movem.l	(sp)+,d0
@@ -328,7 +328,7 @@ CSA_001F:					  ; CODE XREF: ROM:00012178j
 		bsr.w	CSA_015A
 		move.w	#$001D,d0		  ; Cutscene 0x01D: 0x025468
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		move.b	#$0D,d0
 		bsr.w	PlaybackInput
 		ori.b	#$C0,(Player_RotationAndSize).l
@@ -346,7 +346,7 @@ CSA_0021:					  ; CODE XREF: ROM:00012180j
 		bset	#$00,(g_Flags+1).l
 		movea.l	(g_TalkingSprite).l,a0
 		move.b	RotationAndSize(a0),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		ori.b	#$01,d0
 		move.b	d0,(g_Flags+1).l
 		rts
@@ -482,7 +482,7 @@ loc_12BA0:					  ; CODE XREF: ROM:00012BE4j
 		bsr.w	sub_13140
 		move.w	#$0031,d0		  ; Cutscene 0x031: 0x025490
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -892,12 +892,12 @@ CSA_0042:					  ; CODE XREF: ROM:00012204j
 CSA_0043:					  ; CODE XREF: ROM:00012208j
 		move.w	#$004E,d0
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$51,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_1,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 
 loc_13074:					  ; CODE XREF: ROM:00013082j
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$21,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		bne.s	loc_13074
 		move.w	#$004F,d0
 		bsr.w	LoadCutsceneDialogue
@@ -941,7 +941,7 @@ loc_1309C:					  ; CODE XREF: ROM:000130E0j
 		jsr	(j_LoadSprites).l
 		move.w	#$0050,d0
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		rts
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1076,7 +1076,7 @@ CSA_0052:					  ; CODE XREF: ROM:00012244j
 		lea	(Player_X).l,a0
 		bset	#$07,AnimCtrl(a0)
 		andi.b	#$3F,RotationAndSize(a0)
-		eori.b	#$80,d1
+		eori.b	#DIR_FLIP,d1
 		or.b	d1,RotationAndSize(a0)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
@@ -1148,7 +1148,7 @@ CSA_0055:					  ; CODE XREF: ROM:00012250j
 
 loc_1338C:					  ; CODE XREF: ROM:0001339Aj
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$21,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		bne.s	loc_1338C
 		move.w	#$0061,d0		  ; Cutscene 0x061: 0x0254F0
 		btst	#$07,(g_Flags+$12).l
@@ -1158,7 +1158,7 @@ loc_1338C:					  ; CODE XREF: ROM:0001339Aj
 loc_133AE:					  ; CODE XREF: ROM:000133A8j
 		bsr.w	LoadCutsceneDialogue
 		bsr.w	sub_1584A
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		lea	(Player_X).l,a0
 		jsr	(j_SetPlayerIdlePose).l
 		bset	#$07,(Player_RenderFlags).l
@@ -1286,7 +1286,7 @@ CSA_0062:					  ; CODE XREF: ROM:00012284j
 ; ---------------------------------------------------------------------------
 
 loc_134BA:					  ; CODE XREF: ROM:000134A4j
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		clr.w	(g_ControllerPlayback).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -1318,13 +1318,13 @@ loc_134D2:					  ; CODE XREF: ROM:000134EAj
 		jsr	(j_Sleep).l
 		move.w	#$006A,d0		  ; Cutscene 0x06A: 0x025502
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$53,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_2,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		move.w	#$006B,d0		  ; Cutscene 0x06B: 0x025504
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$55,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_3,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		move.w	#$006C,d0		  ; Cutscene 0x06C: 0x025506
 		bsr.w	LoadCutsceneDialogue
@@ -1459,8 +1459,8 @@ CSA_0068:					  ; CODE XREF: ROM:0001229Cj
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_CurrentRoom).l
 		jsr	(j_TransitionToNewRoom).l
-		move.b	#$21,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		jsr	(j_WaitUntilVBlank).l
 		movem.l	(sp)+,d0
 		movem.l	(sp)+,a5
@@ -1534,7 +1534,7 @@ loc_137CA:					  ; CODE XREF: ROM:0001379Aj
 CSA_006B:					  ; CODE XREF: ROM:000122A8j
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
-		eori.b	#$80,d1
+		eori.b	#DIR_FLIP,d1
 		bset	#$07,RenderFlags(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
@@ -1579,7 +1579,7 @@ CSA_0070:					  ; CODE XREF: ROM:000122BCj
 		bset	#$05,InteractFlags(a5)
 		move.w	#$0070,d0		  ; Cutscene 0x070: 0x02550E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1599,8 +1599,8 @@ CSA_0072:					  ; CODE XREF: ROM:000122C4j
 		jsr	(j_FlushDMACopyQueue).l
 		move.w	#$0028,d0		  ; Cutscene 0x028: 0x02547E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$57,(g_FridayAnimation1).l
-		move.b	#$23,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_4,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FROZEN,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1617,8 +1617,8 @@ CSA_0074:					  ; CODE XREF: ROM:000122CCj
 CSA_0075:					  ; CODE XREF: ROM:000122D0j
 		move.w	#$002B,d0		  ; Cutscene 0x02B: 0x025484
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$59,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_5,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1627,8 +1627,8 @@ CSA_0076:					  ; CODE XREF: ROM:000122D4j
 		jsr	(j_CheckAndConsumeItem).l
 		move.w	#$002C,d0		  ; Cutscene 0x02C: 0x025486
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$5B,(g_FridayAnimation1).l
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_6,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1911,7 +1911,7 @@ CSA_0094:					  ; CODE XREF: ROM:0001234Cj
 		bsr.w	CSA_015A
 		move.w	#$0085,d0		  ; Cutscene 0x085: 0x025538
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1955,7 +1955,7 @@ CSA_0098:					  ; CODE XREF: ROM:0001235Cj
 		bsr.w	LoadCutsceneDialogue
 		move.w	#$0088,d0		  ; Cutscene 0x088: 0x02553E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2516,7 +2516,7 @@ loc_14058:					  ; CODE XREF: ROM:00014052j
 ; ---------------------------------------------------------------------------
 
 loc_140C2:					  ; CODE XREF: ROM:0001409Aj
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2528,7 +2528,7 @@ CSA_00C3:					  ; CODE XREF: ROM:00012408j
 CSA_00C4:					  ; CODE XREF: ROM:0001240Cj
 		move.w	#$00A7,d0		  ; Cutscene 0x0A7: 0x02557C
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2545,7 +2545,7 @@ CSA_00C6:					  ; CODE XREF: ROM:00012414j
 		bsr.w	LoadCutsceneDialogue
 		lea	(Player_X).l,a0
 		andi.b	#$3F,RotationAndSize(a0)
-		ori.b	#$80,RotationAndSize(a0)
+		ori.b	#DIR_SW,RotationAndSize(a0)
 		ori.b	#$80,AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(j_SetPlayerIdlePose).l
@@ -2554,7 +2554,7 @@ CSA_00C6:					  ; CODE XREF: ROM:00012414j
 		movem.l	(sp)+,a5
 		move.w	#$00AB,d0		  ; Cutscene 0x0AB: 0x025584
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		bset	#$04,(g_AdditionalFlags+4).l
 		bset	#$00,(g_Flags+1).l
 		rts
@@ -2570,31 +2570,31 @@ CSA_00C8:					  ; CODE XREF: ROM:0001241Cj
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	loc_141E0
-		move.b	#$11,(g_FridayAnimation2).l
+		move.b	#FRIDAY_HOVER,(g_FridayAnimation2).l
 		move.w	#$00B4,d0		  ; Cutscene 0x0B4: 0x025596
 		bsr.w	LoadCutsceneDialogue
 		move.w	#00060,d0
 		jsr	(j_Sleep).l
-		move.b	#$24,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FROZEN2,(g_FridayAnimation2).l
 
 loc_14190:					  ; CODE XREF: ROM:0001419Ej
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$24,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_FROZEN2,(g_FridayAnimation1).l
 		bne.s	loc_14190
 		move.w	#$00B5,d0		  ; Cutscene 0x0B5: 0x025598
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$5D,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_7,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		move.w	#$00B6,d0		  ; Cutscene 0x0B6: 0x02559A
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$5F,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_8,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		bset	#$06,(g_AdditionalFlags+4).l
 
 loc_141E0:					  ; CODE XREF: ROM:0001416Aj
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2813,10 +2813,10 @@ CSA_00DE:					  ; CODE XREF: ROM:00012474j
 CSA_00DF:					  ; CODE XREF: ROM:00012478j
 		move.w	#$00CD,d0		  ; Cutscene 0x0CD: 0x0255C8
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$53,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_2,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		bsr.w	loc_15852
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		move.w	#$00CE,d0		  ; Cutscene 0x0CE: 0x0255CA
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -2923,7 +2923,7 @@ CSA_00EC:					  ; CODE XREF: ROM:000124ACj
 CSA_00ED:					  ; CODE XREF: ROM:000124B0j
 		move.w	#$00D9,d0		  ; Cutscene 0x0D9: 0x0255E0
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3163,7 +3163,7 @@ loc_14836:					  ; CODE XREF: ROM:00014850j
 		bsr.w	CSA_015A
 		move.w	#$00E0,d0		  ; Cutscene 0x0E0: 0x0255EE
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		move.w	#$003F,d7
 
 loc_1486C:					  ; CODE XREF: ROM:00014876j
@@ -3265,21 +3265,21 @@ CSA_0105:					  ; CODE XREF: ROM:00012510j
 		bsr.w	CSA_015A
 		move.w	#$00ED,d0		  ; Cutscene 0x0ED: 0x025608
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$61,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_9,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 
 loc_14980:					  ; CODE XREF: ROM:0001498Ej
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$22,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_FLAP,(g_FridayAnimation1).l
 		bne.s	loc_14980
 		move.w	#$00EE,d0		  ; Cutscene 0x0EE: 0x02560A
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$63,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_10,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 
 loc_149A8:					  ; CODE XREF: ROM:000149B6j
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$21,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		bne.s	loc_149A8
 		move.w	#$00EF,d0		  ; Cutscene 0x0EF: 0x02560C
 		bra.w	LoadCutsceneDialogue
@@ -3305,7 +3305,7 @@ CSA_0108:					  ; CODE XREF: ROM:0001251Cj
 CSA_0109:					  ; CODE XREF: ROM:00012520j
 		move.w	#$00F2,d0		  ; Cutscene 0x0F2: 0x025612
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3423,12 +3423,12 @@ CSA_0111:					  ; CODE XREF: ROM:00012540j
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicFridayAppear
 ; ---------------------------------------------------------------------------
-		move.b	#$65,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_11,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 
 loc_14B8E:					  ; CODE XREF: ROM:00014B9Cj
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$22,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_FLAP,(g_FridayAnimation1).l
 		bne.s	loc_14B8E
 		clr.b	(g_FridayAnimation1).l
 		clr.w	(gVDPSprFriday_Y).l
@@ -3498,12 +3498,12 @@ CSA_0112:					  ; CODE XREF: ROM:00012544j
 		move.w	#00180,d1
 		bsr.w	ShowCutsceneDialogueAndWait
 		jsr	(j_ClearTextbox).l
-		move.b	#$67,(g_FridayAnimation1).l
-		move.b	#$22,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_12,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 
 loc_14CA2:					  ; CODE XREF: ROM:00014CB0j
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$22,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_FLAP,(g_FridayAnimation1).l
 		bne.s	loc_14CA2
 		move.w	#ROOM_INTRO_5,(g_CurrentRoom).l	  ; Intro Screen 5
 		move.w	#ROOM_INTRO_5,(g_OriginalRoom).l
@@ -3512,8 +3512,8 @@ loc_14CA2:					  ; CODE XREF: ROM:00014CB0j
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$80,(Player_RotationAndSize).l
 		jsr	(j_FadeOutToDarkness).l
-		move.b	#$21,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		jsr	(j_WarpToRoomNoFade).l
 		move.w	#$00FE,(g_ControllerPlayback).l
 		move.b	#ITM_STATUEOFJYPTA,d0
@@ -3574,7 +3574,7 @@ CSA_0115:					  ; CODE XREF: ROM:00012550j
 		move.w	#$010B,d0		  ; Cutscene 0x10B: 0x025644
 		move.w	#00060,d1
 		bsr.w	ShowCutsceneDialogueAndWait
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		move.w	#$010C,d0		  ; Cutscene 0x10C: 0x025646
 		move.w	#00120,d1
 		bsr.w	ShowCutsceneDialogueAndWait
@@ -3637,7 +3637,7 @@ CSA_011C:					  ; CODE XREF: ROM:0001256Cj
 		move.w	#00060,d1
 		bsr.w	ShowCutsceneDialogueAndWait
 		clr.w	(g_ControllerPlayback).l
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		jmp	(j_ClearTextbox).l
 ; ---------------------------------------------------------------------------
 
@@ -3733,7 +3733,7 @@ CSA_0129:					  ; CODE XREF: ROM:000125A0j
 		bsr.w	CSA_015A
 		move.w	#$00F7,d0		  ; Cutscene 0x0F7: 0x02561C
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3909,7 +3909,7 @@ CSA_013A:					  ; CODE XREF: ROM:000125E4j
 		bsr.w	CSA_015A
 		move.w	#$012F,d0
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3922,7 +3922,7 @@ CSA_013C:					  ; CODE XREF: ROM:000125ECj
 		bsr.w	CSA_015A
 		move.w	#$012D,d0		  ; Cutscene 0x12D: 0x025688
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3930,7 +3930,7 @@ CSA_013D:					  ; CODE XREF: ROM:000125F0j
 		bsr.w	CSA_015A
 		move.w	#$012E,d0		  ; Cutscene 0x12E: 0x02568A
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4007,7 +4007,7 @@ CSA_0149:					  ; CODE XREF: ROM:00012620j
 		bsr.w	CSA_015A
 		move.w	#$0138,d0		  ; Cutscene 0x138: 0x02569E
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4025,7 +4025,7 @@ locret_15272:					  ; CODE XREF: ROM:00015268j
 CSA_014B:					  ; CODE XREF: ROM:00012628j
 		move.w	#$013A,d0		  ; Cutscene 0x13A: 0x0256A2
 		bsr.w	LoadCutsceneDialogue
-		move.b	#$31,(g_FridayAnimation1).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4276,8 +4276,8 @@ loc_15594:					  ; CODE XREF: ROM:00015598j
 ; ---------------------------------------------------------------------------
 		bsr.w	CSA_015A
 		bsr.w	loc_15852
-		move.b	#$6B,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_14,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		move.w	#$0144,d0		  ; Cutscene 0x144: 0x0256B6
 		move.w	#00060,d1
@@ -4286,8 +4286,8 @@ loc_15594:					  ; CODE XREF: ROM:00015598j
 		move.w	#00180,d1
 		bsr.w	ShowCutsceneDialogueAndWait
 		jsr	(j_ClearTextbox).l
-		move.b	#$6D,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_15,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		bsr.w	loc_15852
 		move.w	#$0146,d0		  ; Cutscene 0x146: 0x0256BA
 		move.w	#00060,d1
@@ -4305,8 +4305,8 @@ loc_15594:					  ; CODE XREF: ROM:00015598j
 		move.w	#00180,d1
 		bsr.w	ShowCutsceneDialogueAndWait
 		jsr	(j_ClearTextbox).l
-		move.b	#$69,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PATH_13,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		moveq	#$00000003,d7
 
 loc_1568E:					  ; CODE XREF: ROM:0001569Cj
@@ -4456,8 +4456,8 @@ locret_15836:					  ; CODE XREF: ROM:00015824j
 
 CSA_015A:					  ; CODE XREF: ROM:00012664j
 						  ; ROM:CSA_0004p ...
-		move.b	#$01,(g_FridayAnimation1).l
-		move.b	#$21,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_UP,(g_FridayAnimation1).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
 		rts
 ; End of function CSA_015A
 
@@ -4467,14 +4467,14 @@ CSA_015A:					  ; CODE XREF: ROM:00012664j
 
 sub_1584A:					  ; CODE XREF: ROM:00012816p
 						  ; ROM:00012990p ...
-		move.b	#$41,(g_FridayAnimation2).l
+		move.b	#FRIDAY_SPELL,(g_FridayAnimation2).l
 
 loc_15852:					  ; CODE XREF: ROM:00013534p
 						  ; ROM:00013550p ...
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$21,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		beq.s	locret_1586C
-		cmpi.b	#$22,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_FLAP,(g_FridayAnimation1).l
 		bne.s	loc_15852
 
 locret_1586C:					  ; CODE XREF: sub_1584A+16j
@@ -4551,7 +4551,7 @@ sub_15914:					  ; CODE XREF: ROM:0001557Ep
 		bsr.s	sub_15972
 		bsr.w	sub_159DE
 		bsr.w	sub_159FA
-		move.w	#$0200,(dword_FF1804).l
+		move.w	#$0200,(g_Scratch1804).l
 		move.w	#$0200,(word_FF1808).l
 		move.w	#$0E00,(word_FF180C).l
 
@@ -4595,7 +4595,7 @@ locret_15970:					  ; CODE XREF: sub_1595C+8j
 
 sub_15972:					  ; CODE XREF: sub_15914p
 		moveq	#$00000007,d7
-		move.w	#$0001,(word_FF1800).l
+		move.w	#$0001,(g_Scratch1800).l
 
 loc_1597C:					  ; CODE XREF: sub_15972+36j
 		trap	#$00			  ; Trap00Handler
@@ -4609,9 +4609,9 @@ loc_15988:					  ; CODE XREF: sub_15972+1Ej
 		bsr.s	sub_159AE
 		jsr	(j_WaitUntilVBlank).l
 		dbf	d6,loc_15988
-		cmpi.w	#$0004,(word_FF1800).l
+		cmpi.w	#$0004,(g_Scratch1800).l
 		bcc.s	loc_159A4
-		addq.w	#$01,(word_FF1800).l
+		addq.w	#$01,(g_Scratch1800).l
 
 loc_159A4:					  ; CODE XREF: sub_15972+2Aj
 		movem.w	(sp)+,d7
@@ -4626,11 +4626,11 @@ loc_159A4:					  ; CODE XREF: sub_15972+2Aj
 sub_159AE:					  ; CODE XREF: sub_15914:loc_15936p
 						  ; sub_15972:loc_15988p
 		movem.l	d0-a6,-(sp)
-		move.w	(word_FF1800).l,d0
+		move.w	(g_Scratch1800).l,d0
 		add.w	d0,(g_VSRAMData).l
 		add.w	d0,(g_VSRAMData+2).l
 		neg.w	d0
-		move.w	d0,(word_FF1800).l
+		move.w	d0,(g_Scratch1800).l
 		jsr	(j_QueueVSRAMUpdate).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,d0-a6
@@ -4828,7 +4828,7 @@ sub_15B7C:					  ; CODE XREF: ROM:00015B62p
 
 
 sub_15B88:					  ; CODE XREF: sub_15B7C+4p
-		move.w	(dword_FF1804).l,d3
+		move.w	(g_Scratch1804).l,d3
 		move.w	(word_FF1808).l,d4
 		move.w	(word_FF180C).l,d7
 		lea	(g_Pal0Base).l,a0
@@ -4842,7 +4842,7 @@ loc_15BAA:					  ; CODE XREF: sub_15B88+28j
 		dbf	d5,loc_15BAA
 		jsr	(j_QueueFullPaletteDMA).l
 		add.w	d4,d3
-		move.w	d3,(dword_FF1804).l
+		move.w	d3,(g_Scratch1804).l
 		move.w	d4,(word_FF1808).l
 		move.w	d7,(word_FF180C).l
 		rts

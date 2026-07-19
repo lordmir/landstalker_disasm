@@ -33,8 +33,8 @@ EnemyAI_Spinner:				  ; CODE XREF: ROM:EnemyAI_Spinner_Bj
 
 loc_1AE180:					  ; CODE XREF: ROM:001AE150j
 		bclr	#$00,CombatFlags(a5)
-		move.w	CentreX(a5),(word_FF1800).l
-		move.w	CentreY(a5),(dword_FF1804).l
+		move.w	CentreX(a5),(g_Scratch1800).l
+		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	sub_1AE1B4
 		bcs.s	loc_1AE1AE
 		bsr.s	sub_1AE1F4
@@ -57,12 +57,12 @@ sub_1AE1B4:					  ; CODE XREF: ROM:001AE196p
 		move.w	#$00A0,d5
 		move.w	#$FFC0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AE1F0
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
-		cmpi.b	#$40,d0
-		cmpi.b	#$80,d0
+		andi.b	#DIR_MASK,d0
+		cmpi.b	#DIR_SE,d0
+		cmpi.b	#DIR_SW,d0
 		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
@@ -84,7 +84,7 @@ sub_1AE1F4:					  ; CODE XREF: ROM:001AE19Ap
 		move.w	#$0050,d5
 		move.w	#$FFE0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AE230
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -112,7 +112,7 @@ sub_1AE234:					  ; CODE XREF: ROM:001AE19Ep
 		move.w	#$0030,d5
 		move.w	#$FFE0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AE270
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -140,7 +140,7 @@ sub_1AE274:					  ; CODE XREF: ROM:001AE1A4p
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AE2D8
 		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
@@ -158,7 +158,7 @@ sub_1AE2A0:					  ; CODE XREF: ROM:001AE1AAp
 		move.w	#$0040,d5
 		move.w	#$FFF0,d6
 		move.w	#$0010,d7
-		bsr.w	sub_1A8964
+		bsr.w	CheckPlayerInRange
 		bcc.s	loc_1AE2D8
 		move.b	(Player_Action).l,d0	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
@@ -241,7 +241,7 @@ loc_1AE35A:					  ; CODE XREF: ROM:001AE354j
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
-		bsr.w	sub_1A880C
+		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		cmpi.b	#$0F,AICounter(a5)
 		bcs.s	loc_1AE398

@@ -5,8 +5,8 @@ SpriteFuncsJmps2	module
 j_HideSprite:
 		jmp	HideSprite(pc)
 
-j_RespawnGhost:
-		jmp	RespawnGhost(pc)
+j_RunEnemyAI:
+		jmp	RunEnemyAI(pc)
 
 j_MoveSpriteOffscreen:
 		jmp	MoveSpriteOffscreen(pc)

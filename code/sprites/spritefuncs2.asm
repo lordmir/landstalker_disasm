@@ -86,17 +86,17 @@ EkeEkeRecover:
 		bmi.w	_death
 		subq.b	#$01,d1
 		jsr	(j_CheckAndConsumeItem).l
-		move.b	#$01,(g_FridayAnimation1).l
-		move.b	#$11,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_UP,(g_FridayAnimation1).l
+		move.b	#FRIDAY_HOVER,(g_FridayAnimation2).l
 		move.w	#60,d0
 		jsr	(j_Sleep).l
-		move.b	#$41,(g_FridayAnimation2).l
+		move.b	#FRIDAY_SPELL,(g_FridayAnimation2).l
 
 _waitFriday:
 		jsr	(j_WaitUntilVBlank).l
-		cmpi.b	#$21,(g_FridayAnimation1).l
+		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		bne.s	_waitFriday
-		move.b	#$31,(g_FridayAnimation2).l
+		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		lea	(Player_X).l,a0
 		bset	#$07,AnimCtrl(a0)
 		bset	#$07,RenderFlags(a0)
@@ -138,8 +138,8 @@ _massanRescue:
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitRoomDisplay).l
-		move.b	#$21,(g_FridayAnimation1).l
-		move.b	#$11,(g_FridayAnimation2).l
+		move.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
+		move.b	#FRIDAY_HOVER,(g_FridayAnimation2).l
 		move.b	#$09,d0
 		bsr.w	PlaybackInput
 		jmp	(j_FadeInFromDarkness).l

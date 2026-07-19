@@ -596,9 +596,11 @@ g_ThrowBehaviour:                 equ $FF12E0
 g_ParalysisTimer:                 equ $FF12E2
 g_ChargedSwordW:                  equ $FF12E4
 g_ChargedSword:                   equ $FF12E5
-word_FF12E6:                      equ $FF12E6
-word_FF12E8:                      equ $FF12E8
-word_FF12EA:                      equ $FF12EA
+; Friday waypoint playback (fridayanimation.asm): steps left to the
+; current waypoint and the per-frame X/Y deltas towards it.
+g_FridayPathSteps:                equ $FF12E6
+g_FridayPathDX:                   equ $FF12E8
+g_FridayPathDY:                   equ $FF12EA
 g_GoldenStatueTimer:              equ $FF12EC
 g_IntroStringDisplayTime:         equ $FF12EE
 word_FF12F0:                      equ $FF12F0
@@ -607,8 +609,14 @@ word_FF12F0:                      equ $FF12F0
 ; entity's struct offset.
 g_VdpSpritePieces:                equ $FF1400
 unk_FF1440:                       equ $FF1440
-word_FF1800:                      equ $FF1800
-dword_FF1804:                     equ $FF1804
+; Shared scratch words; the meaning depends on the caller:
+;  - enemy AIs: the AI sprite's CentreX (1800) / CentreY (1804),
+;    stashed before calling CheckPlayerInRange
+;  - gamelogic2's sprite-underneath search: best overlap (1800) and
+;    best sprite pointer (1804, as a long)
+;  - text engine / dialogue actions: misc counters
+g_Scratch1800:                      equ $FF1800
+g_Scratch1804:                     equ $FF1804
 word_FF1808:                      equ $FF1808
 word_FF180C:                      equ $FF180C
 ; Rolling offset (+3 mod 16 per sprite) subtracted from BehavParam

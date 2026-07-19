@@ -115,9 +115,9 @@ MoveSpriteForward:
 
 _moveFwd:
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$C0,d0
+		andi.b	#DIR_MASK,d0
 		beq.s	_moveNE
-		cmpi.b	#$80,d0
+		cmpi.b	#DIR_SW,d0
 		bhi.w	_moveNW
 		beq.w	_moveSW
 		bcs.w	_moveSE
@@ -478,7 +478,7 @@ EB_UpdateSpriteFacing:
 ; (SetSpriteRotationAnimFlags) and marks the frame dirty.
 RefreshSpriteFacing:
 		move.b	RotationAndSize(a5),d1
-		andi.b	#$C0,d1
+		andi.b	#DIR_MASK,d1
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
 		ori.b	#$80,AnimCtrl(a5)
@@ -576,7 +576,7 @@ EB_Turn180:
 		rts
 
 EB_SetDir180:
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		moveq	#$1,d0
 		bra.w	LoadNextCmd
 
@@ -653,7 +653,7 @@ _toMove:
 _toHitEnemy:
 		movem.l	a5,-(sp)
 		move.b	RotationAndSize(a5),d0
-		andi.w	#$00C0,d0
+		andi.w	#DIR_MASK,d0
 		rol.b	#$02,d0
 		addi.b	#$0A,d0
 		cmpa.l	a0,a5
@@ -688,7 +688,7 @@ _toVase:
 		rts
 
 _toBounce:
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 
 _toPhase:
 		cmpi.b	#$20,BehavParam(a5)
@@ -811,11 +811,11 @@ EB_SetSpeed2:
 		move.b	#$02,Speed(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
-EB_SetSpeed3:
+EB_SetSpeed4:
 		move.b	#$04,Speed(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
-EB_SetSpeed4:
+EB_SetSpeed8:
 		move.b	#$08,Speed(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
@@ -919,9 +919,9 @@ _mttYNone:
 
 _mttDispatch:
 		move.b	RotationAndSize(a5),d4
-		andi.b	#$C0,d4
+		andi.b	#DIR_MASK,d4
 		beq.w	_steerNE
-		cmpi.b	#$80,d4
+		cmpi.b	#DIR_SW,d4
 		bcs.w	_steerSE
 		beq.w	_steerSW
 		bra.w	_steerNW
@@ -993,18 +993,18 @@ _fpNearChk:
 		bhi.s	_steerToTarget
 		cmpi.b	#$FF,d2
 		beq.s	_fpFlipY
-		eori.b	#$80,d2
+		eori.b	#DIR_FLIP,d2
 
 _fpFlipY:
 		cmpi.b	#$FF,d3
 		beq.s	_steerToTarget
-		eori.b	#$80,d3
+		eori.b	#DIR_FLIP,d3
 
 _steerToTarget:
 		move.b	RotationAndSize(a5),d4
-		andi.b	#$C0,d4
+		andi.b	#DIR_MASK,d4
 		beq.w	_steerNE
-		cmpi.b	#$80,d4
+		cmpi.b	#DIR_SW,d4
 		bcs.s	_steerSE
 		beq.w	_steerSW
 
@@ -1057,13 +1057,13 @@ _xmSideStep:
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		eori.b	#$80,d3
+		eori.b	#DIR_FLIP,d3
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d3
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		eori.b	#$80,d2
+		eori.b	#DIR_FLIP,d2
 		andi.b	#$C0,d2
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
@@ -1110,13 +1110,13 @@ _tyFallback:
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d3
 		or.b	d3,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _xOpposed:
@@ -1139,12 +1139,12 @@ _xoTryY:
 		bcc.w	_stepRts
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d4,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _steerNE:
@@ -1197,12 +1197,12 @@ _ymSideStep:
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		eori.b	#$80,d2
+		eori.b	#DIR_FLIP,d2
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		eori.b	#$80,d3
+		eori.b	#DIR_FLIP,d3
 		andi.b	#$C0,d3
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
@@ -1249,13 +1249,13 @@ _txFallback:
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d2
 		or.b	d2,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _yOpposed:
@@ -1280,13 +1280,13 @@ _yoTryX:
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.s	_stepRts
 		andi.b	#$3F,RotationAndSize(a5)
 		andi.b	#$C0,d2
 		or.b	d2,RotationAndSize(a5)
-		eori.b	#$80,RotationAndSize(a5)
+		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _stepRts:
@@ -1657,7 +1657,7 @@ EB_MoveDownAbsolute:
 
 ; Cmd $3F: rise every tick until blocked by something above, then
 ; advance the script.
-EB_NudgeUp:
+EB_MoveUpUntilCollision:
 		bsr.w	RaiseSpriteZ
 		bsr.w	CheckZMoveCollision
 		bcc.s	_nudgeRise

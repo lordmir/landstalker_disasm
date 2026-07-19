@@ -1,10 +1,12 @@
+EnemyAI5	module
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadPal3Low:					  ; CODE XREF: j_InitSpritePalettes+AEB4p
-						  ; j_InitSpritePalettes+AEF2p	...
-		move.l	#$C0640000,(VDP_CTRL_REG).l ; CRAM 0x64	(Palette 3, Entry 4)
+; Loads the four ProjectilePalette2 colours (the file sits directly
+; after this one in ROM, hence the pc-relative reads) into palette 3
+; colours 2-5, in CRAM and in the base + active RAM copies. Called
+; only by Gola, alongside LoadProjectilePalette, when readying her
+; fireball attacks.
+LoadPal3Low:
+		move.l	#$C0640000,(VDP_CTRL_REG).l ; CRAM $64: palette 3, colour 2
 		move.w	(ProjectilePalette2,pc),d1
 		nop
 		move.w	d1,(VDP_DATA_REG).l
@@ -26,6 +28,5 @@ LoadPal3Low:					  ; CODE XREF: j_InitSpritePalettes+AEB4p
 		move.w	d1,(g_Pal3Base+$A).l
 		move.w	d1,(g_Pal3Active+$A).l
 		rts
-; End of function LoadPal3Low
 
-; ---------------------------------------------------------------------------
+		modend

@@ -266,7 +266,7 @@ _walkFacing:
 		move.b	RotationAndSize(a0),d0
 		btst	#$01,CombatFlags(a0)
 		beq.s	_walkRotChk
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 
 _walkRotChk:
 		btst	#$04,d3
@@ -340,7 +340,7 @@ GetRotatedAnimIdx:
 		move.b	RotationAndSize(a0),d0
 		btst	#$01,CombatFlags(a0)
 		beq.s	_raiFacing
-		eori.b	#$80,d0
+		eori.b	#DIR_FLIP,d0
 
 _raiFacing:
 		andi.b	#DIR_MASK,d0

@@ -101,13 +101,13 @@ YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
 		move.b	#$05,(g_VDPSpr02_Size).l
 		move.w	#$E524,(g_VDPSpr02_TileSource).l
 		move.w	#$00D0,(g_VDPSpr02_X).l
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		clr.b	d2
 
 loc_24778:					  ; CODE XREF: YesNoPrompt+AEj
 						  ; YesNoPrompt+DCj ...
 		move.w	d1,(g_VDPSpr02_Y).l
-		tst.b	(word_FF1800).l
+		tst.b	(g_Scratch1800).l
 		bpl.s	loc_2478C
 		clr.w	(g_VDPSpr02_Y).l
 
@@ -133,7 +133,7 @@ loc_247AE:					  ; CODE XREF: YesNoPrompt+80j
 
 loc_247CC:					  ; CODE XREF: YesNoPrompt+CCj
 						  ; YesNoPrompt+E8j
-		addq.b	#$08,(word_FF1800).l
+		addq.b	#$08,(g_Scratch1800).l
 		bra.s	loc_24778
 ; ---------------------------------------------------------------------------
 
@@ -159,7 +159,7 @@ loc_247E8:					  ; CODE XREF: YesNoPrompt+9Cj
 	else
 		move.w	#$0120,(g_VDPSpr02_X).l
 	endif
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		bra.w	loc_24778
 ; ---------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ loc_24804:					  ; CODE XREF: YesNoPrompt+A6j
 		cmpi.w	#$00D0,(g_VDPSpr02_X).l
 		beq.w	loc_247CC
 		move.w	#$00D0,(g_VDPSpr02_X).l
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		bra.w	loc_24778
 ; ---------------------------------------------------------------------------
 
@@ -205,7 +205,7 @@ LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		move.w	#$00D0,(g_VDPSpr79_X).l
 		move.w	d1,(g_VDPSpr79_Y).l
-		move.w	d1,(word_FF1800).l
+		move.w	d1,(g_Scratch1800).l
 		rts
 ; End of function LoadYesNoPrompt
 
@@ -214,14 +214,14 @@ LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 
 
 sub_2488A:					  ; DATA XREF: sub_22E8Ct
-		move.w	(word_FF1800).l,d1
-		clr.b	(word_FF1800).l
+		move.w	(g_Scratch1800).l,d1
+		clr.b	(g_Scratch1800).l
 		clr.b	d2
 
 loc_24898:					  ; CODE XREF: sub_2488A+6Aj
 						  ; sub_2488A+C4j ...
 		move.w	d1,(g_VDPSpr79_Y).l
-		tst.b	(word_FF1800).l
+		tst.b	(g_Scratch1800).l
 		bpl.s	loc_248AC
 		clr.w	(g_VDPSpr79_Y).l
 
@@ -247,7 +247,7 @@ loc_248D0:					  ; CODE XREF: sub_2488A+3Aj
 
 loc_248EE:					  ; CODE XREF: sub_2488A+94j
 						  ; sub_2488A+D0j
-		addq.b	#$08,(word_FF1800).l
+		addq.b	#$08,(g_Scratch1800).l
 		bra.s	loc_24898
 ; ---------------------------------------------------------------------------
 
@@ -281,7 +281,7 @@ loc_24916:					  ; CODE XREF: sub_2488A+58j
 	endif
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		movem.w	d1-d2,-(sp)
 		jsr	(j_DrawEquipInventory).l
 		movem.w	(sp)+,d1-d2
@@ -294,7 +294,7 @@ loc_24952:					  ; CODE XREF: sub_2488A+62j
 		move.w	#$00D0,(g_VDPSpr79_X).l
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
-		clr.b	(word_FF1800).l
+		clr.b	(g_Scratch1800).l
 		movem.w	d1-d2,-(sp)
 		jsr	(j_ClearInventoryWindow).l
 		movem.w	(sp)+,d1-d2
