@@ -149,7 +149,7 @@ loc_2351E:					  ; CODE XREF: ReloadTextboxSprites+10j
 
 ClearTextboxTiles:				  ; CODE XREF: ReloadTextbox+2p
 	if ~((REGION=JP)!(REGION=US_BETA))
-		tst.b	(byte_FF1128).l
+		tst.b	(g_PendingBlockCopies).l
 		beq.w	loc_2353A
 		nop
 		nop

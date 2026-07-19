@@ -1,91 +1,59 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_LoadSpriteBehaviour:				  ; DATA XREF: ROM:00013912t
-						  ; ROM:loc_15DD2t ...
+Sprites1	module
+j_LoadSpriteBehaviour:
 		jmp	LoadSpriteBehaviour(pc)	  ; D0 = spritedata[0x34] = bytes[4] & 0x03 << 8 | bytes[7]
-; End of function j_LoadSpriteBehaviour
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_PlayEndCredits:				  ; DATA XREF: sub_EAD4:loc_EAEAt
-						  ; ROM:00015718t
+j_PlayEndCredits:
 		jmp	PlayEndCredits(pc)
-; End of function j_PlayEndCredits
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_LookupChestContents:				  ; DATA XREF: InitialiseSprites+214t
+j_LookupChestContents:
 		jmp	LookupChestContents(pc)
-; End of function j_LookupChestContents
 
+j_OpenChest:
+		jmp	OpenChest(pc)
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_OpenChest:					  ; DATA XREF: CheckOpenChest+AAt
-						  ; CheckOpenChest+E4t	...
-		jmp	OpenChest(pc)		  ; Church in cave
-; End of function j_OpenChest
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_CheckIfChestOpened:				  ; DATA XREF: ROM:00011736t
-						  ; ROM:00011746t ...
+j_CheckIfChestOpened:
 		jmp	CheckIfChestOpened(pc)
-; End of function j_CheckIfChestOpened
 
-; ---------------------------------------------------------------------------
+; Unreferenced: reloads the behaviour script of every active sprite.
 		lea	(Sprite1_X).l,a5
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_9B01C:					  ; CODE XREF: ROM:0009B026j
+_reloadLoop:
 		tst.w	(a5)
-		bmi.s	locret_9B02A
-		bsr.s	LoadSpriteBehaviour	  ; D0 = spritedata[0x34] = bytes[4] & 0x03 << 8 | bytes[7]
-		lea	$00000080(a5),a5
-		dbf	d7,loc_9B01C
+		bmi.s	_reloadDone
+		bsr.s	LoadSpriteBehaviour
+		lea	SPRITE_SIZE(a5),a5
+		dbf	d7,_reloadLoop
 
-locret_9B02A:					  ; CODE XREF: ROM:0009B01Ej
+_reloadDone:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-; D0 = spritedata[0x34]	= bytes[4] & 0x03 << 8 | bytes[7]
-
-LoadSpriteBehaviour:				  ; CODE XREF: ROM:0009B020p
-						  ; DATA XREF: j_LoadSpriteBehaviourt
+; Attaches behaviour script BehaviourLUTIndex to sprite a5: the
+; index selects a script by summing the per-script byte lengths in
+; SpriteBehaviourOffsets, giving an offset into
+; SpriteBehaviourTable. The script's first {command, parameter} byte
+; pair is loaded into BehavCmd/BehavParam and the script address
+; kept in BehaviourLUTPtr for OnTick to execute.
+LoadSpriteBehaviour:
 		lea	SpriteBehaviourOffsets(pc),a1
 		clr.l	d1
 		move.w	BehaviourLUTIndex(a5),d0
-		beq.s	loc_9B044
+		beq.s	_setScript
 		subq.w	#$01,d0
 
-loc_9B03A:					  ; CODE XREF: LoadSpriteBehaviour+14j
+_sumLoop:
 		clr.l	d2			  ; Accumulate index into master lookup
 		move.b	(a1)+,d2
 		add.l	d2,d1
-		dbf	d0,loc_9B03A		  ; Accumulate index into master lookup
+		dbf	d0,_sumLoop		  ; Accumulate index into master lookup
 
-loc_9B044:					  ; CODE XREF: LoadSpriteBehaviour+Aj
+_setScript:
 		lea	SpriteBehaviourTable(pc),a1
 		adda.l	d1,a1
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1)+,BehavCmd(a5)
 		move.b	(a1),BehavParam(a5)
 		rts
-; End of function LoadSpriteBehaviour
 
-; ---------------------------------------------------------------------------
+		modend

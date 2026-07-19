@@ -69,12 +69,12 @@ LoadItemIntoSlot0:				  ; DATA XREF: ROM:ActionTableo
 		cmpi.w	#$03FF,d0
 		bne.s	loc_28DD8
 		movea.l	(a0)+,a1
-		move.w	(a1),(word_FF1196).l
+		move.w	(a1),(g_CurrentTextItem).l
 		bra.s	loc_28DDE
 ; ---------------------------------------------------------------------------
 
 loc_28DD8:					  ; CODE XREF: LoadItemIntoSlot0+Ej
-		move.w	d0,(word_FF1196).l
+		move.w	d0,(g_CurrentTextItem).l
 
 loc_28DDE:					  ; CODE XREF: LoadItemIntoSlot0+18j
 		movem.l	(sp)+,d0/a1
@@ -215,7 +215,7 @@ ReceiveItem:					  ; DATA XREF: ROM:ActionPointerListo
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
 ; ---------------------------------------------------------------------------
-		move.w	(word_FF1196).l,d0
+		move.w	(g_CurrentTextItem).l,d0
 		bsr.w	GetItem
 	if ((REGION=FR)!(REGION=DE))
 		moveq	#2,d0
@@ -271,7 +271,7 @@ SwitchCharacter:				  ; DATA XREF: ROM:ActionTableo
 
 loc_28F26:					  ; CODE XREF: ROM:00028F20j
 		move.w	d0,(word_FF1924).l
-		move.w	d0,(word_FF1196).l
+		move.w	d0,(g_CurrentTextItem).l
 		cmpi.w	#01000,d0
 		bcc.s	loc_28F42
 		bsr.w	LoadNextCharacterFromRoomTbl

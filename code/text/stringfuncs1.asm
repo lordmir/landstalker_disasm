@@ -129,7 +129,7 @@ InitStringVars:					  ; CODE XREF: InitCompString+2p
 		clr.l	(dword_FF1844).l
 		clr.b	(byte_FF1155).l
 		move.b	(a0)+,(g_comprStringLen).l ; Number of compressed bytes	to process
-		move.l	#word_FF1196,(dword_FF184C).l
+		move.l	#g_CurrentTextItem,(dword_FF184C).l
 		move.b	#$01,d1
 		add.b	d1,d1
 		or.b	d1,(byte_FF1144).l	  ; |=2
@@ -417,7 +417,7 @@ HandleSpeakerName:				  ; CODE XREF: HandleControlChars+14j
 		bsr.w	InsertNewline
 	if ((REGION=FR)!(REGION=DE))
 		clr.w	(word_FF1194).l
-		move.l	#word_FF1196,(dword_FF184C).l
+		move.l	#g_CurrentTextItem,(dword_FF184C).l
 	endif
 		bsr.w	PopItem
 		bsr.w	GetChrName
@@ -478,7 +478,7 @@ HandleNumericVariable:				  ; CODE XREF: HandleControlChars+30j
 		jsr	(j_ConvertToBase10).l
 		lea	(unk_FF119E).l,a1
 		move.l	a1,(dword_FF1844).l
-		lea	(unk_FF0F92).l,a0
+		lea	(g_Base10Digits).l,a0
 		moveq	#$00000009,d1
 
 loc_2326E:					  ; CODE XREF: HandleControlChars:loc_23276j

@@ -7,5 +7,6 @@
     include "code/include/constants/actions.inc"
     include "code/include/constants/directions.inc"
     include "code/include/constants/floors.inc"
+    include "code/include/constants/behaviours.inc"
     include "code/include/constants/rooms.inc"
     include "code/include/structs/entity.inc"

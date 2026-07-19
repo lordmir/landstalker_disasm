@@ -285,7 +285,7 @@ CopyTilemapToVDP:				  ; CODE XREF: DisplayTitle+12Cp
 loc_39E30:					  ; CODE XREF: CopyTilemapToVDP+24j
 		movem.l	d0-d1/a1,-(sp)
 		moveq	#$00000002,d1
-		jsr	(j_DoDMACopy_1).l
+		jsr	(j_DoDMACopy).l
 		movem.l	(sp)+,d0-d1/a1
 		lea	$00000080(a1),a1
 		dbf	d1,loc_39E30

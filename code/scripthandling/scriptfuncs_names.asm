@@ -87,7 +87,7 @@ loc_294D0:					  ; CODE XREF: GetSaveLocationString+12j
 		move.w	(a2)+,d1
 		move.w	(a2)+,d7
 		blt.s	loc_294DE
-		cmp.w	(RmNum2).l,d7
+		cmp.w	(g_OriginalRoom).l,d7
 		bne.s	loc_294D0
 
 loc_294DE:					  ; CODE XREF: GetSaveLocationString+Aj

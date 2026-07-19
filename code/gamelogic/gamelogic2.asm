@@ -1,69 +1,69 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-CalcPlayerFlattenedCoords:			  ; CODE XREF: LoadRoom_0+40p
+GameLogic2	module
+; Room load: rebuilds the fine camera origin (g_CameraFineX/Y) from the
+; coarse + sub flattened player position minus Z, then renormalizes the
+; coarse/sub bytes from the result.
+InitCameraFlattenedCoords:
 		move.b	(g_PlayerXFlattened).l,d0
 		ext.w	d0
 		lsl.w	#$04,d0
-		add.b	(word_FF1126).l,d0
+		add.b	(g_CameraSubX).l,d0
 		move.w	(Player_Z).l,d1
 		sub.w	d1,d0
-		move.w	d0,(word_FF1200).l
+		move.w	d0,(g_CameraFineX).l
 		move.w	d0,d2
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126).l
+		move.b	d0,(g_CameraSubX).l
 		lsr.w	#$04,d2
 		move.b	d2,(g_PlayerXFlattened).l
 		move.b	(g_PlayerYFlattened).l,d0
 		ext.w	d0
 		lsl.w	#$04,d0
-		add.b	(word_FF1126+1).l,d0
+		add.b	(g_CameraSubY).l,d0
 		sub.w	d1,d0
-		move.w	d0,(word_FF1202).l
+		move.w	d0,(g_CameraFineY).l
 		move.w	d0,d2
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126+1).l
+		move.b	d0,(g_CameraSubY).l
 		lsr.w	#$04,d2
 		move.b	d2,(g_PlayerYFlattened).l
 		rts
-; End of function CalcPlayerFlattenedCoords
 
-; ---------------------------------------------------------------------------
 
-CheckForDebugButtons:				  ; CODE XREF: GameLoop+14p
+; Debug pad 2 handling (skipped unless DebugModeEnable): START = warp
+; to the next room (landing on the first walkable heightmap cell), B =
+; pause until B is pressed again, holding UP = give all items. If the
+; g_Flags+8 byte is set it instead locks up looping the dog-transform
+; sound (tamper/cheat trap).
+CheckForDebugButtons:
 		tst.w	(DebugModeEnable).w
-		bmi.w	locret_2F24
+		bmi.w	_debugDone
 		tst.b	(g_Flags+8).l
-		beq.s	loc_2E4C
+		beq.s	_chkWarp
 
-loc_2E3E:					  ; CODE XREF: ROM:00002E4Aj
+_dogLoop:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_DogTransform
-; ---------------------------------------------------------------------------
-		move.w	#00060,d0
+		move.w	#60,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
-		bra.s	loc_2E3E
-; ---------------------------------------------------------------------------
+		bra.s	_dogLoop
 
-loc_2E4C:					  ; CODE XREF: ROM:00002E3Cj
+_chkWarp:
 		tst.b	(g_Controller2State).l
-		bpl.w	loc_2EB8
+		bpl.w	_chkPause
 		bsr.w	FadeOutToDarkness
 
-loc_2E5A:					  ; CODE XREF: ROM:00002E76j
-		addq.w	#$01,(g_RmNum1).l	  ; Debug room warp
-		move.w	(g_RmNum1).l,d0
+_nextRoom:
+		addq.w	#$01,(g_CurrentRoom).l	  ; Debug room warp
+		move.w	(g_CurrentRoom).l,d0
 		bsr.w	LoadRoomParams
 		lea	(g_HeightMap).l,a0
 
-loc_2E70:					  ; CODE XREF: ROM:00002E7Ej
+_findFloorTile:
 		cmpa.l	#Stack,a0
-		bcc.s	loc_2E5A		  ; Debug room warp
+		bcc.s	_nextRoom		  ; Debug room warp
 		move.w	(a0)+,d0
 		andi.w	#$403F,d0
-		bne.s	loc_2E70		  ; Find first occupiable tile in room
+		bne.s	_findFloorTile		  ; Find first occupiable tile in room
 		move.l	a0,d0
 		subq.w	#$02,d0
 		subi.l	#g_HeightMap,d0
@@ -76,118 +76,96 @@ loc_2E70:					  ; CODE XREF: ROM:00002E7Ej
 		move.b	#$08,(Player_SubY).l
 		clr.b	d0
 		bsr.w	LoadRoom_0
-		bra.w	InitVDPAndFadeIn
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR CheckForDebugSaveGame
+		bra.w	InitRoomDisplayAndFadeIn
 
-loc_2EB8:					  ; CODE XREF: ROM:00002E52j
-						  ; CheckForDebugSaveGame+10j
+_chkPause:
 		btst	#CTRL_B,(g_Controller2State).l
-		beq.s	loc_2EF8
+		beq.s	_chkItemCheat
 
-loc_2EC2:					  ; CODE XREF: CheckForDebugSaveGame-3Aj
+_waitBRelease:
 		bsr.w	WaitUntilVBlank
 		bsr.w	UpdateControllerInputs
 		btst	#CTRL_B,(g_Controller2State).l
-		bne.s	loc_2EC2
+		bne.s	_waitBRelease
 
-loc_2ED4:					  ; CODE XREF: CheckForDebugSaveGame-28j
+_waitBPress:
 		bsr.w	WaitUntilVBlank
 		bsr.w	UpdateControllerInputs
 		btst	#CTRL_B,(g_Controller2State).l
-		beq.s	loc_2ED4
+		beq.s	_waitBPress
 
-loc_2EE6:					  ; CODE XREF: CheckForDebugSaveGame-16j
+_waitBRelease2:
 		bsr.w	WaitUntilVBlank
 		bsr.w	UpdateControllerInputs
 		btst	#CTRL_B,(g_Controller2State).l
-		bne.s	loc_2EE6
+		bne.s	_waitBRelease2
 
-loc_2EF8:					  ; CODE XREF: CheckForDebugSaveGame-4Cj
+_chkItemCheat:
 		btst	#CTRL_UP,(g_Controller2State).l
-; END OF FUNCTION CHUNK	FOR CheckForDebugSaveGame
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2F00:
-		beq.s	locret_2F0A
+_itemCheat:
+		beq.s	_noCheat
 		jsr	(j_DebugGetAllItems).l
 		rts
-; ---------------------------------------------------------------------------
 
-locret_2F0A:					  ; CODE XREF: sub_2F00j
+_noCheat:
 		rts
-; End of function sub_2F00
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForDebugSaveGame:				  ; CODE XREF: GameLoop+18p
-
-; FUNCTION CHUNK AT 00002EB8 SIZE 00000048 BYTES
-
+; Debug: A on pad 2 saves the game on the spot.
+CheckForDebugSaveGame:
 		tst.w	(DebugModeEnable).w
-		bmi.w	locret_2F24
+		bmi.w	_debugDone
 		btst	#CTRL_A,(g_Controller2State).l
-		beq.w	loc_2EB8
+		beq.w	_chkPause
 		bsr.w	SaveGame
 
-locret_2F24:					  ; CODE XREF: ROM:00002E32j
-						  ; CheckForDebugSaveGame+4j
+_debugDone:
 		rts
-; End of function CheckForDebugSaveGame
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadGameSelectScreen:				  ; CODE XREF: LoadGame+8p
+LoadGameSelectScreen:
 		bsr.s	CheckRAM
 		move.b	(g_SaveSlot).l,d0
 		jsr	(InitGameSelectScreen).l
 		jsr	(j_SetUpTextDisplay).l
 		rts
-; End of function LoadGameSelectScreen
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckRAM:					  ; CODE XREF: LoadGameSelectScreenp
+; Cold-boot detection: looks for the 'Kan&Makiko' signature at the
+; start of RAM; if absent (fresh power-on) writes it and resets the
+; save slot.
+CheckRAM:
 		lea	(RAM_Start).l,a0
 		lea	aKanMakiko(pc),a1	  ; "Kan&Makiko"
-		moveq	#$00000009,d7
+		moveq	#$9,d7
 
-loc_2F48:					  ; CODE XREF: CheckRAM+10j
+_sigCompare:
 		cmpm.b	(a1)+,(a0)+
-		bne.s	loc_2F52
-		dbf	d7,loc_2F48
+		bne.s	_coldBoot
+		dbf	d7,_sigCompare
 		rts
-; ---------------------------------------------------------------------------
 
-loc_2F52:					  ; CODE XREF: CheckRAM+Ej
+_coldBoot:
 		lea	(RAM_Start).l,a0
 		lea	aKanMakiko(pc),a1	  ; "Kan&Makiko"
-		moveq	#$00000009,d7
+		moveq	#$9,d7
 
-loc_2F5E:					  ; CODE XREF: CheckRAM+24j
+_sigWrite:
 		move.b	(a1)+,(a0)+
-		dbf	d7,loc_2F5E
+		dbf	d7,_sigWrite
 		clr.b	(g_SaveSlot).l
 		rts
-; End of function CheckRAM
 
-; ---------------------------------------------------------------------------
-aKanMakiko:	dc.b 'Kan&Makiko'                 ; DATA XREF: CheckRAM+6t
-						  ; CheckRAM+1Ct
-
-; =============== S U B	R O U T	I N E =======================================
+aKanMakiko:	dc.b 'Kan&Makiko'
 
 
-CollisionDetect:				  ; CODE XREF: j_CollisionDetectj
-						  ; HandleDirectionalControl+222p ...
+; Entity-vs-entity collision test for the entity at struct offset d0:
+; carry set if any other active sprite's hitbox overlaps in X/Y/Z, with
+; a1 -> the collider. Skips sprites with nonzero StateFlags (carried /
+; dying) and any sprite standing on the tested entity.
+CollisionDetect:
 		lea	(Player_X).l,a0
 		move.w	HitBoxXStart(a0,d0.w),d1  ; Bounding box X start
 		move.w	HitBoxXEnd(a0,d0.w),d2	  ; Bounding Box X end
@@ -198,50 +176,44 @@ CollisionDetect:				  ; CODE XREF: j_CollisionDetectj
 		clr.w	d7
 		movea.l	a0,a1
 
-loc_2F98:					  ; CODE XREF: CollisionDetect+6Ej
+_cdLoop:
 		cmp.w	d7,d0
-		beq.s	loc_2FD8
+		beq.s	_cdNext
 		tst.w	X(a0)
-		bmi.s	loc_2FE6		  ; End	of sprites
+		bmi.s	_cdEnd		  ; End	of sprites
 		cmp.w	HitBoxXEnd(a0),d1
-		bhi.s	loc_2FD8
+		bhi.s	_cdNext
 		cmp.w	HitBoxXStart(a0),d2
-		bcs.s	loc_2FD8
+		bcs.s	_cdNext
 		cmp.w	HitBoxYEnd(a0),d3
-		bhi.s	loc_2FD8
+		bhi.s	_cdNext
 		cmp.w	HitBoxYStart(a0),d4
-		bcs.s	loc_2FD8
+		bcs.s	_cdNext
 		cmp.w	HitBoxZEnd(a0),d6
-		bhi.s	loc_2FD8
+		bhi.s	_cdNext
 		cmp.w	Z(a0),d5
-		bcs.s	loc_2FD8
+		bcs.s	_cdNext
 		movea.l	a0,a1
 		tst.b	StateFlags(a0)
-		bne.s	loc_2FD8
+		bne.s	_cdNext
 		cmp.w	SpriteUnderneath(a0),d0
-		beq.s	loc_2FD8
+		beq.s	_cdNext
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_2FD8:					  ; CODE XREF: CollisionDetect+24j
-						  ; CollisionDetect+2Ej ...
+_cdNext:
 		lea	SPRITE_SIZE(a0),a0
 		addi.w	#SPRITE_SIZE,d7
-		cmpi.w	#$0800,d7
-		bcs.s	loc_2F98
+		cmpi.w	#(16*SPRITE_SIZE),d7
+		bcs.s	_cdLoop
 
-loc_2FE6:					  ; CODE XREF: CollisionDetect+28j
+_cdEnd:
 		tst.b	d0
 		rts
-; End of function CollisionDetect
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForCollision:				  ; CODE XREF: j_CheckForCollisionj
-						  ; HandleDirectionalInput+Ap ...
+; Same as CollisionDetect minus the SpriteUnderneath exemption.
+CheckForCollision:
 		lea	(Player_X).l,a0
 		move.w	HitBoxXStart(a0,d0.w),d1
 		move.w	HitBoxXEnd(a0,d0.w),d2
@@ -252,48 +224,47 @@ CheckForCollision:				  ; CODE XREF: j_CheckForCollisionj
 		clr.w	d7
 		movea.l	a0,a1
 
-loc_300C:					  ; CODE XREF: CheckForCollision+68j
+_cfLoop:
 		cmp.w	d7,d0
-		beq.s	loc_3046
+		beq.s	_cfNext
 		tst.w	(a0)
-		bmi.s	loc_3054
+		bmi.s	_cfEnd
 		cmp.w	HitBoxXEnd(a0),d1
-		bhi.s	loc_3046
+		bhi.s	_cfNext
 		cmp.w	HitBoxXStart(a0),d2
-		bcs.s	loc_3046
+		bcs.s	_cfNext
 		cmp.w	HitBoxYEnd(a0),d3
-		bhi.s	loc_3046
+		bhi.s	_cfNext
 		cmp.w	HitBoxYStart(a0),d4
-		bcs.s	loc_3046
+		bcs.s	_cfNext
 		cmp.w	HitBoxZEnd(a0),d6
-		bhi.s	loc_3046
+		bhi.s	_cfNext
 		cmp.w	Z(a0),d5
-		bcs.s	loc_3046
+		bcs.s	_cfNext
 		movea.l	a0,a1
 		tst.b	StateFlags(a0)
-		bne.s	loc_3046
+		bne.s	_cfNext
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3046:					  ; CODE XREF: CheckForCollision+24j
-						  ; CheckForCollision+2Ej ...
+_cfNext:
 		lea	SPRITE_SIZE(a0),a0
 		addi.w	#SPRITE_SIZE,d7
-		cmpi.w	#$0800,d7
-		bcs.s	loc_300C
+		cmpi.w	#(16*SPRITE_SIZE),d7
+		bcs.s	_cfLoop
 
-loc_3054:					  ; CODE XREF: CheckForCollision+28j
+_cfEnd:
 		tst.b	d0
 		rts
-; End of function CheckForCollision
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3058:					  ; CODE XREF: HandleDirectionalControl:loc_1B48p
-						  ; HandleDirectionalControl:loc_1CE0p	...
+; Player collision test that ignores hostile sprites - used while the
+; player is in hurt-invulnerability so they can walk out through
+; enemies. FIX_COLL_1 keeps permanent hostiles - fixed obstacles like
+; trees and spiked balls, marked by the sentinel stat pair
+; ItemDropProbability = $0001 with zero gold - solid, so
+; invulnerability can't be used to clip through them.
+CollisionDetectNonHostile:
 		lea	(Player_X).l,a0
 		move.w	Player_HitBoxXStart-Player_X(a0),d1
 		move.w	HitBoxXEnd(a0),d2
@@ -305,69 +276,63 @@ sub_3058:					  ; CODE XREF: HandleDirectionalControl:loc_1B48p
 		movea.l	a0,a1
 		lea	SPRITE_SIZE(a0),a0
 
-loc_3080:					  ; CODE XREF: sub_3058+7Ej
+_cnLoop:
 		tst.w	(a0)
-		bmi.s	loc_30D8
+		bmi.s	_cnEnd
 		tst.b	InteractFlags(a0)
-		bmi.s	loc_30BC
+		bmi.s	_cnHostile
 
-loc_308A:					  ; CODE XREF: sub_3058+70j
+_cnBox:
 		cmp.w	HitBoxXEnd(a0),d1
-		bhi.s	loc_30CA
+		bhi.s	_cnNext
 		cmp.w	HitBoxXStart(a0),d2
-		bcs.s	loc_30CA
+		bcs.s	_cnNext
 		cmp.w	HitBoxYEnd(a0),d3
-		bhi.s	loc_30CA
+		bhi.s	_cnNext
 		cmp.w	HitBoxYStart(a0),d4
-		bcs.s	loc_30CA
+		bcs.s	_cnNext
 		cmp.w	HitBoxZEnd(a0),d6
-		bhi.s	loc_30CA
+		bhi.s	_cnNext
 		cmp.w	Z(a0),d5
-		bcs.s	loc_30CA
+		bcs.s	_cnNext
 		movea.l	a0,a1
 		tst.b	StateFlags(a0)
-		bne.s	loc_30CA
+		bne.s	_cnNext
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_30BC:					  ; CODE XREF: sub_3058+30j
+_cnHostile:
 	if FIX_COLL_1
 		cmpi.w	#$0001,ItemDropProbability(a0)
-		bne.s	loc_30CA
+		bne.s	_cnNext
 		tst.b	GoldOrChestContents(a0)
-		beq.s	loc_308A
+		beq.s	_cnBox
 	endif
 
-loc_30CA:					  ; CODE XREF: sub_3058+36j
-						  ; sub_3058+3Cj ...
+_cnNext:
 		lea	SPRITE_SIZE(a0),a0
 		addi.w	#SPRITE_SIZE,d7
-		cmpi.w	#$0800,d7
-		bcs.s	loc_3080
+		cmpi.w	#(16*SPRITE_SIZE),d7
+		bcs.s	_cnLoop
 
-loc_30D8:					  ; CODE XREF: sub_3058+2Aj
+_cnEnd:
 		tst.b	d0
 		rts
-; End of function sub_3058
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_30DC:					  ; CODE XREF: HandleDirectionalControl+4F6p
+; Heightmap wall probes at the player's leading hitbox edge (SW/NE =
+; the Y edges, NW/SE below = the X edges): carry set if the floor cell
+; there is taller than the player's Z, i.e. blocked. Also returns d5 =
+; that cell's floor-type byte, which the movers' deflect logic uses.
+CheckWallSW:
 		move.w	(Player_HitBoxYEnd).l,d2
-		bra.s	loc_30EA
-; End of function sub_30DC
+		bra.s	_wallProbeY
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_30E4:					  ; CODE XREF: HandleDirectionalControl+146p
+CheckWallNE:
 		move.w	(Player_HitBoxYStart).l,d2
 
-loc_30EA:					  ; CODE XREF: sub_30DC+6j
+_wallProbeY:
 		move.w	(Player_HitBoxXStart).l,d1
 		move.w	(Player_HitBoxXEnd).l,d4
 		lsr.w	#$03,d1
@@ -384,40 +349,32 @@ loc_30EA:					  ; CODE XREF: sub_30DC+6j
 		move.b	#$4F,d2
 		move.b	(a6),d0
 		and.b	d2,d0
-		move.b	$00000001(a6),d5
+		move.b	$1(a6),d5
 		sub.w	d1,d4
-		beq.s	loc_312E
+		beq.s	_wallYCell2
 		addq.w	#$02,a6
 
-loc_312E:					  ; CODE XREF: sub_30E4+46j
+_wallYCell2:
 		move.b	(a6),d1
 		and.b	d2,d1
 		cmp.b	d0,d3
-		bcs.s	locret_313C
-		move.b	$00000001(a6),d5
+		bcs.s	_wallYDone
+		move.b	$1(a6),d5
 		cmp.b	d1,d3
 
-locret_313C:					  ; CODE XREF: sub_30E4+50j
+_wallYDone:
 		rts
-; End of function sub_30E4
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_313E:					  ; CODE XREF: HandleDirectionalControl+67Ap
+CheckWallNW:
 		move.w	(Player_HitBoxXStart).l,d2
-		bra.s	loc_314C
-; End of function sub_313E
+		bra.s	_wallProbeX
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3146:					  ; CODE XREF: HandleDirectionalControl+360p
+CheckWallSE:
 		move.w	(Player_HitBoxXEnd).l,d2
 
-loc_314C:					  ; CODE XREF: sub_313E+6j
+_wallProbeX:
 		move.w	(Player_HitBoxYStart).l,d1
 		move.w	(Player_HitBoxYEnd).l,d4
 		lsr.w	#$04,d1
@@ -434,42 +391,37 @@ loc_314C:					  ; CODE XREF: sub_313E+6j
 		move.b	#$4F,d2
 		move.b	(a6),d0
 		and.b	d2,d0
-		move.b	$00000001(a6),d5
+		move.b	$1(a6),d5
 		tst.w	d4
-		beq.s	loc_3190
-		lea	$00000094(a6),a6
+		beq.s	_wallXCell2
+		lea	$94(a6),a6
 
-loc_3190:					  ; CODE XREF: sub_3146+44j
+_wallXCell2:
 		move.b	(a6),d1
 		and.b	d2,d1
 		cmp.b	d0,d3
-		bcs.s	locret_319E
-		move.b	$00000001(a6),d5
+		bcs.s	_wallXDone
+		move.b	$1(a6),d5
 		cmp.b	d1,d3
 
-locret_319E:					  ; CODE XREF: sub_3146+50j
+_wallXDone:
 		rts
-; End of function sub_3146
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_31A0:					  ; CODE XREF: sub_38Cj
+; As CheckWallSW etc. but for any entity a5, and with mask $6F so NPCs
+; also respect NPC-only barriers ($20) and out-of-bounds ($40) cells.
+; Skipped entirely (always passable) while on a raft track cell.
+CheckSpriteWallSW:
 		move.w	HitBoxYEnd(a5),d2
-		bra.s	loc_31AA
-; End of function sub_31A0
+		bra.s	_swallProbeY
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_31A6:					  ; CODE XREF: sub_380j
+CheckSpriteWallNE:
 		move.w	HitBoxYStart(a5),d2
 
-loc_31AA:					  ; CODE XREF: sub_31A0+4j
+_swallProbeY:
 		btst	#$04,GroundHeight(a0)
-		bne.s	loc_31F4
+		bne.s	_swallPass
 		move.w	HitBoxXStart(a5),d1
 		move.w	HitBoxXEnd(a5),d4
 		lsr.w	#$03,d1
@@ -487,41 +439,32 @@ loc_31AA:					  ; CODE XREF: sub_31A0+4j
 		adda.w	d1,a6
 		move.b	#$6F,d1
 
-loc_31E6:					  ; CODE XREF: sub_31A6+4Aj
+_swallYLoop:
 		move.b	(a6),d0
 		and.b	d1,d0
 		cmp.b	d0,d3
-		bcs.s	locret_31F6
+		bcs.s	_swallDone
 		addq.w	#$02,a6
-		dbf	d4,loc_31E6
+		dbf	d4,_swallYLoop
 
-loc_31F4:					  ; CODE XREF: sub_31A6+Aj
-						  ; sub_31FE+Aj
+_swallPass:
 		tst.b	d0
 
-locret_31F6:					  ; CODE XREF: sub_31A6+46j
+_swallDone:
 		rts
-; End of function sub_31A6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_31F8:					  ; CODE XREF: sub_392j
+CheckSpriteWallNW:
 		move.w	HitBoxXStart(a5),d2
-		bra.s	loc_3202
-; End of function sub_31F8
+		bra.s	_swallProbeX
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_31FE:					  ; CODE XREF: sub_386j
+CheckSpriteWallSE:
 		move.w	HitBoxXEnd(a5),d2
 
-loc_3202:					  ; CODE XREF: sub_31F8+4j
+_swallProbeX:
 		btst	#$04,GroundHeight(a0)
-		bne.s	loc_31F4
+		bne.s	_swallPass
 		move.w	HitBoxYStart(a5),d1
 		move.w	HitBoxYEnd(a5),d4
 		lsr.w	#$04,d1
@@ -537,135 +480,122 @@ loc_3202:					  ; CODE XREF: sub_31F8+4j
 		adda.w	d2,a6
 		move.b	#$6F,d1
 
-loc_3238:					  ; CODE XREF: sub_31FE+46j
+_swallXLoop:
 		move.b	(a6),d0
 		and.b	d1,d0
 		cmp.b	d0,d3
-		bcs.s	locret_324A
-		lea	$00000094(a6),a6
-		dbf	d4,loc_3238
+		bcs.s	_swallXDone
+		lea	$94(a6),a6
+		dbf	d4,_swallXLoop
 		tst.b	d0
 
-locret_324A:					  ; CODE XREF: sub_31FE+40j
+_swallXDone:
 		rts
-; End of function sub_31FE
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_324C:					  ; CODE XREF: sub_21AEp
+; Run gravity (ProcessGravity) for the player / for entity a0, setting
+; the fall action bit and returning d6 = distance fallen.
+ApplyGravityPlayer:
 		lea	(Player_X).l,a0
-; End of function sub_324C
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3252:					  ; CODE XREF: sub_2232p
+ApplyGravity:
 		move.w	Z(a0),d6
-		bsr.s	TestForFalling
+		bsr.s	ProcessGravity
 		sub.w	Z(a0),d6
-		beq.s	locret_3264
-		bset	#$04,Action1(a0)
+		beq.s	_noFall
+		bset	#ACTB_FALL,Action1(a0)
 
-locret_3264:					  ; CODE XREF: sub_3252+Aj
+_noFall:
 		rts
-; End of function sub_3252
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-TestForFalling:					  ; CODE XREF: sub_3252+4p
+; Gravity: FallRate low 5 bits count fall frames (bit 7 = no gravity),
+; indexing FallAcceleration for this frame's fall speed, clamped to the
+; drop distance available below. No-op once at the room's floor height.
+ProcessGravity:
 		move.b	(g_RoomMinHeight).l,d4
 		andi.w	#$00FF,d4
 		cmp.w	Z(a0),d4
-		beq.s	locret_32B2
+		beq.s	_fallDone
 		move.b	FallRate(a0),d0
-		bmi.s	locret_32B2
+		bmi.s	_fallDone
 		andi.b	#$1F,d0
 		ext.w	d0
 		cmpi.b	#$10,d0
-		bls.s	loc_328C
+		bls.s	_clampRate
 		move.b	#$10,d0
 
-loc_328C:					  ; CODE XREF: TestForFalling+20j
+_clampRate:
 		andi.b	#$E0,FallRate(a0)
 		clr.w	d2
 		move.b	FallAcceleration(pc,d0.w),d2
 		addq.b	#$01,d0
-		bsr.s	sub_32C6
+		bsr.s	GetDropDistance
 		cmp.w	d2,d5
-		bhi.s	loc_32A6
+		bhi.s	_applyFall
 		clr.b	d0
 		move.w	d5,d2
-		beq.s	loc_32AE
+		beq.s	_storeRate
 
-loc_32A6:					  ; CODE XREF: TestForFalling+38j
+_applyFall:
 		sub.w	d2,Z(a0)
 		sub.w	d2,HitBoxZEnd(a0)
 
-loc_32AE:					  ; CODE XREF: TestForFalling+3Ej
+_storeRate:
 		or.b	d0,FallRate(a0)
 
-locret_32B2:					  ; CODE XREF: TestForFalling+Ej
-						  ; TestForFalling+14j
+_fallDone:
 		rts
-; End of function TestForFalling
 
-; ---------------------------------------------------------------------------
 FallAcceleration:dc.b $01, $01,	$01, $02, $02, $02, $02, $03
 		dc.b $03, $03, $04, $04, $04, $05, $06,	$07
 		dc.b $08, $FF
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-sub_32C6:					  ; CODE XREF: sub_1858+52p
-						  ; TestForFalling+34p
+; d5 = how far entity a0 can drop: Z minus the higher of the heightmap
+; floor (rescanned only after the entity moved horizontally, cached in
+; FloorHeight) and the tallest standable sprite below.
+GetDropDistance:
 		movem.w	d0/d2/d6-d7,-(sp)
 		clr.w	d4
 		move.b	FloorHeight(a0),d4
 		move.b	MovedDirFlags(a0),d7
 		andi.b	#$0F,d7
-		beq.s	loc_32E4
+		beq.s	_dropSprites
 		move.w	Z(a0),d7
-		bsr.s	sub_3302
+		bsr.s	GetHighestFloorUnder
 		move.b	d4,FloorHeight(a0)
 
-loc_32E4:					  ; CODE XREF: sub_32C6+12j
+_dropSprites:
 		movem.w	d4,-(sp)
-		bsr.w	sub_338C
+		bsr.w	GetSpriteFloorUnder
 		movem.w	(sp)+,d4
 		cmp.w	d5,d4
-		bcc.s	loc_32F6
+		bcc.s	_dropDist
 		move.w	d5,d4
 
-loc_32F6:					  ; CODE XREF: sub_32C6+2Cj
+_dropDist:
 		move.w	Z(a0),d5
 		sub.w	d4,d5
 		movem.w	(sp)+,d0/d2/d6-d7
 		rts
-; End of function sub_32C6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3302:					  ; CODE XREF: sub_3C8j
-						  ; sub_2896+26p ...
+; Scans the heightmap cells under a0's hitbox: d4 = tallest floor at
+; or below d7 (entity Z), d1 = 1 if any cell is out of bounds for this
+; entity (mask depends on player vs NPC).
+GetHighestFloorUnder:
 		clr.b	d0
 		btst	#$04,GroundHeight(a0)	  ; 0x10 - Raft	track
-		bne.s	loc_331C
+		bne.s	_floorScan
 		move.b	#$40,d0			  ; 0x40 - out of bounds to all
 		cmpa.l	#Player_X,a0
-		beq.s	loc_331C
+		beq.s	_floorScan
 		move.b	#$60,d0			  ; 0x60 = 0x40	| 0x20
 						  ; 0x20 = Out of bounds to NPC	only
 
-loc_331C:					  ; CODE XREF: sub_3302+8j
-						  ; sub_3302+14j
+_floorScan:
 		clr.w	d4
 		move.w	HitBoxXStart(a0),d1
 		move.w	HitBoxYStart(a0),d2
@@ -688,40 +618,37 @@ loc_331C:					  ; CODE XREF: sub_3302+8j
 		sub.w	d3,d5
 		clr.b	d1
 
-loc_3358:					  ; CODE XREF: sub_3302+84j
+_rowLoop:
 		movem.l	d5/a6,-(sp)
 
-loc_335C:					  ; CODE XREF: sub_3302+78j
+_cellLoop:
 		move.b	(a6),d3
 		move.b	d3,d2
 		and.b	d0,d2
-		beq.s	loc_3368
+		beq.s	_cellHeight
 		move.b	#$01,d1
 
-loc_3368:					  ; CODE XREF: sub_3302+60j
+_cellHeight:
 		andi.w	#$000F,d3
 		lsl.b	#$04,d3
 		cmp.w	d4,d3
-		bls.s	loc_3378
+		bls.s	_cellNext
 		cmp.w	d7,d3
-		bhi.s	loc_3378
+		bhi.s	_cellNext
 		move.w	d3,d4
 
-loc_3378:					  ; CODE XREF: sub_3302+6Ej
-						  ; sub_3302+72j
+_cellNext:
 		addq.w	#$02,a6
-		dbf	d5,loc_335C
+		dbf	d5,_cellLoop
 		movem.l	(sp)+,d5/a6
-		lea	$00000094(a6),a6
-		dbf	d6,loc_3358
+		lea	$94(a6),a6
+		dbf	d6,_rowLoop
 		rts
-; End of function sub_3302
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_338C:					  ; CODE XREF: sub_32C6+22p
+; d5 = top (+1) of the tallest standable sprite under a0's hitbox that
+; is below a0's Z.
+GetSpriteFloorUnder:
 		move.w	HitBoxXStart(a0),d1
 		move.w	HitBoxXEnd(a0),d2
 		move.w	HitBoxYStart(a0),d3
@@ -729,42 +656,38 @@ sub_338C:					  ; CODE XREF: sub_32C6+22p
 		move.w	Z(a0),d6
 		clr.w	d5
 		lea	(Player_X).l,a1
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_33AA:					  ; CODE XREF: sub_338C+58j
+_sfLoop:
 		cmpa.l	a0,a1
-		beq.s	loc_33DE
+		beq.s	_sfNext
 		cmp.w	HitBoxXEnd(a1),d1
-		bhi.s	loc_33DE
+		bhi.s	_sfNext
 		cmp.w	HitBoxXStart(a1),d2
-		bcs.s	loc_33DE
+		bcs.s	_sfNext
 		cmp.w	HitBoxYEnd(a1),d3
-		bhi.s	loc_33DE
+		bhi.s	_sfNext
 		cmp.w	HitBoxYStart(a1),d4
-		bcs.s	loc_33DE
+		bcs.s	_sfNext
 		cmp.w	HitBoxZEnd(a1),d6
-		bls.s	loc_33DE
+		bls.s	_sfNext
 		cmp.w	HitBoxZEnd(a1),d5
-		bhi.s	loc_33DE
+		bhi.s	_sfNext
 		tst.b	StateFlags(a1)
-		bne.s	loc_33DE
+		bne.s	_sfNext
 		move.w	HitBoxZEnd(a1),d5
 		addq.w	#$01,d5
 
-loc_33DE:					  ; CODE XREF: sub_338C+20j
-						  ; sub_338C+26j ...
+_sfNext:
 		lea	SPRITE_SIZE(a1),a1
 		tst.b	(a1)
-		dbmi	d7,loc_33AA
+		dbmi	d7,_sfLoop
 		rts
-; End of function sub_338C
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_33EA:					  ; CODE XREF: HandleDirectionalControl+184p
-						  ; HandleDirectionalControl+6A4p ...
+; d5 = gap between a5's head (HitBoxZEnd) and the lowest sprite above
+; it - the ladder-climb head-bump check.
+GetClearanceAbove:
 		move.w	HitBoxXStart(a5),d1
 		move.w	HitBoxXEnd(a5),d2
 		move.w	HitBoxYStart(a5),d3
@@ -772,152 +695,142 @@ sub_33EA:					  ; CODE XREF: HandleDirectionalControl+184p
 		move.w	HitBoxZEnd(a5),d6
 		move.w	#$FFFF,d5
 		lea	(Player_X).l,a1
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_340A:					  ; CODE XREF: sub_33EA+60j
+_caLoop:
 		cmpa.l	a5,a1
-		beq.s	loc_3444
+		beq.s	_caNext
 		btst	#$06,StateFlags(a1)
-		bne.s	loc_3444
+		bne.s	_caNext
 		cmp.w	HitBoxXEnd(a1),d1
-		bhi.s	loc_3444
+		bhi.s	_caNext
 		cmp.w	HitBoxXStart(a1),d2
-		bcs.s	loc_3444
+		bcs.s	_caNext
 		cmp.w	HitBoxYEnd(a1),d3
-		bhi.s	loc_3444
+		bhi.s	_caNext
 		cmp.w	HitBoxYStart(a1),d4
-		bcs.s	loc_3444
+		bcs.s	_caNext
 		cmp.w	Z(a1),d6
-		bcc.s	loc_3444
+		bcc.s	_caNext
 		cmp.w	Z(a1),d5
-		bls.s	loc_3444
+		bls.s	_caNext
 		tst.b	StateFlags(a1)
-		bne.s	loc_3444
+		bne.s	_caNext
 		move.w	Z(a1),d5
 
-loc_3444:					  ; CODE XREF: sub_33EA+22j
-						  ; sub_33EA+2Aj ...
+_caNext:
 		lea	SPRITE_SIZE(a1),a1
 		tst.b	(a1)
-		dbmi	d7,loc_340A
+		dbmi	d7,_caLoop
 		subq.b	#$01,d5
 		sub.w	HitBoxZEnd(a5),d5
 		rts
-; End of function sub_33EA
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3456:					  ; CODE XREF: sub_3BCj
-						  ; ProcessActionButton+18Cp ...
+; Carry set if entity a5's current position is invalid: overlapping
+; another sprite (via CheckForCollision) or on an out-of-bounds /
+; too-tall floor (a1 = 0 marks the floor case).
+ValidateSpritePosition:
 		movem.l	a5,-(sp)
 		move.l	a5,d0
 		subi.l	#Player_X,d0
 		bsr.w	CheckForCollision
-		bcs.s	loc_3482
+		bcs.s	_vspCollide
 		movem.l	(sp)+,a0
-		move.b	($000000FF).w,d7
-		bsr.w	sub_3302
+		move.b	($FF).w,d7
+		bsr.w	GetHighestFloorUnder
 		tst.b	d1
-		bne.s	loc_348C
+		bne.s	_vspFloorBlock
 		cmp.w	Z(a0),d4
-		bhi.s	loc_348C
+		bhi.s	_vspFloorBlock
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3482:					  ; CODE XREF: sub_3456+10j
+_vspCollide:
 		movem.l	(sp)+,a5
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_348C:					  ; CODE XREF: sub_3456+20j
-						  ; sub_3456+26j
-		movea.l	#$00000000,a1
+_vspFloorBlock:
+		movea.l	#$0,a1
 		ori	#$01,ccr
 		rts
-; End of function sub_3456
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3498:					  ; CODE XREF: sub_24F4+Cp
+; Finds the sprite whose top is exactly one unit under a5's feet:
+; returns d0 = struct offset (or -1). A sprite overlapping at least
+; the entity's size (RotationAndSize & $3E) wins outright; otherwise
+; the largest X+Y overlap wins (scratch at word_FF1800/dword_FF1804).
+FindSpriteUnderneath:
 		lea	(Player_X).l,a0
 		move.w	Z(a5),d0
 		subq.w	#$01,d0
 		clr.w	(word_FF1800).l
 		clr.l	(dword_FF1804).l
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_34B2:					  ; CODE XREF: sub_3498+9Ej
+_fsLoop:
 		cmp.w	HitBoxZEnd(a0),d0
-		bne.s	loc_3530
+		bne.s	_fsNext
 		move.w	HitBoxXStart(a5),d1
 		move.w	HitBoxXEnd(a5),d2
 		move.w	HitBoxYStart(a5),d3
 		move.w	HitBoxYEnd(a5),d4
 		cmp.w	HitBoxXEnd(a0),d1
-		bhi.s	loc_3530
+		bhi.s	_fsNext
 		cmp.w	HitBoxXStart(a0),d2
-		bcs.s	loc_3530
+		bcs.s	_fsNext
 		cmp.w	HitBoxYEnd(a0),d3
-		bhi.s	loc_3530
+		bhi.s	_fsNext
 		cmp.w	HitBoxYStart(a0),d4
-		bcs.s	loc_3530
+		bcs.s	_fsNext
 		move.w	HitBoxXEnd(a0),d5
 		sub.w	d1,d5
 		move.w	d2,d6
 		sub.w	HitBoxXStart(a0),d6
 		cmp.w	d5,d6
-		bcc.s	loc_34F2
+		bcc.s	_fsOverlapY
 		move.w	d6,d5
 
-loc_34F2:					  ; CODE XREF: sub_3498+56j
+_fsOverlapY:
 		move.w	HitBoxYEnd(a0),d6
 		sub.w	d3,d6
 		sub.w	HitBoxYStart(a0),d4
 		cmp.w	d6,d4
-		bcc.s	loc_3502
+		bcc.s	_fsSizeChk
 		move.w	d4,d6
 
-loc_3502:					  ; CODE XREF: sub_3498+66j
+_fsSizeChk:
 		move.b	RotationAndSize(a5),d4
 		andi.b	#$3E,d4
 		cmp.b	d4,d5
-		bcs.s	loc_3516
+		bcs.s	_fsScore
 		cmp.b	d4,d6
-		bcs.s	loc_3516
+		bcs.s	_fsScore
 		move.l	a0,d0
-		bra.s	loc_3542
-; ---------------------------------------------------------------------------
+		bra.s	_fsFound
 
-loc_3516:					  ; CODE XREF: sub_3498+74j
-						  ; sub_3498+78j
+_fsScore:
 		move.w	HitBoxYEnd(a5),d4
 		add.w	d5,d6
 		cmp.w	(word_FF1800).l,d6
-		bls.s	loc_3530
+		bls.s	_fsNext
 		move.w	d6,(word_FF1800).l
 		move.l	a0,(dword_FF1804).l
 
-loc_3530:					  ; CODE XREF: sub_3498+1Ej
-						  ; sub_3498+34j ...
+_fsNext:
 		lea	SPRITE_SIZE(a0),a0
 		tst.b	(a0)
-		dbmi	d7,loc_34B2
+		dbmi	d7,_fsLoop
 		move.l	(dword_FF1804).l,d0
-		beq.s	loc_354A
+		beq.s	_fsNone
 
-loc_3542:					  ; CODE XREF: sub_3498+7Cj
+_fsFound:
 		subi.l	#Player_X,d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_354A:					  ; CODE XREF: sub_3498+A8j
+_fsNone:
 		moveq	#$FFFFFFFF,d0
 		rts
-; End of function sub_3498
 
+		modend

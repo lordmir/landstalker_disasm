@@ -42,7 +42,7 @@ loc_9EC06:					  ; CODE XREF: ROM:0009EC08j
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
 		move.b	(a0)+,(a1)+
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_EnableDisplayAndInts).l
 		jsr	(j_EnableVDPSpriteUpdate).l
 		move.b	#$01,(byte_FF112A).l

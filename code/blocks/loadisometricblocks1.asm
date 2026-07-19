@@ -49,7 +49,7 @@ loc_A684:					  ; CODE XREF: LoadTopTiles+4Ej
 						  ; LoadTopTiles+54j ...
 		dbf	d7,loc_A652
 		move.l	a0,(g_ScreenBufferPtr).l
-		addi.b	#$0C,(byte_FF1128).l
+		addi.b	#$0C,(g_PendingBlockCopies).l
 		rts
 ; End of function LoadTopTiles
 
@@ -117,7 +117,7 @@ loc_A71C:					  ; CODE XREF: LoadLeftTiles+54j
 						  ; LoadLeftTiles+5Aj ...
 		dbf	d7,loc_A6E6
 		move.l	a0,(g_ScreenBufferPtr).l
-		addi.b	#$0C,(byte_FF1128).l
+		addi.b	#$0C,(g_PendingBlockCopies).l
 		rts
 ; End of function LoadLeftTiles
 

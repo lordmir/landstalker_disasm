@@ -284,13 +284,13 @@ MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 		lea	MapList(pc,d1.w),a0
 		move.w	(a0)+,d0
 		move.w	(a0)+,(Player_X).l
-		move.w	d0,(RmNum2).l
+		move.w	d0,(g_OriginalRoom).l
 		jsr	(j_CheckForRoomTransition).l
-		move.w	d0,(g_RmNum1).l
+		move.w	d0,(g_CurrentRoom).l
 		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(j_InitVDPAndFadeIn).l
+		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
 ; ---------------------------------------------------------------------------
@@ -390,7 +390,7 @@ loc_2A734:					  ; CODE XREF: ROM:0002A728j
 		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
-		jsr	(j_InitVDPAndFadeIn).l
+		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
 ; ---------------------------------------------------------------------------

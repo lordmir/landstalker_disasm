@@ -70,7 +70,7 @@ loc_24EC8_a:				; CODE XREF: ROM:00024EB8j
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Process Complete
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24F02:				; CODE XREF: ROM:00024E9Ej
 					; ROM:00024EAEj ...
@@ -113,7 +113,7 @@ loc_24F20:				; CODE XREF: ROM:00024F18j
 ; ---------------------------------------------------------------------------
 		jsr	(j_RestoreBGM).l
 		jsr	(j_SaveGame).l
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Game Save Complete
@@ -199,7 +199,7 @@ loc_24F9C:				; CODE XREF: ROM:00024F8Cj
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Rest End
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24FD4:				; CODE XREF: ROM:00024F82j
 					; ROM:00024F9Aj
@@ -230,10 +230,10 @@ loc_24FF2:				; CODE XREF: ROM:00024FEAj
 		moveq	#3,d0
 		jsr	(j_DisplayIslandMap).l
 		jsr	(j_LoadRoom).l
-		jsr	(j_InitVDPAndFadeIn).l
+		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		bsr.w	RestoreBGM_1
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_25022:				; CODE XREF: ROM:00024FF0j
 		movem.l	(sp)+,d0-d1/a0/a5
@@ -290,7 +290,7 @@ loc_2503A:				; CODE XREF: ROM:00025032j
 		ScriptID    $3B,$0	; Run text script at offset 0x027794
 					; 0xE03B: PRINT	MSG 0x0088, MSGBOX CLEARED, END: "{5B}:	Wonderful book,	eh?{57}But not for amateurs.{57}So, I'm keeping it a secret.{5E}"
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_2506A:				; CODE XREF: ROM:00025038j
 		move.l	(sp)+,d0
@@ -325,7 +325,7 @@ loc_25084:				; CODE XREF: ROM:0002507Ej
 ShopPrice_08:
 		move.l	d0,-(sp)
 		clr.w	d0
-		move.b	(byte_FF1903).l,d0
+		move.b	(g_ShopItemId).l,d0
 		move.w	d0,(word_FF1198).l
 		trap	#1
 ; ---------------------------------------------------------------------------
@@ -349,7 +349,7 @@ Shop_08:
 		ScriptID    $935,$0	; Run text script at offset 0x028988
 					; 0xE740: PRINT	MSG 0x078D, MSGBOX CLEARED, END: "{5B}:	I'll send it{57}directly to your shop!{5E}"
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		bra.s	locret_250BC
 ; ---------------------------------------------------------------------------
 

@@ -1,14 +1,16 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckAndDoLavaPaletteFx:			  ; DATA XREF: GameLoop+7Ct
-		cmpi.w	#$020C,(g_RmNum1).l	  ; Lake shrine	exterior with lava
-		bne.s	locret_260C
-		move.b	(byte_FF0F9D).l,d0
+LavaPalette	module
+; Animates the lava in the Lake Shrine exterior room: every 16
+; frames, writes the next pair of colours from the 8-phase
+; LavaPaletteRotation table (incbin'd right after this file) into
+; CRAM slots 8 and 9 of palette 0, cycling on g_VBlankCounterLow
+; bits 4-6.
+CheckAndDoLavaPaletteFx:
+		cmpi.w	#ROOM_LAKE_SHRINE_LAVA,(g_CurrentRoom).l	  ; Lake shrine	exterior with lava
+		bne.s	_lavaDone
+		move.b	(g_VBlankCounterLow).l,d0
 		andi.b	#$0F,d0
-		bne.s	locret_260C
-		move.b	(byte_FF0F9D).l,d0
+		bne.s	_lavaDone
+		move.b	(g_VBlankCounterLow).l,d0
 		andi.w	#$0070,d0
 		lsr.b	#$02,d0
 		move.l	#$C0100000,(VDP_CTRL_REG).l ; Write CRAM 0x0010
@@ -16,9 +18,7 @@ CheckAndDoLavaPaletteFx:			  ; DATA XREF: GameLoop+7Ct
 		move.l	#$C0120000,(VDP_CTRL_REG).l ; Write CRAM 0x0012
 		move.w	LavaPaletteRotation+2(pc,d0.w),(VDP_DATA_REG).l
 
-locret_260C:					  ; CODE XREF: CheckAndDoLavaPaletteFx+8j
-						  ; CheckAndDoLavaPaletteFx+14j
+_lavaDone:
 		rts
-; End of function CheckAndDoLavaPaletteFx
 
-; ---------------------------------------------------------------------------
+		modend

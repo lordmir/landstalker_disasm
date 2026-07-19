@@ -57,7 +57,7 @@ loc_251EA:					  ; CODE XREF: ROM:000251FEj
 loc_25204:					  ; CODE XREF: ROM:000251FAj
 		add.w	d1,d0
 		move.w	d0,(word_FF1924).l
-		move.w	d0,(word_FF1196).l
+		move.w	d0,(g_CurrentTextItem).l
 
 loc_25212:					  ; CODE XREF: ROM:000251D8j
 						  ; ROM:000251E6j ...
@@ -138,7 +138,7 @@ loc_2526C:					  ; CODE XREF: ROM:00025266j
 GetDialogueForRoom:				  ; CODE XREF: ROM:000251D4p
 						  ; ROM:0002522Cp
 		movem.w	d0-d1,-(sp)
-		move.w	(RmNum2).l,d0
+		move.w	(g_OriginalRoom).l,d0
 		lea	RoomDialogueTable(pc),a0
 
 loc_25280:					  ; CODE XREF: ROM:00025298j

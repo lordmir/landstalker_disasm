@@ -74,7 +74,7 @@ loc_2507A:
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Process Complete
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_25086:				; CODE XREF: ROM:00025022j
 					; ROM:00025032j ...
@@ -117,7 +117,7 @@ loc_250A4:				; CODE XREF: ROM:0002509Cj
 ; ---------------------------------------------------------------------------
 		jsr	(j_RestoreBGM).l
 		jsr	(j_SaveGame).l
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Game Save Complete
@@ -205,7 +205,7 @@ loc_25120:				; CODE XREF: ROM:00025110j
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Rest End
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_25158:				; CODE XREF: ROM:00025106j
 					; ROM:0002511Ej
@@ -236,10 +236,10 @@ loc_25176:				; CODE XREF: ROM:0002516Ej
 		moveq	#3,d0
 		jsr	(j_DisplayIslandMap).l
 		jsr	(j_LoadRoom).l
-		jsr	(j_InitVDPAndFadeIn).l
+		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		bsr.w	RestoreBGM_1
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_251A6:				; CODE XREF: ROM:00025174j
 		movem.l	(sp)+,d0-d1/a0/a5
@@ -296,7 +296,7 @@ loc_251BE:				; CODE XREF: ROM:000251B6j
 		ScriptID    $24,$0	; Run text script at offset 0x027962
 					; 0xE024: PRINT	MSG 0x0072, MSGBOX CLEARED, END: "{6A}Un livre merveilleux!{66}Mais pas	pour les d�butants.{66}Aussi, il doit rester secret!{6D}"
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_251EE:				; CODE XREF: ROM:000251BCj
 		move.l	(sp)+,d0
@@ -331,7 +331,7 @@ loc_25208:				; CODE XREF: ROM:00025202j
 ShopPrice_08:
 		movem.l	d0/a0,-(sp)
 		clr.w	d0
-		move.b	(byte_FF1903).l,d0
+		move.b	(g_ShopItemId).l,d0
 		move.w	d0,(word_FF1198).l
 		bsr.w	GetItemArticle
 		lea		Shop_08_Msgs(pc),a0
@@ -364,7 +364,7 @@ Shop_08:
 		bcc.s	loc_25258
 		trap	#1
 		ScriptID	$6EB,$0
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		bra.s	locret_2525C
 ; ---------------------------------------------------------------------------
 

@@ -14,7 +14,7 @@ CheckForMenuOpen:				  ; CODE XREF: GameLoop+10p
 		bne.w	locret_77A4
 		tst.b	(g_SwordSwingFrame).l
 		bne.w	locret_77A4
-		move.b	(byte_FF1133).l,d0
+		move.b	(g_CarryPhase).l,d0
 		beq.s	loc_7654
 		cmpi.b	#$17,d0
 		bne.w	locret_77A4
@@ -47,7 +47,7 @@ loc_76A0:					  ; CODE XREF: CheckForMenuOpen+80j
 		move.w	#$86BC,(a0)+
 		dbf	d7,loc_76A0
 		bsr.w	QueueInventoryScrBTilemapDMA
-		bsr.w	sub_D4AE
+		bsr.w	ClearInventoryWindow
 		jsr	(j_LoadYesNoPrompt).l
 		bsr.w	FadeInFromDarkness
 		jsr	(sub_22E8C).l
@@ -147,7 +147,7 @@ loc_776E:					  ; CODE XREF: CheckForMenuOpen+C4j
 		move.w	#$9203,d0
 		bsr.w	SetVDPReg
 		bsr.w	LoadRoom
-		bsr.w	InitVDPAndFadeIn
+		bsr.w	InitRoomDisplayAndFadeIn
 		bsr.w	LoadMagicSwordGfx
 		clr.b	(g_Controller1State).l
 		movem.w	(sp)+,d1

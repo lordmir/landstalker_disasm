@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 
 ItemUseGarlic:					  ; CODE XREF: ROM:0000864Aj
-		cmpi.w	#$02F6,(g_RmNum1).l
+		cmpi.w	#ROOM_MIRS_TOWER_MIRO,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		cmpi.b	#$11,(Player_Y).l
 		bhi.w	ReturnFailure
@@ -27,7 +27,7 @@ ItemUseAntiparalyze:				  ; CODE XREF: ROM:00008650j
 ; ---------------------------------------------------------------------------
 
 ItemUseEinsteinWhistle:				  ; CODE XREF: ROM:00008656j
-		cmpi.w	#$0234,(g_RmNum1).l
+		cmpi.w	#ROOM_GREENMAZE_SUNSTONE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
 		subi.b	#$2F,d0
@@ -86,7 +86,7 @@ loc_892A:					  ; CODE XREF: ROM:000088E8j
 ; ---------------------------------------------------------------------------
 
 ItemUseGolasEye:				  ; CODE XREF: ROM:0000866Ej
-		cmpi.w	#$01E6,(g_RmNum1).l
+		cmpi.w	#ROOM_MOUNTAINS_STATUE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
 		subi.b	#$37,d0
@@ -186,7 +186,7 @@ ItemUseRestoration:				  ; CODE XREF: ROM:00008680j
 ; ---------------------------------------------------------------------------
 
 ItemUseLogs:					  ; CODE XREF: ROM:00008686j
-		cmpi.w	#$0196,(g_RmNum1).l
+		cmpi.w	#ROOM_LABRYNTH_RAFT1,(g_CurrentRoom).l
 		bne.s	loc_8A7A
 		move.w	(Player_X).l,d0
 		andi.w	#$FEFE,d0
@@ -199,7 +199,7 @@ ItemUseLogs:					  ; CODE XREF: ROM:00008686j
 ; ---------------------------------------------------------------------------
 
 loc_8A7A:					  ; CODE XREF: ROM:00008A52j
-		cmpi.w	#$0199,(g_RmNum1).l
+		cmpi.w	#ROOM_LABRYNTH_RAFT2,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
 		andi.b	#$FE,d0
@@ -223,7 +223,7 @@ ItemUseOracleStone:				  ; CODE XREF: ROM:0000868Cj
 ItemUseIdolStone:				  ; CODE XREF: ROM:00008692j
 		btst	#$06,(g_Flags).l
 		bne.w	ReturnFailure
-		cmpi.w	#$01B1,(g_RmNum1).l
+		cmpi.w	#ROOM_SWAMP_SHRINE_ENTRANCE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		cmpi.b	#$0F,(Player_X).l
 		bhi.w	ReturnFailure
@@ -263,7 +263,7 @@ ItemUseBell:					  ; CODE XREF: ROM:0000869Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-CheckForLifestock:				  ; CODE XREF: sub_620A+49Cp
+CheckForLifestock:				  ; CODE XREF: DoorWarp+49Cp
 						  ; ROM:ItemUseBellp
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
@@ -324,7 +324,7 @@ ConsumeItem:					  ; CODE XREF: ROM:000086DCp
 		jsr	(j_GetItemQtyAndMaxQty).l
 		subq.w	#$01,d1
 		jsr	(j_CheckAndConsumeItem).l
-		bsr.w	sub_D4AE
+		bsr.w	ClearInventoryWindow
 		rts
 ; End of function ConsumeItem
 
@@ -387,7 +387,7 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		jsr	(j_Sleep).l
 		move.l	(Player_X).l,d0
 		movem.l	d0,-(sp)
-		move.w	#$0230,(g_RmNum1).l	  ; Wood cutter	area
+		move.w	#ROOM_GREENMAZE_CUTTER,(g_CurrentRoom).l	  ; Wood cutter	area
 		move.w	#$1732,(Player_X).l
 		bset	#$06,(Player_InteractFlags).l
 		bset	#$00,(g_AdditionalFlags+6).l
@@ -399,7 +399,7 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		move.w	#$00B7,d0
 		jsr	(FlushDMACopyQueue).l
 		jsr	(j_PlayCutsceneScript).l
-		move.w	#$0234,(g_RmNum1).l	  ; Sunstone
+		move.w	#ROOM_GREENMAZE_SUNSTONE,(g_CurrentRoom).l	  ; Sunstone
 		movem.l	(sp)+,d0
 		move.l	d0,(Player_X).l
 		bclr	#$06,(Player_InteractFlags).l
@@ -447,7 +447,7 @@ PostUseKey:					  ; CODE XREF: ROM:000086C8j
 		cmpi.b	#FLOOR_LOCKED_DOOR_SW,d2
 		beq.s	loc_8CEE
 		subi.b	#FLOOR_LOCKED_DOOR,d2
-		bsr.w	sub_4FA8
+		bsr.w	UnlockDoorTileSwap
 		move.l	#$00FF0000,d0
 		move.w	(Player_HeightmapOffset).l,d0
 		movea.l	d0,a0

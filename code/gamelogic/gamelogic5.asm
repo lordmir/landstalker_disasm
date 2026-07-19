@@ -1,7 +1,10 @@
-; ---------------------------------------------------------------------------
+GameLogic5	module
+; Post-load game start: sets up the HUD (status bar gfx, window plane
+; VDP regs, palettes, HUD sprites), scroll registers and blocks. A
+; save in room $8B (the first intro room) runs the intro sequence
+; instead of the normal HUD refresh + fade.
+StartGame:
 
-StartGame:					  ; CODE XREF: ROM:000016CEp
-						  ; DATA XREF: j_StartGamet
 		jsr	(DisableDisplayAndInts).l
 		move.l	#$C0760000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
@@ -17,42 +20,42 @@ StartGame:					  ; CODE XREF: ROM:000016CEp
 		bsr.w	LoadHUDSprites
 		bsr.w	InitScrollRegs
 		bsr.w	InitBlocks
-		cmpi.w	#$008B,(g_RmNum1).l
+		cmpi.w	#ROOM_INTRO_START,(g_CurrentRoom).l
 		beq.s	Intro
 		jsr	(j_RefreshAllHUD).l
 		jsr	(j_RefreshHUD).l
 		jmp	(FadeFromBlack).l
-; ---------------------------------------------------------------------------
 
-Intro:						  ; CODE XREF: ROM:00008DE2j
+; Intro wake-up: shows the intro string with a blank HUD, fades the
+; textbox colour in over six steps, starts the Labrynth music, then
+; loads the intro status bar palette and fades the room in.
+Intro:
 		move.b	#$01,(g_IntroStringToDisplay).l
 		bsr.w	CheckAndDisplayIntroString
 		jsr	(EnableDMAQueueProcessing).l
 		move.w	#$0222,d1
 		move.w	#$0005,d7
 
-loc_8E10:					  ; CODE XREF: ROM:00008E3Aj
+_introFadeLoop:
 		move.l	#$C0760000,(VDP_CTRL_REG).l
 		move.w	d1,(VDP_DATA_REG).l
 		move.w	d1,(g_Pal3Active+$16).l
 		move.w	d1,(g_Pal3Base+$16).l
 		move.w	#$0004,d0
-		jsr	(Sleep).l		  ; Sleeps for d0 frames
+		jsr	(Sleep).l
 		addi.w	#$0222,d1
-		dbf	d7,loc_8E10
+		dbf	d7,_introFadeLoop
 		move.l	#$C07E0000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.w	#$0000,(g_Pal3Active+$1E).l
 		move.w	#$0000,(g_Pal3Base+$1E).l
-		move.w	#00060,d0
-		jsr	(Sleep).l		  ; Sleeps for d0 frames
-		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
+		move.w	#60,d0
+		jsr	(Sleep).l
+		trap	#$00
 		dc.w SND_MusicLabrynth
-; ---------------------------------------------------------------------------
 		move.b	#SND_MusicLabrynth,(g_BGM).l
-		move.w	#00120,d0
-		jsr	(Sleep).l		  ; Sleeps for d0 frames
+		move.w	#120,d0
+		jsr	(Sleep).l
 		lea	StatusBarPal(pc),a0
 		lea	((g_Pal3Base+$14)).l,a1
 		move.w	#$0004,d0
@@ -61,163 +64,132 @@ loc_8E10:					  ; CODE XREF: ROM:00008E3Aj
 		nop
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-InitVDPAndFadeIn:					  ; CODE XREF: ROM:00002EB4j
-						  ; sub_620A+12p ...
-		bsr.s	InitVDP
+InitRoomDisplayAndFadeIn:
+		bsr.s	InitRoomDisplay
 		bra.s	FadeInFromDarkness
-; End of function InitVDPAndFadeIn
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitVDP:					  ; CODE XREF: sub_620A+FAp
-						  ; sub_620A+136p ...
+; Re-initialises the room display after a room load: textbox, HUD
+; sprites, scroll registers and block tables.
+InitRoomDisplay:
 		jsr	(j_RefreshAndClearTextbox).l
 		bsr.w	LoadHUDSprites
 		bsr.w	InitScrollRegs
 		bsr.w	InitBlocks
 		rts
-; End of function InitVDP
 
 
-; =============== S U B	R O U T	I N E =======================================
+; Six-step palette fade-in, then moves the HInt line back to 184 (the
+; HUD split during gameplay).
+FadeInFromDarkness:
 
-
-FadeInFromDarkness:				  ; CODE XREF: CheckForMenuOpen+92p
-						  ; sub_8E9C+2j
-						  ; DATA XREF: ...
 		move.w	#$8AB8,(g_VDPReg10_HIntLine).l
 		move.w	#$8AB8,(VDP_CTRL_REG).l	  ; HINT on line 184
 		jsr	(InitFadeFromBlackParams).l
 		move.w	#$0006,d6
 
-loc_8ECE:					  ; CODE XREF: FadeInFromDarkness+3Aj
+_fadeInLoop:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		move.w	#$0039,d5
 		jsr	(DarkenPalette).l
 		move.w	#$0002,d0
-		jsr	(Sleep).l		  ; Sleeps for d0 frames
-		dbf	d6,loc_8ECE
+		jsr	(Sleep).l
+		dbf	d6,_fadeInLoop
 		rts
-; End of function FadeInFromDarkness
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FadeOutToDarkness:				  ; CODE XREF: ROM:00002E56p
-						  ; sub_620A:WarpToRoomp ...
+; Six-step palette fade-out, then parks the HInt line at 24 while the
+; screen is dark.
+FadeOutToDarkness:
 		jsr	(InitFadeToBlackParams).l
 		move.w	#$0006,d6
 
-loc_8EFE:					  ; CODE XREF: FadeOutToDarkness+2Aj
+_fadeOutLoop:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		move.w	#$0039,d5
 		jsr	(DarkenPalette).l
 		move.w	#$0002,d0
-		jsr	(Sleep).l		  ; Sleeps for d0 frames
-		dbf	d6,loc_8EFE
+		jsr	(Sleep).l
+		dbf	d6,_fadeOutLoop
 		move.w	#$8A18,(g_VDPReg10_HIntLine).l ; HINT on line 24
 		move.w	#$8A18,(VDP_CTRL_REG).l
 		rts
-; End of function FadeOutToDarkness
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadStatusBarGfx:				  ; CODE XREF: ROM:00008DACp
+LoadStatusBarGfx:
 		lea	StatusBarGfx(pc),a0
 		nop
 		lea	(g_Buffer).l,a1
-		lea	($0000D680).l,a2
-		jmp	(LoadCompressedGfx).l	  ; a0 - compressed graphics source
-; End of function LoadStatusBarGfx		  ; a1 - decompressed graphics buffer
-						  ; a2 - VDP tile graphics destination
-
-; =============== S U B	R O U T	I N E =======================================
+		lea	($D680).l,a2
+		jmp	(LoadCompressedGfx).l
 
 
-InitHUD:					  ; CODE XREF: ROM:00008DB0p
+; Loads the HUD tilemap and programs the window plane + HInt VDP
+; registers (VDPRegs below).
+InitHUD:
 		bsr.w	LoadHUDTiles
-		lea	VDPRegs(pc),a0		  ; Window position 0,3
-						  ; HInt enabled, HV Counter enabled
-						  ; HInt on line 184
-						  ; Ext	interrupt disabled, H+V	FULL SCROLL
-		moveq	#$00000004,d1
+		lea	VDPRegs(pc),a0
+		moveq	#$4,d1
 
-loc_8F56:					  ; CODE XREF: InitHUD+12j
+_regLoop:
 		move.w	(a0)+,d0
 		jsr	(SetVDPReg).l
-		dbf	d1,loc_8F56
+		dbf	d1,_regLoop
 		rts
-; End of function InitHUD
 
-; ---------------------------------------------------------------------------
-VDPRegs:	dc.w $9100			  ; DATA XREF: InitHUD+4t
+VDPRegs:	dc.w $9100
 		dc.w $9203			  ; Window position 0,3
 		dc.w $8014			  ; HInt enabled, HV Counter enabled
 		dc.w $8AB8			  ; HInt on line 184
 		dc.w $8B00			  ; Ext	interrupt disabled, H+V	FULL SCROLL
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-LoadHUDTiles:					  ; CODE XREF: InitHUDp
-		cmpi.w	#$008B,(g_RmNum1).l	  ; Intro start
-		bne.s	loc_8F8C
+; Fills the HUD window tilemap rows: blank tiles when starting the
+; intro (room $8B), else the status bar tilemap at palette 3 /
+; priority.
+LoadHUDTiles:
+		cmpi.w	#ROOM_INTRO_START,(g_CurrentRoom).l	  ; Intro start
+		bne.s	_copyTilemap
 		lea	(g_HUD_Row1).l,a1	  ; Blank HUD
 		move.w	#$07FF,d7
 
-loc_8F82:					  ; CODE XREF: LoadHUDTiles+18j
+_blankLoop:
 		move.w	#$E6B4,(a1)+
-		dbf	d7,loc_8F82
+		dbf	d7,_blankLoop
 		rts
-; ---------------------------------------------------------------------------
 
-loc_8F8C:					  ; CODE XREF: LoadHUDTiles+8j
+_copyTilemap:
 		lea	StatusBarTilemap(pc),a0
 		lea	(g_HUD_Row1).l,a1
 		move.w	#$0002,d7
 
-loc_8F9A:					  ; CODE XREF: LoadHUDTiles+40j
+_rowLoop:
 		move.w	#$0027,d6
 
-loc_8F9E:					  ; CODE XREF: LoadHUDTiles+38j
+_cellLoop:
 		move.w	(a0)+,d0
 		ori.w	#$6000,d0
 		move.w	d0,(a1)+
-		dbf	d6,loc_8F9E
+		dbf	d6,_cellLoop
 		adda.w	#$0030,a1
-		dbf	d7,loc_8F9A
+		dbf	d7,_rowLoop
 		rts
-; End of function LoadHUDTiles
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadPlayerPalette:				  ; CODE XREF: sub_2AF2+50p
-						  ; InitPalettesp
-						  ; DATA XREF: ...
+LoadPlayerPalette:
 		lea	DefaultPlayerPal(pc),a0
 		lea	(g_Pal2Base).l,a1
 		move.w	#$000F,d0
 		jsr	(WordCopy).l
 		bra.w	UpdateEquipPal
-; End of function LoadPlayerPalette
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitPalettes:					  ; CODE XREF: ROM:00008DBEp
+; Player palette + status bar palette, then the fixed colours shared
+; by all four palettes: 0 transparent, 1 light grey, 15 black.
+InitPalettes:
 		bsr.s	LoadPlayerPalette
 		lea	StatusBarPal(pc),a0
 		lea	((g_Pal3Base+$14)).l,a1
@@ -225,19 +197,18 @@ InitPalettes:					  ; CODE XREF: ROM:00008DBEp
 		jsr	(WordCopy).l
 		lea	(g_Pal0Base).l,a0
 		clr.w	(a0)			  ; Colour 0 - Always transparent
-		clr.w	$00000020(a0)
-		clr.w	$00000040(a0)
-		clr.w	$00000060(a0)
+		clr.w	$20(a0)
+		clr.w	$40(a0)
+		clr.w	$60(a0)
 		move.w	#$0CCC,d0		  ; Colour 1 - Always light grey
-		move.w	d0,$00000002(a0)
-		move.w	d0,$00000022(a0)
-		move.w	d0,$00000042(a0)
-		move.w	d0,$00000062(a0)
-		clr.w	$0000001E(a0)		  ; Colour 15 -	Always black
-		clr.w	$0000003E(a0)
-		clr.w	$0000005E(a0)
-		clr.w	$0000007E(a0)
+		move.w	d0,$2(a0)
+		move.w	d0,$22(a0)
+		move.w	d0,$42(a0)
+		move.w	d0,$62(a0)
+		clr.w	$1E(a0)		  ; Colour 15 -	Always black
+		clr.w	$3E(a0)
+		clr.w	$5E(a0)
+		clr.w	$7E(a0)
 		rts
-; End of function InitPalettes
 
-; ---------------------------------------------------------------------------
+		modend

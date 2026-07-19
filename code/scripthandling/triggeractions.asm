@@ -190,7 +190,7 @@ TA_0C:						  ; CODE XREF: ROM:00010D38j
 		bne.w	TriggerCompleteOnD0
 		cmpi.w	#$0060,(Player_Z).l
 		bne.w	TriggerCompleteOnD0
-		tst.w	(Player_AnimAction).l
+		tst.w	(Player_PrevAction).l
 		bne.w	TriggerCompleteOnD0
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------

@@ -70,48 +70,48 @@ j_SetUpTextDisplay:				  ; CODE XREF: ClearTextbox+Ep
 
 ; Attributes: thunk
 
-sub_22EA4:					  ; DATA XREF: sub_9BD0+24t
+j_RunShopWelcome:					  ; DATA XREF: CheckShopEnter+24t
 						  ; ROM:CSA_00F0t
-		jmp	sub_24A3C(pc)
-; End of function sub_22EA4
+		jmp	RunShopWelcome(pc)
+; End of function j_RunShopWelcome
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_22EA8:					  ; DATA XREF: sub_620A+4Ct
-						  ; sub_9BFE:loc_9C3At	...
-		jmp	sub_24A4C(pc)
-; End of function sub_22EA8
+j_RunShopFarewell:					  ; DATA XREF: DoorWarp+4Ct
+						  ; CheckShopExit:loc_9C3At	...
+		jmp	RunShopFarewell(pc)
+; End of function j_RunShopFarewell
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_22EAC:					  ; DATA XREF: OnTick+FEEt
-		jmp	sub_24A5C(pc)
-; End of function sub_22EAC
+j_RunShopItemPickUp:					  ; DATA XREF: OnTick+FEEt
+		jmp	RunShopItemPickUp(pc)
+; End of function j_RunShopItemPickUp
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_22EB0:					  ; DATA XREF: OnTick+105At
-		jmp	sub_24A78(pc)
-; End of function sub_22EB0
+j_RunShopItemPutDown:					  ; DATA XREF: OnTick+105At
+		jmp	RunShopItemPutDown(pc)
+; End of function j_RunShopItemPutDown
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_22EB4:					  ; DATA XREF: sub_9BFE+34t
+j_RunShopSteal:					  ; DATA XREF: CheckShopExit+34t
 						  ; ROM:000145BCt
-		jmp	sub_24A88(pc)
-; End of function sub_22EB4
+		jmp	RunShopSteal(pc)
+; End of function j_RunShopSteal
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -168,7 +168,7 @@ j_YesNoPrompt:					  ; CODE XREF: GetYesNoAnswer+Ap
 
 ; Attributes: thunk
 
-j_GetItemQtyAndMaxQty:				  ; DATA XREF: sub_620A+492t
+j_GetItemQtyAndMaxQty:				  ; DATA XREF: DoorWarp+492t
 						  ; CheckOpenChest:loc_711Et ...
 		jmp	GetItemQtyAndMaxQty(pc)
 ; End of function j_GetItemQtyAndMaxQty

@@ -135,7 +135,7 @@ loc_1AE998:					  ; CODE XREF: sub_1AE944+42j
 		add.w	d1,d0
 		move.w	d0,HitBoxZEnd(a5)
 		movea.l	a5,a1
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1AE9CE
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)

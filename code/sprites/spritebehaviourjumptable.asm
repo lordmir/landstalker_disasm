@@ -1,247 +1,124 @@
+BehaviourCmds	module
+; Per-tick behaviour-script dispatch, run for every active entity
+; (UpdateEntities) including the player. The EB_* handlers live in
+; spritebehaviours.asm; a BehavParam:BehavCmd word of 0 means no
+; behaviour.
 
-; =============== S U B	R O U T	I N E =======================================
+OnTick:
+		bsr.w	DespawnSpriteInPit
+		bsr.w	UpdateCarriedSpritePos
 
-
-OnTick:						  ; CODE XREF: UpdateEntities+1Cp
-						  ; DATA XREF: j_OnTickt
-
-; FUNCTION CHUNK AT 00017ADE SIZE 00000062 BYTES
-; FUNCTION CHUNK AT 00017ED4 SIZE 00000024 BYTES
-; FUNCTION CHUNK AT 00017F04 SIZE 00000006 BYTES
-; FUNCTION CHUNK AT 00017FB2 SIZE 00000006 BYTES
-; FUNCTION CHUNK AT 00017FDC SIZE 00000006 BYTES
-; FUNCTION CHUNK AT 00017FF6 SIZE 00000014 BYTES
-; FUNCTION CHUNK AT 00018044 SIZE 00000052 BYTES
-; FUNCTION CHUNK AT 00018128 SIZE 00000238 BYTES
-; FUNCTION CHUNK AT 00018756 SIZE 00000238 BYTES
-; FUNCTION CHUNK AT 000189BE SIZE 00000022 BYTES
-; FUNCTION CHUNK AT 00018A58 SIZE 00000084 BYTES
-; FUNCTION CHUNK AT 00018B24 SIZE 00000062 BYTES
-; FUNCTION CHUNK AT 00018B9C SIZE 000001D0 BYTES
-; FUNCTION CHUNK AT 00018D72 SIZE 00000168 BYTES
-; FUNCTION CHUNK AT 00018EDC SIZE 00000030 BYTES
-; FUNCTION CHUNK AT 00018F12 SIZE 0000002E BYTES
-; FUNCTION CHUNK AT 00018F70 SIZE 0000005E BYTES
-; FUNCTION CHUNK AT 00018FD4 SIZE 0000005C BYTES
-; FUNCTION CHUNK AT 0001904E SIZE 00000080 BYTES
-
-		bsr.w	sub_191B4
-		bsr.w	sub_19206
-
-ProcessNextCmd:					  ; CODE XREF: OnTick+1C0j
-						  ; OnTick+1C8j ...
+ProcessNextCmd:
 		move.w	BehavParam(a5),d0
 		beq.w	EB_NULL
 		andi.w	#$00FF,d0
 		lsl.w	#$02,d0
-		jmp	loc_17918(pc,d0.w)
-; ---------------------------------------------------------------------------
+		jmp	_cmdTable(pc,d0.w)
 
-loc_17918:					  ; CODE XREF: OnTick+16j
-		bra.w	EB_Pause
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveTimed
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnCW
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnCCW
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnNE
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnSE
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnSW
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnNW
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirCW
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirCCW
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirNE
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirSE
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirSW
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirNW
-; ---------------------------------------------------------------------------
-		bra.w	EB_MakeVisible
-; ---------------------------------------------------------------------------
-		bra.w	EB_MakeInvisible
-; ---------------------------------------------------------------------------
-		bra.w	EB_B10
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveRelative
-; ---------------------------------------------------------------------------
-		bra.w	EB_GoToInstruction
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveUntilCollision
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnRandom
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDirRandom
-; ---------------------------------------------------------------------------
-		bra.w	EB_B16
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnRandomImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnCWImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnCCWImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnNEImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnSEImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnSWImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_TurnNWImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_Freeze
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetSpeed1
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetSpeed2
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetSpeed3
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetSpeed4
-; ---------------------------------------------------------------------------
-		bra.w	EB_Turn180
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDir180
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetDir180Immediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_FollowPlayerWithJump
-; ---------------------------------------------------------------------------
-		bra.w	EB_Jump
-; ---------------------------------------------------------------------------
-		bra.w	EB_EnableRotation
-; ---------------------------------------------------------------------------
-		bra.w	EB_DisableRotation
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveRandomTime
-; ---------------------------------------------------------------------------
-		bra.w	EB_LoadSpecialAI
-; ---------------------------------------------------------------------------
-		bra.w	EB_FollowPlayerNoJump
-; ---------------------------------------------------------------------------
-		bra.w	EB_Loot
-; ---------------------------------------------------------------------------
-		bra.w	EB_ShopItem
-; ---------------------------------------------------------------------------
-		bra.w	EB_B10
-; ---------------------------------------------------------------------------
-		bra.w	MoveUpRelative
-; ---------------------------------------------------------------------------
-		bra.w	MoveDownRelative
-; ---------------------------------------------------------------------------
-		bra.w	EB_B16
-; ---------------------------------------------------------------------------
-		bra.w	EB_B33
-; ---------------------------------------------------------------------------
-		bra.w	EB_PlaybackInput
-; ---------------------------------------------------------------------------
-		bra.w	EB_ResetPlayback
-; ---------------------------------------------------------------------------
-		bra.w	EB_WaitForCondition
-; ---------------------------------------------------------------------------
-		bra.w	EB_Pause4s
-; ---------------------------------------------------------------------------
-		bra.w	EB_EnableGravity
-; ---------------------------------------------------------------------------
-		bra.w	EB_DisableGravity
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveUpTimed
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveDownTimed
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveUpAbsolute
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveDownAbsolute
-; ---------------------------------------------------------------------------
-		bra.w	j_j_HideSprite
-; ---------------------------------------------------------------------------
-		bra.w	EB_NudgeUp
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveDownUntilCollision
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetFlag
-; ---------------------------------------------------------------------------
-		bra.w	EB_WaitForFlagSet
-; ---------------------------------------------------------------------------
-		bra.w	EB_ClearFlag
-; ---------------------------------------------------------------------------
-		bra.w	EB_Hide
-; ---------------------------------------------------------------------------
-		bra.w	EB_ShowWhenCollisionClear
-; ---------------------------------------------------------------------------
-		bra.w	EB_WaitForFlagClear
-; ---------------------------------------------------------------------------
-		bra.w	EB_B47
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetEntityAction
-; ---------------------------------------------------------------------------
-		bra.w	EB_ActivateSwitch
-; ---------------------------------------------------------------------------
-		bra.w	EB_ResetSwitch
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveToXYPosImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveToZPosImmediate
-; ---------------------------------------------------------------------------
-		bra.w	EB_ResetToInitParams
-; ---------------------------------------------------------------------------
-		bra.w	EB_TriggerCutscene
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveNoClip
-; ---------------------------------------------------------------------------
-		bra.w	EB_RotatePlayer
-; ---------------------------------------------------------------------------
-		bra.w	EB_MakeHostile
-; ---------------------------------------------------------------------------
-		bra.w	EB_MakeNonHostile
-; ---------------------------------------------------------------------------
-		bra.w	EB_EnableWalkBackwards
-; ---------------------------------------------------------------------------
-		bra.w	EB_DisableWalkBackwards
-; ---------------------------------------------------------------------------
-		bra.w	EB_SpecialAnimation
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveUpToInitPos
-; ---------------------------------------------------------------------------
-		bra.w	EB_TriggerTileSwap
-; ---------------------------------------------------------------------------
-		bra.w	EB_UpdateSpriteFacing
-; ---------------------------------------------------------------------------
-		bra.w	EB_PrintText
-; ---------------------------------------------------------------------------
-		bra.w	EB_B5A
-; ---------------------------------------------------------------------------
-		bra.w	EB_SetTargetPosition
-; ---------------------------------------------------------------------------
-		bra.w	EB_MoveToTargetPosition
-; ---------------------------------------------------------------------------
-		bra.w	EB_RepeatBegin
-; ---------------------------------------------------------------------------
-		bra.w	EB_B5E
-; ---------------------------------------------------------------------------
-		bra.w	EB_DecayFlash
-; ---------------------------------------------------------------------------
-		bra.w	EB_FlashSpinAppear
-; ---------------------------------------------------------------------------
-		bra.w	EB_FlashSpinDisappear
-; ---------------------------------------------------------------------------
-		bra.w	EB_PlaySound
-; ---------------------------------------------------------------------------
-		bra.w	EB_B63
-; ---------------------------------------------------------------------------
-		bra.w	EB_StartHiCutscene
-; ---------------------------------------------------------------------------
-		bra.w	EB_B65
-; ---------------------------------------------------------------------------
-		bra.w	EB_B66
-; ---------------------------------------------------------------------------
-		bra.w	EB_B67
+_cmdTable:
+		bra.w	EB_Pause			; $00
+		bra.w	EB_MoveTimed			; $01
+		bra.w	EB_TurnCW			; $02
+		bra.w	EB_TurnCCW			; $03
+		bra.w	EB_TurnNE			; $04
+		bra.w	EB_TurnSE			; $05
+		bra.w	EB_TurnSW			; $06
+		bra.w	EB_TurnNW			; $07
+		bra.w	EB_SetDirCW			; $08
+		bra.w	EB_SetDirCCW			; $09
+		bra.w	EB_SetDirNE			; $0A
+		bra.w	EB_SetDirSE			; $0B
+		bra.w	EB_SetDirSW			; $0C
+		bra.w	EB_SetDirNW			; $0D
+		bra.w	EB_MakeVisible			; $0E
+		bra.w	EB_MakeInvisible		; $0F
+		bra.w	EB_ThrownObject			; $10
+		bra.w	EB_MoveRelative			; $11
+		bra.w	EB_GoToInstruction		; $12
+		bra.w	EB_MoveUntilCollision		; $13
+		bra.w	EB_TurnRandom			; $14
+		bra.w	EB_SetDirRandom			; $15
+		bra.w	EB_PutDownObject		; $16
+		bra.w	EB_TurnRandomImmediate		; $17
+		bra.w	EB_TurnCWImmediate		; $18
+		bra.w	EB_TurnCCWImmediate		; $19
+		bra.w	EB_TurnNEImmediate		; $1A
+		bra.w	EB_TurnSEImmediate		; $1B
+		bra.w	EB_TurnSWImmediate		; $1C
+		bra.w	EB_TurnNWImmediate		; $1D
+		bra.w	EB_Freeze			; $1E
+		bra.w	EB_SetSpeed1			; $1F
+		bra.w	EB_SetSpeed2			; $20
+		bra.w	EB_SetSpeed3			; $21
+		bra.w	EB_SetSpeed4			; $22
+		bra.w	EB_Turn180			; $23
+		bra.w	EB_SetDir180			; $24
+		bra.w	EB_Turn180Immediate		; $25
+		bra.w	EB_FollowPlayerWithJump		; $26
+		bra.w	EB_Jump				; $27
+		bra.w	EB_EnableRotation		; $28
+		bra.w	EB_DisableRotation		; $29
+		bra.w	EB_MoveRandomTime		; $2A
+		bra.w	EB_RunSpecialAI			; $2B
+		bra.w	EB_FollowPlayerNoJump		; $2C
+		bra.w	EB_Loot				; $2D
+		bra.w	EB_ShopItem			; $2E
+		bra.w	EB_ThrownObject			; $2F
+		bra.w	EB_MoveUpRelative		; $30
+		bra.w	EB_MoveDownRelative		; $31
+		bra.w	EB_PutDownObject		; $32
+		bra.w	EB_FleePlayer			; $33
+		bra.w	EB_PlaybackInput		; $34
+		bra.w	EB_ResetPlayback		; $35
+		bra.w	EB_WaitForCondition		; $36
+		bra.w	EB_Pause4s			; $37
+		bra.w	EB_EnableGravity		; $38
+		bra.w	EB_DisableGravity		; $39
+		bra.w	EB_MoveUpTimed			; $3A
+		bra.w	EB_MoveDownTimed		; $3B
+		bra.w	EB_MoveUpAbsolute		; $3C
+		bra.w	EB_MoveDownAbsolute		; $3D
+		bra.w	EB_DespawnEntity			; $3E
+		bra.w	EB_NudgeUp			; $3F
+		bra.w	EB_MoveDownUntilCollision	; $40
+		bra.w	EB_SetFlag			; $41
+		bra.w	EB_WaitForFlagSet		; $42
+		bra.w	EB_ClearFlag			; $43
+		bra.w	EB_Hide				; $44
+		bra.w	EB_ShowWhenCollisionClear	; $45
+		bra.w	EB_WaitForFlagClear		; $46
+		bra.w	EB_WaitSpriteNotHostile		; $47
+		bra.w	EB_SetEntitySpeed		; $48
+		bra.w	EB_ActivateSwitch		; $49
+		bra.w	EB_ResetSwitch			; $4A
+		bra.w	EB_MoveToXYPosImmediate		; $4B
+		bra.w	EB_MoveToZPosImmediate		; $4C
+		bra.w	EB_ResetToInitParams		; $4D
+		bra.w	EB_StartLoCutscene		; $4E
+		bra.w	EB_MoveNoClip			; $4F
+		bra.w	EB_RotatePlayer			; $50
+		bra.w	EB_MakeHostile			; $51
+		bra.w	EB_MakeNonHostile		; $52
+		bra.w	EB_DisableWalkBackwards		; $53
+		bra.w	EB_EnableWalkBackwards		; $54
+		bra.w	EB_SpecialAnimation		; $55
+		bra.w	EB_MoveUpToInitPos		; $56
+		bra.w	EB_TriggerTileSwap		; $57
+		bra.w	EB_UpdateSpriteFacing		; $58
+		bra.w	EB_PrintText			; $59
+		bra.w	EB_ProjectileHitEnemies		; $5A
+		bra.w	EB_SetTargetPosition		; $5B
+		bra.w	EB_MoveToTargetPosition		; $5C
+		bra.w	EB_RepeatBegin			; $5D
+		bra.w	EB_RepeatEnd			; $5E
+		bra.w	EB_DecayFlash			; $5F
+		bra.w	EB_FlashSpinAppear		; $60
+		bra.w	EB_FlashSpinDisappear		; $61
+		bra.w	EB_PlaySound			; $62
+		bra.w	EB_ProjectileMove		; $63
+		bra.w	EB_StartHiCutscene		; $64
+		bra.w	EB_ProjectileWeaveCW		; $65
+		bra.w	EB_ProjectileWeaveCCW		; $66
+		bra.w	EB_ProjectileFall		; $67
+
+		modend

@@ -1,72 +1,60 @@
-; ---------------------------------------------------------------------------
-
-CheckShopSteal:
+Shops1	module
+; Unused entry point: dead load of a0 (immediately overwritten),
+; then falls through into CheckShopEnter. Never referenced.
+CheckShopEnterUnused:
 		lea	(Sprite1_X).l,a0
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_9BD0:					  ; CODE XREF: sub_620A-6p
+; Called after a door warp: if the destination room is in the Shops
+; table and the player walked in through a front-wall door (facing
+; NE/NW), runs the shopkeeper's welcome script.
+CheckShopEnter:
 		move.b	(Player_RotationAndSize).l,d0
-		addi.b	#$40,d0
-		andi.b	#$C0,d0
-		cmpi.b	#$80,d0
-		bcc.s	locret_9BFC
+		addi.b	#$40,d0			  ; rotate facing one step:
+		andi.b	#DIR_MASK,d0		  ; NE/NW land below DIR_SW,
+		cmpi.b	#DIR_SW,d0		  ; SE/SW at or above
+		bcc.s	_enterDone
 		lea	Shops(pc),a0
 
-loc_9BE8:					  ; CODE XREF: sub_9BD0+22j
+_enterScan:
 		move.w	(a0)+,d0
-		bmi.s	locret_9BFC
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_9BE8
-		jsr	(sub_22EA4).l
+		bmi.s	_enterDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_enterScan
+		jsr	(j_RunShopWelcome).l
 		nop
 
-locret_9BFC:					  ; CODE XREF: sub_9BD0+12j
-						  ; sub_9BD0+1Aj
+_enterDone:
 		rts
-; End of function sub_9BD0
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_9BFE:					  ; CODE XREF: sub_620A-Cp
+; Called before a door warp: if the current room is in the Shops
+; table and the player is leaving through a front door (facing
+; SE/SW), runs the shopkeeper's steal script if the player is
+; carrying something (an unpaid item), otherwise the farewell script.
+CheckShopExit:
 		move.b	(Player_RotationAndSize).l,d0
 		addi.b	#$40,d0
-		andi.b	#$C0,d0
-		cmpi.b	#$80,d0
-		bcs.s	locret_9C40
+		andi.b	#DIR_MASK,d0
+		cmpi.b	#DIR_SW,d0
+		bcs.s	_exitDone
 		lea	Shops(pc),a0
 
-loc_9C16:					  ; CODE XREF: sub_9BFE+22j
+_exitScan:
 		move.w	(a0)+,d0
-		bmi.s	locret_9C40
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_9C16
-		move.b	(Player_Action+1).l,d0	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		andi.b	#$C0,d0
-		cmpi.b	#$C0,d0
-		bne.s	loc_9C3A
-		jsr	(sub_22EB4).l
+		bmi.s	_exitDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_exitScan
+		move.b	(Player_Action+1).l,d0
+		andi.b	#ACT_PICKUP_MASK,d0
+		cmpi.b	#ACT_PICKUP_MASK,d0	  ; both carry bits set?
+		bne.s	_exitFarewell
+		jsr	(j_RunShopSteal).l
 		rts
-; ---------------------------------------------------------------------------
 
-loc_9C3A:					  ; CODE XREF: sub_9BFE+32j
-		jsr	(sub_22EA8).l
+_exitFarewell:
+		jsr	(j_RunShopFarewell).l
 
-locret_9C40:					  ; CODE XREF: sub_9BFE+12j
-						  ; sub_9BFE+1Aj
+_exitDone:
 		rts
-; End of function sub_9BFE
 
-; ---------------------------------------------------------------------------
+		modend

@@ -1,361 +1,338 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadAllWarps:					  ; CODE XREF: LoadRoom_0+44p
+Room1	module
+; Room-load: fills the RAM WarpTbl for the current room, and - when
+; the current room is a story variant - appends the original room's
+; warps as well, so variant rooms keep their doorways.
+LoadAllWarps:
 		lea	(WarpTbl).l,a1
 		clr.b	d7
-		move.w	(g_RmNum1).l,d0
+		move.w	(g_CurrentRoom).l,d0
 		bsr.s	LoadWarps
-		move.w	(g_RmNum1).l,d0
+		move.w	(g_CurrentRoom).l,d0
 		bsr.w	GetOriginalRoomNum
-		cmp.w	(g_RmNum1).l,d0
-		beq.w	locret_A0A0
-; End of function LoadAllWarps
+		cmp.w	(g_CurrentRoom).l,d0
+		beq.w	_warpsDone
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadWarps:					  ; CODE XREF: LoadAllWarps+Ep
+; Appends the warps for room d0 to WarpTbl (a1 = write pointer, d7 =
+; entry count). The ROM list at (RoomExitsPtr) holds two-way
+; connections, 8 bytes each:
+;   WORD 0: room A (low 10 bits) | 6 flag bits (top bits)
+;   WORD 2: cell in room A (X:Y)
+;   WORD 4: room B (low 10 bits)
+;   WORD 6: cell in room B (X:Y)
+; A match on either side emits a WarpTbl entry {from cell, dest room,
+; dest cell}. Flag bits 4-5 shift the arrival cell one cell along Y
+; ($10) or X ($20) - the far side of the doorway - subtracting when
+; travelling A to B and adding on the way back. Flag bits 2-3 widen
+; the doorway one extra cell along X ($04) or Y ($08), and bit 1
+; extends it to a third cell. WarpTbl holds at most 32 entries; on
+; overflow the table is truncated after the debug alarm (30 beeps,
+; suppressed when debug mode is active).
+LoadWarps:
 		movea.l	(RoomExitsPtr).l,a0
 
-loc_9F22:					  ; CODE XREF: LoadWarps+17Cj
+_nextEntry:
 		move.w	(a0),d1
-		bmi.w	loc_A09C
+		bmi.w	_terminate
 		andi.w	#$03FF,d1
 		cmp.w	d1,d0
-		bne.w	loc_9FE4
+		bne.w	_chkReverse
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	(a0),d1
 		rol.w	#$07,d1
 		andi.b	#$3F,d1
-		move.w	$00000002(a0),d3
+		move.w	2(a0),d3
 		move.w	d3,(a1)+
-		move.w	$00000004(a0),d4
+		move.w	4(a0),d4
 		andi.w	#$03FF,d4
 		move.w	d4,(a1)+
-		move.w	$00000006(a0),d5
+		move.w	6(a0),d5
 		move.b	d1,d6
 		andi.b	#$30,d1
-		beq.s	loc_9F74
+		beq.s	_fwdStore
 		cmpi.b	#$10,d1
-		bne.s	loc_9F6A
+		bne.s	_fwdAdjX
 		subq.b	#$01,d5
-		bra.s	loc_9F74
-; ---------------------------------------------------------------------------
+		bra.s	_fwdStore
 
-loc_9F6A:					  ; CODE XREF: LoadWarps+48j
+_fwdAdjX:
 		cmpi.b	#$20,d1
-		bne.s	loc_9F74
+		bne.s	_fwdStore
 		subi.w	#$0100,d5
 
-loc_9F74:					  ; CODE XREF: LoadWarps+42j
-						  ; LoadWarps+4Cj ...
+_fwdStore:
 		move.w	d5,(a1)+
 		move.b	d6,d1
 		andi.b	#$0C,d6
-		beq.w	loc_A096
+		beq.w	_skipEntry
 		cmpi.b	#$04,d6
-		bne.s	loc_9F90
+		bne.s	_fwdExtY
 		addi.w	#$0100,d3
 		addi.w	#$0100,d5
-		bra.s	loc_9F9C
-; ---------------------------------------------------------------------------
+		bra.s	_fwdSecond
 
-loc_9F90:					  ; CODE XREF: LoadWarps+68j
+_fwdExtY:
 		cmpi.b	#$08,d6
-		bne.w	loc_A096
+		bne.w	_skipEntry
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_9F9C:					  ; CODE XREF: LoadWarps+72j
+_fwdSecond:
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	d3,(a1)+
 		move.w	d4,(a1)+
 		move.w	d5,(a1)+
 		andi.b	#$02,d1
-		beq.w	loc_A096
+		beq.w	_skipEntry
 		cmpi.b	#$04,d6
-		bne.s	loc_9FC4
+		bne.s	_fwdExtY2
 		addi.w	#$0100,d3
 		addi.w	#$0100,d5
-		bra.s	loc_9FD0
-; ---------------------------------------------------------------------------
+		bra.s	_fwdThird
 
-loc_9FC4:					  ; CODE XREF: LoadWarps+9Cj
+_fwdExtY2:
 		cmpi.b	#$08,d6
-		bne.w	loc_A096
+		bne.w	_skipEntry
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_9FD0:					  ; CODE XREF: LoadWarps+A6j
+_fwdThird:
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	d3,(a1)+
 		move.w	d4,(a1)+
 		move.w	d5,(a1)+
-		bra.w	loc_A096
-; ---------------------------------------------------------------------------
+		bra.w	_skipEntry
 
-loc_9FE4:					  ; CODE XREF: LoadWarps+12j
-		move.w	$00000004(a0),d1
+_chkReverse:
+		move.w	4(a0),d1
 		andi.w	#$03FF,d1
 		cmp.w	d1,d0
-		bne.w	loc_A096
+		bne.w	_skipEntry
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	(a0),d1
 		rol.w	#$07,d1
 		andi.b	#$3F,d1
-		move.w	$00000006(a0),d3
+		move.w	6(a0),d3
 		move.w	d3,(a1)+
 		move.w	(a0),d4
 		andi.w	#$03FF,d4
 		move.w	d4,(a1)+
-		move.w	$00000002(a0),d5
+		move.w	2(a0),d5
 		move.b	d1,d6
 		andi.b	#$30,d1
-		beq.s	loc_A032
+		beq.s	_revStore
 		cmpi.b	#$10,d1
-		bne.s	loc_A028
+		bne.s	_revAdjX
 		addq.b	#$01,d5
-		bra.s	loc_A032
-; ---------------------------------------------------------------------------
+		bra.s	_revStore
 
-loc_A028:					  ; CODE XREF: LoadWarps+106j
+_revAdjX:
 		cmpi.b	#$20,d1
-		bne.s	loc_A032
+		bne.s	_revStore
 		addi.w	#$0100,d5
 
-loc_A032:					  ; CODE XREF: LoadWarps+100j
-						  ; LoadWarps+10Aj ...
+_revStore:
 		move.w	d5,(a1)+
 		move.b	d6,d1
 		andi.b	#$0C,d6
-		beq.s	loc_A096
+		beq.s	_skipEntry
 		cmpi.b	#$04,d6
-		bne.s	loc_A04C
+		bne.s	_revExtY
 		addi.w	#$0100,d3
 		addi.w	#$0100,d5
-		bra.s	loc_A056
-; ---------------------------------------------------------------------------
+		bra.s	_revSecond
 
-loc_A04C:					  ; CODE XREF: LoadWarps+124j
+_revExtY:
 		cmpi.b	#$08,d6
-		bne.s	loc_A096
+		bne.s	_skipEntry
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_A056:					  ; CODE XREF: LoadWarps+12Ej
+_revSecond:
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	d3,(a1)+
 		move.w	d4,(a1)+
 		move.w	d5,(a1)+
 		andi.b	#$02,d1
-		beq.s	loc_A096
+		beq.s	_skipEntry
 		cmpi.b	#$04,d6
-		bne.s	loc_A07C
+		bne.s	_revExtY2
 		addi.w	#$0100,d3
 		addi.w	#$0100,d5
-		bra.s	loc_A086
-; ---------------------------------------------------------------------------
+		bra.s	_revThird
 
-loc_A07C:					  ; CODE XREF: LoadWarps+154j
+_revExtY2:
 		cmpi.b	#$08,d6
-		bne.s	loc_A096
+		bne.s	_skipEntry
 		addq.b	#$01,d3
 		addq.b	#$01,d5
 
-loc_A086:					  ; CODE XREF: LoadWarps+15Ej
+_revThird:
 		addq.b	#$01,d7
 		cmpi.b	#$20,d7
-		bhi.w	loc_A0A2
+		bhi.w	_overflow
 		move.w	d3,(a1)+
 		move.w	d4,(a1)+
 		move.w	d5,(a1)+
 
-loc_A096:					  ; CODE XREF: LoadWarps+60j
-						  ; LoadWarps+78j ...
+_skipEntry:
 		addq.l	#$08,a0
-		bra.w	loc_9F22
-; ---------------------------------------------------------------------------
+		bra.w	_nextEntry
 
-loc_A09C:					  ; CODE XREF: LoadWarps+8j
-						  ; LoadWarps+18Aj ...
+_terminate:
 		move.w	#$FFFF,(a1)
 
-locret_A0A0:					  ; CODE XREF: LoadAllWarps+20j
+_warpsDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_A0A2:					  ; CODE XREF: LoadWarps+1Cj
-						  ; LoadWarps+86j ...
+; Debug alarm: too many warps in one room (more than 32 WarpTbl
+; entries). Beeps 30 times unless debug mode is on, then truncates.
+_overflow:
 		tst.w	(DebugModeEnable).w
-		bmi.w	loc_A09C
-		move.w	#00029,d7
+		bmi.w	_terminate
+		move.w	#29,d7
 
-loc_A0AE:					  ; CODE XREF: LoadWarps+1A0j
+_beepLoop:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_NigelDropObj2
-; ---------------------------------------------------------------------------
 		move.w	#$0002,d0
 		jsr	(j_Sleep).l
-		dbf	d7,loc_A0AE
-		bra.s	loc_A09C
-; End of function LoadWarps
+		dbf	d7,_beepLoop
+		bra.s	_terminate
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_A0C2:					  ; CODE XREF: sub_620A:loc_6212p
-						  ; sub_620A+F0p ...
+; Finds the warp entry matching the player's map cell in WarpTbl
+; (entries {fromX.b, fromY.b, destRoom.w, destX.b, destY.b}) and sets
+; g_OriginalRoom/g_CurrentRoom (via CheckForRoomTransition) plus the
+; player's new position.
+LookupWarpDestination:
 		lea	(WarpTbl).l,a0
 		move.b	(Player_X).l,d0
 		move.b	(Player_Y).l,d1
 
-loc_A0D4:					  ; CODE XREF: sub_A0C2+50j
+_findCell:
 		move.b	(a0),d2
-		bmi.s	locret_A10E
+		bmi.s	_lwdDone
 		cmp.b	d2,d0
-		bne.s	loc_A110
-		cmp.b	$00000001(a0),d1
-		bne.s	loc_A110
-		move.w	$00000002(a0),d0
-		move.w	d0,(RmNum2).l
+		bne.s	_nextWarp
+		cmp.b	1(a0),d1
+		bne.s	_nextWarp
+		move.w	2(a0),d0
+		move.w	d0,(g_OriginalRoom).l
 		bsr.w	CheckForRoomTransition
-		move.w	d0,(g_RmNum1).l
-		move.b	$00000004(a0),(Player_X).l
-		move.b	$00000005(a0),(Player_Y).l
+		move.w	d0,(g_CurrentRoom).l
+		move.b	4(a0),(Player_X).l
+		move.b	5(a0),(Player_Y).l
 		move.w	#$0808,(Player_SubX).l
 
-locret_A10E:					  ; CODE XREF: sub_A0C2+14j
+_lwdDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_A110:					  ; CODE XREF: sub_A0C2+18j
-						  ; sub_A0C2+1Ej
+_nextWarp:
 		addq.w	#$06,a0
-		bra.s	loc_A0D4
-; End of function sub_A0C2
+		bra.s	_findCell
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_A114:					  ; CODE XREF: LoadRoom_0+48p
+; Room-load: caches the rooms reached by falling through a pit
+; (g_RoomFallDest) and climbing off the top of a ladder
+; (g_RoomClimbDest) for the current room; negative = none.
+LoadFallClimbDests:
 		lea	RoomFallDestination(pc),a0
-		bsr.s	sub_A12E
+		bsr.s	FindRoomDest
 		move.w	d1,(g_RoomFallDest).l
 		lea	RoomClimbDestination(pc),a0
-		bsr.s	sub_A12E
+		bsr.s	FindRoomDest
 		move.w	d1,(g_RoomClimbDest).l
 		rts
-; End of function sub_A114
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_A12E:					  ; CODE XREF: sub_A114+4p
-						  ; sub_A114+10p
-		move.w	(g_RmNum1).l,d0
+; Scans the {room.w, dest room.w} table at a0 for the current room
+; (original, pre-variant number); returns d1 = dest room, or the
+; negative terminator if the room has no entry.
+FindRoomDest:
+		move.w	(g_CurrentRoom).l,d0
 		bsr.s	GetOriginalRoomNum
 		move.w	#$FFFF,d1
 
-loc_A13A:					  ; CODE XREF: sub_A12E+16j
+_frdScan:
 		move.w	(a0),d1
-		bmi.s	locret_A14A
+		bmi.s	_frdDone
 		cmp.w	d0,d1
-		beq.s	loc_A146
+		beq.s	_frdFound
 		addq.l	#$04,a0
-		bra.s	loc_A13A
-; ---------------------------------------------------------------------------
+		bra.s	_frdScan
 
-loc_A146:					  ; CODE XREF: sub_A12E+12j
-		move.w	$00000002(a0),d1
+_frdFound:
+		move.w	2(a0),d1
 
-locret_A14A:					  ; CODE XREF: sub_A12E+Ej
+_frdDone:
 		rts
-; End of function sub_A12E
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForRoomTransition:				  ; CODE XREF: sub_620A+154p
-						  ; sub_620A+1A2p ...
+; Maps room d0 to its story variant: scans RoomTransitionLookup
+; ({orig room.w, variant room.w, flag byte.b, flag bit.b}) and
+; substitutes the variant whenever the entry's story flag is set.
+; Later entries override earlier ones, so variants can chain.
+CheckForRoomTransition:
 		movem.l	d1-d2/a0-a1,-(sp)
-		lea	RoomTransitionLookup(pc),a0 ; WORD 0: Orig Room	Num
-						  ; WORD 1: Dest Room Num
-						  ; BYTE 4: Flags byte
-						  ; BYTE 5: Flags bit
+		lea	RoomTransitionLookup(pc),a0
 		lea	(g_Flags).l,a1
 
-loc_A15A:					  ; CODE XREF: CheckForRoomTransition+2Cj
+_cftScan:
 		move.w	(a0),d1
-		bmi.s	loc_A17A
+		bmi.s	_cftDone
 		cmp.w	d0,d1
-		bne.s	loc_A176
+		bne.s	_cftNext
 		clr.w	d1
-		move.b	$00000004(a0),d1
-		move.b	$00000005(a0),d2
+		move.b	4(a0),d1
+		move.b	5(a0),d2
 		btst	d2,(a1,d1.w)
-		beq.s	loc_A176
-		move.w	$00000002(a0),d0
+		beq.s	_cftNext
+		move.w	2(a0),d0
 
-loc_A176:					  ; CODE XREF: CheckForRoomTransition+14j
-						  ; CheckForRoomTransition+24j
+_cftNext:
 		addq.l	#$06,a0
-		bra.s	loc_A15A
-; ---------------------------------------------------------------------------
+		bra.s	_cftScan
 
-loc_A17A:					  ; CODE XREF: CheckForRoomTransition+10j
+_cftDone:
 		movem.l	(sp)+,d1-d2/a0-a1
 		rts
-; End of function CheckForRoomTransition
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetOriginalRoomNum:				  ; CODE XREF: LoadAllWarps+16p
-						  ; sub_A12E+6p
-						  ; DATA XREF: ...
+; Reverse of CheckForRoomTransition: maps a variant room number in d0
+; back to the original room it substitutes (d0 unchanged if not a
+; variant). Warps, fall/climb destinations and the island map are
+; keyed on original numbers.
+GetOriginalRoomNum:
 		movem.l	d1-d3/a0-a1,-(sp)
 		move.w	d0,d3
-		lea	RoomTransitionLookup(pc),a0 ; WORD 0: Orig Room	Num
-						  ; WORD 1: Dest Room Num
-						  ; BYTE 4: Flags byte
-						  ; BYTE 5: Flags bit
+		lea	RoomTransitionLookup(pc),a0
 		lea	(g_Flags).l,a1
 
-loc_A190:					  ; CODE XREF: GetOriginalRoomNum+1Ej
-		move.w	$00000002(a0),d1
-		bmi.s	loc_A1A0
+_gorScan:
+		move.w	2(a0),d1
+		bmi.s	_gorDone
 		cmp.w	d0,d1
-		bne.s	loc_A19C
+		bne.s	_gorNext
 		move.w	(a0),d3
 
-loc_A19C:					  ; CODE XREF: GetOriginalRoomNum+18j
+_gorNext:
 		addq.l	#$06,a0
-		bra.s	loc_A190
-; ---------------------------------------------------------------------------
+		bra.s	_gorScan
 
-loc_A1A0:					  ; CODE XREF: GetOriginalRoomNum+14j
+_gorDone:
 		move.w	d3,d0
 		movem.l	(sp)+,d1-d3/a0-a1
 		rts
-; End of function GetOriginalRoomNum
 
-; ---------------------------------------------------------------------------
+		modend

@@ -64,6 +64,6 @@ loc_1A8730:					  ; CODE XREF: RespawnGhost+342j
 		movea.l	a5,a1
 		jsr	(j_LookupSpriteAnimFlags).l
 		bsr.w	sub_1A8AE6
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1A87D2
 ; END OF FUNCTION CHUNK	FOR RespawnGhost

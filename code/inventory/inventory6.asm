@@ -3,7 +3,7 @@
 
 
 GetInvEquipLayout:				  ; CODE XREF: sub_EAD4:loc_EAF2p
-						  ; sub_EC34+22p
+						  ; DrawEquipInventory+22p
 		lea	(g_Buffer).l,a0
 		lea	0000000006(a0),a0
 		clr.w	(a0)
@@ -326,7 +326,7 @@ loc_EFB8:					  ; CODE XREF: ROM:0000EF2Ej
 		bne.w	loc_EEF6
 		move.w	-$00000004(a6),d0
 		move.b	d0,(g_SaveSlot).l
-		jsr	(GetCurrentSaveSlot).l
+		jsr	(EraseCurrentSaveslot).l
 		jsr	(WaitUntilVBlank).l
 		move.w	-$00000004(a6),d0
 		bsr.w	sub_F72E
@@ -797,7 +797,7 @@ loc_F314:					  ; CODE XREF: sub_F306+6j
 loc_F32C:					  ; CODE XREF: sub_F30E+32j
 		movem.l	d0-d1/a1,-(sp)
 		moveq	#$00000002,d1
-		jsr	(j_DoDMACopy_1).l
+		jsr	(j_DoDMACopy).l
 		movem.l	(sp)+,d0-d1/a1
 		lea	$00000080(a1),a1
 		dbf	d1,loc_F32C

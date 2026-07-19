@@ -266,7 +266,7 @@ loc_1AADC0:					  ; CODE XREF: ROM:001AADB0j
 		move.b	#$20,d0
 		subq.b	#$01,d0
 		add.w	d0,HitBoxZEnd(a5)
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1AADE8
 		move.w	Z(a5),HitBoxZEnd(a5)
 		subq.b	#$01,AnimPhase(a5)

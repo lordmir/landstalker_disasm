@@ -12,7 +12,7 @@ loc_2951E:					  ; CODE XREF: GetIslandMapLocation+16j
 		move.b	(a2)+,d6
 		move.w	(a2)+,d7
 		blt.s	loc_2952E
-		cmp.w	(RmNum2).l,d7
+		cmp.w	(g_OriginalRoom).l,d7
 		bne.s	loc_2951E
 
 loc_2952E:					  ; CODE XREF: GetIslandMapLocation+Ej

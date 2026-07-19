@@ -9,8 +9,8 @@
 ; 7 - Nole warp
 ;
 
-DoVisualEffect:					  ; CODE XREF: sub_620A+ECp
-						  ; sub_620A+100p ...
+DoVisualEffect:					  ; CODE XREF: DoorWarp+ECp
+						  ; DoorWarp+100p ...
 		movem.l	d0-a6,-(sp)
 		lea	VisualFXTable(pc),a0
 		move.w	d0,d1
@@ -37,8 +37,8 @@ VisualFXTable:	dc.l WarpPadFx			  ; DATA XREF: DoVisualEffect+4t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-WarpPadFx:					  ; CODE XREF: sub_620A+114p
-						  ; DATA XREF: sub_44Ct ...
+WarpPadFx:					  ; CODE XREF: DoorWarp+114p
+						  ; DATA XREF: j_WarpPadFxt ...
 		lea	(g_Buffer).l,a5
 		movea.l	a5,a1
 		lea	(g_Pal0Base).l,a0
@@ -514,7 +514,7 @@ WhiteFlash:					  ; CODE XREF: ContinueKazaltWarpFx+16j
 		moveq	#$FFFFFFFF,d2
 
 loc_E4F2:					  ; CODE XREF: BlackFlash+2j
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		movea.l	a0,a1
 		moveq	#$00000039,d7
@@ -552,7 +552,7 @@ loc_E520:					  ; CODE XREF: BlackFlash+30j
 
 
 RedFlash:					  ; DATA XREF: ROM:0000E140o
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		moveq	#$00000039,d7
 

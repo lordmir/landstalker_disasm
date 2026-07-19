@@ -31,7 +31,7 @@ InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 
 loc_D28A:					  ; CODE XREF: InitInv+56j
 		movem.w	d0-d1/d7,-(sp)
-		jsr	(sub_46DA).l
+		jsr	(LoadItemIconGfx).l
 		movem.w	(sp)+,d0-d1/d7
 		addq.w	#$01,d0
 		addi.w	#$0010,d1
@@ -60,7 +60,7 @@ loc_D2DE:					  ; CODE XREF: InitInv+84j
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_D2DE
 		lea	(g_Buffer).l,a0
-		move.w	(unk_FF0F9C).l,0000000004(a0)
+		move.w	(g_VBlankCounter).l,0000000004(a0)
 		rts
 ; End of function InitInv
 
@@ -68,7 +68,7 @@ loc_D2DE:					  ; CODE XREF: InitInv+84j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D2F4:					  ; CODE XREF: sub_D4AE+3Cp
+sub_D2F4:					  ; CODE XREF: ClearInventoryWindow+3Cp
 		lea	InvPalette2_GreyedOut(pc),a0
 		lea	(g_Pal2Base).l,a1
 		moveq	#$00000007,d7
@@ -83,7 +83,7 @@ loc_D300:					  ; CODE XREF: sub_D2F4+Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D308:					  ; CODE XREF: sub_D4AEp
+sub_D308:					  ; CODE XREF: ClearInventoryWindowp
 		move.b	(byte_FF1BF2).l,d0
 		andi.w	#$001F,d0
 		cmpi.b	#$11,d0
@@ -173,7 +173,7 @@ loc_D3B6:					  ; CODE XREF: sub_D3A8+10j
 ; ---------------------------------------------------------------------------
 
 loc_D3BE:					  ; CODE XREF: CheckForMenuOpen:loc_774Ap
-		bsr.w	sub_D4AE
+		bsr.w	ClearInventoryWindow
 		bsr.w	sub_D96A
 
 loc_D3C6:					  ; CODE XREF: ROM:loc_D424j
@@ -283,7 +283,10 @@ loc_D4A0:					  ; CODE XREF: ROM:0000D40Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D4AE:					  ; CODE XREF: CheckForMenuOpen+88p
+; Blanks the inventory window tilemap (fills the g_Buffer copy and
+; the plane B blocks with the empty tile) and restores the palette if
+; it was dimmed, then flushes the DMA queue.
+ClearInventoryWindow:					  ; CODE XREF: CheckForMenuOpen+88p
 						  ; ConsumeItem+14p ...
 		bsr.w	sub_D308
 		lea	(g_Buffer).l,a1
@@ -293,7 +296,7 @@ sub_D4AE:					  ; CODE XREF: CheckForMenuOpen+88p
 		ori.w	#$0000,d0
 		move.w	#$0B63,d7
 
-loc_D4CA:					  ; CODE XREF: sub_D4AE+1Ej
+loc_D4CA:					  ; CODE XREF: ClearInventoryWindow+1Ej
 		move.w	d0,(a0)+
 		dbf	d7,loc_D4CA
 		bsr.w	sub_D50C
@@ -301,7 +304,7 @@ loc_D4CA:					  ; CODE XREF: sub_D4AE+1Ej
 		move.w	(a0)+,d0
 		move.w	#$043E,d7
 
-loc_D4E0:					  ; CODE XREF: sub_D4AE+34j
+loc_D4E0:					  ; CODE XREF: ClearInventoryWindow+34j
 		move.w	d0,(a0)+
 		dbf	d7,loc_D4E0
 		bsr.w	QueueInventoryScrBTilemapDMA
@@ -311,18 +314,18 @@ loc_D4E0:					  ; CODE XREF: sub_D4AE+34j
 		move.w	#$FFFF,(a0)
 		tst.w	d0
 		beq.s	loc_D504
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 
-loc_D504:					  ; CODE XREF: sub_D4AE+4Ej
+loc_D504:					  ; CODE XREF: ClearInventoryWindow+4Ej
 		jsr	(FlushDMACopyQueue).l
 		rts
-; End of function sub_D4AE
+; End of function ClearInventoryWindow
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_D50C:					  ; CODE XREF: sub_D4AE+22p
+sub_D50C:					  ; CODE XREF: ClearInventoryWindow+22p
 		move.w	#$0000,d1
 		move.w	#$0013,d6
 		lea	((g_Buffer+$5C)).l,a2

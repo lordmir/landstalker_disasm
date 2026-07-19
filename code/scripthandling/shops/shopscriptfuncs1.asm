@@ -11,33 +11,33 @@ HideRightArrow:					  ; DATA XREF: j_HideRightArrowt
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A3C:					  ; DATA XREF: sub_22EA4t
+RunShopWelcome:					  ; DATA XREF: j_RunShopWelcomet
 		movem.l	d0-a6,-(sp)
 		moveq	#$00000004,d1
 		moveq	#$FFFFFFFF,d2
 		bsr.s	sub_24A98
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function sub_24A3C
+; End of function RunShopWelcome
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A4C:					  ; DATA XREF: sub_22EA8t
+RunShopFarewell:					  ; DATA XREF: j_RunShopFarewellt
 		movem.l	d0-a6,-(sp)
 		moveq	#$00000006,d1
 		moveq	#$FFFFFFFF,d2
 		bsr.s	sub_24A98
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function sub_24A4C
+; End of function RunShopFarewell
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A5C:					  ; DATA XREF: sub_22EACt
+RunShopItemPickUp:					  ; DATA XREF: j_RunShopItemPickUpt
 		movem.l	d0-a6,-(sp)
 		bsr.w	sub_24D0C
 		bcc.s	loc_24A6C
@@ -45,48 +45,48 @@ sub_24A5C:					  ; DATA XREF: sub_22EACt
 		bra.s	loc_24A72
 ; ---------------------------------------------------------------------------
 
-loc_24A6C:					  ; CODE XREF: sub_24A5C+8j
+loc_24A6C:					  ; CODE XREF: RunShopItemPickUp+8j
 		moveq	#$00000008,d1
 		moveq	#$00000004,d2
 		bsr.s	sub_24A98
 
-loc_24A72:					  ; CODE XREF: sub_24A5C+Ej
+loc_24A72:					  ; CODE XREF: RunShopItemPickUp+Ej
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function sub_24A5C
+; End of function RunShopItemPickUp
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A78:					  ; DATA XREF: sub_22EB0t
+RunShopItemPutDown:					  ; DATA XREF: j_RunShopItemPutDownt
 		movem.l	d0-a6,-(sp)
 		moveq	#$0000000A,d1
 		moveq	#$00000006,d2
 		bsr.s	sub_24A98
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function sub_24A78
+; End of function RunShopItemPutDown
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A88:					  ; DATA XREF: sub_22EB4t
+RunShopSteal:					  ; DATA XREF: j_RunShopStealt
 		movem.l	d0-a6,-(sp)
 		moveq	#$0000000C,d1
 		moveq	#$00000008,d2
 		bsr.s	sub_24A98
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function sub_24A88
+; End of function RunShopSteal
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24A98:					  ; CODE XREF: sub_24A3C+8p
-						  ; sub_24A4C+8p ...
+sub_24A98:					  ; CODE XREF: RunShopWelcome+8p
+						  ; RunShopFarewell+8p ...
 		movem.l	d0/a0-a1,-(sp)
 		bsr.w	GetSpriteDialogue
 		bne.s	loc_24ACA
@@ -113,11 +113,11 @@ loc_24ACA:					  ; CODE XREF: sub_24A98+8j
 
 ; ---------------------------------------------------------------------------
 
-GainItem:					  ; CODE XREF: sub_24A5C+Ap
+GainItem:					  ; CODE XREF: RunShopItemPickUp+Ap
 		movem.l	d0-d2/a1,-(sp)
 		clr.w	d2
-		move.b	(byte_FF1903).l,d2
-		move.w	d2,(word_FF1196).l
+		move.b	(g_ShopItemId).l,d2
+		move.w	d2,(g_CurrentTextItem).l
 		move.w	d2,d0
 		bsr.w	GetRemainingItemAllowedCount
 		bne.s	loc_24AF4
@@ -180,7 +180,7 @@ loc_24B16:					  ; CODE XREF: ROM:00024AFCj
 		jsr	(j_RestoreBGM).l
 
 loc_24B36:					  ; CODE XREF: ROM:00024B14j
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24B3E:					  ; CODE XREF: ROM:00024AF2j
 		bsr.w	ClearTextbox
@@ -202,7 +202,7 @@ loc_24B54:					  ; CODE XREF: sub_24B48+2Aj
 		bne.s	loc_24B6A
 		move.w	$00000002(a0),d1
 		blt.s	loc_24B74
-		cmp.w	(RmNum2).l,d1
+		cmp.w	(g_OriginalRoom).l,d1
 		beq.s	loc_24B74
 
 loc_24B6A:					  ; CODE XREF: sub_24B48+12j

@@ -211,7 +211,7 @@ loc_1AC994:					  ; CODE XREF: ROM:001AC982j
 		move.w	d0,HitBoxZEnd(a5)
 		movea.l	a5,a1
 		jsr	(sub_1A8AE6).l
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1AC9F6
 		movem.w	(sp)+,d1
 		movem.l	(sp)+,d0

@@ -32,7 +32,7 @@ loc_EA44:					  ; CODE XREF: InitInvEquipScreen+2Ej
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_EA4A:					  ; CODE XREF: sub_EC34p
+sub_EA4A:					  ; CODE XREF: DrawEquipInventoryp
 		lea	((g_Buffer+$10)).l,a0
 		move.w	(g_CurrentEquippedItems).l,d0
 		move.b	#$07,d1
@@ -88,7 +88,7 @@ loc_EAA6:					  ; CODE XREF: sub_EAD4+54j
 		bra.w	loc_D38A
 ; END OF FUNCTION CHUNK	FOR sub_EAD4
 ; ---------------------------------------------------------------------------
-		bsr.w	sub_EC34
+		bsr.w	DrawEquipInventory
 
 ; =============== S U B	R O U T	I N E =======================================
 
@@ -119,7 +119,7 @@ loc_EAF2:					  ; CODE XREF: sub_EAD4+4j
 
 loc_EB02:					  ; CODE XREF: sub_EAD4:loc_EB7Aj
 						  ; sub_EAD4:loc_EB86j	...
-		move.w	(unk_FF0F9C).l,d0
+		move.w	(g_VBlankCounter).l,d0
 		lea	(g_Buffer).l,a0
 		move.w	d0,0000000004(a0)
 		move.w	d0,$00000002(a0)
@@ -273,7 +273,7 @@ loc_EBFA:					  ; CODE XREF: sub_EBEE+12j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-InitEquipGreyedOutPal:				  ; CODE XREF: sub_EC34+4p
+InitEquipGreyedOutPal:				  ; CODE XREF: DrawEquipInventory+4p
 		lea	(g_Pal1Base).l,a0
 		lea	(g_Pal2Base).l,a1
 		moveq	#$0000000F,d7
@@ -291,7 +291,7 @@ loc_EC1C:					  ; CODE XREF: InitEquipGreyedOutPal+12j
 		andi.b	#$22,d0
 		move.b	d0,(a1)+
 		dbf	d7,loc_EC14		  ; Only keep blue component, and darken
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		rts
 ; End of function InitEquipGreyedOutPal
 
@@ -299,8 +299,10 @@ loc_EC1C:					  ; CODE XREF: InitEquipGreyedOutPal+12j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_EC34:					  ; CODE XREF: ROM:0000EAD0p
-						  ; DATA XREF: sub_39Et
+; Blanks the inventory window tilemap and draws the equip screen from
+; EquipInventoryLayout.
+DrawEquipInventory:					  ; CODE XREF: ROM:0000EAD0p
+						  ; DATA XREF: j_DrawEquipInventoryt
 		bsr.w	sub_EA4A
 		bsr.s	InitEquipGreyedOutPal
 		lea	(g_Buffer).l,a1
@@ -309,20 +311,20 @@ sub_EC34:					  ; CODE XREF: ROM:0000EAD0p
 		ori.w	#$0000,d0
 		move.w	#$0B63,d7
 
-loc_EC50:					  ; CODE XREF: sub_EC34+1Ej
+loc_EC50:					  ; CODE XREF: DrawEquipInventory+1Ej
 		move.w	d0,(a0)+
 		dbf	d7,loc_EC50
 		bsr.w	GetInvEquipLayout
 		bsr.w	sub_EC60
 		rts
-; End of function sub_EC34
+; End of function DrawEquipInventory
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
 sub_EC60:					  ; CODE XREF: sub_EAD4+22p
-						  ; sub_EC34+26p
+						  ; DrawEquipInventory+26p
 		moveq	#$00000001,d1
 		moveq	#$00000003,d7
 		lea	EquipInventoryLayout(pc),a3

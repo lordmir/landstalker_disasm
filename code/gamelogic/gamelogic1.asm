@@ -27,25 +27,25 @@ GameLoop:
 		bsr.w	CheckForMenuOpen
 		bsr.w	CheckForDebugButtons
 		bsr.w	CheckForDebugSaveGame
-		bsr.w	CheckForLadderClimb
+		bsr.w	ProcessJumpAndFall
 		bsr.w	ProcessActionButton
 		bsr.w	HandleDirectionalInput
 		jsr	(j_HandleAttack).l
-		jsr	(sub_10358).l
+		jsr	(j_ProcessDeadEnemies).l
 		bsr.w	FindSpritesUnderneath
 		bsr.w	ResetSpriteActions
 		jsr	(j_UpdateEntities).l
 		bsr.w	ValidateSpritesUnderneath
 		bsr.w	MoveWithPlatformZ
 		bsr.w	MoveWithPlatform
-		jsr	(sub_103D8).l
-		jsr	(sub_1034C).l
-		bsr.w	sub_7274
+		jsr	(j_MoveSpritesWithPlatforms).l
+		jsr	(j_ProcessPlayerDamage).l
+		bsr.w	UpdatePlayerSprite
 		jsr	(j_UpdateFrames).l
 		jsr	(j_LoadPlayerSpecialAnimation).l
 		jsr	(LoadSprites).l
 		jsr	(sub_9DA2).l
-		jsr	(sub_10380).l
+		jsr	(j_UpdatePlayerStatusEffects).l
 		jsr	CheckAndDoLavaPaletteFx(pc)
 		nop
 		jsr	(CheckAndDisplayIntroString).l
@@ -55,15 +55,15 @@ GameLoop:
 		bsr.w	EnableDMAQueueProcessing
 		move.w	(SlowDown).w,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
-		jsr	(sub_10384).l
+		jsr	(j_RestorePalette0).l
 		tst.b	d0
 		rts
 
 
 ; Feeds g_Controller1State either from the scripted-input stream
-; (g_ControllerPlayback: $FE = hold current input, 1 = fetch next
-; duration+input pair from g_InputPlaybackAddr, negative byte ends the
-; script) or from the real pad. While paralysed only START gets
+; (g_ControllerPlaybackTimer: $FE = hold current input, 1 = fetch next
+; input+duration pair from g_InputPlaybackAddr, negative input byte
+; ends the script) or from the real pad. While paralysed only START gets
 ; through (menu still opens, no movement); during a special player
 ; animation all input is blocked.
 ProcessControlScript:
@@ -109,7 +109,7 @@ _animLock:
 ; Carries the player along with a moving sprite they stand on: adopts
 ; the platform's speed and steers via the directional dispatch using
 ; the platform's walk action bits (control nibbles $09/$06/$05/$0A =
-; NE/SW/NW/SE). Player_Action bit 11 ($0800) marks "riding".
+; NE/SW/NW/SE). ACT_RIDING in Player_Action marks "riding".
 MoveWithPlatform:
 		move.w	(Player_SpriteUnderneath).l,d0
 		bmi.s	_mwpDone
@@ -120,7 +120,7 @@ MoveWithPlatform:
 		andi.w	#$000F,d0
 		beq.s	_mwpDone
 		move.w	d0,(g_PlayerSpeed).l
-		bset	#$03,(Player_Action).l
+		bset	#ACTBH_RIDING,(Player_Action).l
 		move.b	Action1(a0),d1
 		move.b	#$09,d0
 		lsr.b	#$01,d1
@@ -135,7 +135,7 @@ MoveWithPlatform:
 		lsr.b	#$01,d1
 		bcs.w	_platformSteer
 		move.w	d2,(g_PlayerSpeed).l
-		bclr	#$03,(Player_Action).l
+		bclr	#ACTBH_RIDING,(Player_Action).l
 
 _mwpDone:
 		rts
@@ -168,7 +168,7 @@ _platformDown:
 		subq.w	#$01,d7
 		beq.s	_mwpzDone
 		lea	(Player_X).l,a0
-		bsr.w	sub_32C6
+		bsr.w	GetDropDistance
 		move.b	d5,d7
 		beq.s	_mwpzDone
 		sub.w	d7,(Player_Z).l
@@ -333,9 +333,9 @@ _neProbe:
 		andi.b	#$08,d1
 		cmp.b	d0,d1
 		bcc.w	_neClip
-		bsr.w	sub_30E4
+		bsr.w	CheckWallNE
 		bcc.w	_neClip
-		btst	#$03,(Player_Action).l
+		btst	#ACTBH_RIDING,(Player_Action).l
 		beq.s	_neBlocked
 		btst	#$04,GroundHeight(a0)
 		bne.w	_neClip
@@ -351,7 +351,7 @@ _neBlocked:
 		andi.b	#$3F,d2
 		cmpi.b	#FLOOR_LADDER_NE,d2
 		bne.s	_neDeflect
-		bsr.w	sub_33EA
+		bsr.w	GetClearanceAbove
 		tst.w	d5
 		bne.s	_neLadder
 		rts
@@ -369,7 +369,7 @@ _neLadderAnim:
 		andi.b	#$3F,RotationAndSize(a5)
 		addq.b	#$01,AnimPhase(a5)
 		clr.b	FallRate(a5)
-		move.b	(byte_FF0F9D).l,d7
+		move.b	(g_VBlankCounterLow).l,d7
 		andi.b	#$03,d7
 		bne.s	_neLadderRise
 		trap	#$00			  ; Trap00Handler
@@ -398,7 +398,7 @@ _neClip:
 		beq.s	_neCollide
 
 _neHurtPush:
-		bsr.w	sub_3058
+		bsr.w	CollisionDetectNonHostile
 		bra.s	_neCollRes
 
 _neCollide:
@@ -422,7 +422,6 @@ _neTouch:
 
 
 _revertProbeNE:
-						  ; HandleDirectionalControl:_neTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		add.w	d2,HitBoxYStart(a5)
 		add.w	d2,HitBoxYEnd(a5)
@@ -449,16 +448,16 @@ _neApply:
 		subq.b	#$01,(Player_Y).l
 		subi.w	#$0094,(Player_HeightmapOffset).l
 		movea.w	HeightmapOffset(a5),a6
-		move.w	GroundHeight(a5),(word_FF1208).l
+		move.w	GroundHeight(a5),(g_PrevGroundHeight).l
 		move.w	(a6),GroundHeight(a5)
 
 _neCamApply:
-		move.w	(word_FF1202).l,d0
+		move.w	(g_CameraFineY).l,d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
-		move.w	d0,(word_FF1202).l
+		move.w	d0,(g_CameraFineY).l
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126+1).l
+		move.b	d0,(g_CameraSubY).l
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
@@ -480,7 +479,7 @@ _neScroll:
 		bsr.w	_scrollCamRight
 
 _neFinish:
-		bclr	#$03,(Player_Action).l
+		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_neDone
 		andi.b	#$3F,(Player_RotationAndSize).l
 		bset	#ACTB_WALK_NE,(Player_Action+1).l
@@ -505,9 +504,9 @@ _seProbe:
 		andi.b	#$08,d1
 		cmp.b	d0,d1
 		bls.s	_seClip
-		bsr.w	sub_3146
+		bsr.w	CheckWallSE
 		bcc.s	_seClip
-		btst	#$03,(Player_Action).l
+		btst	#ACTBH_RIDING,(Player_Action).l
 		beq.s	_seDeflect
 		btst	#$04,GroundHeight(a0)
 		bne.w	_seClip
@@ -530,7 +529,7 @@ _seClip:
 		beq.s	_seCollide
 
 _seHurtPush:
-		bsr.w	sub_3058
+		bsr.w	CollisionDetectNonHostile
 		bra.s	_seCollRes
 
 _seCollide:
@@ -554,7 +553,6 @@ _seTouch:
 
 
 _revertProbeSE:
-						  ; HandleDirectionalControl:_seTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		sub.w	d2,HitBoxXStart(a5)
 		sub.w	d2,HitBoxXEnd(a5)
@@ -581,16 +579,16 @@ _seApply:
 		addq.b	#$01,(Player_X).l
 		addi.w	#$0002,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
-		move.w	GroundHeight(a5),(word_FF1208).l
+		move.w	GroundHeight(a5),(g_PrevGroundHeight).l
 		move.w	(a6),GroundHeight(a5)
 
 _seCamApply:
-		move.w	(word_FF1200).l,d0
+		move.w	(g_CameraFineX).l,d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
-		move.w	d0,(word_FF1200).l
+		move.w	d0,(g_CameraFineX).l
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126).l
+		move.b	d0,(g_CameraSubX).l
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
@@ -612,7 +610,7 @@ _seScroll:
 		bsr.w	_scrollCamRight
 
 _seFinish:
-		bclr	#$03,(Player_Action).l
+		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_seDone
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#DIR_SE,(Player_RotationAndSize).l
@@ -638,7 +636,7 @@ _swProbe:
 		andi.b	#$08,d1
 		cmp.b	d0,d1
 		bls.s	_swClip
-		bsr.w	sub_30DC
+		bsr.w	CheckWallSW
 		bcc.s	_swClip
 		bsr.s	_revertProbeSW
 		move.w	#$0001,(g_PlayerSpeed).l
@@ -657,7 +655,7 @@ _swClip:
 		beq.s	_swCollide
 
 _swHurtPush:
-		bsr.w	sub_3058
+		bsr.w	CollisionDetectNonHostile
 		bra.s	_swCollRes
 
 _swCollide:
@@ -681,7 +679,6 @@ _swTouch:
 
 
 _revertProbeSW:
-						  ; HandleDirectionalControl:_swTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		sub.w	d2,HitBoxYStart(a5)
 		sub.w	d2,HitBoxYEnd(a5)
@@ -708,16 +705,16 @@ _swApply:
 		addq.b	#$01,(Player_Y).l
 		addi.w	#$0094,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
-		move.w	GroundHeight(a5),(word_FF1208).l
+		move.w	GroundHeight(a5),(g_PrevGroundHeight).l
 		move.w	(a6),GroundHeight(a5)
 
 _swCamApply:
-		move.w	(word_FF1202).l,d0
+		move.w	(g_CameraFineY).l,d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
-		move.w	d0,(word_FF1202).l
+		move.w	d0,(g_CameraFineY).l
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126+1).l
+		move.b	d0,(g_CameraSubY).l
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
@@ -739,7 +736,7 @@ _swScroll:
 		bsr.w	_scrollCamLeft
 
 _swFinish:
-		bclr	#$03,(Player_Action).l
+		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_swDone
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#DIR_SW,(Player_RotationAndSize).l
@@ -764,7 +761,7 @@ _nwProbe:
 		andi.b	#$08,d1
 		cmp.b	d0,d1
 		bcc.w	_nwClip
-		bsr.w	sub_313E
+		bsr.w	CheckWallNW
 		bcc.w	_nwClip
 		bsr.w	_revertProbeNW
 		move.b	SubX(a5),d2
@@ -776,7 +773,7 @@ _nwProbe:
 		andi.b	#$3F,d2
 		cmpi.b	#FLOOR_LADDER_NW,d2
 		bne.s	_nwDeflect
-		bsr.w	sub_33EA
+		bsr.w	GetClearanceAbove
 		tst.w	d5
 		bne.s	_nwLadder
 		rts
@@ -794,7 +791,7 @@ _nwLadderAnim:
 		ori.b	#DIR_NW,RotationAndSize(a5)
 		addq.b	#$01,AnimPhase(a5)
 		clr.b	FallRate(a5)
-		move.b	(byte_FF0F9D).l,d7
+		move.b	(g_VBlankCounterLow).l,d7
 		andi.b	#$03,d7
 		bne.s	_nwLadderRise
 		trap	#$00			  ; Trap00Handler
@@ -823,7 +820,7 @@ _nwClip:
 		beq.s	_nwCollide
 
 _nwHurtPush:
-		bsr.w	sub_3058
+		bsr.w	CollisionDetectNonHostile
 		bra.s	_nwCollRes
 
 _nwCollide:
@@ -847,7 +844,6 @@ _nwTouch:
 
 
 _revertProbeNW:
-						  ; HandleDirectionalControl:_nwTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		add.w	d2,HitBoxXStart(a5)
 		add.w	d2,HitBoxXEnd(a5)
@@ -874,16 +870,16 @@ _nwApply:
 		subq.b	#$01,(Player_X).l
 		subi.w	#$0002,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
-		move.w	GroundHeight(a5),(word_FF1208).l
+		move.w	GroundHeight(a5),(g_PrevGroundHeight).l
 		move.w	(a6),GroundHeight(a5)
 
 _nwCamApply:
-		move.w	(word_FF1200).l,d0
+		move.w	(g_CameraFineX).l,d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
-		move.w	d0,(word_FF1200).l
+		move.w	d0,(g_CameraFineX).l
 		andi.b	#$0F,d0
-		move.b	d0,(word_FF1126).l
+		move.b	d0,(g_CameraSubX).l
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
@@ -906,7 +902,7 @@ _nwScroll:
 		bsr.w	_scrollCamLeft
 
 _nwFinish:
-		bclr	#$03,(Player_Action).l
+		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_nwDone
 		ori.b	#DIR_NW,(Player_RotationAndSize).l
 		bset	#ACTB_WALK_NW,(Player_Action+1).l
@@ -917,37 +913,37 @@ _nwDone:
 
 
 ; While not already climbing (ACTBH_CLIMB clear): descend if there is
-; room below (_climbDownCheck), else try to rise via HandleJump
-; (_climbUpCheck), shifting the view by the Z delta either way.
-CheckForLadderClimb:
+; room below (_getFallDist), else try to rise via HandleJump
+; (_getJumpRise), shifting the view by the Z delta either way.
+ProcessJumpAndFall:
 		move.b	(g_Controller1State).l,d1
-		and.b	d1,(g_LadderClimbJumpState).l
+		and.b	d1,(g_JumpButtonLatch).l
 		btst	#ACTBH_CLIMB,(Player_Action).l
-		bne.s	_climbDone
-		bsr.s	_climbDownCheck
+		bne.s	_vertDone
+		bsr.s	_getFallDist
 		tst.b	d7
 		bne.w	_viewDropZ
-		btst	#$04,(Player_Unk2F).l
-		beq.s	_tryAscend
+		btst	#ACTB_FALL,(Player_AnimAction1).l
+		beq.s	_tryRise
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_LadderClimb
 
-_tryAscend:
-		bsr.s	_climbUpCheck
+_tryRise:
+		bsr.s	_getJumpRise
 		tst.b	d7
 		bne.w	_viewRiseZ
 
-_climbDone:
+_vertDone:
 		rts
 
 
-_climbDownCheck:
-		bsr.w	sub_324C
+_getFallDist:
+		bsr.w	ApplyGravityPlayer
 		move.w	d6,d7
 		rts
 
 
-_climbUpCheck:
+_getJumpRise:
 		lea	(Player_X).l,a0
 		move.w	Z(a0),d7
 		movem.w	d7,-(sp)
@@ -1007,13 +1003,13 @@ _rsaDone:
 
 
 _fallDistCheck:
-		bsr.w	sub_3252
+		bsr.w	ApplyGravity
 		move.w	d6,d7
 		rts
 
 
 _spriteGroundTick:
-		jsr	(sub_103D2).l
+		jsr	(j_ProcessSpriteJump).l
 		rts
 
 
@@ -1022,12 +1018,12 @@ _spriteGroundTick:
 ; down by 2*d7. _viewRiseZ is the mirror for rising.
 _viewDropZ:
 		clr.b	d1
-		move.w	(word_FF1200).l,d2
+		move.w	(g_CameraFineX).l,d2
 		move.b	d2,d3
 		add.w	d7,d2
-		move.w	d2,(word_FF1200).l
+		move.w	d2,(g_CameraFineX).l
 		andi.b	#$0F,d2
-		move.b	d2,(word_FF1126).l
+		move.b	d2,(g_CameraSubX).l
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d3,d2
@@ -1047,12 +1043,12 @@ _dropTilesX:
 		moveq	#$1,d1
 
 _dropY:
-		move.w	(word_FF1202).l,d2
+		move.w	(g_CameraFineY).l,d2
 		move.b	d2,d3
 		add.w	d7,d2
-		move.w	d2,(word_FF1202).l
+		move.w	d2,(g_CameraFineY).l
 		andi.b	#$0F,d2
-		move.b	d2,(word_FF1126+1).l
+		move.b	d2,(g_CameraSubY).l
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d3,d2
@@ -1092,12 +1088,12 @@ _dropScroll:
 
 _viewRiseZ:
 		clr.b	d1
-		move.w	(word_FF1200).l,d2
+		move.w	(g_CameraFineX).l,d2
 		move.b	d2,d3
 		sub.w	d7,d2
-		move.w	d2,(word_FF1200).l
+		move.w	d2,(g_CameraFineX).l
 		andi.b	#$0F,d2
-		move.b	d2,(word_FF1126).l
+		move.b	d2,(g_CameraSubX).l
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d2,d3
@@ -1118,12 +1114,12 @@ _riseTilesX:
 		moveq	#$1,d1
 
 _riseY:
-		move.w	(word_FF1202).l,d2
+		move.w	(g_CameraFineY).l,d2
 		move.w	d2,d3
 		sub.w	d7,d2
-		move.w	d2,(word_FF1202).l
+		move.w	d2,(g_CameraFineY).l
 		andi.b	#$0F,d2
-		move.b	d2,(word_FF1126+1).l
+		move.b	d2,(g_CameraSubY).l
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d2,d3
@@ -1176,7 +1172,7 @@ _scrollCamUpBy:
 		subq.w	#$01,d7
 
 _scuLoop:
-		eori.w	#$0001,(word_FF1180).l
+		eori.w	#$0001,(g_VScrollParity).l
 		bne.s	_scuNext
 		subq.w	#$01,(g_VSRAMData).l
 		subq.w	#$01,(g_VSRAMData+2).l
@@ -1202,7 +1198,7 @@ _scrollCamDownBy:
 		subq.w	#$01,d7
 
 _scdLoop:
-		eori.w	#$0001,(word_FF1180).l
+		eori.w	#$0001,(g_VScrollParity).l
 		beq.s	_scdNext
 		addq.w	#$01,(g_VSRAMData).l
 		addq.w	#$01,(g_VSRAMData+2).l
@@ -1254,7 +1250,7 @@ FindSpritesUnderneath:
 
 _fsuCheck:
 		movem.w	d7,-(sp)
-		bsr.w	sub_3498
+		bsr.w	FindSpriteUnderneath
 		movem.w	(sp)+,d7
 		bra.s	_fsuStore
 

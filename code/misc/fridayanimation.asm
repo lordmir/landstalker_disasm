@@ -320,7 +320,7 @@ sub_388C:					  ; CODE XREF: UpdateFridayAnimation+258p
 sub_3890:					  ; CODE XREF: UpdateFridayAnimation:loc_3886p
 		move.l	#$00000063,d0
 		move.w	#$07F0,d1
-		bsr.w	sub_46DC
+		bsr.w	LoadSpriteTilesQueued
 		bra.w	EnableDMAQueueProcessing
 ; End of function sub_3890
 

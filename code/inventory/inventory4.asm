@@ -426,7 +426,7 @@ sub_D756:					  ; CODE XREF: sub_D714+Cp
 		lea	(g_VDPSpr01_Y).l,a0
 		lea	(g_Buffer).l,a1
 		move.w	0000000004(a1),d3
-		move.w	(unk_FF0F9C).l,d4
+		move.w	(g_VBlankCounter).l,d4
 		sub.w	d3,d4
 		andi.b	#$3F,d4
 		cmpi.b	#$20,d4
@@ -579,7 +579,7 @@ sub_D88A:					  ; CODE XREF: ROM:0000D3C8p
 		movem.w	d0,-(sp)
 		jsr	(UpdateControllerInputs).l
 		movem.w	(sp)+,d4
-		move.w	(unk_FF0F9C).l,d2
+		move.w	(g_VBlankCounter).l,d2
 		lea	(g_Buffer).l,a1
 		move.b	(a1),d1
 		lea	(g_Controller1State).l,a0
@@ -639,7 +639,7 @@ loc_D90A:					  ; CODE XREF: sub_D902+4j
 		bne.s	loc_D92C
 		lea		(g_Buffer).l,a0
 		move.w	4(a0),d2
-		move.w	(unk_FF0F9C).l,d3
+		move.w	(g_VBlankCounter).l,d3
 		sub.w	d2,d3
 		andi.b	#$1F,d3
 		cmpi.b	#$10,d3
@@ -998,7 +998,7 @@ loc_DB28:					  ; CODE XREF: ROM:0000D3E2j
 ; ---------------------------------------------------------------------------
 		move.l	(sp)+,d0
 		ext.w	d0
-		move.w	d0,(word_FF1196).l
+		move.w	d0,(g_CurrentTextItem).l
 		movem.w	d0,-(sp)
 		jsr	(j_GetItemUseStringIdx).l
 		move.w	d1,d0

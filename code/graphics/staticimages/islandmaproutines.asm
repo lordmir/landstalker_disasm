@@ -101,7 +101,7 @@ loc_3E7DC:					  ; CODE XREF: DisplayIslandMap+18Aj
 		move.l	(a0)+,(a1)+
 		dbf	d7,loc_3E7DC
 		jsr	(j_LoadInitialPlayerPalette).l
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		moveq	#$0000000F,d7
 
@@ -123,7 +123,7 @@ loc_3E7F6:					  ; CODE XREF: DisplayIslandMap+1A4j
 loc_3E826:					  ; CODE XREF: DisplayIslandMap+1D4j
 		clr.w	(a0)+
 		dbf	d7,loc_3E826
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_FlushDMACopyQueue).l
 		lea	var_80(a6),a0
 		lea	(g_Pal0Base).l,a1

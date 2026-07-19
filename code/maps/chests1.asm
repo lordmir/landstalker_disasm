@@ -1,9 +1,11 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LookupChestContents:				  ; DATA XREF: j_LookupChestContentst
-		move.w	(g_RmNum1).l,d0
+Chests1	module
+; Assigns a spawning chest sprite (a1) its contents and global chest
+; index: RoomChestOffsets (keyed on the original, pre-variant room
+; number) gives the room's base index into ChestContents, plus
+; g_chestCount for the nth chest initialised in this room. The index
+; is the chest's bit number in g_ChestOpenFlags.
+LookupChestContents:
+		move.w	(g_CurrentRoom).l,d0
 		jsr	(j_GetOriginalRoomNum).l
 		clr.w	d1
 		move.b	RoomChestOffsets(pc,d0.w),d1
@@ -14,6 +16,5 @@ LookupChestContents:				  ; DATA XREF: j_LookupChestContentst
 		move.b	d1,ChestIndex(a1)	  ; ChestIdx
 		addq.b	#$01,(g_chestCount).l
 		rts
-; End of function LookupChestContents
 
-; ---------------------------------------------------------------------------
+		modend

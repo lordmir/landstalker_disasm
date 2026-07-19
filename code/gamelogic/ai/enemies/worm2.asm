@@ -236,7 +236,7 @@ loc_1A593C:					  ; CODE XREF: ROM:001A5922j
 		move.b	#$18,d0
 		subq.b	#$01,d0
 		add.b	d0,HitBoxSubZEnd(a5)
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1A595C
 		move.w	Z(a5),HitBoxZEnd(a5)
 		rts

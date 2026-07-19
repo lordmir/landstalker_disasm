@@ -420,8 +420,10 @@ _hitstunDone:
 
 
 ; Returns carry set if any vulnerable hostile enemy is present in the
-; room (ignoring respawning ghosts, i.e. guaranteed-drop-of-nothing
-; sprites). Used by the Statue of Gaia to refuse activation otherwise.
+; room, ignoring permanent hostiles (fixed obstacles and respawning
+; ghosts, marked by the sentinel ItemDropProbability = $0001 with
+; zero gold). Used by the Statue of Gaia to refuse activation
+; otherwise.
 AnyHostileEnemies:
 		lea	(Sprite1_X).l,a5
 		moveq	#$E,d7
@@ -498,7 +500,7 @@ _quakeNext:
 		dbf	d7,_quakeLoop
 
 _quakeCheckRoom:
-		cmpi.w	#$020A,(g_RmNum1).l	  ; Lava Room
+		cmpi.w	#ROOM_LAVA_STATUE,(g_CurrentRoom).l	  ; Lava Room
 		beq.s	_quakeEffect
 		tst.b	d6
 		beq.s	_quakeDone
@@ -535,7 +537,7 @@ _SpawnChargeProjectile:
 		bsr.w	HostileEnemiesPresent
 		tst.b	d6
 		beq.w	_projDone
-		jsr	(sub_19288).l
+		jsr	(FindFreeSpriteSlot).l
 		bcs.w	_projDone
 		move.w	(Player_X).l,d0
 		move.b	(Player_RotationAndSize).l,d1
@@ -569,7 +571,7 @@ _projSet:
 		move.w	#$47C0,TileSource(a1)
 		move.w	#$013C,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
-		jsr	(sub_192B6).l
+		jsr	(InitSpawnedSprite).l
 
 _projDone:
 		rts
@@ -626,10 +628,12 @@ _deadDone:
 		rts
 
 
-; Enemy death: respawning ghosts (guaranteed drop of nothing) either
-; re-hostile with $100 health or hide once their story flag is set;
-; everyone else rolls the item drop -- transforming the corpse into an
-; item box or moneybag sprite -- or just despawns.
+; Enemy death: permanent hostiles (the $0001 + zero-gold sentinel; the
+; killable ones being the respawning ghosts) either re-hostile with
+; $100 health or hide once their story flag is set. Everyone else
+; rolls the 1-in-N item drop (corpse becomes an item box, if another
+; item box isn't already on screen and the item limit allows), else
+; drops GoldOrChestContents gold as a moneybag, else just despawns.
 _HandleEnemyDeath:
 		tst.b	(g_Flags+5).l
 		bmi.w	_deathScripted
@@ -640,7 +644,7 @@ _HandleEnemyDeath:
 		bne.s	_deathNormal
 		btst	#$00,(g_Flags+3).l
 		beq.s	_ghostRespawn
-		bsr.w	sub_1A56A
+		bsr.w	SetSacredTreeCutFlag
 
 _deathHide:
 		jmp	(j_HideSprite).l
@@ -690,7 +694,7 @@ _dropMoney:
 		move.b	#SpriteB_Moneybag,SpriteGraphic(a5)
 
 _dropCommon:
-		move.w	#$002D,BehavParam(a5)
+		move.w	#BHV_LOOT,BehavParam(a5)
 		cmpi.b	#$10,Height(a5)
 		bcc.s	_dropTall
 
@@ -726,7 +730,7 @@ _dropFinish:
 		bclr	#$06,InteractFlags(a5)
 		movea.l	a5,a1
 		bsr.w	LookupSpriteAnimFlags
-		bsr.w	sub_19AC8
+		bsr.w	CalcSpriteHitbox
 
 _exit:
 		rts
@@ -764,7 +768,7 @@ _MummyRevive:
 		ori.b	#$80,InitInteractFlags(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
 		movem.w	d7,-(sp)
-		jsr	(sub_1A440C).l
+		jsr	(j_RunEnemyAI_B).l
 		movem.w	(sp)+,d7
 		bra.w	_deadNext
 
@@ -1035,7 +1039,7 @@ GaiaEffect:
 		move.b	#ITM_GAIASWORD,(g_EquippedSword).l
 		jsr	(j_LoadMagicSwordGfx).l
 		jsr	(j_UpdateEquipPal).l
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		move.w	(g_VSRAMData).l,d0
 		move.w	(g_VSRAMData+2).l,d1
 		movem.w	d0-d1,-(sp)
@@ -1052,7 +1056,7 @@ GaiaEffect:
 		move.b	d0,(g_EquippedSword).l
 		jsr	(j_LoadMagicSwordGfx).l
 		jsr	(j_UpdateEquipPal).l
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jmp	(j_FlushDMACopyQueue).l
 
 

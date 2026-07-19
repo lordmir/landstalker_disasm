@@ -37,7 +37,7 @@ LoadLithographTiles:				  ; CODE XREF: DisplayLithograph+2Ep
 
 LoadLithographTilemap:				  ; CODE XREF: DisplayLithograph+30p
 		jsr	(j_DisableInterrupts).l
-		jsr	(j_CopyVDPSpriteTableDMA).l
+		jsr	(j_ClearAndRefreshVDPSpriteTableDMA).l
 		jsr	(j_EnableInterrupts).l
 		clr.w	(g_HorizontalScrollData).l
 		clr.w	(g_VSRAMData).l

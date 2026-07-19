@@ -283,7 +283,7 @@ loc_24916:					  ; CODE XREF: sub_2488A+58j
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		clr.b	(word_FF1800).l
 		movem.w	d1-d2,-(sp)
-		jsr	(sub_39E).l
+		jsr	(j_DrawEquipInventory).l
 		movem.w	(sp)+,d1-d2
 		bra.w	loc_24898
 ; ---------------------------------------------------------------------------
@@ -296,7 +296,7 @@ loc_24952:					  ; CODE XREF: sub_2488A+62j
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		clr.b	(word_FF1800).l
 		movem.w	d1-d2,-(sp)
-		jsr	(sub_398).l
+		jsr	(j_ClearInventoryWindow).l
 		movem.w	(sp)+,d1-d2
 		bra.w	loc_24898
 ; ---------------------------------------------------------------------------

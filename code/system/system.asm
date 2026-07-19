@@ -1,42 +1,39 @@
-; ---------------------------------------------------------------------------
-
-ResetAll:					  ; CODE XREF: ROM:000016C6j
+System	module
+; Soft reset straight back to the Sega logo/title.
+ResetAll:
 		lea	(ResetSP).w,sp
-		bra.s	loc_4CE
-; ---------------------------------------------------------------------------
+		bra.s	_resetCommon
 
-EndGame:					  ; DATA XREF: ROM:j_EndGamet
+; End-of-game reset: fades the music out for three seconds first.
+EndGame:
 		lea	(ResetSP).w,sp
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_FadeOut0
-; ---------------------------------------------------------------------------
-		move.w	#00180,d0
+		move.w	#180,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
 
-loc_4CE:					  ; CODE XREF: ROM:000004BCj
+_resetCommon:
 		bsr.w	DisableDisplayAndInts
 		bsr.s	ResetVDPAndClearRAM
 		bsr.s	ClearAndInitGraphics
 		jmp	(ResetGame).l
-; ---------------------------------------------------------------------------
 
-GameOver:					  ; CODE XREF: ROM:000016D8j
+; Death: music fade + fade to black, then reload the last save.
+GameOver:
 		lea	(ResetSP).w,sp
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_FadeOut0
-; ---------------------------------------------------------------------------
 		bsr.w	FadeToBlack
-		move.w	#00180,d0
+		move.w	#180,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
 		bsr.w	DisableDisplayAndInts
 		bsr.s	ResetVDPAndClearRAM
 		bsr.s	ClearAndInitGraphics
 		jmp	(RestartFromSave).l
-; ---------------------------------------------------------------------------
 
-loc_4FE:					  ; CODE XREF: ROM:000006F6j
+; Cold-boot tail: full hardware init, region protection check, SRAM
+; check, then into the game.
+_bootInit:
 		bsr.s	ResetVDPAndClearRAM
 		bsr.w	InitZ80Driver
 		bsr.s	ClearAndInitGraphics
@@ -46,43 +43,27 @@ loc_4FE:					  ; CODE XREF: ROM:000006F6j
 		bsr.w	CheckSRAM
 		jmp	(ResetGame).l
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-ResetVDPAndClearRAM:				  ; CODE XREF: ROM:000004D2p
-						  ; ROM:000004F4p ...
-		move.w	(InitVDPRegs01,pc),d0	  ; #01	Disable	Display, Enable	VInt, Disable DMA, 28V cells
-						  ; #02	ScrollA	Source 0xC000, #3 Window Source	0xF000
-						  ; #04	ScrollB	Source 0xE000
-						  ; #05	Sprite Table Source 0xD400
-						  ; #06	Reserved 00
-						  ; #07	Background Palette 0, Colour 0 (BLACK)
-						  ; #08	Reserved 00
-						  ; #09	Reserved 00
-						  ; #10	Horizontal Interrupt on	Line 0
-						  ; #11	Ext Interrupt Disabled,	Vertival 2-Cell	scroll,	Horizontal line	scroll
-						  ; #12	40 cell	horizontal, Shadow/HL disabled,	No Interlace
-						  ; #13	HScroll	Base Addr 0xD000
-						  ; #14	Reserved 00
-						  ; #15	Auto Increment 2
-						  ; #16	Vertical 32 Cell, Horizontal 64	Cell
-						  ; #17	Window Left 0 Cells
-						  ; #18	Window Right 0 Cells
+; Blanks the display, clears all RAM from the palettes up, then loads
+; the full register set from the InitVDPRegs00 table (comments below)
+; and DMA-fills VRAM with zero.
+ResetVDPAndClearRAM:
+		move.w	(InitVDPRegs01,pc),d0	  ; #01	- display off, VInt on,	DMA off
 		nop
 		bsr.w	SetVDPReg
 		move.w	#$3FDE,d0
 		lea	(g_Pal0Base).l,a0
 
-loc_52A:					  ; CODE XREF: ResetVDPAndClearRAM+16j
+_clrRam:
 		clr.l	(a0)+
-		dbf	d0,loc_52A
+		dbf	d0,_clrRam
 		lea	InitVDPRegs00(pc),a0	  ; Disable HInt, Enable HV Counters
-		moveq	#$00000012,d1
+		moveq	#$12,d1
 
-loc_536:					  ; CODE XREF: ResetVDPAndClearRAM+26j
+_regLoop:
 		move.w	(a0)+,d0
 		bsr.w	SetVDPReg
-		dbf	d1,loc_536
+		dbf	d1,_regLoop
 		clr.w	d0
 		clr.w	d1
 		clr.w	d2
@@ -90,52 +71,44 @@ loc_536:					  ; CODE XREF: ResetVDPAndClearRAM+26j
 						  ; d1 - Fill length bytes
 						  ; d2 - Fill pattern
 		rts
-; End of function ResetVDPAndClearRAM
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearAndInitGraphics:				  ; CODE XREF: ROM:000004D4p
-						  ; ROM:000004F6p ...
+ClearAndInitGraphics:
 		move.l	#g_VRAMCopyQueue,(g_VRAMCopyQueuePtr).l
 		move.l	#g_DMAOpQueue,(g_DMAOpQueuePtr).l
-		moveq	#$00000040,d0
+		moveq	#$40,d0
 		move.b	d0,(SEGA_CTRL1_CTRL_REG).l
 		move.b	d0,(SEGA_CTRL2_CTRL_REG).l
 		move.b	d0,(SEGA_EXP_CTRL_REG).l
 		lea	(g_HorizontalScrollData).l,a0
 		move.w	#$00FF,d0
 
-loc_57E:					  ; CODE XREF: ClearAndInitGraphics+3Aj
+_clrHScroll:
 		move.w	#$0000,(a0)+
 		move.w	#$0000,(a0)+
-		dbf	d0,loc_57E
+		dbf	d0,_clrHScroll
 		lea	(g_VSRAMData).l,a0
 		move.w	#$0013,d0
 
-loc_594:					  ; CODE XREF: ClearAndInitGraphics+50j
+_clrVSRAM:
 		move.w	#$0000,(a0)+
 		move.w	#$0000,(a0)+
-		dbf	d0,loc_594
+		dbf	d0,_clrVSRAM
 		lea	(g_Pal0Base).l,a0
-		moveq	#$0000007F,d1
+		moveq	#$7F,d1
 
-loc_5A8:					  ; CODE XREF: ClearAndInitGraphics+5Ej
+_clrPal:
 		clr.w	(a0)+
-		dbf	d1,loc_5A8
+		dbf	d1,_clrPal
 		bsr.w	ClearVDPSpriteTable
 		bsr.w	QueueHScrollDMAUpdate
 		bsr.w	QueueVSRAMUpdate
-		bsr.w	CopyBasePalleteToActivePalette
+		bsr.w	CopyBasePaletteToActivePalette
 		bsr.w	EnableDMAQueueProcessing
 		rts
-; End of function ClearAndInitGraphics
 
-; ---------------------------------------------------------------------------
-InitVDPRegs00:	dc.w $8004			  ; DATA XREF: ResetVDPAndClearRAM+1At
-						  ; Disable HInt, Enable HV Counters
-InitVDPRegs01:	dc.w $8124			  ; DATA XREF: ResetVDPAndClearRAMt
+InitVDPRegs00:	dc.w $8004			  ; #00	Disable	HInt, Enable HV	Counters
+InitVDPRegs01:	dc.w $8124
 		dc.w $8230			  ; #01	Disable	Display, Enable	VInt, Disable DMA, 28V cells
 		dc.w $833C			  ; #02	ScrollA	Source 0xC000, #3 Window Source	0xF000
 		dc.w $8407			  ; #04	ScrollB	Source 0xE000
@@ -145,7 +118,7 @@ InitVDPRegs01:	dc.w $8124			  ; DATA XREF: ResetVDPAndClearRAMt
 		dc.w $8800			  ; #08	Reserved 00
 		dc.w $8900			  ; #09	Reserved 00
 		dc.w $8A00			  ; #10	Horizontal Interrupt on	Line 0
-		dc.w $8B07			  ; #11	Ext Interrupt Disabled,	Vertival 2-Cell	scroll,	Horizontal line	scroll
+		dc.w $8B07			  ; #11	Ext Interrupt Disabled,	Vertical 2-Cell	scroll,	Horizontal line	scroll
 		dc.w $8C81			  ; #12	40 cell	horizontal, Shadow/HL disabled,	No Interlace
 		dc.w $8D34			  ; #13	HScroll	Base Addr 0xD000
 		dc.w $8E00			  ; #14	Reserved 00
@@ -153,81 +126,83 @@ InitVDPRegs01:	dc.w $8124			  ; DATA XREF: ResetVDPAndClearRAMt
 		dc.w $9001			  ; #16	Vertical 32 Cell, Horizontal 64	Cell
 		dc.w $9100			  ; #17	Window Left 0 Cells
 		dc.w $9200			  ; #18	Window Right 0 Cells
-; ---------------------------------------------------------------------------
 
-EntryPoint:					  ; DATA XREF: ROM:ResetPCo
+; Standard Sega startup shell, driven by the packed SystemInit block:
+; on cold boot it satisfies TMSS, loads the VDP registers, copies a
+; tiny Z80 stub, clears RAM/CRAM/VSRAM and silences the PSG. A warm
+; reset (controller ports already initialised) skips all of it.
+EntryPoint:
 		tst.l	(SEGA_CTRL1_CTRL_REG0).l
-		bne.s	loc_5F8
+		bne.s	_chkColdBoot
 		tst.w	(SEGA_EXP_CTRL_REG0).l
 
-loc_5F8:					  ; CODE XREF: ROM:000005F0j
-		bne.s	loc_676
+_chkColdBoot:
+		bne.s	_skipColdInit
 		lea	SystemInit(pc),a5
 		movem.w	(a5)+,d5-d7
 		movem.l	(a5)+,a0-a4
-		move.b	-$000010FF(a1),d0
+		move.b	-$10FF(a1),d0
 		andi.b	#$0F,d0
-		beq.s	loc_618
-		move.l	#'SEGA',$00002F00(a1)
+		beq.s	_tmssDone
+		move.l	#'SEGA',$2F00(a1)
 
-loc_618:					  ; CODE XREF: ROM:0000060Ej
+_tmssDone:
 		move.w	(a4),d0
-		moveq	#$00000000,d0
+		moveq	#$00,d0
 		movea.l	d0,a6
 		move.l	a6,usp
-		moveq	#$00000017,d1
+		moveq	#$17,d1
 
-loc_622:					  ; CODE XREF: ROM:00000628j
+_vdpRegLoop:
 		move.b	(a5)+,d5
 		move.w	d5,(a4)
 		add.w	d7,d5
-		dbf	d1,loc_622
+		dbf	d1,_vdpRegLoop
 		move.l	(a5)+,(a4)
 		move.w	d0,(a3)
 		move.w	d7,(a1)
 		move.w	d7,(a2)
 
-loc_634:					  ; CODE XREF: ROM:00000636j
+_waitZ80Bus:
 		btst	d0,(a1)
-		bne.s	loc_634
-		moveq	#$00000025,d2
+		bne.s	_waitZ80Bus
+		moveq	#$25,d2
 
-loc_63A:					  ; CODE XREF: ROM:0000063Cj
+_z80CopyLoop:
 		move.b	(a5)+,(a0)+
-		dbf	d2,loc_63A
+		dbf	d2,_z80CopyLoop
 		move.w	d0,(a2)
 		move.w	d0,(a1)
 		move.w	d7,(a2)
 
-loc_646:					  ; CODE XREF: ROM:00000648j
+_clrRamLoop:
 		move.l	d0,-(a6)
-		dbf	d6,loc_646
+		dbf	d6,_clrRamLoop
 		move.l	(a5)+,(a4)
 		move.l	(a5)+,(a4)
-		moveq	#$0000001F,d3
+		moveq	#$1F,d3
 
-loc_652:					  ; CODE XREF: ROM:00000654j
+_clrCRAMLoop:
 		move.l	d0,(a3)
-		dbf	d3,loc_652
+		dbf	d3,_clrCRAMLoop
 		move.l	(a5)+,(a4)
-		moveq	#$00000013,d4
+		moveq	#$13,d4
 
-loc_65C:					  ; CODE XREF: ROM:0000065Ej
+_clrVSRAMLoop:
 		move.l	d0,(a3)
-		dbf	d4,loc_65C
-		moveq	#$00000003,d5
+		dbf	d4,_clrVSRAMLoop
+		moveq	#$03,d5
 
-loc_664:					  ; CODE XREF: ROM:00000668j
-		move.b	(a5)+,$00000011(a3)
-		dbf	d5,loc_664
+_psgLoop:
+		move.b	(a5)+,$11(a3)
+		dbf	d5,_psgLoop
 		move.w	d0,(a2)
 		movem.l	(a6),d0-a6
 		move	#$2700,sr
 
-loc_676:					  ; CODE XREF: ROM:loc_5F8j
-		bra.s	loc_6E4
-; ---------------------------------------------------------------------------
-SystemInit:	dc.w $8000			  ; DATA XREF: ROM:000005FAt
+_skipColdInit:
+		bra.s	_waitVDP
+SystemInit:	dc.w $8000
 		dc.w $3FFF
 		dc.w $0100
 		dc.l Z80_MEM
@@ -248,21 +223,18 @@ SystemInit:	dc.w $8000			  ; DATA XREF: ROM:000005FAt
 		dc.l $C0000000
 		dc.l $40000010
 		dc.b $9F,$BF,$DF,$FF
-; ---------------------------------------------------------------------------
 
-loc_6E4:					  ; CODE XREF: ROM:loc_676j
+_waitVDP:
 		tst.w	(VDP_CTRL_REG).l
 
-loc_6EA:					  ; CODE XREF: ROM:000006F4j
+_waitDMALoop:
 		move.w	(VDP_CTRL_REG).l,d0
 		andi.w	#$0002,d0
-		bne.s	loc_6EA
-		bra.w	loc_4FE
-
-; =============== S U B	R O U T	I N E =======================================
+		bne.s	_waitDMALoop
+		bra.w	_bootInit
 
 
-InitZ80Driver:					  ; CODE XREF: ROM:00000500p
+InitZ80Driver:
 		movem.l	d0-a1,-(sp)
 		move.w	#$0100,(Z80_BUSREQ_REG0).l
 		move.w	#$0100,(Z80_RESET_REG0).l
@@ -270,10 +242,10 @@ InitZ80Driver:					  ; CODE XREF: ROM:00000500p
 		move.w	#$1F80,d7
 		lea	(SoundDriver).l,a1
 
-loc_71E:					  ; CODE XREF: InitZ80Driver+2Aj
+_copyDriverLoop:
 		move.b	(a1)+,d0
 		bsr.w	WriteAndVerifyReg
-		dbf	d7,loc_71E
+		dbf	d7,_copyDriverLoop
 		move.w	#$0000,(Z80_RESET_REG0).l
 		nop
 		nop
@@ -283,196 +255,149 @@ loc_71E:					  ; CODE XREF: InitZ80Driver+2Aj
 		move.w	#$0000,(Z80_BUSREQ_REG0).l
 		movem.l	(sp)+,d0-a1
 		rts
-; End of function InitZ80Driver
 
-; ---------------------------------------------------------------------------
+; Unreferenced leftover fragment.
 		bsr.w	WriteAndVerifyReg
 		lsr.w	#$08,d0
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-WriteAndVerifyReg:				  ; CODE XREF: InitZ80Driver+26p
-						  ; ROM:0000074Ep ...
+; Writes d0.b to (a0) until the Z80 memory latches it, then advances.
+WriteAndVerifyReg:
 		move.b	d0,(a0)
 		cmp.b	(a0),d0
 		bne.s	WriteAndVerifyReg
 		addq.l	#$01,a0
 		rts
-; End of function WriteAndVerifyReg
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Play sound
-
-Trap00Handler:					  ; DATA XREF: ROM:Trap00o
+; trap #0 - play sound: the word following the trap is the sound ID
+; ($FFFF = use d0 instead), queued into the first free g_SoundQueue
+; slot and sent to the driver by ProcessSoundQueue during VBlank.
+Trap00Handler:
 		movem.l	d0-d1/a0,-(sp)
-		movea.l	$0000000E(sp),a0
+		movea.l	$E(sp),a0
 		move.w	(a0),d1
-		addq.l	#$02,$0000000E(sp)	  ; Get	sound effect ID	and advance PC
+		addq.l	#$02,$E(sp)	  ; Get	sound effect ID	and advance PC
 		cmpi.w	#$FFFF,d1		  ; FFFF - use d0 rather than hard coded value
-		bne.s	loc_774
+		bne.s	_queueSound
 		move.w	d0,d1
 
-loc_774:					  ; CODE XREF: Trap00Handler+12j
-		lea	(unk_FF0FA0).l,a0
-		moveq	#$00000003,d0
+_queueSound:
+		lea	(g_SoundQueue).l,a0
+		moveq	#$03,d0
 
-loc_77C:					  ; CODE XREF: Trap00Handler+20j
+_findSlotLoop:
 		tst.w	(a0)+
-		dbeq	d0,loc_77C
-		move.w	d1,-$00000002(a0)	  ; Queue sound	to be played
+		dbeq	d0,_findSlotLoop
+		move.w	d1,-2(a0)	  ; Queue sound	to be played
 		movem.l	(sp)+,d0-d1/a0
 		rte
-; End of function Trap00Handler
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: noreturn
-
-HandleAddressError:				  ; DATA XREF: ROM:AddressErroro
-
-arg_6		=  $A
-
+; Exception handlers: stash a type tag and the faulting address, then
+; hang in HandleUnexpectedInterrupt.
+HandleAddressError:
 		move.l	#'ADDR',(ExceptType).l
-		move.l	arg_6(sp),(ExceptAddr).l
+		move.l	$A(sp),(ExceptAddr).l
 		bra.s	HandleUnexpectedInterrupt
-; End of function HandleAddressError
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: noreturn
-
-HandleIllegalInst:				  ; DATA XREF: ROM:IllegalInstro
+HandleIllegalInst:
 		move.l	#'BAD ',(ExceptType).l
-		move.l	$00000002(sp),(ExceptAddr).l
+		move.l	2(sp),(ExceptAddr).l
 		bra.s	HandleUnexpectedInterrupt
-; End of function HandleIllegalInst
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: noreturn
-
-HandleDiv0:					  ; DATA XREF: ROM:DivBy0o
+HandleDiv0:
 		move.l	#'ZERO',(ExceptType).l
-		move.l	$00000001(sp),(ExceptAddr).l
+		move.l	1(sp),(ExceptAddr).l
 		bra.s	HandleUnexpectedInterrupt
-; End of function HandleDiv0
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: noreturn
-
-HandleGenericError:				  ; DATA XREF: ROM:BusErroro
-						  ; ROM:CHKInstro ...
+HandleGenericError:
 		move.l	#'OTHR',(ExceptType).l
-		move.l	$00000002(sp),(ExceptAddr).l
+		move.l	2(sp),(ExceptAddr).l
 		bra.w	*+4
-; ---------------------------------------------------------------------------
 
-HandleUnexpectedInterrupt:			  ; CODE XREF: HandleAddressError+12j
-						  ; HandleIllegalInst+12j ...
+HandleUnexpectedInterrupt:
 		nop
 		nop
 		bra.s	HandleUnexpectedInterrupt
-; End of function HandleGenericError
 
-; ---------------------------------------------------------------------------
 
-HandleIRQ7:					  ; CODE XREF: ROM:000007E6j
-						  ; DATA XREF: ROM:IRQ7o
+HandleIRQ7:
 		nop
 		bra.s	HandleIRQ7
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-Trap01Handler:					  ; DATA XREF: ROM:Trap01o
+; trap #1 - run the text command word that follows the trap.
+Trap01Handler:
 		movem.l	d0/a0,-(sp)
-		movea.l	$0000000A(sp),a0
+		movea.l	$A(sp),a0
 		move.w	(a0),d0
-		addq.l	#$02,$0000000A(sp)	  ; Retrieve data from code and	fix sp
+		addq.l	#$02,$A(sp)	  ; Retrieve data from code and	fix sp
 		jsr	(j_RunTextCmd).l
 		movem.l	(sp)+,d0/a0
 		rte
-; End of function Trap01Handler
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-Trap02Handler:					  ; DATA XREF: ROM:Trap02o
+; trap #2 - run a text command fetched from table a0, indexed by the
+; word that follows the trap.
+Trap02Handler:
 		movem.l	d0/a1,-(sp)
-		movea.l	$0000000A(sp),a1
+		movea.l	$A(sp),a1
 		move.w	(a1),d0
 		move.w	(a0,d0.w),d0
-		addq.l	#$02,$0000000A(sp)
+		addq.l	#$02,$A(sp)
 		jsr	(j_RunTextCmd).l
 		movem.l	(sp)+,d0/a1
 		rte
-; End of function Trap02Handler
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-WaitUntilZ80Ready:				  ; CODE XREF: ROM:00000856p
-						  ; DATA XREF: ROM:00000470t
+; Waits frame by frame until the sound driver's ready byte at Z80
+; $1303 reads non-zero.
+WaitUntilZ80Ready:
 		movem.w	d0,-(sp)
 
-loc_824:					  ; CODE XREF: WaitUntilZ80Ready+2Aj
+_z80WaitFrame:
 		bsr.w	WaitUntilVBlank
 		move.w	#$0100,(Z80_BUSREQ_REG0).l
 
-loc_830:					  ; CODE XREF: WaitUntilZ80Ready+18j
+_z80BusLoop:
 		btst	#$00,(Z80_BUSREQ_REG0).l
-		bne.s	loc_830
+		bne.s	_z80BusLoop
 		move.b	(Z80_MEM+$1303).l,d0
 		move.w	#$0000,(Z80_BUSREQ_REG0).l
 		tst.b	d0
-		beq.s	loc_824
+		beq.s	_z80WaitFrame
 		movem.w	(sp)+,d0
 		rts
-; End of function WaitUntilZ80Ready
 
-; ---------------------------------------------------------------------------
 
-RestoreBGM:					  ; CODE XREF: CheckOpenChest+BEp
-						  ; CheckOpenChest+F8p
-						  ; DATA XREF: ...
+; Re-sends the current room's music (g_BGM) to the driver.
+RestoreBGM:
 		movem.w	d0,-(sp)
 		bsr.s	WaitUntilZ80Ready
 		move.b	(g_BGM).l,d0
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_LoadFromD0
-; ---------------------------------------------------------------------------
 		movem.w	(sp)+,d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-GetVDPReg:					  ; CODE XREF: j_GetVDPRegj
+; VDP register access goes through the shadow copy of all registers at
+; g_VDPReg00_ModeSet1: Get/Set take a full $8rXX command word in d0,
+; Or/Mask take a register number in d0 and an OR/AND mask in d1.
+GetVDPReg:
 		movem.l	a0,-(sp)
 		lea	(g_VDPReg00_ModeSet1).l,a0
 		add.w	d0,d0
 		move.w	(a0,d0.w),d0
 		movem.l	(sp)+,a0
 		rts
-; End of function GetVDPReg
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetVDPReg:					  ; CODE XREF: j_SetVDPRegj
-						  ; ResetVDPAndClearRAM+6p ...
+SetVDPReg:
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_VDPReg00_ModeSet1).l,a0
 		move.w	d0,(VDP_CTRL_REG).l
@@ -482,144 +407,85 @@ SetVDPReg:					  ; CODE XREF: j_SetVDPRegj
 		move.w	d1,(a0,d0.w)
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function SetVDPReg
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-OrVDPReg:					  ; CODE XREF: j_OrVDPRegj
-						  ; EnableDisplay+8j ...
+OrVDPReg:
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_VDPReg00_ModeSet1).l,a0
 		add.w	d0,d0
-		or.b	d1,$00000001(a0,d0.w)
-		bra.s	loc_8C2
-; End of function OrVDPReg
+		or.b	d1,1(a0,d0.w)
+		bra.s	_writeReg
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-MaskVDPReg:					  ; CODE XREF: j_MaskVDPRegj
-						  ; DisableDisplayAndInts-12j ...
+MaskVDPReg:
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_VDPReg00_ModeSet1).l,a0
 		add.w	d0,d0
-		and.b	d1,$00000001(a0,d0.w)
+		and.b	d1,1(a0,d0.w)
 
-loc_8C2:					  ; CODE XREF: OrVDPReg+10j
+_writeReg:
 		move.w	(a0,d0.w),d1
 		move.w	d1,(VDP_CTRL_REG).l
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function MaskVDPReg
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EnableDisplay:					  ; CODE XREF: j_EnableDisplayj
-						  ; EnableDisplayAndIntsp ...
+EnableDisplay:
 		move.w	#$0001,d0
 		move.w	#$0040,d1
 		bra.s	OrVDPReg
-; End of function EnableDisplay
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR DisableDisplayAndInts
-
-DisableDisplay:					  ; CODE XREF: ROM:00000218j
-						  ; DisableDisplayAndInts+2j
+DisableDisplay:
 		move.w	#$0001,d0
 		move.w	#$00BF,d1
 		bra.s	MaskVDPReg
-; END OF FUNCTION CHUNK	FOR DisableDisplayAndInts
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-EnableInterrupts:				  ; CODE XREF: j_EnableInterruptsj
-						  ; EnableDisplayAndInts+2j ...
+EnableInterrupts:
 		move	#$2300,sr
 		rts
-; End of function EnableInterrupts
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisableInterrupts:				  ; CODE XREF: j_DisableInterruptsj
-						  ; DisableDisplayAndIntsp ...
+DisableInterrupts:
 		move	#$2700,sr
 		rts
-; End of function DisableInterrupts
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EnableDisplayAndInts:				  ; CODE XREF: j_EnableDisplayAndIntsj
-						  ; ROM:00008DB4p ...
+EnableDisplayAndInts:
 		bsr.s	EnableDisplay
 		bra.s	EnableInterrupts
-; End of function EnableDisplayAndInts
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisableDisplayAndInts:				  ; CODE XREF: j_DisableDisplayAndIntsj
-						  ; ROM:loc_4CEp ...
-
-; FUNCTION CHUNK AT 000008DC SIZE 0000000A BYTES
-
+DisableDisplayAndInts:
 		bsr.s	DisableInterrupts
 		bra.s	DisableDisplay
-; End of function DisableDisplayAndInts
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisableVDPSpriteUpdate:				  ; CODE XREF: j_DisableVDPSpriteUpdatej
-						  ; ROM:00008DC2p
+DisableVDPSpriteUpdate:
 		bclr	#$01,(g_InterruptFlags).l
 		rts
-; End of function DisableVDPSpriteUpdate
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EnableVDPSpriteUpdate:				  ; CODE XREF: j_EnableVDPSpriteUpdatej
+EnableVDPSpriteUpdate:
 		bset	#$01,(g_InterruptFlags).l
 		rts
-; End of function EnableVDPSpriteUpdate
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CopyBasePalleteToActivePalette:			  ; CODE XREF: j_CopyBasePalleteToActivePalettej
-						  ; ClearAndInitGraphics+6Ep ...
+; Copies all four base palettes to the active set, then falls through
+; to queue the CRAM DMA.
+CopyBasePaletteToActivePalette:
 		movem.l	d7/a5-a6,-(sp)
 		lea	(g_Pal0Base).l,a5
 		lea	(g_Pal0Active).l,a6
 		move.w	#$003F,d7
 
-loc_922:					  ; CODE XREF: CopyBasePalleteToActivePalette+16j
+_copyPalLoop:
 		move.w	(a5)+,(a6)+
-		dbf	d7,loc_922
+		dbf	d7,_copyPalLoop
 		movem.l	(sp)+,d7/a5-a6
-; End of function CopyBasePalleteToActivePalette
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-QueueFullPaletteDMA:				  ; CODE XREF: j_QueueFullPaletteDMAj
-						  ; DarkenPalette+1Cp ...
+QueueFullPaletteDMA:
 		movem.l	a6,-(sp)
 		movea.l	(g_DMAOpQueuePtr).l,a6
 		move.l	#$8F029400,(a6)+	  ; #15	- Auto-increment 2, #20	- DMA Len hi 0
@@ -630,215 +496,161 @@ QueueFullPaletteDMA:				  ; CODE XREF: j_QueueFullPaletteDMAj
 		addq.b	#$01,(g_NumQueuedDMAOps).l
 		movem.l	(sp)+,a6		  ; DMA	Transfer 128 bytes from	address	0xFF0ED0
 		rts
-; End of function QueueFullPaletteDMA
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadPaletteToRAM:				  ; CODE XREF: j_LoadPaletteToRAMj
+LoadPaletteToRAM:
 		lea	(g_Pal0Base).l,a1
-; End of function LoadPaletteToRAM
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CopyPalette:					  ; CODE XREF: j_CopyPalettej
-						  ; InitInvDisplay+1Ep
+CopyPalette:
 		move.w	#$000F,d0
-; End of function CopyPalette
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-WordCopy:					  ; CODE XREF: ROM:00000332j
-						  ; WordCopy+2j ...
+WordCopy:
 		move.w	(a0)+,(a1)+
 		dbf	d0,WordCopy
 		rts
-; End of function WordCopy
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitFadeFromBlackParams:			  ; CODE XREF: j_InitFadeFromBlackParamsj
-						  ; FadeFromBlackp ...
+InitFadeFromBlackParams:
 		move.w	#$0C00,(g_PaletteDarkenCurrentBrightness).l
 		move.w	#-$0200,(g_PaletteDarkenExtent).l
 		clr.w	(g_PaletteDarkenTargetBrightness).l
 		rts
-; End of function InitFadeFromBlackParams
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FadeFromBlack:					  ; CODE XREF: j_FadeFromBlackj
-						  ; ROM:00008DF0j
+FadeFromBlack:
 		bsr.s	InitFadeFromBlackParams
 		bra.w	DoChangePaletteBrightness
-; End of function FadeFromBlack
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitFadeToBlackParams:				  ; CODE XREF: j_InitFadeToBlackParamsj
-						  ; FadeToBlackp ...
+InitFadeToBlackParams:
 		move.w	#$0200,(g_PaletteDarkenCurrentBrightness).l
 		move.w	#$0200,(g_PaletteDarkenExtent).l
 		clr.w	(g_PaletteDarkenTargetBrightness).l
 		rts
-; End of function InitFadeToBlackParams
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FadeToBlack:					  ; CODE XREF: j_FadeToBlackj
-						  ; ROM:000004E4p
+FadeToBlack:
 		bsr.s	InitFadeToBlackParams
 
-DoChangePaletteBrightness:			  ; CODE XREF: FadeFromBlack+2j
+DoChangePaletteBrightness:
 		move.w	#$0006,d6
 
-loc_9AE:					  ; CODE XREF: FadeToBlack+10j
+_fadeStepLoop:
 		bsr.s	DarkenActivePalette
 		move.w	#$0001,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
-		dbf	d6,loc_9AE
+		dbf	d6,_fadeStepLoop
 		rts
-; End of function FadeToBlack
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DarkenActivePalette:				  ; CODE XREF: ROM:00000374j
-						  ; FadeToBlack:loc_9AEp
+DarkenActivePalette:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		move.w	#$003F,d5
-; End of function DarkenActivePalette
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DarkenPalette:					  ; CODE XREF: j_DarkenPalettej
-						  ; FadeInFromDarkness+2Ap ...
+DarkenPalette:
 		move.w	(g_PaletteDarkenCurrentBrightness).l,d3
 		move.w	(g_PaletteDarkenExtent).l,d4
 		move.w	(g_PaletteDarkenTargetBrightness).l,d7
 
-loc_9E0:					  ; CODE XREF: DarkenPalette+18j
+_darkenLoop:
 		move.w	(a0)+,d0
 		bsr.s	DarkenColour
 		move.w	d0,(a1)+
-		dbf	d5,loc_9E0
+		dbf	d5,_darkenLoop
 		bsr.w	QueueFullPaletteDMA
 		bsr.w	EnableDMAQueueProcessing
 		add.w	d4,d3
 		move.w	d3,(g_PaletteDarkenCurrentBrightness).l
 		rts
-; End of function DarkenPalette
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DarkenColour:					  ; CODE XREF: DarkenPalette+14p
-						  ; sub_E7AA+24p
+; d0 = BGR colour word. Subtracts the step in d3 from each 3-bit
+; channel (blue step in d3 bits 8-11, shifted down for green then
+; red), snapping a channel to d7 when it underflows.
+DarkenColour:
 		move.w	d0,d1
 		andi.w	#$0E00,d1
 		sub.w	d3,d1
 		andi.w	#$1E00,d1
 		cmpi.w	#$1000,d1
-		bcs.s	loc_A10
+		bcs.s	_dkGreen
 		move.w	d7,d1
 
-loc_A10:					  ; CODE XREF: DarkenColour+10j
+_dkGreen:
 		lsr.w	#$04,d3
 		move.w	d0,d2
 		andi.w	#$00E0,d2
 		sub.w	d3,d2
 		andi.w	#$01E0,d2
 		cmpi.w	#$0100,d2
-		bcs.s	loc_A26
+		bcs.s	_dkRed
 		move.w	d7,d2
 
-loc_A26:					  ; CODE XREF: DarkenColour+26j
+_dkRed:
 		lsr.w	#$04,d3
 		andi.w	#$000E,d0
 		sub.w	d3,d0
 		andi.w	#$001E,d0
 		cmpi.w	#$0010,d0
-		bcs.s	loc_A3A
+		bcs.s	_dkDone
 		move.w	d7,d0
 
-loc_A3A:					  ; CODE XREF: DarkenColour+3Aj
+_dkDone:
 		lsl.w	#$08,d3
 		or.w	d2,d0
 		or.w	d1,d0
 		rts
-; End of function DarkenColour
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FadeFromWhite:					  ; CODE XREF: j_FadeFromWhitej
+FadeFromWhite:
 		move.w	#$0C00,d3
 		move.w	#-$0200,d4
 		move.w	#$0E00,d7
 		bra.w	DoWhiteFade
-; ---------------------------------------------------------------------------
 
-FadeToWhite:					  ; CODE XREF: j_FadeToWhitej
+FadeToWhite:
 		move.w	#$0200,d3
 		move.w	#$0200,d4
 		move.w	#$0E00,d7
 
-DoWhiteFade:					  ; CODE XREF: FadeFromWhite+Cj
+DoWhiteFade:
 		move.w	#$0006,d6
 
-loc_A62:					  ; CODE XREF: FadeFromWhite+4Cj
+_whStepLoop:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		move.w	#$003F,d5
 
-loc_A72:					  ; CODE XREF: FadeFromWhite+36j
+_whColourLoop:
 		move.w	(a0)+,d0
 		bsr.s	BrightenColour
 		move.w	d0,(a1)+
-		dbf	d5,loc_A72
+		dbf	d5,_whColourLoop
 		bsr.w	QueueFullPaletteDMA
 		bsr.w	EnableDMAQueueProcessing
 		move.w	#$0004,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames
 		add.w	d4,d3
-		dbf	d6,loc_A62
+		dbf	d6,_whStepLoop
 		rts
-; End of function FadeFromWhite
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-BrightenColour:					  ; CODE XREF: FadeFromWhite+32p
-						  ; sub_E8A8+34p
+; As DarkenColour but adding towards the ceiling in d7 (usually $0E
+; per channel = white).
+BrightenColour:
 		move.w	d0,d1
 		andi.w	#$0E00,d1
 		add.w	d3,d1
 		andi.w	#$1E00,d1
 		cmpi.w	#$1000,d1
-		bcs.s	loc_AA8
+		bcs.s	_brGreen
 		move.w	d7,d1
 
-loc_AA8:					  ; CODE XREF: BrightenColour+10j
+_brGreen:
 		lsr.w	#$04,d3
 		lsr.w	#$04,d7
 		move.w	d0,d2
@@ -846,38 +658,32 @@ loc_AA8:					  ; CODE XREF: BrightenColour+10j
 		add.w	d3,d2
 		andi.w	#$01E0,d2
 		cmpi.w	#$0100,d2
-		bcs.s	loc_AC0
+		bcs.s	_brRed
 		move.w	d7,d2
 
-loc_AC0:					  ; CODE XREF: BrightenColour+28j
+_brRed:
 		lsr.w	#$04,d3
 		lsr.w	#$04,d7
 		andi.w	#$000E,d0
 		add.w	d3,d0
 		andi.w	#$001E,d0
 		cmpi.w	#$0010,d0
-		bcs.s	loc_AD6
+		bcs.s	_brDone
 		move.w	d7,d0
 
-loc_AD6:					  ; CODE XREF: BrightenColour+3Ej
+_brDone:
 		lsl.w	#$08,d3
 		lsl.w	#$08,d7
 		or.w	d2,d0
 		or.w	d1,d0
 		rts
-; End of function BrightenColour
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearAndRefreshVDPSpriteTableDMA:		  ; CODE XREF: j_CopyVDPSpriteTableDMAj
-						  ; LoadGame+Cp ...
+ClearAndRefreshVDPSpriteTableDMA:
 		bsr.s	ClearScrollPlanes
 		bsr.s	ClearVDPSpriteTable
 
-UpdateVDPSpriteTableDMA:			  ; CODE XREF: ROM:0000026Cj
-						  ; RefreshVDPSpriteTable+Ap
+UpdateVDPSpriteTableDMA:
 		lea	(VDP_CTRL_REG).l,a6
 		move.w	#$8134,(a6)		  ; #1 - Enable	display, HInt, HV counters
 		move.l	#$94019340,(a6)		  ; #20	- DMA Len hi 0x01, #19 - DMA Len lo 0x40
@@ -890,35 +696,25 @@ UpdateVDPSpriteTableDMA:			  ; CODE XREF: ROM:0000026Cj
 		move.w	(g_DMADestHi).l,(a6)
 		move.w	(g_VDPReg01_ModeSet2).l,(a6)
 		rts
-; End of function ClearAndRefreshVDPSpriteTableDMA
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearVDPSpriteTable:				  ; CODE XREF: j_ClearVDPSpriteTablej
-						  ; ClearAndInitGraphics+62p ...
+ClearVDPSpriteTable:
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_VDPSpr00_Y).l,a0
-		moveq	#$0000004F,d1
-		moveq	#$00000001,d0
+		moveq	#$4F,d1
+		moveq	#$01,d0
 
-loc_B24:					  ; CODE XREF: ClearVDPSpriteTable+14j
+_clrSprLoop:
 		move.l	d0,(a0)+
 		clr.l	(a0)+
 		addq.b	#$01,d0
-		dbf	d1,loc_B24
-		clr.b	-$00000005(a0)
+		dbf	d1,_clrSprLoop
+		clr.b	-5(a0)
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function ClearVDPSpriteTable
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearScrollPlanes:				  ; CODE XREF: ROM:00000260j
-						  ; ClearAndRefreshVDPSpriteTableDMAp ...
+ClearScrollPlanes:
 		movem.l	d7/a6,-(sp)
 		move.w	#$C000,d0
 		move.w	#$0FFF,d1
@@ -934,89 +730,67 @@ ClearScrollPlanes:				  ; CODE XREF: ROM:00000260j
 						  ; d2 - Fill pattern
 		movem.l	(sp)+,d7/a6
 		rts
-; End of function ClearScrollPlanes
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-WaitUntilVBlank:				  ; CODE XREF: j_WaitUntilVBlankj
-						  ; WaitUntilZ80Ready:loc_824p	...
+WaitUntilVBlank:
 		bsr.w	Return
 		bsr.w	UpdateFridayAnimation
 		bset	#$07,(g_InterruptFlags).l
 
-loc_B6E:					  ; CODE XREF: WaitUntilVBlank+18j
+_vblankWait:
 		btst	#$07,(g_InterruptFlags).l
-		bne.s	loc_B6E
+		bne.s	_vblankWait
 		rts
-; End of function WaitUntilVBlank
 
 
-; =============== S U B	R O U T	I N E =======================================
+; Sleeps for d0	frames.
 
-; Sleeps for d0	frames
-
-Sleep:						  ; CODE XREF: j_Sleepj
-						  ; ROM:000004CAp ...
+Sleep:
 		movem.w	d0,-(sp)
 
-loc_B7E:					  ; CODE XREF: Sleep+6j
+_sleepLoop:
 		bsr.s	WaitUntilVBlank
-		dbf	d0,loc_B7E
+		dbf	d0,_sleepLoop
 		movem.w	(sp)+,d0
 		rts
-; End of function Sleep
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EnableVRAMCopyQueueProcessing:			  ; CODE XREF: j_EnableProcessingOfVRAMCopyQueuej
-						  ; ROM:FlushVRAMCopyQueuep ...
+EnableVRAMCopyQueueProcessing:
 		bset	#$00,(g_InterruptFlags).l
 		rts
-; End of function EnableVRAMCopyQueueProcessing
 
-; ---------------------------------------------------------------------------
 
-FlushVRAMCopyQueue:				  ; CODE XREF: ROM:0000029Cj
-						  ; ROM:00000CF8j
+FlushVRAMCopyQueue:
 		bsr.s	EnableVRAMCopyQueueProcessing
 		bra.w	WaitUntilVBlank
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-EnableDMAQueueProcessing:			  ; CODE XREF: j_EnableDMAQueueProcessingj
-						  ; ClearAndInitGraphics+72p ...
+EnableDMAQueueProcessing:
 		bset	#$03,(g_InterruptFlags).l
 		rts
-; End of function EnableDMAQueueProcessing
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FlushDMACopyQueue:				  ; CODE XREF: j_FlushDMACopyQueuej
-						  ; LoadRoom_0+50p ...
+FlushDMACopyQueue:
 		bsr.s	EnableDMAQueueProcessing
 		bra.w	WaitUntilVBlank
-; End of function FlushDMACopyQueue
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_BAA:					  ; CODE XREF: ROM:0000027Ej
+; The routines from here to CopyToPlaneB write tilemap cells (d0 =
+; tile word, d5/d6 = cell x/y relative to the scroll position) to
+; plane A/B VRAM via the VRAM copy queue, mirroring each write into
+; the RAM copies of the planes at $FFC000/$FFE000. They assume a
+; 32-cell-wide plane (row stride $40), which doesn't match the
+; game's 64-cell setup, and are only reachable through unreferenced
+; thunks - leftovers from an earlier engine.
+WritePlaneACell:
 		movem.l	d7/a4-a5,-(sp)
 		movea.l	(g_VRAMCopyQueuePtr).l,a4
-		moveq	#$00000000,d7
+		moveq	#$00,d7
 		move.w	d7,(a4)+
-		bsr.s	sub_BF6
+		bsr.s	CalcPlaneCellAddrs
 		move.w	a6,(a4)+
 
-loc_BBC:					  ; CODE XREF: ROM:00000BF4j
+_cellFinish:
 		move.w	d0,(a4)+
 		move.l	a4,(g_VRAMCopyQueuePtr).l
 		move.b	#$01,(g_VRAMCopyQueueLen).l
@@ -1027,27 +801,25 @@ loc_BBC:					  ; CODE XREF: ROM:00000BF4j
 		move.w	d0,(a6)
 		movem.l	(sp)+,d7/a4-a5
 		rts
-; End of function sub_BAA
 
-; ---------------------------------------------------------------------------
 
-loc_BE0:					  ; CODE XREF: ROM:00000284j
+WritePlaneBCell:
 		movem.l	d7/a4-a5,-(sp)
 		movea.l	(g_VRAMCopyQueuePtr).l,a4
-		moveq	#$00000000,d7
+		moveq	#$00,d7
 		move.w	d7,(a4)+		  ; Single word	copy
-		bsr.s	sub_BF6
-		bsr.s	sub_C66
+		bsr.s	CalcPlaneCellAddrs
+		bsr.s	SwapPlaneAddr
 		move.w	a6,(a4)+
-		bra.s	loc_BBC
-
-; =============== S U B	R O U T	I N E =======================================
+		bra.s	_cellFinish
 
 
-sub_BF6:					  ; CODE XREF: ROM:0000028Aj
-						  ; sub_BAA+Ep	...
+; Converts cell x/y in d5/d6 into scroll-adjusted VRAM addresses:
+; returns a6 with the plane A ($C000-based) address in the low word
+; and the plane B ($E000-based) address in the high word.
+CalcPlaneCellAddrs:
 		movem.l	d5-d7,-(sp)
-		lea	($0000E000).l,a6	  ; 0xE000 - Scroll B data
+		lea	($E000).l,a6		  ; 0xE000 - Scroll B data
 		lsl.w	#$01,d5
 		move.w	(g_HorizontalScrollData+2).l,d7
 		lsr.w	#$02,d7
@@ -1060,10 +832,10 @@ sub_BF6:					  ; CODE XREF: ROM:0000028Aj
 		andi.w	#$07C0,d6
 		or.w	d6,d5
 		adda.w	d5,a6
-		bsr.s	sub_C66
+		bsr.s	SwapPlaneAddr
 		movem.l	(sp)+,d5-d6
 		movem.l	d5-d6,-(sp)
-		adda.l	#$0000C000,a6
+		adda.l	#$C000,a6
 		lsl.w	#$01,d5
 		move.w	(g_HorizontalScrollData).l,d7
 		lsr.w	#$02,d7
@@ -1080,93 +852,89 @@ sub_BF6:					  ; CODE XREF: ROM:0000028Aj
 		andi.w	#$003E,d5
 		andi.w	#$07C0,d6
 		rts
-; End of function sub_BF6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_C66:					  ; CODE XREF: ROM:00000BF0p
-						  ; sub_BF6+2Ep ...
+; Swaps the two packed plane addresses in a6 (selects plane B).
+SwapPlaneAddr:
 		movem.l	d7,-(sp)
 		move.l	a6,d7
 		swap	d7
 		movea.l	d7,a6
 		movem.l	(sp)+,d7
 		rts
-; End of function sub_C66
 
-; ---------------------------------------------------------------------------
 
-loc_C76:					  ; CODE XREF: ROM:000002AEj
+; Copies a g_PlaneCopySize rectangle of cells from a4 (g_Buffer for
+; the first entry point) to the plane and its RAM mirror, one queued
+; row at a time.
+CopyBufferToPlaneA:
 		lea	(g_Buffer).l,a4
 
-loc_C7C:					  ; CODE XREF: ROM:000002BAj
+CopyToPlaneA:
 		movem.l	d5-d6,-(sp)
-		move.w	(word_FF0FAC).l,d5
+		move.w	(g_PlaneCopyXY).l,d5
 		lsr.w	#$08,d5
-		move.w	(word_FF0FAC).l,d6
+		move.w	(g_PlaneCopyXY).l,d6
 		andi.w	#$00FF,d6
-		bsr.w	sub_BF6
+		bsr.w	CalcPlaneCellAddrs
 		movem.l	(sp)+,d5-d6
 
-loc_C9A:					  ; CODE XREF: ROM:00000D1Ej
+_copyRows:
 		movem.l	d3-d4/a3-a6,-(sp)
 		clr.l	d3
 		move.w	a6,d3
 		ori.l	#RAM_Start,d3
 		movea.l	d3,a3
 		movea.l	(g_VRAMCopyQueuePtr).l,a5
-		move.w	(word_FF0FAE).l,d3
-		andi.l	#$000000FF,d3
+		move.w	(g_PlaneCopySize).l,d3
+		andi.l	#$FF,d3
 		move.b	d3,(g_VRAMCopyQueueLen).l
 		subq.w	#$01,d3
 
-loc_CC4:					  ; CODE XREF: ROM:00000CF0j
+_rowLoop:
 		movem.l	a3,-(sp)
-		move.w	(word_FF0FAE).l,d4
+		move.w	(g_PlaneCopySize).l,d4
 		andi.l	#$0000FF00,d4
 		lsr.w	#$08,d4
 		subq.w	#$01,d4
 		move.w	d4,(a5)+
 		move.w	a6,(a5)+
 
-loc_CDC:					  ; CODE XREF: ROM:00000CE0j
+_cellLoop:
 		move.w	(a4),(a5)+
 		move.w	(a4)+,(a3)+
-		dbf	d4,loc_CDC
+		dbf	d4,_cellLoop
 		adda.w	#$0040,a6
 		movem.l	(sp)+,a3
 		adda.w	#$0040,a3
-		dbf	d3,loc_CC4
+		dbf	d3,_rowLoop
 		movem.l	(sp)+,d3-d4/a3-a6
 		bra.w	FlushVRAMCopyQueue
-; ---------------------------------------------------------------------------
 
-loc_CFC:					  ; CODE XREF: ROM:000002B4j
+CopyToPlaneB:
 		movem.l	d5-d6,-(sp)
-		move.w	(word_FF0FAC).l,d5
+		move.w	(g_PlaneCopyXY).l,d5
 		lsr.w	#$08,d5
-		move.w	(word_FF0FAC).l,d6
+		move.w	(g_PlaneCopyXY).l,d6
 		andi.w	#$00FF,d6
-		bsr.w	sub_BF6
+		bsr.w	CalcPlaneCellAddrs
 		movem.l	(sp)+,d5-d6
-		bsr.w	sub_C66
-		bra.w	loc_C9A
+		bsr.w	SwapPlaneAddr
+		bra.w	_copyRows
 
-; =============== S U B	R O U T	I N E =======================================
 
-; d0 = DMA Length
+; Immediate VRAM DMA with interrupts disabled.
+; d0 = DMA Length (words)
 ; a0 = DMA Source
 ; a1 = DMA Destination
+; Transfers that cross a 128KB source bank are split into two DMAs.
 
-DoDMACopy:					  ; CODE XREF: j_DoDMACopy_1j
-						  ; GetTileset+5Cp ...
+DoDMACopy:
 		movem.l	d2/d7,-(sp)
 		move	sr,-(sp)
 		move	#$2700,sr		  ; Disable interrupts
 
-loc_D2C:					  ; CODE XREF: DoDMACopy+A8j
+_dmaChunk:
 		movem.l	d0/a0-a1/a6,-(sp)
 		lea	(VDP_CTRL_REG).l,a6	  ; VDP	Control
 		move.w	(g_VDPReg01_ModeSet2).l,d7
@@ -1215,43 +983,41 @@ loc_D2C:					  ; CODE XREF: DoDMACopy+A8j
 		move.l	a0,d2
 		swap	d2
 		cmp.b	d2,d7
-		beq.s	loc_DCE
+		beq.s	_dmaDone
 		swap	d2
 		suba.w	d2,a1
 		lsr.w	#$01,d2
 		move.w	d2,d0
 		clr.w	d2
 		movea.l	d2,a0
-		bra.w	loc_D2C
-; ---------------------------------------------------------------------------
+		bra.w	_dmaChunk
 
-loc_DCE:					  ; CODE XREF: DoDMACopy+9Aj
+_dmaDone:
 		move	(sp)+,sr
 		movem.l	(sp)+,d2/d7
 		rts
-; End of function DoDMACopy
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-; d0 - DMA Length
+; Queues a VRAM DMA (same registers as DoDMACopy) into g_DMAOpQueue
+; for ProcessQueuedDMAOps to run during the next VBlank/HBlank,
+; splitting on 128KB source bank crossings.
+; d0 - DMA Length (words)
 ; a0 - DMA Source
-; a1 - DMA Copy
+; a1 - DMA Destination
 
-QueueDMAOp:					  ; CODE XREF: j_QueueDMAOpj
-						  ; ROM:j_QueueDMAOp_0j ...
+QueueDMAOp:
 		movem.l	d2/d7,-(sp)
 
-loc_DDA:					  ; CODE XREF: QueueDMAOp+84j
+_queueChunk:
 		movem.l	d0/a0-a1/a6,-(sp)
 		movea.l	(g_DMAOpQueuePtr).l,a6
 		move.w	#$8F02,(a6)+
 		move.l	#$94009300,(a6)+	  ; DMA	LENGTH (Regs #19 and #20)
-		movep.w	d0,-$0003(a6)
+		movep.w	d0,-$03(a6)
 		move.l	a0,d0
 		lsr.l	#$01,d0
 		move.l	#$96009500,(a6)+	  ; DMA	SOURCE ADDR LOW	(Regs #22 and #21)
-		movep.w	d0,-$0003(a6)
+		movep.w	d0,-$03(a6)
 		move.l	a0,d0
 		swap	d0
 		lsr.w	#$01,d0
@@ -1269,7 +1035,7 @@ loc_DDA:					  ; CODE XREF: QueueDMAOp+84j
 		move.l	a6,(g_DMAOpQueuePtr).l
 		addq.b	#$01,(g_NumQueuedDMAOps).l
 		movem.l	(sp)+,d0/a0-a1/a6
-		moveq	#$00000000,d2
+		moveq	#$00,d2
 		move.w	d0,d2
 		add.w	d2,d2
 		move.l	a0,d7
@@ -1279,26 +1045,22 @@ loc_DDA:					  ; CODE XREF: QueueDMAOp+84j
 		move.l	a0,d2
 		swap	d2
 		cmp.b	d2,d7
-		beq.s	loc_E5E
+		beq.s	_queueDone
 		swap	d2
 		suba.w	d2,a1
 		lsr.w	#$01,d2
-		beq.s	loc_E5E
+		beq.s	_queueDone
 		move.w	d2,d0
 		clr.w	d2
 		movea.l	d2,a0
-		bra.w	loc_DDA
-; ---------------------------------------------------------------------------
+		bra.w	_queueChunk
 
-loc_E5E:					  ; CODE XREF: QueueDMAOp+74j
-						  ; QueueDMAOp+7Cj
+_queueDone:
 		movem.l	(sp)+,d2/d7
 		rts
-; End of function QueueDMAOp
 
-; ---------------------------------------------------------------------------
 
-SetVRAMAddressOnVDP:				  ; CODE XREF: ROM:00000290j
+SetVRAMAddressOnVDP:
 		movem.w	d7,-(sp)
 		move.w	a6,d7
 		andi.w	#$3FFF,d7
@@ -1311,11 +1073,8 @@ SetVRAMAddressOnVDP:				  ; CODE XREF: ROM:00000290j
 		movem.w	(sp)+,d7
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-QueueHScrollDMAUpdate:				  ; CODE XREF: j_QueueHScrollDMAUpdatej
-						  ; ClearAndInitGraphics+66p ...
+QueueHScrollDMAUpdate:
 		movem.l	a6,-(sp)
 		movea.l	(g_DMAOpQueuePtr).l,a6
 		move.l	#$8F029402,(a6)+	  ; Auto-increment = 2,	DMA Len	Hi = 0x02
@@ -1328,45 +1087,30 @@ QueueHScrollDMAUpdate:				  ; CODE XREF: j_QueueHScrollDMAUpdatej
 		addq.b	#$01,(g_NumQueuedDMAOps).l
 		movem.l	(sp)+,a6
 		rts
-; End of function QueueHScrollDMAUpdate
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FillHScrollData:				  ; CODE XREF: j_FillHScrollDataj
-						  ; InitScrollRegs+26p	...
+FillHScrollData:
 		movem.l	d7/a6,-(sp)
 		lea	(g_HorizontalScrollData).l,a6
 
-loc_EC8:					  ; CODE XREF: FillHScrollDataOffset1+Aj
+_fillHScroll:
 		move.w	#$00FF,d7
 
-loc_ECC:					  ; CODE XREF: FillHScrollData+12j
+_fillHLoop:
 		move.w	d6,(a6)+
 		addq.w	#$02,a6
-		dbf	d7,loc_ECC
+		dbf	d7,_fillHLoop
 		movem.l	(sp)+,d7/a6
 		bra.s	QueueHScrollDMAUpdate
-; End of function FillHScrollData
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FillHScrollDataOffset1:				  ; CODE XREF: j_FillHScrollDataOffset1j
-						  ; CheckForMenuOpen+64p ...
+FillHScrollDataOffset1:
 		movem.l	d7/a6,-(sp)
 		lea	((g_HorizontalScrollData+2)).l,a6
-		bra.s	loc_EC8
-; End of function FillHScrollDataOffset1
+		bra.s	_fillHScroll
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-QueueVSRAMUpdate:				  ; CODE XREF: j_QueueVSRAMUpdatej
-						  ; ClearAndInitGraphics+6Ap ...
+QueueVSRAMUpdate:
 		movem.l	a6,-(sp)
 		movea.l	(g_DMAOpQueuePtr).l,a6
 		move.l	#$8F029400,(a6)+	  ; Auto-increment 2, DMA Len Hi 0
@@ -1379,48 +1123,34 @@ QueueVSRAMUpdate:				  ; CODE XREF: j_QueueVSRAMUpdatej
 		addq.b	#$01,(g_NumQueuedDMAOps).l
 		movem.l	(sp)+,a6
 		rts
-; End of function QueueVSRAMUpdate
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FillVSRAM:					  ; CODE XREF: j_FillVSRAMj
-						  ; InitScrollRegs+46p
+FillVSRAM:
 		movem.l	d7/a6,-(sp)
 		lea	(g_VSRAMData).l,a6
 
-loc_F24:					  ; CODE XREF: FillVSRAMOffset1+Aj
+_fillVSRAM:
 		move.w	#$0013,d7
 
-loc_F28:					  ; CODE XREF: FillVSRAM+12j
+_fillVLoop:
 		move.w	d6,(a6)+
 		addq.w	#$02,a6
-		dbf	d7,loc_F28
+		dbf	d7,_fillVLoop
 		movem.l	(sp)+,d7/a6
 		bra.s	QueueVSRAMUpdate
-; End of function FillVSRAM
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FillVSRAMOffset1:				  ; CODE XREF: j_FillVSRAMOffset1j
-						  ; CheckForMenuOpen+6Ap ...
+FillVSRAMOffset1:
 		movem.l	d7/a6,-(sp)
 		lea	((g_VSRAMData+2)).l,a6
-		bra.s	loc_F24
-; End of function FillVSRAMOffset1
+		bra.s	_fillVSRAM
 
-
-; =============== S U B	R O U T	I N E =======================================
 
 ; d0 - Fill destination	address	VDP
 ; d1 - Fill length bytes
 ; d2 - Fill pattern
 
-DoDMAFill:					  ; CODE XREF: j_DoDMAFillj
-						  ; ResetVDPAndClearRAM+30p ...
+DoDMAFill:
 		movem.l	d0-d3,-(sp)
 		move.w	(g_VDPReg01_ModeSet2).l,d3
 		ori.b	#$10,d3			  ; Enable DMA
@@ -1446,54 +1176,50 @@ DoDMAFill:					  ; CODE XREF: j_DoDMAFillj
 		move.w	d0,(VDP_CTRL_REG).l	  ; Fill dest hi
 		move.w	d2,(VDP_DATA_REG).l	  ; Fill pattern
 
-loc_FB4:					  ; CODE XREF: DoDMAFill+7Cj
+_fillWait:
 		move.w	(VDP_CTRL_REG).l,d0
 		andi.w	#$0002,d0
-		bne.s	loc_FB4			  ; Wait until DMA complete
+		bne.s	_fillWait			  ; Wait until DMA complete
 		move.w	(g_VDPReg01_ModeSet2).l,d3
 		move.w	d3,(VDP_CTRL_REG).l	  ; Disable DMA
 		move.w	#$8F02,(VDP_CTRL_REG).l	  ; Set	auto-increment back to 2
 		movem.l	(sp)+,d0-d3
 		rts
-; End of function DoDMAFill
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ConvertToBase10:				  ; CODE XREF: j_ConvertToBase10j
+; d7 = value. Writes ten digit bytes to g_Base10Digits, each stored
+; as digit+1 ($02 = '1'); leading zeros are then cleared to $00.
+ConvertToBase10:
 		movem.l	d5-d7/a5-a6,-(sp)
 		lea	PowersOf10(pc),a5
 		nop
-		lea	(unk_FF0F92).l,a6
-		moveq	#$00000009,d5
+		lea	(g_Base10Digits).l,a6
+		moveq	#$09,d5
 
-loc_FEC:					  ; CODE XREF: ConvertToBase10+1Ej
+_digitLoop:
 		clr.b	d6
 
-loc_FEE:					  ; CODE XREF: ConvertToBase10+18j
+_divLoop:
 		addq.w	#$01,d6
 		sub.l	(a5),d7
-		bcc.s	loc_FEE
+		bcc.s	_divLoop
 		move.b	d6,(a6)+
 		add.l	(a5)+,d7
-		dbf	d5,loc_FEC
-		lea	(unk_FF0F92).l,a6
-		moveq	#$00000008,d6
+		dbf	d5,_digitLoop
+		lea	(g_Base10Digits).l,a6
+		moveq	#$08,d6
 
-loc_1004:					  ; CODE XREF: ConvertToBase10+34j
+_zeroLoop:
 		cmpi.b	#$01,(a6)
-		bne.w	loc_1012
+		bne.w	_b10Done
 		clr.b	(a6)+
-		dbf	d6,loc_1004
+		dbf	d6,_zeroLoop
 
-loc_1012:					  ; CODE XREF: ConvertToBase10+2Ej
+_b10Done:
 		movem.l	(sp)+,d5-d7/a5-a6
 		rts
-; End of function ConvertToBase10
 
-; ---------------------------------------------------------------------------
-PowersOf10:	dc.l 1000000000			  ; DATA XREF: ConvertToBase10+4t
+PowersOf10:	dc.l 1000000000
 		dc.l 0100000000
 		dc.l 0010000000
 		dc.l 0001000000
@@ -1504,44 +1230,35 @@ PowersOf10:	dc.l 1000000000			  ; DATA XREF: ConvertToBase10+4t
 		dc.l 0000000010
 		dc.l 0000000001
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-UpdateControllerInputs:				  ; CODE XREF: j_UpdateControllerInputsj
-						  ; ROM:WaitForButtonPushp ...
+UpdateControllerInputs:
 		movem.l	d5-d7/a5-a6,-(sp)
 		move	sr,d5
 		bsr.w	DisableInterrupts
 		move.w	#$0100,(Z80_BUSREQ_REG0).l
 
-loc_1052:					  ; CODE XREF: UpdateControllerInputs+1Aj
+_ctrlBusLoop:
 		btst	#$00,(Z80_BUSREQ_REG0).l
-		bne.s	loc_1052
+		bne.s	_ctrlBusLoop
 		bsr.s	ReadControllerInput
 		move.w	#$0000,(Z80_BUSREQ_REG0).l
 		move	d5,sr
 		movem.l	(sp)+,d5-d7/a5-a6
 		rts
-; End of function UpdateControllerInputs
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ReadControllerInput:				  ; CODE XREF: UpdateControllerInputs+1Cp
+ReadControllerInput:
 		lea	(g_Controller1State).l,a5
 		lea	(SEGA_CTRL1_DATA_REG).l,a6
 		bsr.s	ReadControllerReg
 		neg.b	d6
 		add.w	d6,(g_RNG).l
 		addq.w	#$02,a6
-; End of function ReadControllerInput
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ReadControllerReg:				  ; CODE XREF: ReadControllerInput+Cp
+; Standard TH-toggled 3-button pad read; result is inverted so
+; pressed = 1. Both raw reads are also summed into g_RNG as entropy.
+ReadControllerReg:
 		move.b	#$00,(a6)
 		nop
 		nop
@@ -1558,108 +1275,86 @@ ReadControllerReg:				  ; CODE XREF: ReadControllerInput+Cp
 		not.b	d6
 		move.b	d6,(a5)+
 		rts
-; End of function ReadControllerReg
 
-; ---------------------------------------------------------------------------
 
-WaitForButtonPush:				  ; CODE XREF: ROM:00000344j
-						  ; ROM:000010C2j
+WaitForButtonPush:
 		bsr.s	UpdateControllerInputs
 		andi.b	#CTRLBF_ANYBUTTON,(g_Controller1State).l
-		bne.s	locret_10C4
+		bne.s	_wfbDone
 		bsr.w	WaitUntilVBlank
 		bra.s	WaitForButtonPush
-; ---------------------------------------------------------------------------
 
-locret_10C4:					  ; CODE XREF: ROM:000010BCj
+_wfbDone:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-WaitForNextButtonPress:				  ; CODE XREF: j_WaitForNextButtonPressj
-						  ; WaitForNextButtonPress+12j
+WaitForNextButtonPress:
 		bsr.w	UpdateControllerInputs
 		andi.b	#CTRLBF_ANYBUTTON,(g_Controller1State).l
-		beq.s	loc_10DA
+		beq.s	_wfnWait
 		bsr.w	WaitUntilVBlank
 		bra.s	WaitForNextButtonPress
-; ---------------------------------------------------------------------------
 
-loc_10DA:					  ; CODE XREF: WaitForNextButtonPress+Cj
-						  ; WaitForNextButtonPress+26j
+_wfnWait:
 		bsr.w	UpdateControllerInputs
 		andi.b	#CTRLBF_ANYBUTTON,(g_Controller1State).l
-		bne.s	locret_10EE
+		bne.s	_wfnDone
 		bsr.w	WaitUntilVBlank
-		bra.s	loc_10DA
-; ---------------------------------------------------------------------------
+		bra.s	_wfnWait
 
-locret_10EE:					  ; CODE XREF: WaitForNextButtonPress+20j
+_wfnDone:
 		rts
-; End of function WaitForNextButtonPress
 
-; ---------------------------------------------------------------------------
 
-loc_10F0:					  ; CODE XREF: ROM:00000350j
+; Like UpdateControllerInputs but suppresses the buttons in
+; g_InputHoldMask for up to 10 frames. The mask is never set anywhere
+; and this is only reachable via an unreferenced thunk - an unused
+; debounce leftover.
+UpdateControllerInputsMasked:
 		movem.l	d7,-(sp)
 		bsr.w	UpdateControllerInputs
 		move.b	(g_Controller1State).l,d7
-		and.b	(byte_FF0F90).l,d7
-		beq.s	loc_1124
-		addq.b	#$01,(byte_FF0F91).l
-		move.b	(byte_FF0F91).l,d7
+		and.b	(g_InputHoldMask).l,d7
+		beq.s	_maskReset
+		addq.b	#$01,(g_InputHoldTimer).l
+		move.b	(g_InputHoldTimer).l,d7
 		cmpi.b	#$0A,d7
-		bcc.s	loc_1124
+		bcc.s	_maskReset
 		clr.b	(g_Controller1State).l
 		movem.l	(sp)+,d7
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1124:					  ; CODE XREF: ROM:00001104j
-						  ; ROM:00001116j
-		clr.b	(byte_FF0F90).l
-		clr.b	(byte_FF0F91).l
+_maskReset:
+		clr.b	(g_InputHoldMask).l
+		clr.b	(g_InputHoldTimer).l
 		movem.l	(sp)+,d7
 		rts
-; ---------------------------------------------------------------------------
 
-Wait1SecondOrUntilButtonPushed:			  ; CODE XREF: ROM:00000356j
+Wait1SecondOrUntilButtonPushed:
 		movem.l	d5,-(sp)
-		moveq	#0000000059,d5
-; START	OF FUNCTION CHUNK FOR Wait3SecondsOrUntilButtonPushed
+		moveq	#59,d5
 
-loc_113C:					  ; CODE XREF: Wait3SecondsOrUntilButtonPushed-Aj
-						  ; Wait3SecondsOrUntilButtonPushed+Aj
+_waitBtnLoop:
 		bsr.w	UpdateControllerInputs
 		andi.b	#CTRLBF_ANYBUTTON,(g_Controller1State).l
-		bne.s	loc_1152
+		bne.s	_waitBtnDone
 		bsr.w	WaitUntilVBlank
-		dbf	d5,loc_113C
+		dbf	d5,_waitBtnLoop
 
-loc_1152:					  ; CODE XREF: Wait3SecondsOrUntilButtonPushed-10j
+_waitBtnDone:
 		movem.l	(sp)+,d5
 		rts
-; END OF FUNCTION CHUNK	FOR Wait3SecondsOrUntilButtonPushed
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-Wait3SecondsOrUntilButtonPushed:		  ; CODE XREF: j_Wait3SecondsOrUntilButtonPushedj
-
-; FUNCTION CHUNK AT 0000113C SIZE 0000001C BYTES
-
+Wait3SecondsOrUntilButtonPushed:
 		movem.l	d5,-(sp)
-		move.l	#0000000179,d5
-		bra.s	loc_113C
-; End of function Wait3SecondsOrUntilButtonPushed
+		move.l	#179,d5
+		bra.s	_waitBtnLoop
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GenerateRandomNumber:				  ; CODE XREF: j_GenerateRandomNumberj
-						  ; ROM:00008988p ...
+; Steps g_RNG (seed = seed * 13 + 7) and returns d7 = a random
+; number in [0, d6).
+GenerateRandomNumber:
 		move.w	(g_RNG).l,d7
 		mulu.w	#$000D,d7
 		addi.w	#$0007,d7
@@ -1668,111 +1363,100 @@ GenerateRandomNumber:				  ; CODE XREF: j_GenerateRandomNumberj
 		mulu.w	d6,d7
 		swap	d7
 		rts
-; End of function GenerateRandomNumber
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleHBlankInterrupt:				  ; DATA XREF: ROM:HBlank_Interrupto
+; HInt. When the shadow HInt-line register still reads $8AA0 (line
+; 160, the textbox split) the handler just re-opens the window to
+; full height; otherwise (darkened rooms, HInt on an early line) it
+; syncs to the next scanline, blanks the display and writes the
+; queued map-block cells (ProcessPendingBlockCopies). Either way, if
+; a frame is pending it processes the queued VDP work here instead
+; of waiting for VBlank.
+HandleHBlankInterrupt:
 		bsr.w	DisableInterrupts
 		cmpi.w	#$8AA0,(g_VDPReg10_HIntLine).l ; HINT on Line 160
-		beq.s	loc_11D0
+		beq.s	_fullWindow
 		movem.l	d0-a6,-(sp)
 		move.b	(VDP_HVCTR_REG).l,d0
 
-loc_119C:					  ; CODE XREF: HandleHBlankInterrupt+1Ej
+_hvSyncLoop:
 		cmp.b	(VDP_HVCTR_REG).l,d0
-		beq.s	loc_119C
+		beq.s	_hvSyncLoop
 		move.w	#$8124,(VDP_CTRL_REG).l
 		move.w	#$8124,(g_VDPReg01_ModeSet2).l
-		bsr.w	sub_2686
+		bsr.w	ProcessPendingBlockCopies
 
-loc_11B8:					  ; CODE XREF: HandleHBlankInterrupt+58j
+_procQueues:
 		btst	#$07,(g_InterruptFlags).l
-		beq.s	loc_11C6
+		beq.s	_hintDone
 		bsr.w	ProcessQueuedVDPActions
 
-loc_11C6:					  ; CODE XREF: HandleHBlankInterrupt+3Cj
+_hintDone:
 		bsr.w	EnableInterrupts
 		movem.l	(sp)+,d0-a6
 		rte
-; ---------------------------------------------------------------------------
 
-loc_11D0:					  ; CODE XREF: HandleHBlankInterrupt+Cj
+_fullWindow:
 		movem.l	d0-a6,-(sp)
 		move.w	#$921C,(VDP_CTRL_REG).l	  ; WINDOW 28 CELLS UP (Fullscreen)
-		bra.s	loc_11B8
-; End of function HandleHBlankInterrupt
+		bra.s	_procQueues
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleVBlankInterrupt:				  ; DATA XREF: ROM:VBlank_Interrupto
+; VBlank. If a frame is pending (flag bit 7, set by WaitUntilVBlank):
+; briefly blanks the display, DMAs the sprite table and drains the
+; VRAM copy / VRAM read / DMA queues. Always: bumps g_VBlankCounter
+; and g_RNG, pumps the sound queue, and advances the play-time clock
+; (3600 frames -> minute -> hour).
+HandleVBlankInterrupt:
 		movem.l	d0-a6,-(sp)
 		bclr	#$07,(g_InterruptFlags).l
-		beq.s	loc_11F6
-		bsr.w	DisableDisplay_0
+		beq.s	_vbCounters
+		bsr.w	_disableDisplayVBlank
 		bsr.w	RefreshVDPSpriteTable
 		bsr.s	ProcessQueuedVDPActions
 
-loc_11F6:					  ; CODE XREF: HandleVBlankInterrupt+Cj
+_vbCounters:
 		bsr.w	EnableDisplay
-		addq.w	#$01,(unk_FF0F9C).l
+		addq.w	#$01,(g_VBlankCounter).l
 		addq.w	#$01,(g_RNG).l
 		move.w	(g_VDPReg18_WindowVPos).l,(VDP_CTRL_REG).l
-		bsr.w	sub_13B6
+		bsr.w	ProcessSoundQueue
 		addq.w	#$01,(g_FrameCount).l
-		cmpi.w	#03600,(g_FrameCount).l
-		bcs.s	loc_1246
+		cmpi.w	#3600,(g_FrameCount).l
+		bcs.s	_vbDone
 		clr.w	(g_FrameCount).l
 		addq.w	#$01,(g_MinuteCount).l
-		cmpi.w	#00060,(g_MinuteCount).l
-		bcs.s	loc_1246
+		cmpi.w	#60,(g_MinuteCount).l
+		bcs.s	_vbDone
 		clr.w	(g_MinuteCount).l
 		addq.w	#$01,(g_HourCount).l
 
-loc_1246:					  ; CODE XREF: HandleVBlankInterrupt+44j
-						  ; HandleVBlankInterrupt+5Aj
+_vbDone:
 		movem.l	(sp)+,d0-a6
 		rte
-; End of function HandleVBlankInterrupt
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisableDisplay_0:				  ; CODE XREF: HandleVBlankInterrupt+Ep
+_disableDisplayVBlank:
 		andi.b	#$BF,(g_VDPReg01_ModeSet2+1).l
 		move.w	(g_VDPReg01_ModeSet2).l,(VDP_CTRL_REG).l
 		rts
-; End of function DisableDisplay_0
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessQueuedVDPActions:			  ; CODE XREF: HandleHBlankInterrupt+3Ep
-						  ; HandleVBlankInterrupt+16p
+ProcessQueuedVDPActions:
 		bsr.s	ProcessVRAMCopyQueue
 		bsr.w	ProcessVRAMReadOp
 		bsr.w	ProcessQueuedDMAOps
 		rts
-; End of function ProcessQueuedVDPActions
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessVRAMCopyQueue:				  ; CODE XREF: ProcessQueuedVDPActionsp
+ProcessVRAMCopyQueue:
 		bclr	#$00,(g_InterruptFlags).l
-		beq.w	locret_12EE
+		beq.w	_cpqDone
 		tst.b	(g_VRAMCopyQueueLen).l
-		beq.w	locret_12EE
+		beq.w	_cpqDone
 		lea	(g_VRAMCopyQueue).l,a0
 
-loc_1288:					  ; CODE XREF: ProcessVRAMCopyQueue+6Ej
+_cpqNext:
 		move.w	(a0)+,d0		  ; First word - Copy length + Auto Increment
 						  ; BIT	15 Clear = AutoIncrement 2
 						  ; BIT	14 Clear = AutoIncrement 0x40
@@ -1780,14 +1464,13 @@ loc_1288:					  ; CODE XREF: ProcessVRAMCopyQueue+6Ej
 						  ; Remainder	 = Copy	length - 1
 		move.w	#$8F02,d1		  ; Reg	#15 - Auto-increment 2
 		bclr	#$0F,d0
-		beq.s	loc_12A2		  ; Set	auto-increment on VDP
+		beq.s	_cpqSetInc		  ; Set	auto-increment on VDP
 		move.w	#$8F40,d1		  ; Reg	#15 - Auto increment 0x40
 		bclr	#$0E,d0
-		beq.s	loc_12A2		  ; Set	auto-increment on VDP
+		beq.s	_cpqSetInc		  ; Set	auto-increment on VDP
 		move.w	#$8F80,d1		  ; Reg	#15 - Auto increment 0x80
 
-loc_12A2:					  ; CODE XREF: ProcessVRAMCopyQueue+26j
-						  ; ProcessVRAMCopyQueue+30j
+_cpqSetInc:
 		move.w	d1,(VDP_CTRL_REG).l	  ; Set	auto-increment on VDP
 		move.w	(a0)+,d2		  ; Second word	- VRAM Write address
 		move.w	d2,d1
@@ -1801,30 +1484,21 @@ loc_12A2:					  ; CODE XREF: ProcessVRAMCopyQueue+26j
 		roxl.w	#$01,d2
 		move.w	d2,(VDP_CTRL_REG).l	  ; Copy VRAM High address
 
-loc_12CA:					  ; CODE XREF: ProcessVRAMCopyQueue+64j
+_cpqData:
 		move.w	(a0)+,(VDP_DATA_REG).l	  ; Third+ word	- VRAM Data
-		dbf	d0,loc_12CA		  ; Copy in VDP	data
+		dbf	d0,_cpqData		  ; Copy in VDP	data
 		subq.b	#$01,(g_VRAMCopyQueueLen).l
-		bne.s	loc_1288		  ; First word - Copy length + Auto Increment
-						  ; BIT	15 Clear = AutoIncrement 2
-						  ; BIT	14 Clear = AutoIncrement 0x40
-						  ; Bit	14 Set	 = AutoIncrement 0x80
-						  ; Remainder	 = Copy	length - 1
+		bne.s	_cpqNext
 		move.w	#$8F02,(VDP_CTRL_REG).l	  ; Reset auto-increment value to 2
 		move.l	#g_VRAMCopyQueue,(g_VRAMCopyQueuePtr).l
 
-locret_12EE:					  ; CODE XREF: ProcessVRAMCopyQueue+8j
-						  ; ProcessVRAMCopyQueue+12j
+_cpqDone:
 		rts
-; End of function ProcessVRAMCopyQueue
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessVRAMReadOp:				  ; CODE XREF: ProcessQueuedVDPActions+2p
+ProcessVRAMReadOp:
 		bclr	#$04,(g_InterruptFlags).l
-		beq.s	locret_132E
+		beq.s	_readDone
 		lea	(g_VRAMCopyQueue).l,a0
 		move.w	#$8F02,(VDP_CTRL_REG).l	  ; Set	auto-increment to 2
 		move.w	(a0),d7
@@ -1836,48 +1510,40 @@ ProcessVRAMReadOp:				  ; CODE XREF: ProcessQueuedVDPActions+2p
 		move.w	d7,(VDP_CTRL_REG).l
 		move.w	(a0)+,d7
 
-loc_1324:					  ; CODE XREF: ProcessVRAMReadOp+3Aj
+_readLoop:
 		move.w	(VDP_DATA_REG).l,(a0)+
-		dbf	d7,loc_1324
+		dbf	d7,_readLoop
 
-locret_132E:					  ; CODE XREF: ProcessVRAMReadOp+8j
+_readDone:
 		rts
-; End of function ProcessVRAMReadOp
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-RefreshVDPSpriteTable:				  ; CODE XREF: HandleVBlankInterrupt+12p
+RefreshVDPSpriteTable:
 		btst	#$01,(g_InterruptFlags).l
-		bne.s	locret_133E
+		bne.s	_sprDone
 		bsr.w	UpdateVDPSpriteTableDMA
 
-locret_133E:					  ; CODE XREF: RefreshVDPSpriteTable+8j
+_sprDone:
 		rts
-; End of function RefreshVDPSpriteTable
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessQueuedDMAOps:				  ; CODE XREF: ProcessQueuedVDPActions+6p
+ProcessQueuedDMAOps:
 		bclr	#$03,(g_InterruptFlags).l
-		beq.s	locret_13B4
+		beq.s	_dmaOpsDone
 		tst.b	(g_NumQueuedDMAOps).l
-		beq.s	locret_13B4
+		beq.s	_dmaOpsDone
 		move.w	#$0100,(Z80_BUSREQ_REG0).l
 
-loc_135A:					  ; CODE XREF: ProcessQueuedDMAOps+22j
+_dmaBusLoop:
 		btst	#$00,(Z80_BUSREQ_REG0).l
-		bne.s	loc_135A
+		bne.s	_dmaBusLoop
 		lea	(g_DMAOpQueue).l,a0
 		lea	(VDP_CTRL_REG).l,a6
 		move.w	(g_VDPReg01_ModeSet2).l,d7
 		ori.b	#$10,d7
 		move.w	d7,(a6)
 
-loc_137C:					  ; CODE XREF: ProcessQueuedDMAOps+56j
+_dmaOpLoop:
 		move.l	(a0)+,(a6)
 		move.l	(a0)+,(a6)
 		move.l	(a0)+,(a6)
@@ -1885,136 +1551,129 @@ loc_137C:					  ; CODE XREF: ProcessQueuedDMAOps+56j
 		move.w	(a0)+,(g_DMADestHi).l
 		move.w	(g_DMADestHi).l,(a6)
 		subq.b	#$01,(g_NumQueuedDMAOps).l
-		bne.s	loc_137C
+		bne.s	_dmaOpLoop
 		move.w	(g_VDPReg01_ModeSet2).l,(a6)
 		move.w	#$8F02,(a6)
 		move.w	#$0000,(Z80_BUSREQ_REG0).l
 		move.l	#g_DMAOpQueue,(g_DMAOpQueuePtr).l
 
-locret_13B4:					  ; CODE XREF: ProcessQueuedDMAOps+8j
-						  ; ProcessQueuedDMAOps+10j
+_dmaOpsDone:
 		rts
-; End of function ProcessQueuedDMAOps
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_13B6:					  ; CODE XREF: HandleVBlankInterrupt+32p
+; Runs every VBlank: forwards one entry from g_SoundQueue (d1 =
+; parameter byte, d0 = sound id) to the driver's command ports at
+; Z80 $1FFC-$1FFF. Special ids: $FB pops g_BGMStack to resume the
+; previous track; >= $FD are sent as-is; $F0 stalls the queue until
+; the driver reports ready (g_SndQueueWait); $FC sends its parameter
+; to $1FFD. Otherwise: a repeat of the current BGM is dropped; bit 7
+; set means "with priority parameter" (sent to $1FFC); ids <= $40 get
+; priority $0F; and ids < $40 (music tracks) are pushed onto
+; g_BGMStack.
+ProcessSoundQueue:
 		move.w	#$0100,(Z80_BUSREQ_REG0).l
 
-loc_13BE:					  ; CODE XREF: sub_13B6+10j
+_sndBusLoop:
 		btst	#$00,(Z80_BUSREQ_REG0).l
-		bne.s	loc_13BE
-		tst.b	(byte_FF0F7F).l
-		beq.w	loc_13E2
+		bne.s	_sndBusLoop
+		tst.b	(g_SndQueueWait).l
+		beq.w	_sndCheckQueue
 		tst.b	(Z80_MEM+$1283).l
-		beq.w	loc_14E6
-		clr.b	(byte_FF0F7F).l
+		beq.w	_sndDone
+		clr.b	(g_SndQueueWait).l
 
-loc_13E2:					  ; CODE XREF: sub_13B6+18j
-		lea	(unk_FF0FA0).l,a0
-		move.l	0000000004(a0),d0
+_sndCheckQueue:
+		lea	(g_SoundQueue).l,a0
+		move.l	4(a0),d0
 		or.l	(a0),d0
-		beq.w	loc_14E6
+		beq.w	_sndDone
 		move.b	(a0),d1
-		move.b	$00000001(a0),d0
-		move.w	$00000002(a0),(a0)+
-		move.w	$00000002(a0),(a0)+
-		move.w	$00000002(a0),(a0)+
+		move.b	1(a0),d0
+		move.w	2(a0),(a0)+
+		move.w	2(a0),(a0)+
+		move.w	2(a0),(a0)+
 		clr.w	(a0)
 		cmpi.b	#$FB,d0
-		bne.s	loc_1440
-		tst.b	(byte_FF0F80).l
-		beq.s	loc_1432
+		bne.s	_chkDirectCmd
+		tst.b	(g_BGMStackDepth).l
+		beq.s	_sendStackTop
 		movem.l	d7-a0,-(sp)
-		lea	(byte_FF0F81).l,a0
-		moveq	#$00000008,d7
+		lea	(g_BGMStack).l,a0
+		moveq	#$08,d7
 
-loc_1420:					  ; CODE XREF: sub_13B6+6Ej
-		move.b	$00000001(a0),(a0)+
-		dbf	d7,loc_1420
+_popLoop:
+		move.b	1(a0),(a0)+
+		dbf	d7,_popLoop
 		movem.l	(sp)+,d7-a0
-		subq.b	#$01,(byte_FF0F80).l
+		subq.b	#$01,(g_BGMStackDepth).l
 
-loc_1432:					  ; CODE XREF: sub_13B6+5Cj
-		move.b	(byte_FF0F81).l,(Z80_MEM+$1FFF).l
-		bra.w	loc_14E6
-; ---------------------------------------------------------------------------
+_sendStackTop:
+		move.b	(g_BGMStack).l,(Z80_MEM+$1FFF).l
+		bra.w	_sndDone
 
-loc_1440:					  ; CODE XREF: sub_13B6+54j
+_chkDirectCmd:
 		cmpi.b	#$FD,d0
-		bcs.s	loc_1450
+		bcs.s	_chkWaitCmd
 		move.b	d0,(Z80_MEM+$1FFF).l
-		bra.w	loc_14E6
-; ---------------------------------------------------------------------------
+		bra.w	_sndDone
 
-loc_1450:					  ; CODE XREF: sub_13B6+8Ej
+_chkWaitCmd:
 		cmpi.b	#$F0,d0
-		bne.s	loc_1462
-		move.b	#$01,(byte_FF0F7F).l
-		bra.w	loc_14E6
-; ---------------------------------------------------------------------------
+		bne.s	_chkChanCmd
+		move.b	#$01,(g_SndQueueWait).l
+		bra.w	_sndDone
 
-loc_1462:					  ; CODE XREF: sub_13B6+9Ej
+_chkChanCmd:
 		cmpi.b	#$FC,d0
-		bne.s	loc_147C
+		bne.s	_chkRepeat
 		andi.b	#$0F,d1
 		move.b	d1,(Z80_MEM+$1FFD).l
 		move.b	d0,(Z80_MEM+$1FFF).l
-		bra.w	loc_14E6
-; ---------------------------------------------------------------------------
+		bra.w	_sndDone
 
-loc_147C:					  ; CODE XREF: sub_13B6+B0j
+_chkRepeat:
 		movem.l	d0,-(sp)
 		andi.b	#$7F,d0
-		cmp.b	(byte_FF0F81).l,d0
+		cmp.b	(g_BGMStack).l,d0
 		movem.l	(sp)+,d0
-		bne.s	loc_1494
-		bra.w	loc_14E6
-; ---------------------------------------------------------------------------
+		bne.s	_chkSFXFlag
+		bra.w	_sndDone
 
-loc_1494:					  ; CODE XREF: sub_13B6+D8j
+_chkSFXFlag:
 		bclr	#$07,d0
-		beq.s	loc_14A2
+		beq.s	_chkLowTrack
 		move.b	d1,(Z80_MEM+$1FFC).l
-		bra.s	loc_14B0
-; ---------------------------------------------------------------------------
+		bra.s	_sendCmd
 
-loc_14A2:					  ; CODE XREF: sub_13B6+E2j
+_chkLowTrack:
 		cmpi.b	#$40,d0
-		bgt.s	loc_14B0
+		bgt.s	_sendCmd
 		move.b	#$0F,(Z80_MEM+$1FFC).l
 
-loc_14B0:					  ; CODE XREF: sub_13B6+EAj
-						  ; sub_13B6+F0j
+_sendCmd:
 		move.b	d0,(Z80_MEM+$1FFF).l
 		cmpi.b	#$40,d0
-		bge.s	loc_14E6
+		bge.s	_sndDone
 		movem.l	d7-a0,-(sp)
 		lea	(g_InterruptFlags).l,a0
-		moveq	#$00000008,d7
+		moveq	#$08,d7
 
-loc_14C8:					  ; CODE XREF: sub_13B6+116j
-		move.b	-$00000002(a0),-(a0)
-		dbf	d7,loc_14C8
+_pushLoop:
+		move.b	-2(a0),-(a0)
+		dbf	d7,_pushLoop
 		move.b	d0,-(a0)
 		movem.l	(sp)+,d7-a0
-		cmpi.b	#$0A,(byte_FF0F80).l
-		bge.s	loc_14E6
-		addq.b	#$01,(byte_FF0F80).l
+		cmpi.b	#$0A,(g_BGMStackDepth).l
+		bge.s	_sndDone
+		addq.b	#$01,(g_BGMStackDepth).l
 
-loc_14E6:					  ; CODE XREF: sub_13B6+22j
-						  ; sub_13B6+38j ...
+_sndDone:
 		move.w	#$0000,(Z80_BUSREQ_REG0).l
 		rts
-; End of function sub_13B6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-nullsub_2:
+; Unreferenced.
+_ret:
 		rts
-; End of function nullsub_2
 
+		modend

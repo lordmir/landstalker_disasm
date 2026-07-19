@@ -1,7 +1,9 @@
-AnimatedTilesetIdxs:dc.b $00,$0C,$0C,$02,$02,$04,$05,$06 ; DATA	XREF: LoadAnimTiles+20t
+AnimatedTilesetIdxs:
+		dc.b $00,$0C,$0C,$02,$02,$04,$05,$06
 		dc.b $06,$07,$07,$09,$0D,$0D,$0E,$01
 		dc.b $0F,$03,$03,$11,$08,$10,$FF,$FF
-AnimatedTilesetData:dc.w $7300			  ; DATA XREF: LoadAnimTiles+38t
+AnimatedTilesetData:
+		dc.w $7300
 		dc.w $0100
 		dc.b $14
 		dc.b $03

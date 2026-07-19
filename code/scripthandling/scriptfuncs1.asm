@@ -82,7 +82,7 @@ loc_24F3E:					  ; CODE XREF: HandleShopInterraction+28j
 		move.w	d2,d0
 		bsr.w	GetItem
 		move.w	$00000002(a0),d0	  ; Purchased
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24F50:					  ; CODE XREF: HandleShopInterraction+1Ej
 						  ; HandleShopInterraction+32j

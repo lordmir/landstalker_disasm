@@ -5,7 +5,7 @@
 SpawnSmallProjectile:				  ; CODE XREF: ROM:001AC0ECp
 						  ; ROM:001AC3D0p ...
 		movem.w	d0-d1,-(sp)
-		jsr	(sub_103B2).l
+		jsr	(j_FindFreeSpriteSlot).l
 		bcs.w	loc_1AC4FC
 		move.w	X(a5),d0
 		move.b	RotationAndSize(a5),d1
@@ -46,7 +46,7 @@ loc_1AC4A8:					  ; CODE XREF: SpawnSmallProjectile+26j
 		move.w	#$64C0,TileSource(a1)
 		move.w	#$021C,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
-		jsr	(sub_103B8).l
+		jsr	(j_InitSpawnedSprite).l
 		bset	#$00,CombatFlags(a1)
 		bset	#$07,InteractFlags(a1)
 		bset	#$07,InitInteractFlags(a1)

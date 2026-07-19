@@ -1,41 +1,19 @@
+SpriteFuncsJmps2	module
+; Second thunk block for the sprite systems; the unlabeled jmp is an
+; unused leftover.
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_HideSprite:					  ; DATA XREF: ROM:000117A6t
-						  ; ROM:000117B2t ...
+j_HideSprite:
 		jmp	HideSprite(pc)
-; End of function j_HideSprite
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_1A4404:					  ; DATA XREF: UpdateEntities:loc_178F6t
+j_RespawnGhost:
 		jmp	RespawnGhost(pc)
-; End of function sub_1A4404
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_MoveSpriteOffscreen:				  ; DATA XREF: OnTick:loc_188BCt
-						  ; OnTick+FFCt ...
+j_MoveSpriteOffscreen:
 		jmp	MoveSpriteOffscreen(pc)
-; End of function j_MoveSpriteOffscreen
 
+j_RunEnemyAI_B:
+		jmp	RunEnemyAI_B(pc)
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_1A440C:					  ; DATA XREF: ROM:00012C96t
-						  ; ProcessDeadEnemies+1E8t ...
-		jmp	sub_1A86D6(pc)
-; End of function sub_1A440C
-
-; ---------------------------------------------------------------------------
 		jmp	LoadProjectilePalette(pc)
+
+		modend

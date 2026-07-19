@@ -553,7 +553,7 @@ sub_1AF448:					  ; CODE XREF: j_InitSpritePalettes+AF2Cp
 		move.b	RotationAndSize(a5),d2
 		movem.w	d6,-(sp)
 		movem.w	d2,-(sp)
-		jsr	(sub_103B2).l
+		jsr	(j_FindFreeSpriteSlot).l
 		movem.w	(sp)+,d1
 		movem.w	(sp)+,d6
 		bcs.w	loc_1AF4F8
@@ -602,7 +602,7 @@ loc_1AF492:					  ; CODE XREF: sub_1AF448+38j
 		move.w	d6,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
 		move.b	#$80,FallRate(a1)
-		jsr	(sub_103B8).l
+		jsr	(j_InitSpawnedSprite).l
 		bset	#$00,CombatFlags(a1)
 		bset	#$07,InteractFlags(a1)
 		bset	#$07,InitInteractFlags(a1)

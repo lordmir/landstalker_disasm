@@ -1,99 +1,89 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-; d0 - current talker script
-; d1 - current talker sprite ID
-
-GetSpeakerSpriteId:				  ; DATA XREF: j_GetSpeakerSpriteIdt
+Shops2	module
+; Finds the sprite whose dialogue field matches talker script id d0
+; (the Dialogue word packs script id:6 | sprite id:10). Only sprites
+; with InteractFlags bit 4 set are considered. Returns d1 = sprite
+; id and carry clear on success; carry set if no sprite matches.
+GetSpeakerSpriteId:
 		movem.l	d0/d7-a0,-(sp)
 		lea	(Sprite1_X).l,a0
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_9C8E:					  ; CODE XREF: GetSpeakerSpriteId+22j
+_spkScan:
 		btst	#$04,InteractFlags(a0)
-		beq.s	loc_9CA0
+		beq.s	_spkNext
 		move.b	Dialogue(a0),d1
 		lsr.b	#$02,d1
 		cmp.b	d1,d0
-		beq.s	loc_9CB2
+		beq.s	_spkFound
 
-loc_9CA0:					  ; CODE XREF: GetSpeakerSpriteId+12j
+_spkNext:
 		lea	SPRITE_SIZE(a0),a0
-		dbf	d7,loc_9C8E
+		dbf	d7,_spkScan
 		movem.l	(sp)+,d0/d7-a0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_9CB2:					  ; CODE XREF: GetSpeakerSpriteId+1Cj
+_spkFound:
 		move.w	Dialogue(a0),d1
 		andi.w	#$03FF,d1
 		movem.l	(sp)+,d0/d7-a0
 		tst.b	d0
 		rts
-; End of function GetSpeakerSpriteId
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetLifestockSoldFlag:				  ; DATA XREF: j_SetLifestockSoldFlagt
+; Marks the current room's shop as having sold its one Life Stock.
+; No-op (carry set) if the room has no LifestockSoldFlags entry.
+SetLifestockSoldFlag:
 		movem.l	d0-d1/a0,-(sp)
 		bsr.s	ReadLifestockSoldFlag
-		bcs.s	loc_9CD0
+		bcs.s	_setDone
 		bset	d1,(a0,d0.w)
 		tst.b	d0
 
-loc_9CD0:					  ; CODE XREF: SetLifestockSoldFlag+6j
+_setDone:
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function SetLifestockSoldFlag
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ReadLifestockSoldFlag:				  ; CODE XREF: SetLifestockSoldFlag+4p
-						  ; CheckIfLifestockSold+4p
+; Looks up the current room in the LifestockSoldFlags table (entries
+; {room.w, flag byte offset.b, bit.b}, negative room terminates).
+; Returns a0 = g_Flags, d0 = byte offset, d1 = bit number and carry
+; clear; carry set if the room has no entry.
+ReadLifestockSoldFlag:
 		lea	LifestockSoldFlags(pc),a0
 
-loc_9CDA:					  ; CODE XREF: ReadLifestockSoldFlag+12j
+_lsScan:
 		move.w	(a0),d0
-		bmi.s	loc_9CFE
-		cmp.w	(g_RmNum1).l,d0
-		beq.s	loc_9CEA
+		bmi.s	_lsEnd
+		cmp.w	(g_CurrentRoom).l,d0
+		beq.s	_lsFound
 		addq.l	#$04,a0
-		bra.s	loc_9CDA
-; ---------------------------------------------------------------------------
+		bra.s	_lsScan
 
-loc_9CEA:					  ; CODE XREF: ReadLifestockSoldFlag+Ej
-		move.b	$00000002(a0),d0
+_lsFound:
+		move.b	2(a0),d0
 		ext.w	d0
-		move.b	$00000003(a0),d1
+		move.b	3(a0),d1
 		lea	(g_Flags).l,a0
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_9CFE:					  ; CODE XREF: ReadLifestockSoldFlag+6j
+_lsEnd:
 		ori	#$01,ccr
 		rts
-; End of function ReadLifestockSoldFlag
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckIfLifestockSold:				  ; DATA XREF: j_CheckIfLifestockSoldt
+; Tests whether the current room's shop has already sold its Life
+; Stock: Z clear if sold; carry set if the room has no entry.
+CheckIfLifestockSold:
 		movem.l	d0-d1/a0,-(sp)
 		bsr.s	ReadLifestockSoldFlag
-		bcs.s	loc_9D12
+		bcs.s	_chkDone
 		tst.b	d0
 		btst	d1,(a0,d0.w)
 
-loc_9D12:					  ; CODE XREF: CheckIfLifestockSold+6j
+_chkDone:
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function CheckIfLifestockSold
 
-; ---------------------------------------------------------------------------
+		modend

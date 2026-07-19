@@ -271,7 +271,7 @@ loc_1A66FA:					  ; CODE XREF: ROM:001A66E8j
 		move.b	d0,SubY(a5)
 		movea.l	a5,a1
 		jsr	(sub_1A8AE6).l
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1A673E
 		movem.w	(sp)+,d1
 		movem.l	(sp)+,d0

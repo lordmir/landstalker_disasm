@@ -1,158 +1,148 @@
+SpriteFuncs3	module
+; Sprite palette allocation. Palettes 1 and 3 carry the sprite
+; colours: each has a "low" slot (colours 2-7); palette 1 also has a
+; "high" slot (colours 8-14), while palette 3's high half belongs to
+; the HUD. A sprite's TileSource palette bits select where its
+; colours load (bit 5 set = palettes 1/3 in use, bit 6 = palette 3).
+; SpritePaletteLUT maps sprite type -> palette index (bit 7 = high
+; slot), with colour data in SpritePaletteLo (6 colours) and
+; SpritePaletteHi (7 colours).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-j_InitSpritePalettes:				  ; DATA XREF: InitSprites+Ct
-
-; FUNCTION CHUNK AT 001AEEDA SIZE 00000024 BYTES
-; FUNCTION CHUNK AT 001AEF4C SIZE 00000026 BYTES
-; FUNCTION CHUNK AT 001AF0D8 SIZE 000000B2 BYTES
-; FUNCTION CHUNK AT 001AF1FC SIZE 00000082 BYTES
-; FUNCTION CHUNK AT 001AF292 SIZE 000001B6 BYTES
-; FUNCTION CHUNK AT 001AF4FE SIZE 00000088 BYTES
-
+j_InitSpritePalettes:
 		jmp	InitSpritePalettes(pc)
-; ---------------------------------------------------------------------------
 
-loc_1A4418:					  ; DATA XREF: sub_12CAE+16t
+j_GetSpritePalette:
 		jmp	GetSpritePalette(pc)
-; ---------------------------------------------------------------------------
-		jmp	(EnemyAI_Gola_A).l
-; ---------------------------------------------------------------------------
 
-InitSpritePalettes:				  ; DATA XREF: j_InitSpritePalettest
+		jmp	(EnemyAI_Gola_A).l
+
+; Room load: clears all three sprite palette slots, then loads the
+; palette of every sprite that uses one.
+InitSpritePalettes:
 		lea	((g_Pal1Base+4)).l,a0
 		lea	((g_Pal1Base+$10)).l,a1
 		lea	((g_Pal3Base+4)).l,a2
-		moveq	#$00000005,d7
+		moveq	#$5,d7
 
-loc_1A4436:					  ; CODE XREF: j_InitSpritePalettes+28j
+_clrPalLoop:
 		clr.w	(a0)+
 		clr.w	(a1)+
 		clr.w	(a2)+
-		dbf	d7,loc_1A4436
+		dbf	d7,_clrPalLoop
 		clr.w	(a1)
 		lea	(Sprite1_X).l,a0
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_1A444A:					  ; CODE XREF: j_InitSpritePalettes+4Ej
+_spriteLoop:
 		tst.w	X(a0)
-		bmi.s	locret_1A4466
+		bmi.s	_ispDone
 		move.b	TileSource(a0),d0
 		andi.b	#$20,d0
-		beq.s	loc_1A445E
+		beq.s	_nextSprite
 		move.b	SpriteType(a0),d0
 		bsr.s	GetSpritePalette
 
-loc_1A445E:					  ; CODE XREF: j_InitSpritePalettes+42j
+_nextSprite:
 		lea	SPRITE_SIZE(a0),a0
-		dbf	d7,loc_1A444A
+		dbf	d7,_spriteLoop
 
-locret_1A4466:					  ; CODE XREF: j_InitSpritePalettes+38j
+_ispDone:
 		rts
-; End of function j_InitSpritePalettes
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetSpritePalette:				  ; CODE XREF: j_InitSpritePalettes+48p
-						  ; DATA XREF: j_InitSpritePalettes:loc_1A4418t
+; Loads the palette for sprite a0 (type in d0) into the slot chosen
+; by its TileSource palette bits. If the slot already holds a
+; different palette, a debug alarm beeps (one SND_EnemyDie1) before
+; overwriting; requesting the high slot on palette 3 (occupied by
+; the HUD) beeps seven times and loads nothing. Debug mode silences
+; both alarms.
+GetSpritePalette:
 		lea	SpritePaletteLUT(pc),a1
 
-loc_1A446C:					  ; CODE XREF: GetSpritePalette+10j
+_lutScan:
 		move.b	(a1),d1
 		cmp.b	d1,d0
-		beq.s	loc_1A447C		  ; Palette is 1 or 3
+		beq.s	_typeFound		  ; Palette is 1 or 3
 
-loc_1A4472:					  ; CODE XREF: GetSpritePalette+1Aj
-						  ; GetSpritePalette+7Ej ...
+_lutNext:
 		addq.l	#$02,a1
 		cmpi.b	#$FF,(a1)
-		bne.s	loc_1A446C
+		bne.s	_lutScan
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A447C:					  ; CODE XREF: GetSpritePalette+8j
-		btst	#$05,$00000006(a0)	  ; Palette is 1 or 3
-		beq.s	loc_1A4472		  ; SKIP - Palette 1 is	the room palette, palette 3 is Nigel's palette. Either way, we already have the palette.
-		move.b	$00000001(a1),d2
-		bmi.s	loc_1A44A0		  ; High bit set - High	palette
-		btst	#$06,$00000006(a0)	  ; Palette is 4 - we only have	a low slot, as the high	slot is	occupied by the	HUD.
-		beq.s	loc_1A44BE
+_typeFound:
+		btst	#$05,TileSource(a0)	  ; Palette is 1 or 3
+		beq.s	_lutNext		  ; SKIP - Palette 1 is	the room palette, palette 3 is Nigel's palette. Either way, we already have the palette.
+		move.b	1(a1),d2
+		bmi.s	_hiSlot			  ; High bit set - High	palette
+		btst	#$06,TileSource(a0)	  ; Palette is 4 - we only have	a low slot, as the high	slot is	occupied by the	HUD.
+		beq.s	_loPal1
 		lea	((g_Pal3Base+4)).l,a2
 		lea	SpritePaletteLo(pc),a3
-		moveq	#$00000005,d6
-		bra.s	loc_1A44CA		  ; Load low palette
-; ---------------------------------------------------------------------------
+		moveq	#$5,d6
+		bra.s	_loCopy			  ; Load low palette
 
-loc_1A44A0:					  ; CODE XREF: GetSpritePalette+20j
-		btst	#$06,$00000006(a0)
-		bne.s	loc_1A450A
+_hiSlot:
+		btst	#$06,TileSource(a0)
+		bne.s	_hiOnPal3
 		lea	((g_Pal1Base+$10)).l,a2
 		lea	SpritePaletteHi(pc),a3
-		moveq	#$00000006,d6
+		moveq	#$6,d6
 		andi.w	#$007F,d2
 		mulu.w	#$000E,d2
-		bra.s	loc_1A44D2		  ; Load high palette
-; ---------------------------------------------------------------------------
+		bra.s	_copyLoop		  ; Load high palette
 
-loc_1A44BE:					  ; CODE XREF: GetSpritePalette+28j
+_loPal1:
 		lea	((g_Pal1Base+4)).l,a2
 		lea	SpritePaletteLo(pc),a3
-		moveq	#$00000005,d6
+		moveq	#$5,d6
 
-loc_1A44CA:					  ; CODE XREF: GetSpritePalette+36j
+_loCopy:
 		andi.w	#$007F,d2
 		mulu.w	#$000C,d2
 
-loc_1A44D2:					  ; CODE XREF: GetSpritePalette+54j
-						  ; GetSpritePalette+7Aj
+_copyLoop:
 		move.w	(a2),d5
-		beq.s	loc_1A44DC
+		beq.s	_copyColour
 		cmp.w	(a3,d2.w),d5
-		bne.s	loc_1A44EA
+		bne.s	_conflict
 
-loc_1A44DC:					  ; CODE XREF: GetSpritePalette+6Cj
-						  ; GetSpritePalette+86j ...
+_copyColour:
 		move.w	(a3,d2.w),(a2)+
 		addq.w	#$02,d2
-		dbf	d6,loc_1A44D2
-		bra.w	loc_1A4472
-; ---------------------------------------------------------------------------
+		dbf	d6,_copyLoop
+		bra.w	_lutNext
 
-loc_1A44EA:					  ; CODE XREF: GetSpritePalette+72j
+; Slot already holds a different palette: debug alarm, then
+; overwrite anyway.
+_conflict:
 		tst.w	(DebugModeEnable).w
-		bmi.w	loc_1A44DC
+		bmi.w	_copyColour
 		movem.w	d0,-(sp)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyDie1
-; ---------------------------------------------------------------------------
 		move.w	#$0006,d0
 		jsr	(j_Sleep).l
 		movem.w	(sp)+,d0
-		bra.s	loc_1A44DC
-; ---------------------------------------------------------------------------
+		bra.s	_copyColour
 
-loc_1A450A:					  ; CODE XREF: GetSpritePalette+3Ej
+; High slot requested on palette 3 - impossible (the HUD owns it):
+; seven beeps, palette not loaded.
+_hiOnPal3:
 		tst.w	(DebugModeEnable).w
-		bmi.w	loc_1A4472
+		bmi.w	_lutNext
 		movem.w	d7,-(sp)
-		moveq	#$00000006,d7
+		moveq	#$6,d7
 
-loc_1A4518:					  ; CODE XREF: GetSpritePalette+C6j
+_beepLoop:
 		movem.w	d0,-(sp)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover1
-; ---------------------------------------------------------------------------
 		move.w	#$0006,d0
 		jsr	(j_Sleep).l
 		movem.w	(sp)+,d0
-		dbf	d7,loc_1A4518
+		dbf	d7,_beepLoop
 		movem.w	(sp)+,d7
-		bra.w	loc_1A4472
-; End of function GetSpritePalette
+		bra.w	_lutNext
 
-; ---------------------------------------------------------------------------
+		modend

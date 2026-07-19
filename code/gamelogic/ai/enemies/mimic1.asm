@@ -337,7 +337,7 @@ loc_1A9E4A:					  ; CODE XREF: ROM:001A9CEEj
 		sub.w	d1,d0
 		addq.w	#$01,d0
 		move.w	d0,Z(a5)
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1A9E90
 		movem.w	(sp)+,d0-d1
 		move.w	d0,Z(a5)

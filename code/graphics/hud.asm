@@ -41,7 +41,7 @@ RefreshHUD:					  ; CODE XREF: ROM:00012DF0p
 						  ; ROM:00012E7Ep ...
 		bclr	#$07,(g_UpdateHUDFlag).l
 		beq.s	locret_1694A
-		jsr	(j_QueueHUDTilemapDMA).l
+		jsr	(j_QueuePartialHUDTilemapDMA).l
 
 locret_1694A:					  ; CODE XREF: RefreshHUD+8j
 		rts
@@ -93,7 +93,7 @@ UpdateMaxHealthHUD:				  ; CODE XREF: RefreshMaxHealthHUD+4p
 loc_16986:					  ; CODE XREF: UpdateMaxHealthHUD+8j
 		lsr.w	#$08,d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F99).l,a0
+		lea	(g_Base10Digit7).l,a0
 		lea	((g_HUD_Row2+$34)).l,a1
 		tst.b	(a0)+
 		beq.s	loc_169A8
@@ -119,7 +119,7 @@ UpdateCurrentHealthHUD:				  ; CODE XREF: RefreshCurrentHealthHUD+4p
 loc_169C0:					  ; CODE XREF: UpdateCurrentHealthHUD+8j
 		lsr.w	#$08,d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F99).l,a0
+		lea	(g_Base10Digit7).l,a0
 		lea	((g_HUD_Row2+$2E)).l,a1
 		tst.b	(a0)+
 		beq.s	loc_169E2
@@ -420,7 +420,7 @@ UpdateEkeEkeHUD:				  ; CODE XREF: LoadPlayerSpecialAnimation+194p
 
 loc_16C4E:					  ; CODE XREF: UpdateEkeEkeHUD+Ej
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F9A).l,a0
+		lea	(g_Base10Digit8).l,a0
 		lea	((g_HUD_Row2+$3E)).l,a1
 		tst.b	(a0)+
 		beq.s	loc_16C68
@@ -441,7 +441,7 @@ RefreshGoldHUD:					  ; CODE XREF: RefreshAllHUD+8p
 		moveq	#$00000000,d7
 		move.w	(g_Gold).l,d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F97).l,a0
+		lea	(g_Base10Digit5).l,a0
 		lea	((g_HUD_Row2+$42)).l,a1
 		tst.b	(a0)+
 		beq.s	loc_16CA6

@@ -266,7 +266,7 @@ loc_1AB160:					  ; CODE XREF: ROM:001AB150j
 		move.b	#$20,d0
 		subq.b	#$01,d0
 		add.w	d0,HitBoxZEnd(a5)
-		jsr	(sub_3BC).l
+		jsr	(j_ValidateSpritePosition).l
 		bcc.s	loc_1AB188
 		move.w	Z(a5),HitBoxZEnd(a5)
 		subq.b	#$01,AnimPhase(a5)

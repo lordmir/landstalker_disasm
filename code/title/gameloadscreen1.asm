@@ -8,7 +8,7 @@ GetPlayTimeDigits:				  ; CODE XREF: sub_F78E+50p
 		mulu.w	#00100,d7
 		add.w	(g_MinuteCount).l,d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F96).l,a0
+		lea	(g_Base10Digit4).l,a0
 		bsr.s	sub_F374
 		bsr.s	sub_F374
 		bsr.s	sub_F374
@@ -76,7 +76,7 @@ sub_F3A6:					  ; CODE XREF: sub_F78E+48p
 
 loc_F3B6:					  ; CODE XREF: sub_F3A6+Aj
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F98).l,a0
+		lea	(g_Base10Digit6).l,a0
 		bsr.s	sub_F374
 		bsr.s	sub_F374
 		bsr.s	sub_F374
@@ -92,7 +92,7 @@ sub_F3CC:					  ; CODE XREF: sub_F78E+2Ep
 		clr.w	d7
 		move.b	d0,d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F9B).l,a0
+		lea	(g_Base10Digit9).l,a0
 		bsr.s	sub_F38C
 		rts
 ; End of function sub_F3CC
@@ -107,7 +107,7 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		move.b	d2,d7
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F9A).l,a0
+		lea	(g_Base10Digit8).l,a0
 	if	((REGION=JP)!(REGION=US_BETA))
 		bsr.s	sub_F374
 	else
@@ -118,7 +118,7 @@ sub_F3E0:					  ; CODE XREF: sub_F78E+58p
 		move.l	(sp)+,d7
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
-		lea	(unk_FF0F9A).l,a0
+		lea	(g_Base10Digit8).l,a0
 		bsr.w	sub_F374
 	if	((REGION=JP)!(REGION=US_BETA))
 		bsr.s	sub_F38C
@@ -354,7 +354,7 @@ sub_F578:					  ; CODE XREF: sub_F78E+1Ep
 		lea	(a0,d1.w),a0
 		move.w	#$01C0,d0
 		moveq	#$00000002,d1
-		jsr	(j_DoDMACopy_1).l
+		jsr	(j_DoDMACopy).l
 		rts
 ; End of function sub_F578
 
@@ -385,7 +385,7 @@ DMACopyTextBuffer:				  ; CODE XREF: ROM:0000EF6Ap
 		lea	($000050C0).w,a1
 		move.w	#$0480,d0
 		moveq	#$00000002,d1
-		jsr	(j_DoDMACopy_1).l
+		jsr	(j_DoDMACopy).l
 		rts
 ; End of function DMACopyTextBuffer
 

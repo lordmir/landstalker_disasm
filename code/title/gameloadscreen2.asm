@@ -12,7 +12,7 @@ loc_F6E6:					  ; CODE XREF: InitGameStartScreen+28j
 		lea	(g_ScreenBuffer).l,a0
 		move.w	#$01C0,d0
 		moveq	#$00000002,d1
-		jsr	(j_DoDMACopy_1).l
+		jsr	(j_DoDMACopy).l
 		movem.l	(sp)+,d7/a1
 		lea	$00000380(a1),a1
 		dbf	d7,loc_F6E6
@@ -181,7 +181,7 @@ loc_F862:					  ; CODE XREF: ROM:0000F86Aj
 		sub.w	d0,d2
 		move.w	d2,(a1)+
 		dbf	d7,loc_F862
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(EnableDMAQueueProcessing).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -194,7 +194,7 @@ loc_F87C:					  ; CODE XREF: ROM:0000F84Ej
 loc_F888:					  ; CODE XREF: ROM:0000F88Aj
 		move.w	(a0)+,(a1)+
 		dbf	d7,loc_F888
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(EnableDMAQueueProcessing).l
 		rts
 
@@ -270,7 +270,7 @@ loc_F8F2:					  ; CODE XREF: sub_F8C6+28j
 		or.w	d3,d1
 		move.w	d1,(a0)+
 		dbf	d7,sub_F8C6
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(EnableDMAQueueProcessing).l
 		rts
 ; End of function sub_F8C6
@@ -418,7 +418,7 @@ var_2		= -2
 		move.w	d2,var_8(a4)
 		clr.w	var_2(a4)
 		move.w	d3,var_A(a4)
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(WaitUntilVBlank).l
 		bsr.w	sub_F306
 		bsr.s	sub_FA24
@@ -557,7 +557,7 @@ sub_FAF0:					  ; CODE XREF: ROM:0000EFF2p
 		lea	(g_Pal2Base).l,a1
 		bsr.w	LoadInitialPlayerPalette
 		jsr	(UpdateEquipPal).l
-		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(EnableDMAQueueProcessing).l
 		rts
 ; End of function sub_FAF0

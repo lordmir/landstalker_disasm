@@ -6,7 +6,7 @@ GetItemShopSellPrice:				  ; CODE XREF: sub_24B48+4p
 						  ; DisplayItemPriceMessage+4p	...
 		move.l	d2,-(sp)
 		clr.w	d0
-		move.b	(byte_FF1903).l,d0
+		move.b	(g_ShopItemId).l,d0
 		move.w	d0,(word_FF1198).l
 		bsr.w	GetItemBuyPrice
 		clr.w	d2
@@ -49,10 +49,10 @@ loc_24D08:					  ; CODE XREF: ROM:00024CFAj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_24D0C:					  ; CODE XREF: sub_24A5C+4p
+sub_24D0C:					  ; CODE XREF: RunShopItemPickUp+4p
 						  ; ROM:loc_24CF6p
 		movem.w	d0-d1,-(sp)
-		move.w	(RmNum2).l,d0
+		move.w	(g_OriginalRoom).l,d0
 		lea	ShopScript(pc),a1	  ; Massan Shop
 
 loc_24D1A:					  ; CODE XREF: sub_24D0C+1Aj

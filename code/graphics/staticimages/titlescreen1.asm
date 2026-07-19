@@ -302,7 +302,7 @@ DisplayTitleScreen:				  ; CODE XREF: DisplayTitle+4j
 loc_39920:					  ; CODE XREF: DisplayTitle+1C0j
 		clr.w	(a0)+
 		dbf	d7,loc_39920
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_EnableInterrupts).l
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(j_EnableDisplay).l
@@ -317,7 +317,7 @@ loc_39948:					  ; CODE XREF: DisplayTitle+1E2j
 		jsr	(j_LoadPaletteToRAM).l
 		lea	Title3Palette(pc),a0
 		jsr	(j_CopyPalette).l
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	WaitForStartGame
 		move	sr,-(sp)
@@ -425,7 +425,7 @@ loc_399E4:					  ; CODE XREF: ROM:00039A52j
 		bsr.w	sub_39A98
 		tst.b	-$0000001D(a6)
 		beq.s	loc_39A3C
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_EnableDMAQueueProcessing).l
 
 loc_39A3C:					  ; CODE XREF: ROM:00039A2Ej

@@ -34,7 +34,7 @@ loc_1A87D2:					  ; CODE XREF: RespawnGhost+3BEj
 		bne.s	loc_1A8800
 		move.w	#$0008,AnimationIndex(a5)
 		bset	#$07,RenderFlags(a5)
-		bsr.w	sub_1A86D6
+		bsr.w	RunEnemyAI_B
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -360,7 +360,7 @@ j_j_LoadSpriteBehaviour:			  ; CODE XREF: sub_1A4D0E+40p
 
 sub_1A8AE6:					  ; CODE XREF: RespawnGhost+3B4p
 						  ; DATA XREF: ROM:001A6412t ...
-		jmp	(sub_1038E).l
+		jmp	(j_CalcSpriteHitbox).l
 ; End of function sub_1A8AE6
 
 ; ---------------------------------------------------------------------------

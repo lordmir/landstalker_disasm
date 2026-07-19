@@ -324,7 +324,7 @@ loc_29DF8:					  ; CODE XREF: sub_29DE6+Aj
 loc_29E04:					  ; CODE XREF: sub_29DE6+16j
 		btst	#$04,d7
 		beq.s	loc_29E10
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 
 loc_29E10:					  ; CODE XREF: sub_29DE6+22j
 		jsr	(j_FlushDMACopyQueue).l
@@ -402,7 +402,7 @@ sub_29EA4:					  ; CODE XREF: ROM:00029B24p
 loc_29ECE:					  ; CODE XREF: sub_29EA4+2Cj
 		move.w	(a0)+,(a1)+
 		dbf	d0,loc_29ECE
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		move.l	(a0)+,(g_HorizontalScrollData).l
 		move.l	(a0)+,(g_VSRAMData).l
 		jsr	(j_QueueHScrollDMAUpdate).l
@@ -677,7 +677,7 @@ loc_2A0A6:					  ; CODE XREF: sub_2A07A+14j
 loc_2A0AE:					  ; CODE XREF: sub_2A07A+2Aj
 		dbf	d5,loc_2A08C
 		rol.w	#$04,d2
-		jsr	(j_CopyBasePalleteToActivePalette).l
+		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		move.w	d3,d0
 		jsr	(j_Sleep).l

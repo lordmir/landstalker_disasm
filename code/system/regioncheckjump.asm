@@ -1,11 +1,4 @@
-		if		REGION_CHECK
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_CheckRegion:					  ; DATA XREF: ROM:00000506t
+	if		REGION_CHECK
+j_CheckRegion:
 		jmp	(CheckRegion).l
-; End of function j_CheckRegion
-
-; ---------------------------------------------------------------------------
-		endif
+	endif

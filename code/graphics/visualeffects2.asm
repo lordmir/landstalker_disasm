@@ -14,7 +14,7 @@ loc_E83E:					  ; CODE XREF: ContinueKazaltWarpFx+8j
 		andi.b	#$03,d0
 		cmpi.b	#$01,d0
 		bcs.w	WhiteFlash
-		jmp	(CopyBasePalleteToActivePalette).l
+		jmp	(CopyBasePaletteToActivePalette).l
 ; End of function ContinueKazaltWarpFx
 
 

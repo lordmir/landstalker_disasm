@@ -234,7 +234,7 @@ loc_1A9546:					  ; CODE XREF: ROM:001A94F8j
 		bcs.s	loc_1A9540
 		bra.w	EnemyAI_Skeleton1
 ; ---------------------------------------------------------------------------
-		jsr	(sub_103B2).l
+		jsr	(j_FindFreeSpriteSlot).l
 		bcs.w	loc_1A95D4
 		move.w	(a5),d0
 		move.b	RotationAndSize(a5),d1
@@ -273,7 +273,7 @@ loc_1A95A0:					  ; CODE XREF: ROM:001A9592j
 		move.w	#$47C0,TileSource(a1)
 		move.w	#$013C,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
-		jsr	(sub_103B8).l
+		jsr	(j_InitSpawnedSprite).l
 
 loc_1A95D4:					  ; CODE XREF: ROM:001A9572j
 		bra.w	EnemyAI_Skeleton1

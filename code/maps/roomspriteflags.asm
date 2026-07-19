@@ -1,237 +1,214 @@
+RoomSpriteFlags	module
+; Room-load appliers that read the persistent story flags (g_Flags)
+; and update the room's sprites to match: hiding cleared enemies and
+; one-time events, keeping unlocked doors open, pressed switches
+; pressed and cut sacred trees gone.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HideSpriteAtD0:					  ; CODE XREF: DoCustomRoomActions+36p
-						  ; DoCustomRoomActions+3Ep ...
+; Hides sprite index d0 (a5 = sprite base, restored to Sprite1
+; afterwards).
+HideSpriteAtD0:
 		ext.w	d0
 		lsl.w	#$07,d0
 		adda.w	d0,a5
 		jsr	(j_HideSprite).l
 		lea	(Sprite1_X).l,a5
 		rts
-; End of function HideSpriteAtD0
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-MoveSprite:					  ; CODE XREF: DoCustomRoomActions+1C4p
-						  ; DoCustomRoomActions+1F2p ...
+; Sets sprite d0's map cell to d1 (X:Y word).
+MoveSprite:
 		movem.w	d0,-(sp)
 		ext.w	d0
 		lsl.w	#$07,d0
 		move.w	d1,(a5,d0.w)
 		movem.w	(sp)+,d0
 		rts
-; End of function MoveSprite
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetSpriteZ:					  ; CODE XREF: DoCustomRoomActions+1CCp
-						  ; DoCustomRoomActions+220p ...
+; Sets sprite d0's Z to d1.
+SetSpriteZ:
 		movem.w	d0,-(sp)
 		ext.w	d0
 		lsl.w	#$07,d0
-		move.w	d1,$00000012(a5,d0.w)
+		move.w	d1,Z(a5,d0.w)
 		movem.w	(sp)+,d0
 		rts
-; End of function SetSpriteZ
 
-; ---------------------------------------------------------------------------
+; Unreferenced: sets bit 7 of sprite d0's FallRate.
 		movem.w	d0,-(sp)
 		ext.w	d0
 		lsl.w	#$07,d0
-		bset	#$07,$00000020(a5,d0.w)
+		bset	#$07,FallRate(a5,d0.w)
 		movem.w	(sp)+,d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-sub_1A356:					  ; CODE XREF: DoCustomRoomActions+2F0p
-						  ; DoCustomRoomActions+394p ...
+; Sets sprite d0's facing to d1 (0-3 = NE/SE/SW/NW) and refreshes its
+; animation.
+SetSpriteFacing:
 		movem.l	d0/a1,-(sp)
 		ext.w	d0
 		lsl.w	#$07,d0
 		lea	(Sprite1_X).l,a1
 		adda.w	d0,a1
 		lsl.b	#$06,d1
-		andi.b	#$3F,$00000004(a1)
-		or.b	d1,$00000004(a1)
+		andi.b	#$3F,RotationAndSize(a1)  ; clear facing bits
+		or.b	d1,RotationAndSize(a1)
 		bsr.w	SetSpriteRotationAnimFlags
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function sub_1A356
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckRoomFlagsToHideSprites:			  ; CODE XREF: CheckFlags+8p
+CheckRoomFlagsToHideSprites:
 		bsr.s	CheckSpriteVisibleFlags
 		bsr.s	CheckOneTimeEventFlags
 		rts
-; End of function CheckRoomFlagsToHideSprites
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckSpriteVisibleFlags:			  ; CODE XREF: CheckRoomFlagsToHideSpritesp
+; Hides sprites according to SpriteVisibilityFlags: 4-byte entries
+; {room.w, flag byte.b (bit 7 = hide when the flag is CLEAR instead
+; of set), flag bit (top 3 bits) | sprite index (low 5 bits) .b}.
+CheckSpriteVisibleFlags:
 		lea	SpriteVisibilityFlags(pc),a0
 		lea	(g_Flags).l,a1
 
-loc_1A38C:					  ; CODE XREF: CheckSpriteVisibleFlags+52j
+_svScan:
 		move.w	(a0),d0
-		bmi.s	locret_1A3D6
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_1A3D2
-		move.b	$00000003(a0),d1
+		bmi.s	_svDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_svNext
+		move.b	3(a0),d1
 		lsr.b	#$05,d1
 		clr.w	d0
-		move.b	$00000002(a0),d0
-		bpl.s	loc_1A3B2
+		move.b	2(a0),d0
+		bpl.s	_svNormal
 		andi.b	#$7F,d0
 		btst	d1,(a1,d0.w)
-		bne.s	loc_1A3D2
-		bra.s	loc_1A3B8
-; ---------------------------------------------------------------------------
+		bne.s	_svNext
+		bra.s	_svHide
 
-loc_1A3B2:					  ; CODE XREF: CheckSpriteVisibleFlags+22j
+_svNormal:
 		btst	d1,(a1,d0.w)
-		beq.s	loc_1A3D2
+		beq.s	_svNext
 
-loc_1A3B8:					  ; CODE XREF: CheckSpriteVisibleFlags+2Ej
-		move.b	$00000003(a0),d0
+_svHide:
+		move.b	3(a0),d0
 		andi.b	#$1F,d0
 		lea	(Sprite1_X).l,a5
 		movem.l	a0-a1,-(sp)
 		bsr.w	HideSpriteAtD0
 		movem.l	(sp)+,a0-a1
 
-loc_1A3D2:					  ; CODE XREF: CheckSpriteVisibleFlags+14j
-						  ; CheckSpriteVisibleFlags+2Cj ...
+_svNext:
 		addq.l	#$04,a0
-		bra.s	loc_1A38C
-; ---------------------------------------------------------------------------
+		bra.s	_svScan
 
-locret_1A3D6:					  ; CODE XREF: CheckSpriteVisibleFlags+Cj
+_svDone:
 		rts
-; End of function CheckSpriteVisibleFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckOneTimeEventFlags:				  ; CODE XREF: CheckRoomFlagsToHideSprites+2p
+; Hides one-time event sprites: 6-byte OneTimeEventFlags entries add
+; a second flag condition - {room.w, flag byte A.b, flag bit A (top
+; 3) | sprite index (low 5) .b, flag byte B.b, flag bit B.b}. Here
+; the default sense is "condition passes when the flag is CLEAR";
+; bit 7 of a flag byte inverts to "when SET". The sprite is hidden
+; when both conditions pass. Relies on a1 = g_Flags left by
+; CheckSpriteVisibleFlags running immediately before.
+CheckOneTimeEventFlags:
 		lea	OneTimeEventFlags(pc),a0
 
-loc_1A3DC:					  ; CODE XREF: CheckOneTimeEventFlags+6Aj
+_otScan:
 		move.w	(a0),d0
-		bmi.s	locret_1A444
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_1A440
-		move.b	$00000003(a0),d1
+		bmi.s	_otDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_otNext
+		move.b	3(a0),d1
 		lsr.b	#$05,d1
 		clr.w	d0
-		move.b	$00000002(a0),d0
-		bpl.s	loc_1A402
+		move.b	2(a0),d0
+		bpl.s	_otNormalA
 		andi.b	#$7F,d0
 		btst	d1,(a1,d0.w)
-		beq.s	loc_1A440
-		bra.s	loc_1A408
-; ---------------------------------------------------------------------------
+		beq.s	_otNext
+		bra.s	_otCondB
 
-loc_1A402:					  ; CODE XREF: CheckOneTimeEventFlags+1Cj
+_otNormalA:
 		btst	d1,(a1,d0.w)
-		bne.s	loc_1A440
+		bne.s	_otNext
 
-loc_1A408:					  ; CODE XREF: CheckOneTimeEventFlags+28j
-		move.b	$00000005(a0),d1
+_otCondB:
+		move.b	5(a0),d1
 		clr.w	d0
-		move.b	$00000004(a0),d0
-		bpl.s	loc_1A420
+		move.b	4(a0),d0
+		bpl.s	_otNormalB
 		andi.b	#$7F,d0
 		btst	d1,(a1,d0.w)
-		beq.s	loc_1A440
-		bra.s	loc_1A426
-; ---------------------------------------------------------------------------
+		beq.s	_otNext
+		bra.s	_otHide
 
-loc_1A420:					  ; CODE XREF: CheckOneTimeEventFlags+3Aj
+_otNormalB:
 		btst	d1,(a1,d0.w)
-		bne.s	loc_1A440
+		bne.s	_otNext
 
-loc_1A426:					  ; CODE XREF: CheckOneTimeEventFlags+46j
-		move.b	$00000003(a0),d0
+_otHide:
+		move.b	3(a0),d0
 		andi.b	#$1F,d0
 		lea	(Sprite1_X).l,a5
 		movem.l	a0-a1,-(sp)
 		bsr.w	HideSpriteAtD0
 		movem.l	(sp)+,a0-a1
 
-loc_1A440:					  ; CODE XREF: CheckOneTimeEventFlags+Ej
-						  ; CheckOneTimeEventFlags+26j	...
+_otNext:
 		addq.l	#$06,a0
-		bra.s	loc_1A3DC
-; ---------------------------------------------------------------------------
+		bra.s	_otScan
 
-locret_1A444:					  ; CODE XREF: CheckOneTimeEventFlags+6j
+_otDone:
 		rts
-; End of function CheckOneTimeEventFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckLockedDoorSpriteFlags:			  ; CODE XREF: CheckFlags+10p
+; Removes an unlocked door's sprite on room load.
+CheckLockedDoorSpriteFlags:
 		lea	LockedDoorSpriteFlags(pc),a0
-		bra.s	loc_1A450
-; End of function CheckLockedDoorSpriteFlags
+		bra.s	_checkAndHide
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckFlagsToHideMultipleSprites:		  ; CODE XREF: CheckFlags+Cp
+; Removes cleared-room sprites on room load; with FIX_SPRITE_HIDE the
+; hide extends to every following sprite slot instead of just one.
+CheckFlagsToHideMultipleSprites:
 		lea	RoomClearFlags(pc),a0
 
-loc_1A450:					  ; CODE XREF: CheckLockedDoorSpriteFlags+4j
+_checkAndHide:
 		bsr.s	FindNextRoomFlagMatch
-		bcc.s	locret_1A46A
+		bcc.s	_hideDone
 		btst	d0,(a1,d1.w)
-		beq.s	locret_1A46A
+		beq.s	_hideDone
 
-loc_1A45A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+1Cj
+_hideLoop:
 		move.w	#$FFFF,(a0,d2.w)	  ; Move offscreen
 	if FIX_SPRITE_HIDE
 		addi.w	#SPRITE_SIZE,d2
 		cmpi.w	#ALL_SPRITES_SIZE,d2
-		bne.s	loc_1A45A		  ; Move offscreen
+		bne.s	_hideLoop		  ; Move offscreen
 	endif
 
-locret_1A46A:					  ; CODE XREF: CheckFlagsToHideMultipleSprites+6j
-						  ; CheckFlagsToHideMultipleSprites+Cj
+_hideDone:
 		rts
-; End of function CheckFlagsToHideMultipleSprites
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckPermanentSwitchFlags:			  ; CODE XREF: CheckFlags+14p
+; Forces already-pressed permanent switches into their pressed state
+; on room load: facing SW, animation 4, behaviour parameter cleared,
+; drawn behind (RenderFlags bit 7).
+CheckPermanentSwitchFlags:
 		lea	PermanentSwitchFlags(pc),a0
 
-loc_1A470:					  ; CODE XREF: CheckPermanentSwitchFlags+34j
+_psScan:
 		bsr.s	FindNextRoomFlagMatch	  ; Returns:
 						  ; d0:	flag bit
 						  ; d1:	flag byte
 						  ; d2:	offset to sprite table entry
-		bcc.s	locret_1A4A2
+		bcc.s	_psDone
 		btst	d0,(a1,d1.w)
-		beq.s	loc_1A49C
+		beq.s	_psNext
 		andi.b	#$3F,RotationAndSize(a0,d2.w)
 		ori.b	#$80,RotationAndSize(a0,d2.w)
 		move.w	#$0004,AnimationIndex(a0,d2.w)
@@ -239,195 +216,174 @@ loc_1A470:					  ; CODE XREF: CheckPermanentSwitchFlags+34j
 		clr.w	BehavParam(a0,d2.w)
 		bset	#$07,RenderFlags(a0,d2.w)
 
-loc_1A49C:					  ; CODE XREF: CheckPermanentSwitchFlags+Cj
+_psNext:
 		movea.l	a6,a0
 		addq.l	#$04,a0
-		bra.s	loc_1A470		  ; Returns:
-						  ; d0:	flag bit
-						  ; d1:	flag byte
-						  ; d2:	offset to sprite table entry
-; ---------------------------------------------------------------------------
+		bra.s	_psScan
 
-locret_1A4A2:					  ; CODE XREF: CheckPermanentSwitchFlags+6j
+_psDone:
 		rts
-; End of function CheckPermanentSwitchFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckUnlockDoor:				  ; DATA XREF: j_CheckUnlockDoort
+; Returns carry set if this room has a locked door whose unlock flag
+; is still clear (i.e. a key is needed); carry clear otherwise.
+CheckUnlockDoor:
 		lea	LockedDoorSpriteFlags(pc),a0
 		bsr.s	FindNextRoomFlagMatch
-		bcc.s	loc_1A4B8
+		bcc.s	_cudNotLocked
 		btst	d0,(a1,d1.w)
-		bne.s	loc_1A4B8
+		bne.s	_cudNotLocked
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A4B8:					  ; CODE XREF: CheckUnlockDoor+6j
-						  ; CheckUnlockDoor+Cj
+_cudNotLocked:
 		tst.b	d0
 		rts
-; End of function CheckUnlockDoor
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-UnlockDoor:					  ; DATA XREF: j_UnlockDoort
+; Sets this room's door-unlocked flag and moves the door sprite
+; offscreen.
+UnlockDoor:
 		lea	LockedDoorSpriteFlags(pc),a0
 		bsr.s	FindNextRoomFlagMatch
-		bcc.s	locret_1A4CE
+		bcc.s	_udDone
 		bset	d0,(a1,d1.w)
 		move.w	#$FFFF,(a0,d2.w)
 
-locret_1A4CE:					  ; CODE XREF: UnlockDoor+6j
+_udDone:
 		rts
-; End of function UnlockDoor
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FindNextRoomFlagMatch:				  ; CODE XREF: CheckFlagsToHideMultipleSprites:loc_1A450p
-						  ; CheckPermanentSwitchFlags:loc_1A470p ...
-		move.w	(g_RmNum1).l,d0
+; Scans the 4-byte flag table at a0 ({room.w, flag byte.b, flag bit
+; (top 3 bits) | sprite index (low 5 bits) .b}) for g_CurrentRoom.
+; On a match returns carry set with d0 = flag bit, d1 = flag byte
+; offset, d2 = sprite table offset, a6 = the entry (for resuming the
+; scan), a0 = Sprite1 base and a1 = g_Flags; carry clear when the
+; table is exhausted.
+FindNextRoomFlagMatch:
+		move.w	(g_CurrentRoom).l,d0
 		lea	(g_Flags).l,a1
 
-loc_1A4DC:					  ; CODE XREF: FindNextRoomFlagMatch+3Aj
+_fnScan:
 		move.w	(a0),d1
-		bmi.s	loc_1A50C
+		bmi.s	_fnNoMatch
 		cmp.w	d0,d1
-		bne.s	loc_1A508
+		bne.s	_fnNext
 		clr.w	d1
-		move.b	$00000002(a0),d1
-		move.b	$00000003(a0),d0
+		move.b	2(a0),d1
+		move.b	3(a0),d0
 		lsr.b	#$05,d0
-		move.b	$00000003(a0),d2
+		move.b	3(a0),d2
 		andi.w	#$001F,d2
 		lsl.w	#$07,d2
 		movea.l	a0,a6
 		lea	(Sprite1_X).l,a0
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1A508:					  ; CODE XREF: FindNextRoomFlagMatch+12j
+_fnNext:
 		addq.l	#$04,a0
-		bra.s	loc_1A4DC
-; ---------------------------------------------------------------------------
+		bra.s	_fnScan
 
-loc_1A50C:					  ; CODE XREF: FindNextRoomFlagMatch+Ej
+_fnNoMatch:
 		tst.b	d0
 		rts
-; End of function FindNextRoomFlagMatch
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckSacredTreeFlags:				  ; CODE XREF: CheckFlags+18p
+; Hides the sacred trees already cut in this room: SacredTreeFlags
+; entries are {room.w, flag byte.b, flag bit.b}, one per tree in
+; sprite order; d7 counts the room's trees so FindTree can locate
+; the matching sprite.
+CheckSacredTreeFlags:
 		lea	SacredTreeFlags(pc),a0
 		lea	(g_Flags).l,a2
 		clr.w	d7
 
-loc_1A51C:					  ; CODE XREF: CheckSacredTreeFlags+34j
+_stScan:
 		move.w	(a0),d0
-		bmi.s	locret_1A546
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_1A542
+		bmi.s	_stDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_stNext
 		clr.w	d0
-		move.b	$00000002(a0),d0
-		move.b	$00000003(a0),d1
+		move.b	2(a0),d0
+		move.b	3(a0),d1
 		btst	d1,(a2,d0.w)
-		beq.s	loc_1A540
+		beq.s	_stCount
 		bsr.s	FindTree
 		jsr	(j_HideSprite).l
 
-loc_1A540:					  ; CODE XREF: CheckSacredTreeFlags+26j
+_stCount:
 		addq.b	#$01,d7
 
-loc_1A542:					  ; CODE XREF: CheckSacredTreeFlags+16j
+_stNext:
 		addq.l	#$04,a0
-		bra.s	loc_1A51C
-; ---------------------------------------------------------------------------
+		bra.s	_stScan
 
-locret_1A546:					  ; CODE XREF: CheckSacredTreeFlags+Ej
+_stDone:
 		rts
-; End of function CheckSacredTreeFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-FindTree:					  ; CODE XREF: CheckSacredTreeFlags+28p
+; Returns a5 = the (d7+1)-th sprite with the sacred tree graphic.
+FindTree:
 		movem.w	d7,-(sp)
 		lea	(Sprite1_X).l,a5
 
-loc_1A552:					  ; CODE XREF: FindTree+16j
-		cmpi.b	#SpriteB_SacredTree,$0000000B(a5) ; Tree
-		beq.s	loc_1A560
+_ftScan:
+		cmpi.b	#SpriteB_SacredTree,SpriteGraphic(a5)
+		beq.s	_ftMatch
 
-loc_1A55A:					  ; CODE XREF: FindTree:loc_1A560j
-		lea	$00000080(a5),a5
-		bra.s	loc_1A552		  ; Tree
-; ---------------------------------------------------------------------------
+_ftSkip:
+		lea	SPRITE_SIZE(a5),a5
+		bra.s	_ftScan
 
-loc_1A560:					  ; CODE XREF: FindTree+10j
-		dbf	d7,loc_1A55A
+_ftMatch:
+		dbf	d7,_ftSkip
 		movem.w	(sp)+,d7
 		rts
-; End of function FindTree
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1A56A:					  ; CODE XREF: ROM:0001626Cp
+; Called when a sacred tree (a5) is destroyed: counts the tree
+; sprites before a5 to get its ordinal, then sets the matching
+; SacredTreeFlags entry's flag so the tree stays gone.
+SetSacredTreeCutFlag:
 		lea	(Sprite1_X).l,a0
 		clr.w	d7
 
-loc_1A572:					  ; CODE XREF: sub_1A56A+20j
+_tcCount:
 		cmpi.b	#$FF,X(a0)
-		beq.s	loc_1A58C
+		beq.s	_tcFindEntry
 		cmpa.l	a0,a5
-		beq.s	loc_1A58C
+		beq.s	_tcFindEntry
 		cmpi.b	#SpriteB_SacredTree,SpriteGraphic(a0)
-		bne.s	loc_1A586
+		bne.s	_tcNext
 		addq.b	#$01,d7
 
-loc_1A586:					  ; CODE XREF: sub_1A56A+18j
+_tcNext:
 		lea	SPRITE_SIZE(a0),a0
-		bra.s	loc_1A572
-; ---------------------------------------------------------------------------
+		bra.s	_tcCount
 
-loc_1A58C:					  ; CODE XREF: sub_1A56A+Cj
-						  ; sub_1A56A+10j
+_tcFindEntry:
 		lea	SacredTreeFlags(pc),a0
 		lea	(g_Flags).l,a2
 
-loc_1A596:					  ; CODE XREF: sub_1A56A+3Aj
+_tcScan:
 		move.w	(a0),d0
-		bmi.s	locret_1A5B8
-		cmp.w	(g_RmNum1).l,d0
-		beq.s	loc_1A5A6
+		bmi.s	_tcDone
+		cmp.w	(g_CurrentRoom).l,d0
+		beq.s	_tcMatch
 
-loc_1A5A2:					  ; CODE XREF: sub_1A56A:loc_1A5A6j
+_tcAdvance:
 		addq.l	#$04,a0
-		bra.s	loc_1A596
-; ---------------------------------------------------------------------------
+		bra.s	_tcScan
 
-loc_1A5A6:					  ; CODE XREF: sub_1A56A+36j
-		dbf	d7,loc_1A5A2
+_tcMatch:
+		dbf	d7,_tcAdvance
 		clr.w	d0
-		move.b	$00000002(a0),d0
-		move.b	$00000003(a0),d1
+		move.b	2(a0),d0
+		move.b	3(a0),d1
 		bset	d1,(a2,d0.w)
 
-locret_1A5B8:					  ; CODE XREF: sub_1A56A+2Ej
+_tcDone:
 		rts
-; End of function sub_1A56A
 
-; ---------------------------------------------------------------------------
+		modend

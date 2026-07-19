@@ -70,7 +70,7 @@ loc_24D2C:				; CODE XREF: ROM:00024D1Cj
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Process Complete
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24D66:				; CODE XREF: ROM:00024D02j
 					; ROM:00024D12j ...
@@ -113,7 +113,7 @@ loc_24D84:				; CODE XREF: ROM:00024D7Cj
 ; ---------------------------------------------------------------------------
 		jsr	(j_RestoreBGM).l
 		jsr	(j_SaveGame).l
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Game Save Complete
@@ -199,7 +199,7 @@ loc_24E00:				; CODE XREF: ROM:00024DF0j
 ; ---------------------------------------------------------------------------
 		dc.w $E			; Rest End
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24E38:				; CODE XREF: ROM:00024DE6j
 					; ROM:00024DFEj
@@ -230,10 +230,10 @@ loc_24E56:				; CODE XREF: ROM:00024E4Ej
 		moveq	#3,d0
 		jsr	(j_DisplayIslandMap).l
 		jsr	(j_LoadRoom).l
-		jsr	(j_InitVDPAndFadeIn).l
+		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		bsr.w	RestoreBGM_1
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24E86:				; CODE XREF: ROM:00024E54j
 		movem.l	(sp)+,d0-d1/a0/a5
@@ -290,7 +290,7 @@ loc_24E9E:				; CODE XREF: ROM:00024E96j
 		ScriptID    $24,$0	; Run text script at offset 0x027642
 					; 0xE024: PRINT	MSG 0x0072, MSGBOX CLEARED, END: "{47}WUNDERSCHÖNES{43}BUCH, NICHT WAHR?{43}ABER ES IST	NICHTS FÜR ANFÄNGER.{4A}{47}DESWEGEN{43}HALTE ICH ES GEHEIM.{4A}"
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 
 loc_24ECE:				; CODE XREF: ROM:00024E9Cj
 		move.l	(sp)+,d0
@@ -325,7 +325,7 @@ loc_24EE8:				; CODE XREF: ROM:00024EE2j
 ShopPrice_08:
 		movem.l	d0/a0,-(sp)
 		clr.w	d0
-		move.b	(byte_FF1903).l,d0
+		move.b	(g_ShopItemId).l,d0
 		move.w	d0,(word_FF1198).l
 		bsr.w	GetItemArticle
 		lea	Shop_08_Msgs(pc),a0
@@ -361,7 +361,7 @@ Shop_08:
 		ScriptID    $6EE,$0	; Run text script at offset 0x0283D6
 					; 0xE4F7: PRINT	MSG 0x0545, MSGBOX CLEARED, END: "{47}ICH SCHICKE ES{43}DIREKT ZU DEINEM LADEN!{4A}"
 ; ---------------------------------------------------------------------------
-		move.b	#$FF,(byte_FF1903).l
+		move.b	#$FF,(g_ShopItemId).l
 		bra.s	locret_24F3C
 ; ---------------------------------------------------------------------------
 

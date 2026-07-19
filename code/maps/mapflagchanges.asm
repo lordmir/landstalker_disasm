@@ -1,114 +1,103 @@
+MapFlagChanges	module
+; Persistent map graphics changes: on room load, story/door flags
+; replay "tile swaps" - block copies within the loaded map layers
+; (row stride $94 bytes) and heightmap - so opened doors, drained
+; water etc. stay changed. The TileSwaps table holds 16-byte entries
+; (source/dest map and heightmap coordinates, size, copy mode, with
+; the room number at offset $C and the swap id at $E).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckRoomGfxFlags:				  ; CODE XREF: ROM:00002BC2p
+; Room load: applies every flagged tile swap for this room.
+CheckRoomGfxFlags:
 		bsr.s	CheckTileSwapFlags
 		bsr.s	CheckTreeWarpFlags
 		rts
-; End of function CheckRoomGfxFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckTileSwapFlags:				  ; CODE XREF: CheckRoomGfxFlagsp
+; Scans RoomGfxSwapFlags, then falls through to scan the unlocked
+; door swaps in LockedDoorGfxSwapFlags.
+CheckTileSwapFlags:
 		lea	RoomGfxSwapFlags(pc),a0
 		lea	(g_Flags).l,a1
 		bsr.s	CheckForGraphicSwapFlags
 		lea	LockedDoorGfxSwapFlags(pc),a0
-; End of function CheckTileSwapFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForGraphicSwapFlags:			  ; CODE XREF: CheckTileSwapFlags+Ap
-						  ; CheckForGraphicSwapFlags+36j
+; Applies the swaps in table a0: 4-byte entries {room.w, flag
+; byte.b (negative = apply unconditionally), swap id (bits 3-6) |
+; flag bit (low 3 bits) .b}. a1 = g_Flags.
+CheckForGraphicSwapFlags:
 		move.w	(a0),d0
-		bmi.s	locret_4E44
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_4E40
-		move.b	$00000002(a0),d0
-		bmi.s	loc_4E2E
+		bmi.s	_gsDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_gsNext
+		move.b	2(a0),d0
+		bmi.s	_gsApply
 		ext.w	d0
-		move.b	$00000003(a0),d1
+		move.b	3(a0),d1
 		andi.b	#$07,d1
 		btst	d1,(a1,d0.w)
-		beq.s	loc_4E40
+		beq.s	_gsNext
 
-loc_4E2E:					  ; CODE XREF: CheckForGraphicSwapFlags+10j
-		move.b	$00000003(a0),d0
+_gsApply:
+		move.b	3(a0),d0
 		andi.b	#$78,d0
 		movem.l	a0-a1,-(sp)
-		bsr.s	sub_4E90
+		bsr.s	ApplyTileSwap
 		movem.l	(sp)+,a0-a1
 
-loc_4E40:					  ; CODE XREF: CheckForGraphicSwapFlags+Aj
-						  ; CheckForGraphicSwapFlags+20j
+_gsNext:
 		addq.l	#$04,a0
 		bra.s	CheckForGraphicSwapFlags
-; ---------------------------------------------------------------------------
 
-locret_4E44:					  ; CODE XREF: CheckForGraphicSwapFlags+2j
+_gsDone:
 		rts
-; End of function CheckForGraphicSwapFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckTreeWarpFlags:				  ; CODE XREF: CheckRoomGfxFlags+2p
+; Applies swap 8 for TreeWarpGfxSwapFlags entries whose flag AND the
+; next flag bit are both set - the tree warps opening up (gated on
+; g_AdditionalFlags+4 bit 7). Relies on a1 = g_Flags left by
+; CheckTileSwapFlags running immediately before.
+CheckTreeWarpFlags:
 		lea	TreeWarpGfxSwapFlags(pc),a0
 		btst	#$07,(g_AdditionalFlags+4).l
-		beq.s	locret_4E8E
+		beq.s	_twDone
 
-loc_4E54:					  ; CODE XREF: CheckTreeWarpFlags+46j
+_twScan:
 		move.w	(a0),d0
-		bmi.s	locret_4E8E
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_4E8A
-		move.b	$00000002(a0),d0
+		bmi.s	_twDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_twNext
+		move.b	2(a0),d0
 		ext.w	d0
-		move.b	$00000003(a0),d1
+		move.b	3(a0),d1
 		andi.b	#$07,d1
 		btst	d1,(a1,d0.w)
-		beq.s	loc_4E8A
+		beq.s	_twNext
 		addq.b	#$01,d1
 		btst	d1,(a1,d0.w)
-		beq.s	loc_4E8A
+		beq.s	_twNext
 		move.b	#$08,d0
 		movem.l	a0-a1,-(sp)
-		bsr.s	sub_4E90
+		bsr.s	ApplyTileSwap
 		movem.l	(sp)+,a0-a1
 
-loc_4E8A:					  ; CODE XREF: CheckTreeWarpFlags+18j
-						  ; CheckTreeWarpFlags+2Cj ...
+_twNext:
 		addq.l	#$04,a0
-		bra.s	loc_4E54
-; ---------------------------------------------------------------------------
+		bra.s	_twScan
 
-locret_4E8E:					  ; CODE XREF: CheckTreeWarpFlags+Cj
-						  ; CheckTreeWarpFlags+10j
+_twDone:
 		rts
-; End of function CheckTreeWarpFlags
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_4E90:					  ; CODE XREF: CheckForGraphicSwapFlags+2Ep
-						  ; CheckTreeWarpFlags+3Ep
+; Applies tile swap d0 to both the map layers and the heightmap.
+ApplyTileSwap:
 		bsr.s	MapTileSwap
 		bra.s	HMTileSwap
-; End of function sub_4E90
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-MapTileSwap:					  ; CODE XREF: DoTileSwap+3Ep
-						  ; sub_4E90p
+; Applies swap d0's block copy to the foreground/background map
+; layers.
+MapTileSwap:
 		bsr.s	LoadTileSwap
 		bsr.w	GetMapOffsets
 		movea.l	a1,a3
@@ -120,14 +109,10 @@ MapTileSwap:					  ; CODE XREF: DoTileSwap+3Ep
 		ext.w	d1
 		bsr.s	DoMapTileSwap
 		rts
-; End of function MapTileSwap
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HMTileSwap:					  ; CODE XREF: DoTileSwap+36p
-						  ; sub_4E90+2j
+; Applies swap d0's copy to the heightmap.
+HMTileSwap:
 		bsr.w	GetHeightmapCoordOffset
 		movea.l	a1,a2
 		bsr.w	GetHeightmapCoordOffset
@@ -137,166 +122,152 @@ HMTileSwap:					  ; CODE XREF: DoTileSwap+36p
 		ext.w	d1
 		bsr.w	SwapHMTiles
 		rts
-; End of function HMTileSwap
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadTileSwap:					  ; CODE XREF: DoTileSwap+14p
-						  ; MapTileSwapp
+; Finds the TileSwaps entry for the current room with swap id d0
+; (ids are stored offset by 8). A missing entry hangs forever
+; beeping - a debug alarm for bad data.
+LoadTileSwap:
 		subi.b	#$08,d0
 		lea	TileSwaps(pc),a0
 
-loc_4ECE:					  ; CODE XREF: LoadTileSwap+20j
-		move.w	$0000000C(a0),d1
-		bmi.s	loc_4EE8
-		cmp.w	(g_RmNum1).l,d1
-		bne.s	loc_4EE2
-		cmp.b	$0000000E(a0),d0
-		beq.s	locret_4EF2
+_tsScan:
+		move.w	$C(a0),d1
+		bmi.s	_tsMissing
+		cmp.w	(g_CurrentRoom).l,d1
+		bne.s	_tsNext
+		cmp.b	$E(a0),d0
+		beq.s	_tsFound
 
-loc_4EE2:					  ; CODE XREF: LoadTileSwap+14j
-		lea	$00000010(a0),a0
-		bra.s	loc_4ECE
-; ---------------------------------------------------------------------------
+_tsNext:
+		lea	$10(a0),a0
+		bra.s	_tsScan
 
-loc_4EE8:					  ; CODE XREF: LoadTileSwap+Cj
-						  ; LoadTileSwap+2Aj
+_tsMissing:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_NigelDropObj2
-; ---------------------------------------------------------------------------
 		nop
 		nop
-		bra.s	loc_4EE8
-; ---------------------------------------------------------------------------
+		bra.s	_tsMissing
 
-locret_4EF2:					  ; CODE XREF: LoadTileSwap+1Aj
+_tsFound:
 		rts
-; End of function LoadTileSwap
 
 
-; =============== S U B	R O U T	I N E =======================================
+; Copies a (d0+1) x (d1+1) cell block in both map layers, a1/a2 =
+; foreground/background dest, a3/a4 = source. Mode (entry byte at
+; 9(a0)): 0 = plain rows (stride $94); 1 = rows shifted one cell
+; with stride $96, following the isometric diagonal; 2+ = column
+; copy (stepping a row at a time) advancing diagonally.
+DoMapTileSwap:
+		cmpi.b	#$01,9(a0)
+		beq.s	_mode1
+		bhi.s	_mode2
 
-
-DoMapTileSwap:					  ; CODE XREF: MapTileSwap+16p
-		cmpi.b	#$01,$00000009(a0)
-		beq.s	loc_4F24
-		bhi.s	loc_4F4E
-
-loc_4EFE:					  ; CODE XREF: DoMapTileSwap+2Aj
+_m0Rows:
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F02:					  ; CODE XREF: DoMapTileSwap+12j
+_m0Row:
 		move.w	(a3)+,(a1)+
 		move.w	(a4)+,(a2)+
-		dbf	d0,loc_4F02
+		dbf	d0,_m0Row
 		movem.l	(sp)+,d0/a1-a4
-		lea	$00000094(a1),a1
-		lea	$00000094(a2),a2
-		lea	$00000094(a3),a3
-		lea	$00000094(a4),a4
-		dbf	d1,loc_4EFE
+		lea	$94(a1),a1
+		lea	$94(a2),a2
+		lea	$94(a3),a3
+		lea	$94(a4),a4
+		dbf	d1,_m0Rows
 		rts
-; ---------------------------------------------------------------------------
 
-loc_4F24:					  ; CODE XREF: DoMapTileSwap+6j
+_mode1:
 		addq.w	#$02,a1
 		addq.w	#$02,a3
 
-loc_4F28:					  ; CODE XREF: DoMapTileSwap+54j
+_m1Rows:
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F2C:					  ; CODE XREF: DoMapTileSwap+3Cj
+_m1Row:
 		move.w	(a3)+,(a1)+
 		move.w	(a4)+,(a2)+
-		dbf	d0,loc_4F2C
+		dbf	d0,_m1Row
 		movem.l	(sp)+,d0/a1-a4
-		lea	$00000096(a1),a1
-		lea	$00000096(a2),a2
-		lea	$00000096(a3),a3
-		lea	$00000096(a4),a4
-		dbf	d1,loc_4F28
+		lea	$96(a1),a1
+		lea	$96(a2),a2
+		lea	$96(a3),a3
+		lea	$96(a4),a4
+		dbf	d1,_m1Rows
 		rts
-; ---------------------------------------------------------------------------
 
-loc_4F4E:					  ; CODE XREF: DoMapTileSwap+8j
-		lea	$00000094(a2),a2
-		lea	$00000094(a4),a4
+_mode2:
+		lea	$94(a2),a2
+		lea	$94(a4),a4
 
-loc_4F56:					  ; CODE XREF: DoMapTileSwap+92j
+_m2Cols:
 		movem.l	d0/a1-a4,-(sp)
 
-loc_4F5A:					  ; CODE XREF: DoMapTileSwap+7Aj
+_m2Col:
 		move.w	(a3),(a1)
 		move.w	(a4),(a2)
-		lea	$00000094(a1),a1
-		lea	$00000094(a2),a2
-		lea	$00000094(a3),a3
-		lea	$00000094(a4),a4
-		dbf	d0,loc_4F5A
+		lea	$94(a1),a1
+		lea	$94(a2),a2
+		lea	$94(a3),a3
+		lea	$94(a4),a4
+		dbf	d0,_m2Col
 		movem.l	(sp)+,d0/a1-a4
-		lea	$00000096(a1),a1
-		lea	$00000096(a2),a2
-		lea	$00000096(a3),a3
-		lea	$00000096(a4),a4
-		dbf	d1,loc_4F56
+		lea	$96(a1),a1
+		lea	$96(a2),a2
+		lea	$96(a3),a3
+		lea	$96(a4),a4
+		dbf	d1,_m2Cols
 		rts
-; End of function DoMapTileSwap
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-SwapHMTiles:					  ; CODE XREF: HMTileSwap+12p
-						  ; SwapHMTiles+16j
+; Copies a (d0+1) x (d1+1) block within the heightmap (a1 = dest,
+; a2 = source, row stride $94).
+SwapHMTiles:
 		movem.l	d0/a1-a2,-(sp)
 
-loc_4F90:					  ; CODE XREF: SwapHMTiles+6j
+_hmRow:
 		move.w	(a2)+,(a1)+
-		dbf	d0,loc_4F90
+		dbf	d0,_hmRow
 		movem.l	(sp)+,d0/a1-a2
-		lea	$00000094(a1),a1
-		lea	$00000094(a2),a2
+		lea	$94(a1),a1
+		lea	$94(a2),a2
 		dbf	d1,SwapHMTiles
 		rts
-; End of function SwapHMTiles
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_4FA8:					  ; CODE XREF: ROM:00008CD4p
+; Using a key on a locked door (PostUseKey): d2 = door index from
+; the floor type. Finds this room's LockedDoorGfxSwapFlags entry
+; with swap id (d2*8)+8, sets its persistent flag and applies the
+; door-opening tile swap immediately.
+UnlockDoorTileSwap:
 		lsl.b	#$03,d2
 		addq.b	#$08,d2
 		lea	LockedDoorGfxSwapFlags(pc),a0
 		lea	(g_Flags).l,a1
 
-loc_4FB6:					  ; CODE XREF: sub_4FA8+40j
+_ldScan:
 		move.w	(a0),d0
-		bmi.s	locret_4FE4
-		cmp.w	(g_RmNum1).l,d0
-		bne.s	loc_4FE6
-		move.b	$00000003(a0),d0
+		bmi.s	_ldDone
+		cmp.w	(g_CurrentRoom).l,d0
+		bne.s	_ldNext
+		move.b	3(a0),d0
 		andi.b	#$78,d0
 		cmp.b	d0,d2
-		bne.s	loc_4FE6
-		move.b	$00000002(a0),d3
+		bne.s	_ldNext
+		move.b	2(a0),d3
 		ext.w	d3
-		move.b	$00000003(a0),d1
+		move.b	3(a0),d1
 		andi.b	#$07,d1
 		bset	d1,(a1,d3.w)
 		bsr.w	DoTileSwap
 
-locret_4FE4:					  ; CODE XREF: sub_4FA8+10j
+_ldDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_4FE6:					  ; CODE XREF: sub_4FA8+18j
-						  ; sub_4FA8+24j
+_ldNext:
 		addq.l	#$04,a0
-		bra.s	loc_4FB6
-; End of function sub_4FA8
+		bra.s	_ldScan
 
-; ---------------------------------------------------------------------------
+		modend

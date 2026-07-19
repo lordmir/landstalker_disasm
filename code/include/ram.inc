@@ -415,30 +415,46 @@ g_Pal3Active:                     equ $FF0F30
 g_PaletteDarkenCurrentBrightness: equ $FF0F50
 g_PaletteDarkenExtent:            equ $FF0F52
 g_PaletteDarkenTargetBrightness:  equ $FF0F54
-byte_FF0F7F:                      equ $FF0F7F
-byte_FF0F80:                      equ $FF0F80
-byte_FF0F81:                      equ $FF0F81
+; Nonzero while sound command $F0 stalls the queue: ProcessSoundQueue
+; sends nothing more until the driver reports ready at Z80 $1283.
+g_SndQueueWait:                   equ $FF0F7F
+; Stack of the last BGM track numbers played: $FF0F81 = current,
+; $FF0F82-$FF0F8A = history (up to 10 deep, depth in g_BGMStackDepth).
+; Sound command $FB pops it to resume the previous track.
+g_BGMStackDepth:                  equ $FF0F80
+g_BGMStack:                       equ $FF0F81
 g_InterruptFlags:                 equ $FF0F8B
 g_VRAMCopyQueueLen:               equ $FF0F8C
 g_NumQueuedDMAOps:                equ $FF0F8D
 g_Controller1State:               equ $FF0F8E
 g_Controller2State:               equ $FF0F8F
-byte_FF0F90:                      equ $FF0F90
-byte_FF0F91:                      equ $FF0F91
-unk_FF0F92:                       equ $FF0F92
-unk_FF0F96:                       equ $FF0F96
-unk_FF0F97:                       equ $FF0F97
-unk_FF0F98:                       equ $FF0F98
-unk_FF0F99:                       equ $FF0F99
-unk_FF0F9A:                       equ $FF0F9A
-unk_FF0F9B:                       equ $FF0F9B
-unk_FF0F9C:                       equ $FF0F9C
-byte_FF0F9D:                      equ $FF0F9D
-unk_FF0FA0:                       equ $FF0FA0
+; Buttons UpdateControllerInputsMasked suppresses for up to 10 frames.
+; Never written non-zero anywhere, so the masking is vestigial.
+g_InputHoldMask:                  equ $FF0F90
+g_InputHoldTimer:                 equ $FF0F91
+; ConvertToBase10 output: ten digit bytes, each stored as digit+1
+; ($02 = '1'), leading zeros cleared to $00. The Digit4-9 aliases are
+; the last six digits, used by the HUD/menu number displays.
+g_Base10Digits:                   equ $FF0F92
+g_Base10Digit4:                   equ $FF0F96
+g_Base10Digit5:                   equ $FF0F97
+g_Base10Digit6:                   equ $FF0F98
+g_Base10Digit7:                   equ $FF0F99
+g_Base10Digit8:                   equ $FF0F9A
+g_Base10Digit9:                   equ $FF0F9B
+; Increments every VBlank (never reset); the low byte's bit 0 is read
+; as an odd/even frame toggle for palette cycling and sprite flicker.
+g_VBlankCounter:                  equ $FF0F9C
+g_VBlankCounterLow:               equ $FF0F9D
+; Four-word sound command queue fed by trap #0 (param byte : sound id
+; byte); drained one entry per VBlank by ProcessSoundQueue.
+g_SoundQueue:                     equ $FF0FA0
 g_DMADestHi:                      equ $FF0FA8
 g_RNG:                            equ $FF0FAA
-word_FF0FAC:                      equ $FF0FAC
-word_FF0FAE:                      equ $FF0FAE
+; Cell x/y (hi/lo byte) and width/height (hi/lo byte) for the unused
+; CopyToPlaneA/B tilemap rectangle copiers.
+g_PlaneCopyXY:                    equ $FF0FAC
+g_PlaneCopySize:                  equ $FF0FAE
 g_VDPReg00_ModeSet1:              equ $FF0FB0
 g_VDPReg01_ModeSet2:              equ $FF0FB2
 g_VDPReg02_PatternBaseScrollA:    equ $FF0FB4
@@ -470,8 +486,13 @@ g_ChestOpenFlags:                 equ $FF1080
 g_RoomVisitedFlags:               equ $FF10C0
 g_PlayerXFlattened:               equ $FF1124
 g_PlayerYFlattened:               equ $FF1125
-word_FF1126:                      equ $FF1126
-byte_FF1128:                      equ $FF1128
+; Sub-cell (0-$F) part of the camera position; the initial HScroll and
+; VSRAM values are derived from these (InitScrollRegs, gamelogic6).
+g_CameraSubX:                     equ $FF1126
+g_CameraSubY:                     equ $FF1127
+; Number of queued screen-block VDP copies not yet flushed (tile swaps,
+; door blocks, block clears); mapload waits for it to drain.
+g_PendingBlockCopies:             equ $FF1128
 byte_FF1129:                      equ $FF1129
 byte_FF112A:                      equ $FF112A
 g_comprStringLen:                 equ $FF112B
@@ -482,11 +503,20 @@ g_CurPalIdx:                      equ $FF112F
 g_RoomMinHeight:                  equ $FF1130
 g_RoomMaxHeight:                  equ $FF1131
 g_UpdateHUDFlag:                  equ $FF1132
-byte_FF1133:                      equ $FF1133
+; Pickup/carry/throw phase counter (ProcessActionButton): 1 = pickup
+; started, counts up each frame through lift ($08) and raise ($10),
+; then held at $17 while carrying; advances again on A/C to arm and
+; execute the throw ($18-$26). Zero = not carrying. HandleJump allows
+; jumping only when 0 or >= $17 (carrying, not mid-animation), and
+; walk animation switches to the carry variant while >= $18.
+g_CarryPhase:                     equ $FF1133
 byte_FF1134:                      equ $FF1134
 g_PlayerMoving:                   equ $FF113C
 g_SwordButtonMask:                equ $FF113D
-g_LadderClimbJumpState:           equ $FF113E
+; Buttons held since the last jump (and.b'd with the pad each frame);
+; HandleJump requires it clear and sets CTRLBF_B, so jumps don't
+; auto-repeat while B stays held.
+g_JumpButtonLatch:                equ $FF113E
 g_SwordSwingFrame:                equ $FF113F
 g_RoomBGM:                        equ $FF1140
 g_currentSpeakerScriptID:         equ $FF1141
@@ -514,24 +544,42 @@ g_BGM:                            equ $FF1156
 g_GaiaAttackQueued:               equ $FF1157
 g_StepCounter:                    equ $FF1158
 g_IntroStringToDisplay:           equ $FF1159
-byte_FF115A:                      equ $FF115A
-word_FF1180:                      equ $FF1180
+g_SavedBlockCopies:               equ $FF115A
+; Toggles 0/1 each camera scroll step so vertical (VSRAM) movement runs
+; at half the horizontal rate (see _scrollCamUpBy/_scrollCamDownBy).
+g_VScrollParity:                  equ $FF1180
 g_PlayerSpeed:                    equ $FF1182
 g_BlockTableIndex:                equ $FF1184
 unk_FF1186:                       equ $FF1186
 word_FF1192:                      equ $FF1192
 word_FF1194:                      equ $FF1194
-word_FF1196:                      equ $FF1196
+; Item id referenced by dialogue/text: chest contents, shop items;
+; string rendering substitutes its name/article into strings.
+g_CurrentTextItem:                equ $FF1196
 word_FF1198:                      equ $FF1198
 word_FF119A:                      equ $FF119A
 word_FF119C:                      equ $FF119C
 unk_FF119E:                       equ $FF119E
-unk_FF11DE:                       equ $FF11DE
-word_FF1200:                      equ $FF1200
-word_FF1202:                      equ $FF1202
-g_RmNum1:                         equ $FF1204
-RmNum2:                           equ $FF1206
-word_FF1208:                      equ $FF1208
+; Sprite draw-order list: entity struct offsets ($0000-$0780), sorted
+; back-to-front by SortSpritesByDepth, terminated by $FFFF.
+g_SpriteDrawList:                 equ $FF11DE
+; Fine (16x coarse + sub) camera origin the sprite projection subtracts
+; from: the player's flattened position minus Z (set on room load in
+; gamelogic2, tracked by the movement handlers in gamelogic1).
+g_CameraFineX:                    equ $FF1200
+g_CameraFineY:                    equ $FF1202
+; The room actually loaded: the warp destination after
+; CheckForRoomTransition substitutes any story-flag variant (e.g.
+; thieves' cave without water, Mercator harbour after Mir).
+g_CurrentRoom:                    equ $FF1204
+; The original (pre-variant) room number from the warp table; warps,
+; fall/climb destinations and the island map are keyed on this
+; (GetOriginalRoomNum maps a variant back).
+g_OriginalRoom:                   equ $FF1206
+; Last acknowledged Player_GroundHeight (high byte = height, low byte =
+; floor type): floor handlers latch it here to detect floor changes and
+; fire warp pads / Goddess Statues only once.
+g_PrevGroundHeight:               equ $FF1208
 g_SwordChargeMeter:               equ $FF120A
 g_CarriedEntity:                  equ $FF120C
 g_Gold:                           equ $FF120E
@@ -541,7 +589,10 @@ g_RoomFallDest:                   equ $FF12DA
 g_RoomClimbDest:                  equ $FF12DC
 g_ControllerPlayback:             equ $FF12DE
 g_ControllerPlaybackTimer:        equ $FF12DF
-word_FF12E0:                      equ $FF12E0
+; Behaviour {param,cmd} word given to a thrown sprite: $0010 = dropped
+; (thrown up), $1710 = thrown forward with momentum (directional input
+; held when the throw was armed).
+g_ThrowBehaviour:                 equ $FF12E0
 g_ParalysisTimer:                 equ $FF12E2
 g_ChargedSwordW:                  equ $FF12E4
 g_ChargedSword:                   equ $FF12E5
@@ -551,13 +602,19 @@ word_FF12EA:                      equ $FF12EA
 g_GoldenStatueTimer:              equ $FF12EC
 g_IntroStringDisplayTime:         equ $FF12EE
 word_FF12F0:                      equ $FF12F0
-unk_FF1400:                       equ $FF1400
+; Per-entity VDP sprite piece buffers ($40 bytes each, 8 pieces of
+; {Y, size, tile attr, X}), built by BuildSpritePieces at half the
+; entity's struct offset.
+g_VdpSpritePieces:                equ $FF1400
 unk_FF1440:                       equ $FF1440
 word_FF1800:                      equ $FF1800
 dword_FF1804:                     equ $FF1804
 word_FF1808:                      equ $FF1808
 word_FF180C:                      equ $FF180C
-byte_FF1838:                      equ $FF1838
+; Rolling offset (+3 mod 16 per sprite) subtracted from BehavParam
+; when sprites with behaviour 1 spawn, so identical sprites in a
+; room don't animate in sync.
+g_BehavPhaseStagger:              equ $FF1838
 g_chestCount:                     equ $FF183C
 g_ScreenBufferPtr:                equ $FF1840
 dword_FF1844:                     equ $FF1844
@@ -567,14 +624,20 @@ JmpInstr1:                        equ $FF1850
 JumpInstr2:                       equ $FF1858
 unk_FF1860:                       equ $FF1860
 g_InputPlaybackAddr:              equ $FF1870
-dword_FF1874:                     equ $FF1874
+; Write pointer past the primary blockset in g_Blockset, where the
+; room's secondary blockset is decompressed to (GetBlockset).
+g_SecBlocksetPtr:                 equ $FF1874
 g_PrintNumericDwordValue:         equ $FF1878
 g_PrintNumericByteValue:          equ $FF187B
-dword_FF187C:                     equ $FF187C
+; Pointer to the sprite the player is talking to (CheckTalk).
+g_TalkingSprite:                  equ $FF187C
 g_FridayAnimPtr:                  equ $FF1880
 g_curDecomprChar:                 equ $FF1900
 g_RightArrowCursorState:          equ $FF1902
-byte_FF1903:                      equ $FF1903
+; Item id handed between EB_ShopItem and the shop scripts: the shop-item
+; sprite's contents byte on pick-up/put-down; the script writes $FF back
+; to say the sprite should despawn (item bought, stolen or taken).
+g_ShopItemId:                     equ $FF1903
 g_YesNoPromptResult:              equ $FF1904
 g_GameFlagProgress1:              equ $FF1906
 g_GameFlagProgress2:              equ $FF1907
@@ -646,11 +709,11 @@ Player_GroundType:                equ $FF5423
 Player_AnimationIndex:            equ $FF5424
 Player_AnimationFrame:            equ $FF5426
 Player_HeightmapOffset:           equ $FF5428
-Player_Unk2A:                     equ $FF542A
-Player_Unk2B:                     equ $FF542B
+Player_BehavParam:                equ $FF542A
+Player_BehavCmd:                  equ $FF542B
 Player_Action:                    equ $FF542C
-Player_AnimAction:                equ $FF542E
-Player_Unk2F:                     equ $FF542F
+Player_PrevAction:                equ $FF542E
+Player_AnimAction1:               equ $FF542F
 Player_SpriteUnderneath:          equ $FF5430
 Player_BehaviourLUTPtr:           equ $FF5432
 Player_GoldOrChestContents:       equ $FF5436
@@ -680,24 +743,20 @@ Player_InitZ:                     equ $FF5452
 Player_HitBoxZEnd:                equ $FF5454
 Player_DrawOrder:                 equ $FF5456
 Player_TempHealth:                equ $FF5458
-Player_Unk5A:                     equ $FF545A
-Player_Unk5B:                     equ $FF545B
-Player_Unk5C:                     equ $FF545C
-Player_Unk5D:                     equ $FF545D
+Player_TargetX:                   equ $FF545A
+Player_TargetY:                   equ $FF545B
+Player_TargetSubX:                equ $FF545C
+Player_TargetSubY:                equ $FF545D
 Player_SavedBehaviourLUTPtr:      equ $FF545E
-Player_Unk62:                     equ $FF5462
-Player_Unk63:                     equ $FF5463
-Player_Unk64:                     equ $FF5464
-Player_Unk65:                     equ $FF5465
-Player_Unk66:                     equ $FF5466
+Player_RepeatPtr:                 equ $FF5462
+Player_RepeatCount:               equ $FF5466
 Player_SavedBehavParam:           equ $FF5467
 Player_InitCombatFlags:           equ $FF5468
 Player_SavedBehavCmd:             equ $FF5469
 Player_InitBehavParam:            equ $FF546A
 Player_InitBehavCmd:              equ $FF546B
 Player_MovedDirFlags:             equ $FF546D
-Player_Unk6E:                     equ $FF546E
-Player_Unk6F:                     equ $FF546F
+Player_AnimFlags:                 equ $FF546F
 Player_TileCopySource:            equ $FF5471
 Player_InitBehaviourLUTPtr:       equ $FF5472
 Player_InitGoldOrChestCont:       equ $FF5476
@@ -736,11 +795,11 @@ Sprite1_GroundType:               equ $FF54A3
 Sprite1_AnimationIndex:           equ $FF54A4
 Sprite1_AnimationFrame:           equ $FF54A6
 Sprite1_HeightmapOffset:          equ $FF54A8
-Sprite1_Unk2A:                    equ $FF54AA
-Sprite1_Unk2B:                    equ $FF54AB
+Sprite1_BehavParam:               equ $FF54AA
+Sprite1_BehavCmd:                 equ $FF54AB
 Sprite1_Action:                   equ $FF54AC
-Sprite1_Unk2E:                    equ $FF54AE
-Sprite1_Unk2F:                    equ $FF54AF
+Sprite1_PrevAction:               equ $FF54AE
+Sprite1_AnimAction1:              equ $FF54AF
 Sprite1_SpriteUnderneath:         equ $FF54B0
 Sprite1_BehaviourLUTPtr:          equ $FF54B2
 Sprite1_GoldOrChestContents:      equ $FF54B6
@@ -770,24 +829,20 @@ Sprite1_InitZ:                    equ $FF54D2
 Sprite1_HitBoxZEnd:               equ $FF54D4
 Sprite1_DrawOrder:                equ $FF54D6
 Sprite1_TempHealth:               equ $FF54D8
-Sprite1_Unk5A:                    equ $FF54DA
-Sprite1_Unk5B:                    equ $FF54DB
-Sprite1_Unk5C:                    equ $FF54DC
-Sprite1_Unk5D:                    equ $FF54DD
+Sprite1_TargetX:                  equ $FF54DA
+Sprite1_TargetY:                  equ $FF54DB
+Sprite1_TargetSubX:               equ $FF54DC
+Sprite1_TargetSubY:               equ $FF54DD
 Sprite1_SavedBehaviourLUTPtr:     equ $FF54DE
-Sprite1_Unk62:                    equ $FF54E2
-Sprite1_Unk63:                    equ $FF54E3
-Sprite1_Unk64:                    equ $FF54E4
-Sprite1_Unk65:                    equ $FF54E5
-Sprite1_Unk66:                    equ $FF54E6
+Sprite1_RepeatPtr:                equ $FF54E2
+Sprite1_RepeatCount:              equ $FF54E6
 Sprite1_SavedBehavParam:          equ $FF54E7
 Sprite1_InitCombatFlags:          equ $FF54E8
 Sprite1_SavedBehavCmd:            equ $FF54E9
 Sprite1_InitBehavParam:           equ $FF54EA
 Sprite1_InitBehavCmd:             equ $FF54EB
 Sprite1_MovedDirFlags:            equ $FF54ED
-Sprite1_Unk6E:                    equ $FF54EE
-Sprite1_Unk6F:                    equ $FF54EF
+Sprite1_AnimFlags:                equ $FF54EF
 Sprite1_TileCopySource:           equ $FF54F1
 Sprite1_InitBehaviourLUTPtr:      equ $FF54F2
 Sprite1_InitGoldOrChestCont:      equ $FF54F6
@@ -826,11 +881,11 @@ Sprite2_GroundType:               equ $FF5523
 Sprite2_AnimationIndex:           equ $FF5524
 Sprite2_AnimationFrame:           equ $FF5526
 Sprite2_HeightmapOffset:          equ $FF5528
-Sprite2_Unk2A:                    equ $FF552A
-Sprite2_Unk2B:                    equ $FF552B
+Sprite2_BehavParam:               equ $FF552A
+Sprite2_BehavCmd:                 equ $FF552B
 Sprite2_Action:                   equ $FF552C
-Sprite2_Unk2E:                    equ $FF552E
-Sprite2_Unk2F:                    equ $FF552F
+Sprite2_PrevAction:               equ $FF552E
+Sprite2_AnimAction1:              equ $FF552F
 Sprite2_SpriteUnderneath:         equ $FF5530
 Sprite2_BehaviourLUTPtr:          equ $FF5532
 Sprite2_GoldOrChestContents:      equ $FF5536
@@ -860,24 +915,20 @@ Sprite2_InitZ:                    equ $FF5552
 Sprite2_HitBoxZEnd:               equ $FF5554
 Sprite2_DrawOrder:                equ $FF5556
 Sprite2_TempHealth:               equ $FF5558
-Sprite2_Unk5A:                    equ $FF555A
-Sprite2_Unk5B:                    equ $FF555B
-Sprite2_Unk5C:                    equ $FF555C
-Sprite2_Unk5D:                    equ $FF555D
+Sprite2_TargetX:                  equ $FF555A
+Sprite2_TargetY:                  equ $FF555B
+Sprite2_TargetSubX:               equ $FF555C
+Sprite2_TargetSubY:               equ $FF555D
 Sprite2_SavedBehaviourLUTPtr:     equ $FF555E
-Sprite2_Unk62:                    equ $FF5562
-Sprite2_Unk63:                    equ $FF5563
-Sprite2_Unk64:                    equ $FF5564
-Sprite2_Unk65:                    equ $FF5565
-Sprite2_Unk66:                    equ $FF5566
+Sprite2_RepeatPtr:                equ $FF5562
+Sprite2_RepeatCount:              equ $FF5566
 Sprite2_SavedBehavParam:          equ $FF5567
 Sprite2_InitCombatFlags:          equ $FF5568
 Sprite2_SavedBehavCmd:            equ $FF5569
 Sprite2_InitBehavParam:           equ $FF556A
 Sprite2_InitBehavCmd:             equ $FF556B
 Sprite2_MovedDirFlags:            equ $FF556D
-Sprite2_Unk6E:                    equ $FF556E
-Sprite2_Unk6F:                    equ $FF556F
+Sprite2_AnimFlags:                equ $FF556F
 Sprite2_TileCopySource:           equ $FF5571
 Sprite2_InitBehaviourLUTPtr:      equ $FF5572
 Sprite2_InitGoldOrChestCont:      equ $FF5576
@@ -916,11 +967,11 @@ Sprite3_GroundType:               equ $FF55A3
 Sprite3_AnimationIndex:           equ $FF55A4
 Sprite3_AnimationFrame:           equ $FF55A6
 Sprite3_HeightmapOffset:          equ $FF55A8
-Sprite3_Unk2A:                    equ $FF55AA
-Sprite3_Unk2B:                    equ $FF55AB
+Sprite3_BehavParam:               equ $FF55AA
+Sprite3_BehavCmd:                 equ $FF55AB
 Sprite3_Action:                   equ $FF55AC
-Sprite3_Unk2E:                    equ $FF55AE
-Sprite3_Unk2F:                    equ $FF55AF
+Sprite3_PrevAction:               equ $FF55AE
+Sprite3_AnimAction1:              equ $FF55AF
 Sprite3_SpriteUnderneath:         equ $FF55B0
 Sprite3_BehaviourLUTPtr:          equ $FF55B2
 Sprite3_GoldOrChestContents:      equ $FF55B6
@@ -950,24 +1001,20 @@ Sprite3_InitZ:                    equ $FF55D2
 Sprite3_HitBoxZEnd:               equ $FF55D4
 Sprite3_DrawOrder:                equ $FF55D6
 Sprite3_TempHealth:               equ $FF55D8
-Sprite3_Unk5A:                    equ $FF55DA
-Sprite3_Unk5B:                    equ $FF55DB
-Sprite3_Unk5C:                    equ $FF55DC
-Sprite3_Unk5D:                    equ $FF55DD
+Sprite3_TargetX:                  equ $FF55DA
+Sprite3_TargetY:                  equ $FF55DB
+Sprite3_TargetSubX:               equ $FF55DC
+Sprite3_TargetSubY:               equ $FF55DD
 Sprite3_SavedBehaviourLUTPtr:     equ $FF55DE
-Sprite3_Unk62:                    equ $FF55E2
-Sprite3_Unk63:                    equ $FF55E3
-Sprite3_Unk64:                    equ $FF55E4
-Sprite3_Unk65:                    equ $FF55E5
-Sprite3_Unk66:                    equ $FF55E6
+Sprite3_RepeatPtr:                equ $FF55E2
+Sprite3_RepeatCount:              equ $FF55E6
 Sprite3_SavedBehavParam:          equ $FF55E7
 Sprite3_InitCombatFlags:          equ $FF55E8
 Sprite3_SavedBehavCmd:            equ $FF55E9
 Sprite3_InitBehavParam:           equ $FF55EA
 Sprite3_InitBehavCmd:             equ $FF55EB
 Sprite3_MovedDirFlags:            equ $FF55ED
-Sprite3_Unk6E:                    equ $FF55EE
-Sprite3_Unk6F:                    equ $FF55EF
+Sprite3_AnimFlags:                equ $FF55EF
 Sprite3_TileCopySource:           equ $FF55F1
 Sprite3_InitBehaviourLUTPtr:      equ $FF55F2
 Sprite3_InitGoldOrChestCont:      equ $FF55F6
@@ -1006,11 +1053,11 @@ Sprite4_GroundType:               equ $FF5623
 Sprite4_AnimationIndex:           equ $FF5624
 Sprite4_AnimationFrame:           equ $FF5626
 Sprite4_HeightmapOffset:          equ $FF5628
-Sprite4_Unk2A:                    equ $FF562A
-Sprite4_Unk2B:                    equ $FF562B
+Sprite4_BehavParam:               equ $FF562A
+Sprite4_BehavCmd:                 equ $FF562B
 Sprite4_Action:                   equ $FF562C
-Sprite4_Unk2E:                    equ $FF562E
-Sprite4_Unk2F:                    equ $FF562F
+Sprite4_PrevAction:               equ $FF562E
+Sprite4_AnimAction1:              equ $FF562F
 Sprite4_SpriteUnderneath:         equ $FF5630
 Sprite4_BehaviourLUTPtr:          equ $FF5632
 Sprite4_GoldOrChestContents:      equ $FF5636
@@ -1040,24 +1087,20 @@ Sprite4_InitZ:                    equ $FF5652
 Sprite4_HitBoxZEnd:               equ $FF5654
 Sprite4_DrawOrder:                equ $FF5656
 Sprite4_TempHealth:               equ $FF5658
-Sprite4_Unk5A:                    equ $FF565A
-Sprite4_Unk5B:                    equ $FF565B
-Sprite4_Unk5C:                    equ $FF565C
-Sprite4_Unk5D:                    equ $FF565D
+Sprite4_TargetX:                  equ $FF565A
+Sprite4_TargetY:                  equ $FF565B
+Sprite4_TargetSubX:               equ $FF565C
+Sprite4_TargetSubY:               equ $FF565D
 Sprite4_SavedBehaviourLUTPtr:     equ $FF565E
-Sprite4_Unk62:                    equ $FF5662
-Sprite4_Unk63:                    equ $FF5663
-Sprite4_Unk64:                    equ $FF5664
-Sprite4_Unk65:                    equ $FF5665
-Sprite4_Unk66:                    equ $FF5666
+Sprite4_RepeatPtr:                equ $FF5662
+Sprite4_RepeatCount:              equ $FF5666
 Sprite4_SavedBehavParam:          equ $FF5667
 Sprite4_InitCombatFlags:          equ $FF5668
 Sprite4_SavedBehavCmd:            equ $FF5669
 Sprite4_InitBehavParam:           equ $FF566A
 Sprite4_InitBehavCmd:             equ $FF566B
 Sprite4_MovedDirFlags:            equ $FF566D
-Sprite4_Unk6E:                    equ $FF566E
-Sprite4_Unk6F:                    equ $FF566F
+Sprite4_AnimFlags:                equ $FF566F
 Sprite4_TileCopySource:           equ $FF5671
 Sprite4_InitBehaviourLUTPtr:      equ $FF5672
 Sprite4_InitGoldOrChestCont:      equ $FF5676
@@ -1096,11 +1139,11 @@ Sprite5_GroundType:               equ $FF56A3
 Sprite5_AnimationIndex:           equ $FF56A4
 Sprite5_AnimationFrame:           equ $FF56A6
 Sprite5_HeightmapOffset:          equ $FF56A8
-Sprite5_Unk2A:                    equ $FF56AA
-Sprite5_Unk2B:                    equ $FF56AB
+Sprite5_BehavParam:               equ $FF56AA
+Sprite5_BehavCmd:                 equ $FF56AB
 Sprite5_Action:                   equ $FF56AC
-Sprite5_Unk2E:                    equ $FF56AE
-Sprite5_Unk2F:                    equ $FF56AF
+Sprite5_PrevAction:               equ $FF56AE
+Sprite5_AnimAction1:              equ $FF56AF
 Sprite5_SpriteUnderneath:         equ $FF56B0
 Sprite5_BehaviourLUTPtr:          equ $FF56B2
 Sprite5_GoldOrChestContents:      equ $FF56B6
@@ -1130,24 +1173,20 @@ Sprite5_InitZ:                    equ $FF56D2
 Sprite5_HitBoxZEnd:               equ $FF56D4
 Sprite5_DrawOrder:                equ $FF56D6
 Sprite5_TempHealth:               equ $FF56D8
-Sprite5_Unk5A:                    equ $FF56DA
-Sprite5_Unk5B:                    equ $FF56DB
-Sprite5_Unk5C:                    equ $FF56DC
-Sprite5_Unk5D:                    equ $FF56DD
+Sprite5_TargetX:                  equ $FF56DA
+Sprite5_TargetY:                  equ $FF56DB
+Sprite5_TargetSubX:               equ $FF56DC
+Sprite5_TargetSubY:               equ $FF56DD
 Sprite5_SavedBehaviourLUTPtr:     equ $FF56DE
-Sprite5_Unk62:                    equ $FF56E2
-Sprite5_Unk63:                    equ $FF56E3
-Sprite5_Unk64:                    equ $FF56E4
-Sprite5_Unk65:                    equ $FF56E5
-Sprite5_Unk66:                    equ $FF56E6
+Sprite5_RepeatPtr:                equ $FF56E2
+Sprite5_RepeatCount:              equ $FF56E6
 Sprite5_SavedBehavParam:          equ $FF56E7
 Sprite5_InitCombatFlags:          equ $FF56E8
 Sprite5_SavedBehavCmd:            equ $FF56E9
 Sprite5_InitBehavParam:           equ $FF56EA
 Sprite5_InitBehavCmd:             equ $FF56EB
 Sprite5_MovedDirFlags:            equ $FF56ED
-Sprite5_Unk6E:                    equ $FF56EE
-Sprite5_Unk6F:                    equ $FF56EF
+Sprite5_AnimFlags:                equ $FF56EF
 Sprite5_TileCopySource:           equ $FF56F1
 Sprite5_InitBehaviourLUTPtr:      equ $FF56F2
 Sprite5_InitGoldOrChestCont:      equ $FF56F6
@@ -1186,11 +1225,11 @@ Sprite6_GroundType:               equ $FF5723
 Sprite6_AnimationIndex:           equ $FF5724
 Sprite6_AnimationFrame:           equ $FF5726
 Sprite6_HeightmapOffset:          equ $FF5728
-Sprite6_Unk2A:                    equ $FF572A
-Sprite6_Unk2B:                    equ $FF572B
+Sprite6_BehavParam:               equ $FF572A
+Sprite6_BehavCmd:                 equ $FF572B
 Sprite6_Action:                   equ $FF572C
-Sprite6_Unk2E:                    equ $FF572E
-Sprite6_Unk2F:                    equ $FF572F
+Sprite6_PrevAction:               equ $FF572E
+Sprite6_AnimAction1:              equ $FF572F
 Sprite6_SpriteUnderneath:         equ $FF5730
 Sprite6_BehaviourLUTPtr:          equ $FF5732
 Sprite6_GoldOrChestContents:      equ $FF5736
@@ -1220,24 +1259,20 @@ Sprite6_InitZ:                    equ $FF5752
 Sprite6_HitBoxZEnd:               equ $FF5754
 Sprite6_DrawOrder:                equ $FF5756
 Sprite6_TempHealth:               equ $FF5758
-Sprite6_Unk5A:                    equ $FF575A
-Sprite6_Unk5B:                    equ $FF575B
-Sprite6_Unk5C:                    equ $FF575C
-Sprite6_Unk5D:                    equ $FF575D
+Sprite6_TargetX:                  equ $FF575A
+Sprite6_TargetY:                  equ $FF575B
+Sprite6_TargetSubX:               equ $FF575C
+Sprite6_TargetSubY:               equ $FF575D
 Sprite6_SavedBehaviourLUTPtr:     equ $FF575E
-Sprite6_Unk62:                    equ $FF5762
-Sprite6_Unk63:                    equ $FF5763
-Sprite6_Unk64:                    equ $FF5764
-Sprite6_Unk65:                    equ $FF5765
-Sprite6_Unk66:                    equ $FF5766
+Sprite6_RepeatPtr:                equ $FF5762
+Sprite6_RepeatCount:              equ $FF5766
 Sprite6_SavedBehavParam:          equ $FF5767
 Sprite6_InitCombatFlags:          equ $FF5768
 Sprite6_SavedBehavCmd:            equ $FF5769
 Sprite6_InitBehavParam:           equ $FF576A
 Sprite6_InitBehavCmd:             equ $FF576B
 Sprite6_MovedDirFlags:            equ $FF576D
-Sprite6_Unk6E:                    equ $FF576E
-Sprite6_Unk6F:                    equ $FF576F
+Sprite6_AnimFlags:                equ $FF576F
 Sprite6_TileCopySource:           equ $FF5771
 Sprite6_InitBehaviourLUTPtr:      equ $FF5772
 Sprite6_InitGoldOrChestCont:      equ $FF5776
@@ -1276,11 +1311,11 @@ Sprite7_GroundType:               equ $FF57A3
 Sprite7_AnimationIndex:           equ $FF57A4
 Sprite7_AnimationFrame:           equ $FF57A6
 Sprite7_HeightmapOffset:          equ $FF57A8
-Sprite7_Unk2A:                    equ $FF57AA
-Sprite7_Unk2B:                    equ $FF57AB
+Sprite7_BehavParam:               equ $FF57AA
+Sprite7_BehavCmd:                 equ $FF57AB
 Sprite7_Action:                   equ $FF57AC
-Sprite7_Unk2E:                    equ $FF57AE
-Sprite7_Unk2F:                    equ $FF57AF
+Sprite7_PrevAction:               equ $FF57AE
+Sprite7_AnimAction1:              equ $FF57AF
 Sprite7_SpriteUnderneath:         equ $FF57B0
 Sprite7_BehaviourLUTPtr:          equ $FF57B2
 Sprite7_GoldOrChestContents:      equ $FF57B6
@@ -1310,24 +1345,20 @@ Sprite7_InitZ:                    equ $FF57D2
 Sprite7_HitBoxZEnd:               equ $FF57D4
 Sprite7_DrawOrder:                equ $FF57D6
 Sprite7_TempHealth:               equ $FF57D8
-Sprite7_Unk5A:                    equ $FF57DA
-Sprite7_Unk5B:                    equ $FF57DB
-Sprite7_Unk5C:                    equ $FF57DC
-Sprite7_Unk5D:                    equ $FF57DD
+Sprite7_TargetX:                  equ $FF57DA
+Sprite7_TargetY:                  equ $FF57DB
+Sprite7_TargetSubX:               equ $FF57DC
+Sprite7_TargetSubY:               equ $FF57DD
 Sprite7_SavedBehaviourLUTPtr:     equ $FF57DE
-Sprite7_Unk62:                    equ $FF57E2
-Sprite7_Unk63:                    equ $FF57E3
-Sprite7_Unk64:                    equ $FF57E4
-Sprite7_Unk65:                    equ $FF57E5
-Sprite7_Unk66:                    equ $FF57E6
+Sprite7_RepeatPtr:                equ $FF57E2
+Sprite7_RepeatCount:              equ $FF57E6
 Sprite7_SavedBehavParam:          equ $FF57E7
 Sprite7_InitCombatFlags:          equ $FF57E8
 Sprite7_SavedBehavCmd:            equ $FF57E9
 Sprite7_InitBehavParam:           equ $FF57EA
 Sprite7_InitBehavCmd:             equ $FF57EB
 Sprite7_MovedDirFlags:            equ $FF57ED
-Sprite7_Unk6E:                    equ $FF57EE
-Sprite7_Unk6F:                    equ $FF57EF
+Sprite7_AnimFlags:                equ $FF57EF
 Sprite7_TileCopySource:           equ $FF57F1
 Sprite7_InitBehaviourLUTPtr:      equ $FF57F2
 Sprite7_InitGoldOrChestCont:      equ $FF57F6
@@ -1366,11 +1397,11 @@ Sprite8_GroundType:               equ $FF5823
 Sprite8_AnimationIndex:           equ $FF5824
 Sprite8_AnimationFrame:           equ $FF5826
 Sprite8_HeightmapOffset:          equ $FF5828
-Sprite8_Unk2A:                    equ $FF582A
-Sprite8_Unk2B:                    equ $FF582B
+Sprite8_BehavParam:               equ $FF582A
+Sprite8_BehavCmd:                 equ $FF582B
 Sprite8_Action:                   equ $FF582C
-Sprite8_Unk2E:                    equ $FF582E
-Sprite8_Unk2F:                    equ $FF582F
+Sprite8_PrevAction:               equ $FF582E
+Sprite8_AnimAction1:              equ $FF582F
 Sprite8_SpriteUnderneath:         equ $FF5830
 Sprite8_BehaviourLUTPtr:          equ $FF5832
 Sprite8_GoldOrChestContents:      equ $FF5836
@@ -1400,24 +1431,20 @@ Sprite8_InitZ:                    equ $FF5852
 Sprite8_HitBoxZEnd:               equ $FF5854
 Sprite8_DrawOrder:                equ $FF5856
 Sprite8_TempHealth:               equ $FF5858
-Sprite8_Unk5A:                    equ $FF585A
-Sprite8_Unk5B:                    equ $FF585B
-Sprite8_Unk5C:                    equ $FF585C
-Sprite8_Unk5D:                    equ $FF585D
+Sprite8_TargetX:                  equ $FF585A
+Sprite8_TargetY:                  equ $FF585B
+Sprite8_TargetSubX:               equ $FF585C
+Sprite8_TargetSubY:               equ $FF585D
 Sprite8_SavedBehaviourLUTPtr:     equ $FF585E
-Sprite8_Unk62:                    equ $FF5862
-Sprite8_Unk63:                    equ $FF5863
-Sprite8_Unk64:                    equ $FF5864
-Sprite8_Unk65:                    equ $FF5865
-Sprite8_Unk66:                    equ $FF5866
+Sprite8_RepeatPtr:                equ $FF5862
+Sprite8_RepeatCount:              equ $FF5866
 Sprite8_SavedBehavParam:          equ $FF5867
 Sprite8_InitCombatFlags:          equ $FF5868
 Sprite8_SavedBehavCmd:            equ $FF5869
 Sprite8_InitBehavParam:           equ $FF586A
 Sprite8_InitBehavCmd:             equ $FF586B
 Sprite8_MovedDirFlags:            equ $FF586D
-Sprite8_Unk6E:                    equ $FF586E
-Sprite8_Unk6F:                    equ $FF586F
+Sprite8_AnimFlags:                equ $FF586F
 Sprite8_TileCopySource:           equ $FF5871
 Sprite8_InitBehaviourLUTPtr:      equ $FF5872
 Sprite8_InitGoldOrChestCont:      equ $FF5876
@@ -1456,11 +1483,11 @@ Sprite9_GroundType:               equ $FF58A3
 Sprite9_AnimationIndex:           equ $FF58A4
 Sprite9_AnimationFrame:           equ $FF58A6
 Sprite9_HeightmapOffset:          equ $FF58A8
-Sprite9_Unk2A:                    equ $FF58AA
-Sprite9_Unk2B:                    equ $FF58AB
+Sprite9_BehavParam:               equ $FF58AA
+Sprite9_BehavCmd:                 equ $FF58AB
 Sprite9_Action:                   equ $FF58AC
-Sprite9_Unk2E:                    equ $FF58AE
-Sprite9_Unk2F:                    equ $FF58AF
+Sprite9_PrevAction:               equ $FF58AE
+Sprite9_AnimAction1:              equ $FF58AF
 Sprite9_SpriteUnderneath:         equ $FF58B0
 Sprite9_BehaviourLUTPtr:          equ $FF58B2
 Sprite9_GoldOrChestContents:      equ $FF58B6
@@ -1490,24 +1517,20 @@ Sprite9_InitZ:                    equ $FF58D2
 Sprite9_HitBoxZEnd:               equ $FF58D4
 Sprite9_DrawOrder:                equ $FF58D6
 Sprite9_TempHealth:               equ $FF58D8
-Sprite9_Unk5A:                    equ $FF58DA
-Sprite9_Unk5B:                    equ $FF58DB
-Sprite9_Unk5C:                    equ $FF58DC
-Sprite9_Unk5D:                    equ $FF58DD
+Sprite9_TargetX:                  equ $FF58DA
+Sprite9_TargetY:                  equ $FF58DB
+Sprite9_TargetSubX:               equ $FF58DC
+Sprite9_TargetSubY:               equ $FF58DD
 Sprite9_SavedBehaviourLUTPtr:     equ $FF58DE
-Sprite9_Unk62:                    equ $FF58E2
-Sprite9_Unk63:                    equ $FF58E3
-Sprite9_Unk64:                    equ $FF58E4
-Sprite9_Unk65:                    equ $FF58E5
-Sprite9_Unk66:                    equ $FF58E6
+Sprite9_RepeatPtr:                equ $FF58E2
+Sprite9_RepeatCount:              equ $FF58E6
 Sprite9_SavedBehavParam:          equ $FF58E7
 Sprite9_InitCombatFlags:          equ $FF58E8
 Sprite9_SavedBehavCmd:            equ $FF58E9
 Sprite9_InitBehavParam:           equ $FF58EA
 Sprite9_InitBehavCmd:             equ $FF58EB
 Sprite9_MovedDirFlags:            equ $FF58ED
-Sprite9_Unk6E:                    equ $FF58EE
-Sprite9_Unk6F:                    equ $FF58EF
+Sprite9_AnimFlags:                equ $FF58EF
 Sprite9_TileCopySource:           equ $FF58F1
 Sprite9_InitBehaviourLUTPtr:      equ $FF58F2
 Sprite9_InitGoldOrChestCont:      equ $FF58F6
@@ -1546,11 +1569,11 @@ Sprite10_GroundType:              equ $FF5923
 Sprite10_AnimationIndex:          equ $FF5924
 Sprite10_AnimationFrame:          equ $FF5926
 Sprite10_HeightmapOffset:         equ $FF5928
-Sprite10_Unk2A:                   equ $FF592A
-Sprite10_Unk2B:                   equ $FF592B
+Sprite10_BehavParam:              equ $FF592A
+Sprite10_BehavCmd:                equ $FF592B
 Sprite10_Action:                  equ $FF592C
-Sprite10_Unk2E:                   equ $FF592E
-Sprite10_Unk2F:                   equ $FF592F
+Sprite10_PrevAction:              equ $FF592E
+Sprite10_AnimAction1:             equ $FF592F
 Sprite10_SpriteUnderneath:        equ $FF5930
 Sprite10_BehaviourLUTPtr:         equ $FF5932
 Sprite10_GoldOrChestContents:     equ $FF5936
@@ -1580,24 +1603,20 @@ Sprite10_InitZ:                   equ $FF5952
 Sprite10_HitBoxZEnd:              equ $FF5954
 Sprite10_DrawOrder:               equ $FF5956
 Sprite10_TempHealth:              equ $FF5958
-Sprite10_Unk5A:                   equ $FF595A
-Sprite10_Unk5B:                   equ $FF595B
-Sprite10_Unk5C:                   equ $FF595C
-Sprite10_Unk5D:                   equ $FF595D
+Sprite10_TargetX:                 equ $FF595A
+Sprite10_TargetY:                 equ $FF595B
+Sprite10_TargetSubX:              equ $FF595C
+Sprite10_TargetSubY:              equ $FF595D
 Sprite10_SavedBehaviourLUTPtr:    equ $FF595E
-Sprite10_Unk62:                   equ $FF5962
-Sprite10_Unk63:                   equ $FF5963
-Sprite10_Unk64:                   equ $FF5964
-Sprite10_Unk65:                   equ $FF5965
-Sprite10_Unk66:                   equ $FF5966
+Sprite10_RepeatPtr:               equ $FF5962
+Sprite10_RepeatCount:             equ $FF5966
 Sprite10_SavedBehavParam:         equ $FF5967
 Sprite10_InitCombatFlags:         equ $FF5968
 Sprite10_SavedBehavCmd:           equ $FF5969
 Sprite10_InitBehavParam:          equ $FF596A
 Sprite10_InitBehavCmd:            equ $FF596B
 Sprite10_MovedDirFlags:           equ $FF596D
-Sprite10_Unk6E:                   equ $FF596E
-Sprite10_Unk6F:                   equ $FF596F
+Sprite10_AnimFlags:               equ $FF596F
 Sprite10_TileCopySource:          equ $FF5971
 Sprite10_InitBehaviourLUTPtr:     equ $FF5972
 Sprite10_InitGoldOrChestCont:     equ $FF5976
@@ -1636,11 +1655,11 @@ Sprite11_GroundType:              equ $FF59A3
 Sprite11_AnimationIndex:          equ $FF59A4
 Sprite11_AnimationFrame:          equ $FF59A6
 Sprite11_HeightmapOffset:         equ $FF59A8
-Sprite11_Unk2A:                   equ $FF59AA
-Sprite11_Unk2B:                   equ $FF59AB
+Sprite11_BehavParam:              equ $FF59AA
+Sprite11_BehavCmd:                equ $FF59AB
 Sprite11_Action:                  equ $FF59AC
-Sprite11_Unk2E:                   equ $FF59AE
-Sprite11_Unk2F:                   equ $FF59AF
+Sprite11_PrevAction:              equ $FF59AE
+Sprite11_AnimAction1:             equ $FF59AF
 Sprite11_SpriteUnderneath:        equ $FF59B0
 Sprite11_BehaviourLUTPtr:         equ $FF59B2
 Sprite11_GoldOrChestContents:     equ $FF59B6
@@ -1670,24 +1689,20 @@ Sprite11_InitZ:                   equ $FF59D2
 Sprite11_HitBoxZEnd:              equ $FF59D4
 Sprite11_DrawOrder:               equ $FF59D6
 Sprite11_TempHealth:              equ $FF59D8
-Sprite11_Unk5A:                   equ $FF59DA
-Sprite11_Unk5B:                   equ $FF59DB
-Sprite11_Unk5C:                   equ $FF59DC
-Sprite11_Unk5D:                   equ $FF59DD
+Sprite11_TargetX:                 equ $FF59DA
+Sprite11_TargetY:                 equ $FF59DB
+Sprite11_TargetSubX:              equ $FF59DC
+Sprite11_TargetSubY:              equ $FF59DD
 Sprite11_SavedBehaviourLUTPtr:    equ $FF59DE
-Sprite11_Unk62:                   equ $FF59E2
-Sprite11_Unk63:                   equ $FF59E3
-Sprite11_Unk64:                   equ $FF59E4
-Sprite11_Unk65:                   equ $FF59E5
-Sprite11_Unk66:                   equ $FF59E6
+Sprite11_RepeatPtr:               equ $FF59E2
+Sprite11_RepeatCount:             equ $FF59E6
 Sprite11_SavedBehavParam:         equ $FF59E7
 Sprite11_InitCombatFlags:         equ $FF59E8
 Sprite11_SavedBehavCmd:           equ $FF59E9
 Sprite11_InitBehavParam:          equ $FF59EA
 Sprite11_InitBehavCmd:            equ $FF59EB
 Sprite11_MovedDirFlags:           equ $FF59ED
-Sprite11_Unk6E:                   equ $FF59EE
-Sprite11_Unk6F:                   equ $FF59EF
+Sprite11_AnimFlags:               equ $FF59EF
 Sprite11_TileCopySource:          equ $FF59F1
 Sprite11_InitBehaviourLUTPtr:     equ $FF59F2
 Sprite11_InitGoldOrChestCont:     equ $FF59F6
@@ -1726,11 +1741,11 @@ Sprite12_GroundType:              equ $FF5A23
 Sprite12_AnimationIndex:          equ $FF5A24
 Sprite12_AnimationFrame:          equ $FF5A26
 Sprite12_HeightmapOffset:         equ $FF5A28
-Sprite12_Unk2A:                   equ $FF5A2A
-Sprite12_Unk2B:                   equ $FF5A2B
+Sprite12_BehavParam:              equ $FF5A2A
+Sprite12_BehavCmd:                equ $FF5A2B
 Sprite12_Action:                  equ $FF5A2C
-Sprite12_Unk2E:                   equ $FF5A2E
-Sprite12_Unk2F:                   equ $FF5A2F
+Sprite12_PrevAction:              equ $FF5A2E
+Sprite12_AnimAction1:             equ $FF5A2F
 Sprite12_SpriteUnderneath:        equ $FF5A30
 Sprite12_BehaviourLUTPtr:         equ $FF5A32
 Sprite12_GoldOrChestContents:     equ $FF5A36
@@ -1760,24 +1775,20 @@ Sprite12_InitZ:                   equ $FF5A52
 Sprite12_HitBoxZEnd:              equ $FF5A54
 Sprite12_DrawOrder:               equ $FF5A56
 Sprite12_TempHealth:              equ $FF5A58
-Sprite12_Unk5A:                   equ $FF5A5A
-Sprite12_Unk5B:                   equ $FF5A5B
-Sprite12_Unk5C:                   equ $FF5A5C
-Sprite12_Unk5D:                   equ $FF5A5D
+Sprite12_TargetX:                 equ $FF5A5A
+Sprite12_TargetY:                 equ $FF5A5B
+Sprite12_TargetSubX:              equ $FF5A5C
+Sprite12_TargetSubY:              equ $FF5A5D
 Sprite12_SavedBehaviourLUTPtr:    equ $FF5A5E
-Sprite12_Unk62:                   equ $FF5A62
-Sprite12_Unk63:                   equ $FF5A63
-Sprite12_Unk64:                   equ $FF5A64
-Sprite12_Unk65:                   equ $FF5A65
-Sprite12_Unk66:                   equ $FF5A66
+Sprite12_RepeatPtr:               equ $FF5A62
+Sprite12_RepeatCount:             equ $FF5A66
 Sprite12_SavedBehavParam:         equ $FF5A67
 Sprite12_InitCombatFlags:         equ $FF5A68
 Sprite12_SavedBehavCmd:           equ $FF5A69
 Sprite12_InitBehavParam:          equ $FF5A6A
 Sprite12_InitBehavCmd:            equ $FF5A6B
 Sprite12_MovedDirFlags:           equ $FF5A6D
-Sprite12_Unk6E:                   equ $FF5A6E
-Sprite12_Unk6F:                   equ $FF5A6F
+Sprite12_AnimFlags:               equ $FF5A6F
 Sprite12_TileCopySource:          equ $FF5A71
 Sprite12_InitBehaviourLUTPtr:     equ $FF5A72
 Sprite12_InitGoldOrChestCont:     equ $FF5A76
@@ -1816,11 +1827,11 @@ Sprite13_GroundType:              equ $FF5AA3
 Sprite13_AnimationIndex:          equ $FF5AA4
 Sprite13_AnimationFrame:          equ $FF5AA6
 Sprite13_HeightmapOffset:         equ $FF5AA8
-Sprite13_Unk2A:                   equ $FF5AAA
-Sprite13_Unk2B:                   equ $FF5AAB
+Sprite13_BehavParam:              equ $FF5AAA
+Sprite13_BehavCmd:                equ $FF5AAB
 Sprite13_Action:                  equ $FF5AAC
-Sprite13_Unk2E:                   equ $FF5AAE
-Sprite13_Unk2F:                   equ $FF5AAF
+Sprite13_PrevAction:              equ $FF5AAE
+Sprite13_AnimAction1:             equ $FF5AAF
 Sprite13_SpriteUnderneath:        equ $FF5AB0
 Sprite13_BehaviourLUTPtr:         equ $FF5AB2
 Sprite13_GoldOrChestContents:     equ $FF5AB6
@@ -1850,24 +1861,20 @@ Sprite13_InitZ:                   equ $FF5AD2
 Sprite13_HitBoxZEnd:              equ $FF5AD4
 Sprite13_DrawOrder:               equ $FF5AD6
 Sprite13_TempHealth:              equ $FF5AD8
-Sprite13_Unk5A:                   equ $FF5ADA
-Sprite13_Unk5B:                   equ $FF5ADB
-Sprite13_Unk5C:                   equ $FF5ADC
-Sprite13_Unk5D:                   equ $FF5ADD
+Sprite13_TargetX:                 equ $FF5ADA
+Sprite13_TargetY:                 equ $FF5ADB
+Sprite13_TargetSubX:              equ $FF5ADC
+Sprite13_TargetSubY:              equ $FF5ADD
 Sprite13_SavedBehaviourLUTPtr:    equ $FF5ADE
-Sprite13_Unk62:                   equ $FF5AE2
-Sprite13_Unk63:                   equ $FF5AE3
-Sprite13_Unk64:                   equ $FF5AE4
-Sprite13_Unk65:                   equ $FF5AE5
-Sprite13_Unk66:                   equ $FF5AE6
+Sprite13_RepeatPtr:               equ $FF5AE2
+Sprite13_RepeatCount:             equ $FF5AE6
 Sprite13_SavedBehavParam:         equ $FF5AE7
 Sprite13_InitCombatFlags:         equ $FF5AE8
 Sprite13_SavedBehavCmd:           equ $FF5AE9
 Sprite13_InitBehavParam:          equ $FF5AEA
 Sprite13_InitBehavCmd:            equ $FF5AEB
 Sprite13_MovedDirFlags:           equ $FF5AED
-Sprite13_Unk6E:                   equ $FF5AEE
-Sprite13_Unk6F:                   equ $FF5AEF
+Sprite13_AnimFlags:               equ $FF5AEF
 Sprite13_TileCopySource:          equ $FF5AF1
 Sprite13_InitBehaviourLUTPtr:     equ $FF5AF2
 Sprite13_InitGoldOrChestCont:     equ $FF5AF6
@@ -1906,11 +1913,11 @@ Sprite14_GroundType:              equ $FF5B23
 Sprite14_AnimationIndex:          equ $FF5B24
 Sprite14_AnimationFrame:          equ $FF5B26
 Sprite14_HeightmapOffset:         equ $FF5B28
-Sprite14_Unk2A:                   equ $FF5B2A
-Sprite14_Unk2B:                   equ $FF5B2B
+Sprite14_BehavParam:              equ $FF5B2A
+Sprite14_BehavCmd:                equ $FF5B2B
 Sprite14_Action:                  equ $FF5B2C
-Sprite14_Unk2E:                   equ $FF5B2E
-Sprite14_Unk2F:                   equ $FF5B2F
+Sprite14_PrevAction:              equ $FF5B2E
+Sprite14_AnimAction1:             equ $FF5B2F
 Sprite14_SpriteUnderneath:        equ $FF5B30
 Sprite14_BehaviourLUTPtr:         equ $FF5B32
 Sprite14_GoldOrChestContents:     equ $FF5B36
@@ -1940,24 +1947,20 @@ Sprite14_InitZ:                   equ $FF5B52
 Sprite14_HitBoxZEnd:              equ $FF5B54
 Sprite14_DrawOrder:               equ $FF5B56
 Sprite14_TempHealth:              equ $FF5B58
-Sprite14_Unk5A:                   equ $FF5B5A
-Sprite14_Unk5B:                   equ $FF5B5B
-Sprite14_Unk5C:                   equ $FF5B5C
-Sprite14_Unk5D:                   equ $FF5B5D
+Sprite14_TargetX:                 equ $FF5B5A
+Sprite14_TargetY:                 equ $FF5B5B
+Sprite14_TargetSubX:              equ $FF5B5C
+Sprite14_TargetSubY:              equ $FF5B5D
 Sprite14_SavedBehaviourLUTPtr:    equ $FF5B5E
-Sprite14_Unk62:                   equ $FF5B62
-Sprite14_Unk63:                   equ $FF5B63
-Sprite14_Unk64:                   equ $FF5B64
-Sprite14_Unk65:                   equ $FF5B65
-Sprite14_Unk66:                   equ $FF5B66
+Sprite14_RepeatPtr:               equ $FF5B62
+Sprite14_RepeatCount:             equ $FF5B66
 Sprite14_SavedBehavParam:         equ $FF5B67
 Sprite14_InitCombatFlags:         equ $FF5B68
 Sprite14_SavedBehavCmd:           equ $FF5B69
 Sprite14_InitBehavParam:          equ $FF5B6A
 Sprite14_InitBehavCmd:            equ $FF5B6B
 Sprite14_MovedDirFlags:           equ $FF5B6D
-Sprite14_Unk6E:                   equ $FF5B6E
-Sprite14_Unk6F:                   equ $FF5B6F
+Sprite14_AnimFlags:               equ $FF5B6F
 Sprite14_TileCopySource:          equ $FF5B71
 Sprite14_InitBehaviourLUTPtr:     equ $FF5B72
 Sprite14_InitGoldOrChestCont:     equ $FF5B76
@@ -1996,11 +1999,11 @@ Sprite15_GroundType:              equ $FF5BA3
 Sprite15_AnimationIndex:          equ $FF5BA4
 Sprite15_AnimationFrame:          equ $FF5BA6
 Sprite15_HeightmapOffset:         equ $FF5BA8
-Sprite15_Unk2A:                   equ $FF5BAA
-Sprite15_Unk2B:                   equ $FF5BAB
+Sprite15_BehavParam:              equ $FF5BAA
+Sprite15_BehavCmd:                equ $FF5BAB
 Sprite15_Action:                  equ $FF5BAC
-Sprite15_Unk2E:                   equ $FF5BAE
-Sprite15_Unk2F:                   equ $FF5BAF
+Sprite15_PrevAction:              equ $FF5BAE
+Sprite15_AnimAction1:             equ $FF5BAF
 Sprite15_SpriteUnderneath:        equ $FF5BB0
 Sprite15_BehaviourLUTPtr:         equ $FF5BB2
 Sprite15_GoldOrChestContents:     equ $FF5BB6
@@ -2030,24 +2033,20 @@ Sprite15_InitZ:                   equ $FF5BD2
 Sprite15_HitBoxZEnd:              equ $FF5BD4
 Sprite15_DrawOrder:               equ $FF5BD6
 Sprite15_TempHealth:              equ $FF5BD8
-Sprite15_Unk5A:                   equ $FF5BDA
-Sprite15_Unk5B:                   equ $FF5BDB
-Sprite15_Unk5C:                   equ $FF5BDC
-Sprite15_Unk5D:                   equ $FF5BDD
+Sprite15_TargetX:                 equ $FF5BDA
+Sprite15_TargetY:                 equ $FF5BDB
+Sprite15_TargetSubX:              equ $FF5BDC
+Sprite15_TargetSubY:              equ $FF5BDD
 Sprite15_SavedBehaviourLUTPtr:    equ $FF5BDE
-Sprite15_Unk62:                   equ $FF5BE2
-Sprite15_Unk63:                   equ $FF5BE3
-Sprite15_Unk64:                   equ $FF5BE4
-Sprite15_Unk65:                   equ $FF5BE5
-Sprite15_Unk66:                   equ $FF5BE6
+Sprite15_RepeatPtr:               equ $FF5BE2
+Sprite15_RepeatCount:             equ $FF5BE6
 Sprite15_SavedBehavParam:         equ $FF5BE7
 Sprite15_InitCombatFlags:         equ $FF5BE8
 Sprite15_SavedBehavCmd:           equ $FF5BE9
 Sprite15_InitBehavParam:          equ $FF5BEA
 Sprite15_InitBehavCmd:            equ $FF5BEB
 Sprite15_MovedDirFlags:           equ $FF5BED
-Sprite15_Unk6E:                   equ $FF5BEE
-Sprite15_Unk6F:                   equ $FF5BEF
+Sprite15_AnimFlags:               equ $FF5BEF
 Sprite15_TileCopySource:          equ $FF5BF1
 Sprite15_InitBehaviourLUTPtr:     equ $FF5BF2
 Sprite15_InitGoldOrChestCont:     equ $FF5BF6

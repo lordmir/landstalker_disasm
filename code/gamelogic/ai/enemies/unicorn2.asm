@@ -136,7 +136,7 @@ sub_1A8EDE:					  ; CODE XREF: ROM:001A8E3Ap
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
 		bne.s	loc_1A8F44
-		move.b	(Player_AnimAction).l,d0
+		move.b	(Player_PrevAction).l,d0
 		andi.b	#$07,d0
 		beq.w	loc_1A8F48
 		move.w	#00100,d6

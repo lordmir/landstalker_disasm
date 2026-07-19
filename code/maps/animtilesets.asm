@@ -32,7 +32,7 @@ loc_9D68:					  ; CODE XREF: LoadAnimTiles+2Cj
 		move.w	(a1,d3.w),(a5)+
 		move.w	$00000002(a1,d3.w),(a5)+
 		move.b	$00000004(a1,d3.w),(a4)+
-		cmpi.w	#$01ED,(g_RmNum1).l	  ; Ship
+		cmpi.w	#ROOM_MERCATOR_DOCKED_SHIP,(g_CurrentRoom).l	  ; Ship
 		bne.s	loc_9D90
 		move.b	#$02,(a4)+
 		bra.s	loc_9D94

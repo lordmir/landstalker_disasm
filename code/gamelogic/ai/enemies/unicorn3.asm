@@ -136,7 +136,7 @@ sub_1A919E:					  ; CODE XREF: ROM:001A90FAp
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
 		bne.s	loc_1A9204
-		move.b	(Player_AnimAction).l,d0
+		move.b	(Player_PrevAction).l,d0
 		andi.b	#$07,d0
 		beq.w	loc_1A9208
 		move.w	#00100,d6

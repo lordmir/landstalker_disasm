@@ -58,7 +58,7 @@ QueueTextboxTilemapDMA:				  ; CODE XREF: j_QueueTextboxTilemapDMAj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-QueuePartialHUDTilemapDMA:			  ; CODE XREF: j_QueueHUDTilemapDMAj
+QueuePartialHUDTilemapDMA:			  ; CODE XREF: j_QueuePartialHUDTilemapDMAj
 		movea.l	(g_DMAOpQueuePtr).l,a6
 		move.l	#$8F029400,(a6)+	  ; Auto-increment 2, DMA Length hi = 0
 		move.l	#$9364968E,(a6)+	  ; DMA	Length lo = 0x64, DMA Source mid = 0x8E

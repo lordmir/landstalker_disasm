@@ -10,12 +10,14 @@ TileSource:           equ $06
 ;   0 = Hidden/inactive. Set by HideSprite, cleared to (re)enable a sprite
 ;       (customroomactions2). Skips drawing (gamelogic3:ProjectSpriteToScreen), collision,
 ;       talk/pickup checks. Initialised from room sprite data bit 5.
+;   3 = Shop-item pick-up latch: set once by EB_ShopItem when the player
+;       lifts a shop item overhead (runs the shop script only once).
 ;   4 = Half movement speed (HandleDirectionalControl halves g_PlayerSpeed).
 ;       Initialised from room sprite data bit 4; cleared by trigger action TA_16.
 ;   5 = Grabbed by player (pickup stage 1, set in ProcessActionButton;
-;       sub_19206 makes it inherit Player_SpriteUnderneath).
+;       UpdateCarriedSpritePos makes it inherit Player_SpriteUnderneath).
 ;   6 = Carried above player's head (pickup stage 2; Z tracks
-;       Player_HitBoxZEnd; cleared when thrown). Bits 1-3 and 7 appear unused.
+;       Player_HitBoxZEnd; cleared when thrown). Bits 1-2 and 7 appear unused.
 StateFlags:           equ $08
 Speed:                equ $09
 ; AnimCtrl: animation control byte.
@@ -36,7 +38,7 @@ SpriteGraphic:        equ $0B
 ;   1 = Hurt/knockback state. Set on taking damage (combat:StartEnemyHitstun),
 ;       blocks further damage while set, drives the damage flicker.
 ;   2 = Frictionless: not dragged along by the sprite it stands on
-;       (spritebehaviours:sub_19114).
+;       (MoveSpriteWithPlatform).
 ;   4 = Talkable NPC: has dialogue (CheckTalk, GetSpeakerSpriteId).
 ;   5 = Liftable: player can pick this sprite up (CheckPickUpEntity).
 ;   6 = Do not draw this frame (toggled rapidly for damage/blink flicker,
@@ -89,6 +91,10 @@ AnimAction1:          equ $2F
 SpriteUnderneath:     equ $30
 BehaviourLUTPtr:      equ $32
 BehaviourLUTIndex:    equ $34
+; For enemies: the gold amount dropped (as a moneybag) when the item
+; roll fails - zero means nothing is left behind. For chests: the
+; contents item id ($3F = empty trapped chest). Cleared when an enemy
+; corpse turns into an item box instead.
 GoldOrChestContents:  equ $36
 ; AIState: state variable for the entity's AI -- enemy AIs step it
 ; through phases ($10/$20/$21...) and StartEnemyHitstun clears it on
@@ -101,13 +107,14 @@ ChestIndex:           equ $37
 ;   0 = Invincible: sword hits clink (SND_SwordHit) and deal no damage.
 ;       Toggled freely by boss AIs (Duke, Ifrit, Knight) for attack windows.
 ;   1 = Walk backwards: facing shown flipped 180 degrees and walk animation
-;       plays in reverse (EB_EnableWalkBackwards / EB_DisableWalkBackwards --
-;       NB: those EB labels look swapped; bset = backwards on).
+;       plays in reverse (set by EB_EnableWalkBackwards, cleared by
+;       EB_DisableWalkBackwards; the unicorns use it for their backwards charge).
 ;   2 = Died this frame: set when health reaches 0 (combat:MarkEnemyDead),
 ;       consumed by combat:ProcessDeadEnemies which runs the death/item-drop logic.
 ;   6 = Use alternate animation bank (+8 anim index offset) -- the
 ;       "disguised/second form" for mimic, mushroom, Duke-in-chair, Ifrit.
-;       Bits 3-5 and 7 appear unused.
+;   7 = Shop-item put-down latch: set once by EB_ShopItem when a shop
+;       item settles on a counter tile. Bits 3-5 appear unused.
 CombatFlags:          equ $38
 FloorHeight:          equ $39
 Dialogue:             equ $3A
@@ -128,7 +135,7 @@ InitTileSource:       equ $46
 ;       Gaia Sword quakes instead). While in hitstun with any of these
 ;       set, BuildVdpSpriteEntry overlays that sword's hit effect
 ;       sprites instead of the plain blink flicker.
-;   6 = No-clip move: set around EB_MoveNoClip movement (sub_17B40) so
+;   6 = No-clip move: set around EB_MoveNoClip movement (MoveSpriteForwardNoClip) so
 ;       the shared move routine skips collision detection.
 ;   7 = Layout dirty: rebuild the sprite's VDP piece layout and reload
 ;       frame tiles (consumed together with AnimCtrl bit 7 by
@@ -175,7 +182,7 @@ TargetSubY:           equ $5D
 ; SavedBehaviourLUTPtr (long, $5E-$61) / SavedBehavParam / SavedBehavCmd:
 ; together with SavedSpeed ($49), the behaviour state saved by
 ; CheckPickUpEntity when the player picks the sprite up. Restored by the
-; carried/thrown behaviour handlers in OnTick (loc_18150 / loc_181C6)
+; carried/thrown behaviour handlers in OnTick (EB_ThrownObject / EB_PutDownObject)
 ; when the sprite is put down or lands -- unless the saved BehavCmd is
 ; itself a carried/thrown command ($10/$16/$2F/$32), in which case the
 ; behaviour is cleared or replaced instead.
@@ -195,7 +202,7 @@ InitBehavCmd:         equ $6B
 ; MovedDirFlags: bits 0-3 are set when the entity moves in each of the
 ; four isometric directions (same layout as the Action1 walk bits:
 ; 0=NE/-Y, 1=SW/+Y, 2=NW/-X, 3=SE/+X), by both the player movement code
-; and the entity behaviour move routines. TestForFalling's helper
+; and the entity behaviour move routines. ProcessGravity's helper
 ; (gamelogic2:sub_32C6) tests the low nibble to decide whether to
 ; recompute FloorHeight. NB: initialised to $FF and never cleared, so in
 ; practice the recompute always runs -- looks like a vestigial
@@ -226,10 +233,14 @@ ItemDrop:             equ $77
 ; written by GetEnemyStats from ItemDropProbabilityLookup (indexed by
 ; bits packed into the enemy's defence/drop stat bytes). The drop roll
 ; scales a 16-bit random into [0,N) and drops on 0, so $0001 means a
-; guaranteed drop and $0000 means never. ProcessDeadEnemies treats the
-; combination "guaranteed drop but GoldOrChestContents = 0" as a marker
-; for respawning enemies (ghosts): they are made hostile again with
-; $100 health instead of dying.
+; guaranteed item drop and $0000 means never; a failed item roll drops
+; GoldOrChestContents gold instead. The stat pair "$0001 with
+; GoldOrChestContents = 0" never occurs on real enemies and serves as
+; a sentinel for permanent hostiles - indestructible obstacles (trees,
+; spiked balls) and respawning ghosts. They are excluded from the
+; hostile-enemy scans and the quake attack, stay solid during
+; hurt-invulnerability (FIX_COLL_1), and on death (the ghosts) respawn
+; hostile with $100 health instead of dying.
 ItemDropProbability:  equ $78
 InitDialogue:         equ $7A
 InitSpriteType:       equ $7B

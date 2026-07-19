@@ -7,6 +7,9 @@
 ;   $0100-$0700              attack / special animation number
 ;                            (sprite-specific: player sword swings,
 ;                            enemy attacks, Duke sitting, mummy get-up)
+;   $0800                    riding a moving platform (set by
+;                            MoveWithPlatform while standing on a
+;                            moving sprite)
 ;   $1000                    ladder climb
 ;   $2000                    take damage
 ;   $4000                    rebuild sprite piece layout (set on throw,
@@ -21,12 +24,14 @@ ACTB_FALL:        equ 4
 ACTB_JUMP:        equ 5
 ACTB_PICKUP:      equ 6
 ACTB_PUTDOWN:     equ 7
+ACTB_RIDING:      equ 11
 ACTB_CLIMB:       equ 12
 ACTB_DAMAGE:      equ 13
 ACTB_REFRESH:     equ 14
 
 ; bit numbers within the high byte (byte-sized ops on QueuedAction or
 ; Player_Action address directly)
+ACTBH_RIDING:     equ 3
 ACTBH_CLIMB:      equ 4
 ACTBH_DAMAGE:     equ 5
 ACTBH_REFRESH:    equ 6
@@ -45,6 +50,7 @@ ACT_ATTACK5:      equ $0500
 ACT_ATTACK6:      equ $0600
 ACT_ATTACK7:      equ $0700
 ACT_ATTACK_MASK:  equ $0700
+ACT_RIDING:       equ $0800
 ACT_CLIMB:        equ $1000
 ACT_DAMAGE:       equ $2000
 ACT_REFRESH:      equ $4000

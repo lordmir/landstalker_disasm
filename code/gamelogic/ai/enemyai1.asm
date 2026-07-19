@@ -2,7 +2,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 
 
-RespawnGhost:					  ; DATA XREF: sub_1A4404t
+RespawnGhost:					  ; DATA XREF: j_RespawnGhostt
 
 ; FUNCTION CHUNK AT 001A870E SIZE 00000098 BYTES
 ; FUNCTION CHUNK AT 001A87D2 SIZE 0000003A BYTES
@@ -16,7 +16,7 @@ RespawnGhost:					  ; DATA XREF: sub_1A4404t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A83F0:					  ; CODE XREF: sub_1A86D6+4p
+sub_1A83F0:					  ; CODE XREF: RunEnemyAI_B+4p
 		move.w	Dialogue(a5),d0
 		andi.w	#$03FF,d0
 		lea	EnemyTable(pc),a0
@@ -396,10 +396,12 @@ loc_1A84A6:					  ; DATA XREF: sub_1A83F0:loc_1A840Et
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1A86D6:					  ; CODE XREF: RespawnGhost+414p
-						  ; DATA XREF: sub_1A440Ct
+; Runs the sprite's EnemyAI_*_B routine (the second entry of its
+; pair in the AI dispatch ladder), then the default OnTick.
+RunEnemyAI_B:					  ; CODE XREF: RespawnGhost+414p
+						  ; DATA XREF: j_RunEnemyAI_Bt
 		move.w	#$0004,d1
 		bsr.w	sub_1A83F0
 		bra.w	j_j_OnTick
-; End of function sub_1A86D6
+; End of function RunEnemyAI_B
 
