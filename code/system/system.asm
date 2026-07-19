@@ -33,7 +33,7 @@ GameOver:					  ; CODE XREF: ROM:000016D8j
 		bsr.w	DisableDisplayAndInts
 		bsr.s	ResetVDPAndClearRAM
 		bsr.s	ClearAndInitGraphics
-		jmp	(loc_16CA).l
+		jmp	(RestartFromSave).l
 ; ---------------------------------------------------------------------------
 
 loc_4FE:					  ; CODE XREF: ROM:000006F6j

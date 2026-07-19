@@ -55,12 +55,12 @@ ItemUseGaiaStatue:				  ; CODE XREF: ROM:0000862Cj
 
 loc_8758:					  ; CODE XREF: ROM:00008742j
 						  ; ROM:0000874Cj
-		jsr	(sub_103C4).l
+		jsr	(j_AnyHostileEnemies).l
 		bcc.w	ReturnFailure
 
 loc_8762:					  ; CODE XREF: ROM:00008756j
 		bsr.w	ConsumeItem
-		bset	#$00,(byte_FF1157).l
+		bset	#$00,(g_GaiaAttackQueued).l
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 

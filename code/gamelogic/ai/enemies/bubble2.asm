@@ -5,9 +5,9 @@ EnemyAI_Bubble2_B:				  ; CODE XREF: ROM:001A85D2j
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Bubble2_A:				  ; CODE XREF: ROM:001A85CEj
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1ABA52
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1ABA70
 		cmpi.b	#$10,d0
 		beq.w	loc_1ABAE8
@@ -20,8 +20,8 @@ loc_1ABA52:					  ; CODE XREF: ROM:001ABA42j
 EnemyAI_Bubble2:				  ; CODE XREF: ROM:EnemyAI_Bubble2_Bj
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$00,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$00,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -59,35 +59,35 @@ loc_1ABAAE:					  ; CODE XREF: ROM:001ABA74j
 ; ---------------------------------------------------------------------------
 
 loc_1ABAC4:					  ; CODE XREF: ROM:001ABA8Aj
-		move.b	#$10,ChestIndex(a5)
-		clr.b	Unk0D(a5)
+		move.b	#$10,AIState(a5)
+		clr.b	AnimPhase(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABAD0:					  ; CODE XREF: ROM:001ABAB4j
 		bsr.w	j_j_OnTick
-		move.w	#$0100,QueuedAction(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABADC:					  ; CODE XREF: ROM:001ABABCj
 		bsr.w	j_j_OnTick
-		move.w	#$0200,QueuedAction(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABAE8:					  ; CODE XREF: ROM:001ABA4Ej
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
 		addi.w	#$0300,d0
 		move.w	d0,QueuedAction(a5)
-		cmpi.b	#$40,Unk0D(a5)
+		cmpi.b	#$40,AnimPhase(a5)
 		bcs.s	locret_1ABB14
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
-		clr.b	ChestIndex(a5)
+		clr.b	AIState(a5)
 
 locret_1ABB14:					  ; CODE XREF: ROM:001ABB04j
 		rts

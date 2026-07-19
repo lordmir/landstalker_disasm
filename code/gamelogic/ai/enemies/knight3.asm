@@ -5,9 +5,9 @@ EnemyAI_Knight3_B:				  ; CODE XREF: ROM:001A851Aj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Knight3_A:				  ; CODE XREF: ROM:001A8516j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1A730E
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1A7314
 		cmpi.b	#$10,d0
 		beq.s	loc_1A7340
@@ -37,7 +37,7 @@ EnemyAI_Knight3:				  ; CODE XREF: ROM:EnemyAI_Knight3_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1A7340:					  ; CODE XREF: ROM:001A7308j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A7370
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -71,7 +71,7 @@ sub_1A7374:					  ; CODE XREF: ROM:001A7358p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
 		bhi.s	loc_1A73AC
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -109,7 +109,7 @@ sub_1A73B0:					  ; CODE XREF: ROM:001A735Cp
 						  ; Bit13 - Receive Damage
 		andi.b	#$07,d0
 		beq.s	loc_1A73F2
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -136,10 +136,10 @@ sub_1A73F6:					  ; CODE XREF: ROM:001A7360p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00075,d7
 		bhi.s	loc_1A7432
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0011,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -164,19 +164,19 @@ sub_1A7436:					  ; CODE XREF: ROM:001A7366p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00010,d7
 		bcc.s	loc_1A7472
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0009,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A7472:					  ; CODE XREF: sub_1A7436+20j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -201,36 +201,36 @@ loc_1A7490:					  ; CODE XREF: ROM:001A730Aj
 ; ---------------------------------------------------------------------------
 
 loc_1A74AC:					  ; CODE XREF: ROM:001A749Aj
-		move.w	#$0300,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$05,Unk0D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$05,AnimPhase(a5)
 		bcs.s	loc_1A74D6
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$17,Unk0D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$17,AnimPhase(a5)
 		bcs.s	loc_1A74D6
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$00,CombatFlags(a5)
 		bra.w	EnemyAI_Knight3
 ; ---------------------------------------------------------------------------
 
 loc_1A74D6:					  ; CODE XREF: ROM:001A74BCj
 						  ; ROM:001A74CAj
-		bset	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$00,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A74E2:					  ; CODE XREF: ROM:001A7494j
 						  ; ROM:001A74A0j ...
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.s	loc_1A7516
 		move.w	#$0029,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	loc_1A7516
 		bra.w	EnemyAI_Knight3
 ; ---------------------------------------------------------------------------

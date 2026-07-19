@@ -33,7 +33,7 @@ j_MoveSpriteOffscreen:				  ; DATA XREF: OnTick:loc_188BCt
 ; Attributes: thunk
 
 sub_1A440C:					  ; DATA XREF: ROM:00012C96t
-						  ; sub_16220+1E8t ...
+						  ; ProcessDeadEnemies+1E8t ...
 		jmp	sub_1A86D6(pc)
 ; End of function sub_1A440C
 

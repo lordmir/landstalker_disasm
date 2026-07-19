@@ -10,7 +10,7 @@ GetSpeakerSpriteId:				  ; DATA XREF: j_GetSpeakerSpriteIdt
 		moveq	#$0000000E,d7
 
 loc_9C8E:					  ; CODE XREF: GetSpeakerSpriteId+22j
-		btst	#$04,Flags2(a0)
+		btst	#$04,InteractFlags(a0)
 		beq.s	loc_9CA0
 		move.b	Dialogue(a0),d1
 		lsr.b	#$02,d1

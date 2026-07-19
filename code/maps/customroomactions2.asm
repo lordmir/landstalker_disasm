@@ -117,7 +117,7 @@ _Next29:					  ; CODE XREF: sub_19FB0+22Ej
 		bne.w	_Next30			  ; Cave Spinner
 		btst	#$01,(g_AdditionalFlags+$B).l
 		beq.w	_Done
-		bclr	#$00,(Sprite1_Flags1).l
+		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
 ; ---------------------------------------------------------------------------
 
@@ -126,7 +126,7 @@ _Next30:					  ; CODE XREF: sub_19FB0+27Ej
 		bne.w	_Next31			  ; Cave Ifrit
 		btst	#$00,(g_AdditionalFlags+$18).l
 		beq.w	_Done
-		bclr	#$00,(Sprite2_Flags1).l
+		bclr	#$00,(Sprite2_StateFlags).l
 		bra.w	_Done
 ; ---------------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ _Next31:					  ; CODE XREF: sub_19FB0+2A2j
 		bne.w	_Next32			  ; Cave Miro
 		btst	#$05,(g_AdditionalFlags+$18).l
 		beq.w	_Done
-		bclr	#$00,(Sprite1_Flags1).l
+		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
 ; ---------------------------------------------------------------------------
 
@@ -144,7 +144,7 @@ _Next32:					  ; CODE XREF: sub_19FB0+2C6j
 		bne.w	_Next33			  ; Mir's tower first room
 		btst	#$02,(g_AdditionalFlags+$18).l
 		beq.w	_Done
-		bclr	#$00,(Sprite1_Flags1).l
+		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
 ; ---------------------------------------------------------------------------
 

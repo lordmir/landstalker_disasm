@@ -5,9 +5,9 @@ EnemyAI_Mummy2_B:				  ; CODE XREF: ROM:001A8542j
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Mummy2_A:				  ; CODE XREF: ROM:001A853Ej
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1A7E14
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1A7E1A
 		cmpi.b	#$10,d0
 		beq.s	loc_1A7E7A
@@ -35,23 +35,23 @@ EnemyAI_Mummy2:					  ; CODE XREF: ROM:EnemyAI_Mummy2_Bj
 						  ; ROM:001A7E3Ej ...
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
-		clr.b	Unk0D(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
+		clr.b	AnimPhase(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A7E5E:					  ; CODE XREF: ROM:001A80EEj
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$24,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
-		clr.b	Unk0D(a5)
+		move.b	#$24,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
+		clr.b	AnimPhase(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A7E7A:					  ; CODE XREF: ROM:001A7E0Ej
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A7EAA
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -88,7 +88,7 @@ sub_1A7EBA:					  ; CODE XREF: ROM:001A7E92p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
 		bhi.s	loc_1A7EF2
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0013,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -115,7 +115,7 @@ sub_1A7EF6:					  ; CODE XREF: ROM:001A7E96p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
 		bhi.s	loc_1A7F2E
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0014,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -142,7 +142,7 @@ sub_1A7F32:					  ; CODE XREF: ROM:001A7E9Ap
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00030,d7
 		bhi.s	loc_1A7F6A
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -173,19 +173,19 @@ sub_1A7F6E:					  ; CODE XREF: ROM:001A7EA0p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00060,d7
 		bcc.s	loc_1A7FBA
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A7FBA:					  ; CODE XREF: sub_1A7F6E+30j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -217,17 +217,17 @@ loc_1A7FF8:					  ; CODE XREF: ROM:001A7FDCj
 ; ---------------------------------------------------------------------------
 
 loc_1A7FFE:					  ; CODE XREF: ROM:001A7FE8j
-		move.w	#$0300,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$08,Unk0D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$08,AnimPhase(a5)
 		bcs.s	locret_1A8080
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$10,Unk0D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$10,AnimPhase(a5)
 		bcs.s	locret_1A8080
-		move.w	#$0500,QueuedAction(a5)
-		cmpi.b	#$18,Unk0D(a5)
+		move.w	#ACT_ATTACK5,QueuedAction(a5)
+		cmpi.b	#$18,AnimPhase(a5)
 		bcs.s	locret_1A8080
-		cmpi.b	#$19,Unk0D(a5)
+		cmpi.b	#$19,AnimPhase(a5)
 		bcc.s	loc_1A805C
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -236,20 +236,20 @@ loc_1A7FFE:					  ; CODE XREF: ROM:001A7FE8j
 		move.w	#$0030,d7
 		bsr.w	sub_1A8964
 		bcc.w	loc_1A807C
-		addq.b	#$01,Unk0D(a5)
+		addq.b	#$01,AnimPhase(a5)
 
 loc_1A805C:					  ; CODE XREF: ROM:001A8032j
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$20,Unk0D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$20,AnimPhase(a5)
 		bcs.s	locret_1A8080
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$28,Unk0D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$28,AnimPhase(a5)
 		bcs.s	locret_1A8080
 		bra.w	EnemyAI_Mummy2
 ; ---------------------------------------------------------------------------
 
 loc_1A807C:					  ; CODE XREF: ROM:001A8054j
-		subq.b	#$01,Unk0D(a5)
+		subq.b	#$01,AnimPhase(a5)
 
 locret_1A8080:					  ; CODE XREF: ROM:001A800Ej
 						  ; ROM:001A801Cj ...
@@ -259,9 +259,9 @@ locret_1A8080:					  ; CODE XREF: ROM:001A800Ej
 loc_1A8082:					  ; CODE XREF: ROM:001A7FF4j
 		tst.b	(g_PlayerAnimation).l
 		bne.w	EnemyAI_Mummy2
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.w	loc_1A80A2
-		move.b	#$01,(byte_FF1142).l
+		move.b	#$01,(g_PlayerHurtTimer).l
 		bra.w	*+4
 ; ---------------------------------------------------------------------------
 
@@ -274,8 +274,8 @@ loc_1A80A2:					  ; CODE XREF: ROM:001A8092j
 		move.w	#$0009,d7
 		bsr.w	sub_1A8964
 		bcc.w	EnemyAI_Mummy2
-		move.b	Unk0D(a5),d0
-		addq.b	#$01,Unk0D(a5)
+		move.b	AnimPhase(a5),d0
+		addq.b	#$01,AnimPhase(a5)
 		tst.b	d0
 		bne.s	loc_1A80EA
 		trap	#$00			  ; Trap00Handler
@@ -295,21 +295,21 @@ loc_1A80EA:					  ; CODE XREF: ROM:001A80D0j
 ; ---------------------------------------------------------------------------
 
 loc_1A80F4:					  ; CODE XREF: ROM:001A80E8j
-		bclr	#$06,Flags2(a5)
+		bclr	#$06,InteractFlags(a5)
 		bra.w	loc_1A8AEC
 ; ---------------------------------------------------------------------------
 
 loc_1A80FE:					  ; CODE XREF: ROM:001A7FF0j
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.w	locret_1A8132
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0011,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcc.w	EnemyAI_Mummy2
 
 locret_1A8132:					  ; CODE XREF: ROM:001A810Ej

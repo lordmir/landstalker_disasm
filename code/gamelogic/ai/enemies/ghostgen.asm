@@ -15,7 +15,7 @@ EnemyAI_GhostGen_A:				  ; CODE XREF: ROM:001A8606j
 EnemyAI_GhostGen:				  ; CODE XREF: ROM:EnemyAI_GhostGen_Bj
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		bclr	#$01,Flags2(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR RespawnGhost
@@ -50,17 +50,17 @@ loc_1A8730:					  ; CODE XREF: RespawnGhost+342j
 		andi.b	#$1F,TileSource(a5)
 		move.b	InitTileSource(a5),d0
 		or.b	d0,TileSource(a5)
-		move.w	InitUnk0A(a5),Unk0A(a5)
-		move.b	InitFlags2(a5),Flags2(a5)
+		move.w	InitAnimCtrl(a5),AnimCtrl(a5)
+		move.b	InitInteractFlags(a5),InteractFlags(a5)
 		move.w	InitZ(a5),Z(a5)
-		move.w	Unk6A(a5),BehavParam(a5)
+		move.w	InitBehavParam(a5),BehavParam(a5)
 		move.l	InitBehaviourLUTPtr(a5),BehaviourLUTPtr(a5)
 		move.b	InitGoldOrChestCont(a5),GoldOrChestContents(a5)
 		move.w	InitDialogue(a5),Dialogue(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
-		bclr	#$00,Flags1(a5)
-		clr.b	ChestIndex(a5)
-		clr.b	Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$00,StateFlags(a5)
+		clr.b	AIState(a5)
+		clr.b	CombatFlags(a5)
 		movea.l	a5,a1
 		jsr	(j_LookupSpriteAnimFlags).l
 		bsr.w	sub_1A8AE6

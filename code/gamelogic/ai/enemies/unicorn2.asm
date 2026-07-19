@@ -5,10 +5,10 @@ EnemyAI_Unicorn2_B:				  ; CODE XREF: ROM:001A855Aj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Unicorn2_A:				  ; CODE XREF: ROM:001A8556j
-		bclr	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		btst	#$01,Flags2(a5)
+		bclr	#$01,CombatFlags(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1A8DD2
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1A8DD8
 		cmpi.b	#$10,d0
 		beq.s	loc_1A8E1E
@@ -38,16 +38,16 @@ EnemyAI_Unicorn2:				  ; CODE XREF: ROM:EnemyAI_Unicorn2_Bj
 						  ; ROM:001A8DFCj ...
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
-		bclr	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
+		bclr	#$01,CombatFlags(a5)
 		rts
 ; End of function EnemyAI_Unicorn2
 
 ; ---------------------------------------------------------------------------
 
 loc_1A8E1E:					  ; CODE XREF: ROM:001A8DCCj
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A8E4A
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -94,7 +94,7 @@ sub_1A8E5A:					  ; CODE XREF: ROM:001A8E36p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
 		bls.w	loc_1A8EC0
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -103,7 +103,7 @@ sub_1A8E5A:					  ; CODE XREF: ROM:001A8E36p
 
 loc_1A8EC0:					  ; CODE XREF: sub_1A8E5A+4Cj
 						  ; ROM:001A901Cj
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0018,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -143,8 +143,8 @@ sub_1A8EDE:					  ; CODE XREF: ROM:001A8E3Ap
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
 		bhi.s	loc_1A8F44
-		bset	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		move.b	#$22,ChestIndex(a5)
+		bset	#$01,CombatFlags(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0017,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -158,7 +158,7 @@ loc_1A8F44:					  ; CODE XREF: sub_1A8EDE+10j
 ; ---------------------------------------------------------------------------
 
 loc_1A8F48:					  ; CODE XREF: sub_1A8EDE+36j
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0011,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -175,7 +175,7 @@ sub_1A8F5E:					  ; CODE XREF: ROM:001A8E40p
 		move.w	#$0010,d7
 		bsr.w	sub_1A8964
 		bcc.s	loc_1A8F86
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -221,8 +221,8 @@ loc_1A8FAC:					  ; CODE XREF: ROM:001A8F8Ej
 		andi.b	#$C0,d1
 		cmp.b	d0,d1
 		bne.w	EnemyAI_Unicorn2
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.b	#$0F,d0
 		bne.s	loc_1A9020
 		move.w	#00100,d6
@@ -231,7 +231,7 @@ loc_1A8FAC:					  ; CODE XREF: ROM:001A8F8Ej
 		bcs.w	loc_1A8EC0
 
 loc_1A9020:					  ; CODE XREF: ROM:001A900Cj
-		move.b	Unk0D(a5),d0
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0010,d0
 		lsl.w	#$04,d0
 		addi.w	#$0300,d0
@@ -246,13 +246,13 @@ loc_1A9034:					  ; CODE XREF: ROM:001A8F94j
 
 loc_1A903A:					  ; CODE XREF: ROM:001A8FA4j
 						  ; ROM:001A8FA8j
-		addq.b	#$01,Unk0D(a5)
+		addq.b	#$01,AnimPhase(a5)
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0100,QueuedAction(a5)
-		cmpi.b	#$10,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		cmpi.b	#$10,AnimPhase(a5)
 		bcs.s	loc_1A9060
 		bra.w	EnemyAI_Unicorn2
 ; ---------------------------------------------------------------------------
@@ -263,6 +263,6 @@ loc_1A9060:					  ; CODE XREF: ROM:001A905Aj
 ; ---------------------------------------------------------------------------
 
 loc_1A9066:					  ; CODE XREF: ROM:001A8F9Cj
-		bset	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$01,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts

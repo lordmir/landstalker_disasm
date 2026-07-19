@@ -5,11 +5,11 @@ EnemyAI_Mir_B:					  ; CODE XREF: ROM:001A85EAj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Mir_A:					  ; CODE XREF: ROM:001A85E6j
-		bset	#$00,Flags2(a5)
-		bclr	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		btst	#$01,Flags2(a5)
+		bset	#$00,InteractFlags(a5)
+		bclr	#$01,CombatFlags(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.w	loc_1ABFF2
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		cmpi.b	#$10,d0
 		bne.w	loc_1AC04E
 		bra.s	loc_1ABF72
@@ -19,8 +19,8 @@ EnemyAI_Mir:					  ; CODE XREF: ROM:EnemyAI_Mir_Bj
 						  ; ROM:001AC104j ...
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -28,10 +28,10 @@ loc_1ABF72:					  ; CODE XREF: ROM:001ABF58j
 		bsr.w	sub_1AC010
 		move.b	d2,d1
 		movea.l	a5,a1
-		bclr	#$00,Flags2(a5)
+		bclr	#$00,InteractFlags(a5)
 		jsr	(j_SetSpriteRotationAnimFlags).l
-		bset	#$07,Unk48(a5)
-		clr.b	Unk0A(a5)
+		bset	#$07,RenderFlags(a5)
+		clr.b	AnimCtrl(a5)
 		move.w	(Player_CentreX).l,d0
 		subi.w	#$0070,d0
 		move.w	CentreX(a5),d1
@@ -74,8 +74,8 @@ loc_1ABFF8:					  ; CODE XREF: ROM:001ABFA4j
 
 loc_1AC004:					  ; CODE XREF: ROM:001ABFD0j
 						  ; ROM:001ABFE6j
-		clr.b	Unk4D(a5)
-		move.b	#$20,ChestIndex(a5)
+		clr.b	AICounter(a5)
+		move.b	#$20,AIState(a5)
 		rts
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -113,21 +113,21 @@ locret_1AC04C:					  ; CODE XREF: sub_1AC010+26j
 ; ---------------------------------------------------------------------------
 
 loc_1AC04E:					  ; CODE XREF: ROM:001ABF54j
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		bsr.w	sub_1AC010
 		move.b	d2,d1
 		movea.l	a5,a1
-		bclr	#$00,Flags2(a5)
+		bclr	#$00,InteractFlags(a5)
 		jsr	(j_SetSpriteRotationAnimFlags).l
-		bset	#$00,Flags2(a5)
+		bset	#$00,InteractFlags(a5)
 		andi.w	#$0004,AnimationIndex(a5)
 		addi.w	#$0008,AnimationIndex(a5)
-		move.b	#$01,Unk0A(a5)
-		andi.b	#$BF,Flags2(a5)
-		addq.b	#$01,Unk4D(a5)
+		move.b	#$01,AnimCtrl(a5)
+		andi.b	#$BF,InteractFlags(a5)
+		addq.b	#$01,AICounter(a5)
 		move.w	#$0000,AnimationFrame(a5)
-		move.w	#$0100,QueuedAction(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AC0AE
 		lea	($00009880).l,a2
 		move.b	#$01,d0
@@ -135,14 +135,14 @@ loc_1AC04E:					  ; CODE XREF: ROM:001ABF54j
 ; ---------------------------------------------------------------------------
 
 loc_1AC0AE:					  ; CODE XREF: ROM:001AC09Cj
-		cmpi.b	#$02,Unk4D(a5)
+		cmpi.b	#$02,AICounter(a5)
 		bne.w	loc_1AC0C0
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
 ; ---------------------------------------------------------------------------
 
 loc_1AC0C0:					  ; CODE XREF: ROM:001AC0B4j
-		cmpi.b	#$0F,Unk4D(a5)
+		cmpi.b	#$0F,AICounter(a5)
 		bhi.w	loc_1AC108
 		bcs.w	locret_1AC11E
 		bsr.w	sub_1AC010
@@ -167,8 +167,8 @@ loc_1AC0FC:					  ; CODE XREF: ROM:001AC0F0j
 
 loc_1AC108:					  ; CODE XREF: ROM:001AC0C6j
 		move.w	#$0004,AnimationFrame(a5)
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AICounter(a5)
 		beq.w	EnemyAI_Mir
 
 locret_1AC11E:					  ; CODE XREF: ROM:001AC0CAj

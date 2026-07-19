@@ -47,9 +47,9 @@ loc_1AC4A8:					  ; CODE XREF: SpawnSmallProjectile+26j
 		move.w	#$021C,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
 		jsr	(sub_103B8).l
-		bset	#$00,Flags4(a1)		  ; Bit	0 = Invincible / Solid
-		bset	#$07,Flags2(a1)
-		bset	#$07,InitFlags2(a1)
+		bset	#$00,CombatFlags(a1)
+		bset	#$07,InteractFlags(a1)
+		bset	#$07,InitInteractFlags(a1)
 		tst.b	d0
 		rts
 ; ---------------------------------------------------------------------------

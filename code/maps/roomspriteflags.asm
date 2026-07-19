@@ -235,9 +235,9 @@ loc_1A470:					  ; CODE XREF: CheckPermanentSwitchFlags+34j
 		andi.b	#$3F,RotationAndSize(a0,d2.w)
 		ori.b	#$80,RotationAndSize(a0,d2.w)
 		move.w	#$0004,AnimationIndex(a0,d2.w)
-		bclr	#$00,Flags1(a0,d2.w)
+		bclr	#$00,StateFlags(a0,d2.w)
 		clr.w	BehavParam(a0,d2.w)
-		bset	#$07,Unk48(a0,d2.w)
+		bset	#$07,RenderFlags(a0,d2.w)
 
 loc_1A49C:					  ; CODE XREF: CheckPermanentSwitchFlags+Cj
 		movea.l	a6,a0

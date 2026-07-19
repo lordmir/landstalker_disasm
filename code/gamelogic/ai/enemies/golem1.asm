@@ -5,9 +5,9 @@ EnemyAI_Golem1_B:				  ; CODE XREF: ROM:001A862Aj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Golem1_A:				  ; CODE XREF: ROM:001A8626j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AD0CA
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AD0D0
 		cmpi.b	#$10,d0
 		beq.s	loc_1AD0FC
@@ -37,7 +37,7 @@ EnemyAI_Golem1:					  ; CODE XREF: ROM:EnemyAI_Golem1_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1AD0FC:					  ; CODE XREF: ROM:001AD0C4j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AD120
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -66,10 +66,10 @@ sub_1AD124:					  ; CODE XREF: ROM:001AD114p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
 		bcc.s	loc_1AD160
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0013,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -90,10 +90,10 @@ sub_1AD164:					  ; CODE XREF: ROM:001AD118p
 		move.w	#$0020,d7
 		bsr.w	sub_1A8964
 		bcc.s	loc_1AD190
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -109,16 +109,16 @@ loc_1AD194:					  ; CODE XREF: ROM:001AD0C6j
 		andi.b	#$0F,d0
 		cmpi.b	#$03,d0
 		bcs.s	loc_1AD1D4
-		move.w	#$0300,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.s	locret_1AD1D2
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	locret_1AD1D2
 		beq.w	EnemyAI_Golem1
 

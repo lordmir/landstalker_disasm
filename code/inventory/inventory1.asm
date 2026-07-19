@@ -12,7 +12,7 @@ CheckForMenuOpen:				  ; CODE XREF: GameLoop+10p
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu
 		bne.w	locret_77A4
-		tst.b	(byte_FF113F).l
+		tst.b	(g_SwordSwingFrame).l
 		bne.w	locret_77A4
 		move.b	(byte_FF1133).l,d0
 		beq.s	loc_7654
@@ -100,7 +100,7 @@ sub_7718:					  ; CODE XREF: CheckForMenuOpen+BAp
 		bne.s	loc_7744
 		cmp.b	(a0),d1
 		beq.s	loc_7744
-		clr.w	(g_SwordCharge_0).l
+		clr.w	(g_SwordChargeMeter).l
 		movem.l	d0-d1/a0,-(sp)
 		jsr	(j_RefreshSwordChargeHUD).l
 		jsr	(j_MarkHUDForUpdate).l

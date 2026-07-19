@@ -43,51 +43,51 @@ UpdateSpriteFrame:				  ; CODE XREF: UpdateFrames+16p
 						  ; Attack  - 0100, 0200, 0300,	0400, (500, 600, 700)
 						  ; Climb   - 1000
 						  ; TakeDmg - 2000
-		btst	#$01,Flags2(a0)
+		btst	#$01,InteractFlags(a0)
 		beq.s	loc_10428
-		move.b	Unk48(a0),d1
+		move.b	RenderFlags(a0),d1
 		andi.b	#$07,d1
 		bne.s	loc_10428
-		bchg	#$06,Flags2(a0)
+		bchg	#$06,InteractFlags(a0)
 
 loc_10428:					  ; CODE XREF: UpdateSpriteFrame+12j
 						  ; UpdateSpriteFrame+1Cj
-		move.b	Unk0A(a0),d1
+		move.b	AnimCtrl(a0),d1
 		andi.b	#$7F,d1
 		beq.s	loc_1048A
 		move.b	AnimFlags(a0),d3
 		btst	#$05,d3			  ; HasTakeDamageAnim
 		beq.s	loc_10446
 		move.w	d0,d1
-		andi.w	#$2000,d1
+		andi.w	#ACT_DAMAGE,d1
 		bne.w	LoadDamageAnimFrame	  ; Bit5: HasDamageAnim
 
 loc_10446:					  ; CODE XREF: UpdateSpriteFrame+36j
-		tst.b	Unk0A(a0)
+		tst.b	AnimCtrl(a0)
 		bmi.s	loc_104B2
 		cmpi.b	#$FF,d0			  ; Any	Movement
 		beq.w	loc_1051E
 		tst.w	d0
 		beq.s	LoadIdleAnimFrame	  ; Idle
-		btst	#$00,Flags2(a0)
+		btst	#$00,InteractFlags(a0)
 		bne.s	locret_10490
 		move.w	d0,d1
-		andi.w	#$2000,d1		  ; Take Dmg
+		andi.w	#ACT_DAMAGE,d1		  ; Take Dmg
 		bne.w	LoadDamageAnimFrame	  ; Bit5: HasDamageAnim
 		move.w	d0,d1
-		andi.w	#$0700,d1		  ; Attack
+		andi.w	#ACT_ATTACK_MASK,d1		  ; Attack
 		bne.w	LoadAttackAnimFrame
 		move.w	d0,d1
-		andi.w	#$0030,d1		  ; Jump/Fall
+		andi.w	#ACT_AIR_MASK,d1		  ; Jump/Fall
 		bne.w	LoadJumpAnimFrame
 		move.w	d0,d1
-		andi.w	#$000F,d1		  ; Walk
+		andi.w	#ACT_WALK_MASK,d1	  ; Walk
 		bne.w	LoadWalkAnimFrame
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1048A:					  ; CODE XREF: UpdateSpriteFrame+2Cj
-		andi.b	#$7F,Unk0A(a0)
+		andi.b	#$7F,AnimCtrl(a0)
 
 locret_10490:					  ; CODE XREF: UpdateSpriteFrame+5Aj
 						  ; UpdateSpriteFrame+A8j
@@ -96,7 +96,7 @@ locret_10490:					  ; CODE XREF: UpdateSpriteFrame+5Aj
 
 loc_10492:					  ; CODE XREF: ROM:00012762p
 						  ; ROM:0001283Ep
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		move.b	AnimFlags(a0),d3
 		bra.s	loc_104B2
 ; ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ LoadIdleAnimFrame:				  ; CODE XREF: UpdateSpriteFrame+52j
 						  ; UpdateSpriteFrame+34Aj
 		btst	#$00,d3
 		beq.w	loc_1056E
-		btst	#$00,Flags2(a0)
+		btst	#$00,InteractFlags(a0)
 		bne.s	locret_10490
 		bsr.w	sub_10794
 
@@ -113,7 +113,7 @@ loc_104B2:					  ; CODE XREF: UpdateSpriteFrame+46j
 						  ; UpdateSpriteFrame+98j
 		clr.w	AnimationFrame(a0)
 		move.w	#$0000,d1
-		btst	#$06,Flags4(a0)		  ; True for mimic, mushroom
+		btst	#$06,CombatFlags(a0)		  ; True for mimic, mushroom
 		beq.w	loc_104C8
 		move.w	#$0008,d1
 
@@ -163,7 +163,7 @@ locret_1051C:					  ; CODE XREF: UpdateSpriteFrame+120j
 ; ---------------------------------------------------------------------------
 
 loc_1051E:					  ; CODE XREF: UpdateSpriteFrame+4Cj
-		btst	#$00,Flags2(a0)
+		btst	#$00,InteractFlags(a0)
 		bne.s	locret_1051C
 		clr.w	PrevAction(a0)
 		bsr.w	sub_10794
@@ -186,14 +186,14 @@ loc_1054C:					  ; CODE XREF: UpdateSpriteFrame+13Ej
 loc_10554:					  ; CODE XREF: UpdateSpriteFrame+12Ej
 		clr.w	AnimationFrame(a0)
 		move.w	#$0000,d1
-		btst	#$06,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a0)
 		beq.w	GetRotatedFrame		  ; Bit	4 - Do not rotate
 		move.w	#$0008,d1
 		bra.w	GetRotatedFrame		  ; Bit	4 - Do not rotate
 ; ---------------------------------------------------------------------------
 
 loc_1056E:					  ; CODE XREF: UpdateSpriteFrame+9Ej
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		move.b	d0,d1
 		move.b	Speed(a0),d7
 		bne.s	loc_1057E
@@ -203,16 +203,16 @@ loc_1057E:					  ; CODE XREF: UpdateSpriteFrame+174j
 		add.b	d7,d1
 		neg.b	d7
 		and.b	d7,d1
-		move.b	d1,Unk0D(a0)
+		move.b	d1,AnimPhase(a0)
 		cmpi.b	#$3F,d0
 		bls.s	locret_105AA
 		andi.b	#$3F,d0
-		move.b	d0,Unk0D(a0)
+		move.b	d0,AnimPhase(a0)
 		move.b	AnimationFrame1(a0),d1
 		addq.b	#$04,d1
 		andi.b	#$04,d1
 		move.b	d1,AnimationFrame1(a0)
-		bset	#$07,Unk0A(a0)
+		bset	#$07,AnimCtrl(a0)
 
 locret_105AA:					  ; CODE XREF: UpdateSpriteFrame+188j
 		rts
@@ -232,10 +232,10 @@ loc_105BC:					  ; CODE XREF: UpdateSpriteFrame+1ACj
 		andi.b	#$0F,d2
 		cmp.b	d1,d2
 		beq.s	loc_105D2
-		move.b	#$08,Unk0D(a0)
+		move.b	#$08,AnimPhase(a0)
 
 loc_105D2:					  ; CODE XREF: UpdateSpriteFrame+1C6j
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		move.b	d0,d1
 		move.b	Speed(a0),d7
 		add.b	d7,d7
@@ -247,7 +247,7 @@ loc_105D2:					  ; CODE XREF: UpdateSpriteFrame+1C6j
 loc_105E6:					  ; CODE XREF: UpdateSpriteFrame+1B6j
 		move.b	#$0C,d5
 		clr.w	d4
-		btst	#$06,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a0)
 		beq.s	loc_105F8
 		move.w	#$0018,d4
 
@@ -256,10 +256,10 @@ loc_105F8:					  ; CODE XREF: UpdateSpriteFrame+1EEj
 		andi.b	#$0F,d2
 		cmp.b	d1,d2
 		beq.s	loc_10606
-		move.b	#$08,Unk0D(a0)
+		move.b	#$08,AnimPhase(a0)
 
 loc_10606:					  ; CODE XREF: UpdateSpriteFrame+1FAj
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		move.b	d0,d1
 		move.b	Speed(a0),d7
 		bne.s	loc_10616
@@ -267,7 +267,7 @@ loc_10606:					  ; CODE XREF: UpdateSpriteFrame+1FAj
 
 loc_10616:					  ; CODE XREF: UpdateSpriteFrame+1DAj
 						  ; UpdateSpriteFrame+1E0j ...
-		btst	#$01,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$01,CombatFlags(a0)
 		beq.s	loc_10622
 		sub.b	d7,d1
 		bra.s	loc_10624
@@ -279,21 +279,21 @@ loc_10622:					  ; CODE XREF: UpdateSpriteFrame+218j
 loc_10624:					  ; CODE XREF: UpdateSpriteFrame+21Cj
 		neg.b	d7
 		and.b	d7,d1
-		move.b	d1,Unk0D(a0)
+		move.b	d1,AnimPhase(a0)
 		cmpi.b	#$07,d0
 		bls.s	loc_1064E
 		andi.b	#$07,d0
-		move.b	d0,Unk0D(a0)
+		move.b	d0,AnimPhase(a0)
 		move.b	AnimationFrame1(a0),d0
 		move.b	d0,d1
 		addq.b	#$04,d1
 		and.b	d5,d1
 		move.b	d1,AnimationFrame1(a0)
-		bset	#$07,Unk0A(a0)
+		bset	#$07,AnimCtrl(a0)
 
 loc_1064E:					  ; CODE XREF: UpdateSpriteFrame+22Cj
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$01,CombatFlags(a0)
 		beq.s	loc_1065E
 		eori.b	#$80,d0
 
@@ -335,7 +335,7 @@ loc_10692:					  ; CODE XREF: UpdateSpriteFrame+1B2j
 		beq.s	locret_1068C
 		move.b	#$04,d5
 		clr.w	d4
-		btst	#$06,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a0)
 		beq.w	loc_105F8
 		move.w	#$0008,d4
 		bra.w	loc_105F8
@@ -376,7 +376,7 @@ loc_106C4:					  ; CODE XREF: UpdateSpriteFrame+2BAj
 GetRotatedAnimIdx:				  ; CODE XREF: UpdateSpriteFrame+2C8j
 						  ; UpdateSpriteFrame+2D4j ...
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$01,CombatFlags(a0)
 		beq.s	loc_10720
 		eori.b	#$80,d0
 
@@ -453,7 +453,7 @@ sub_10794:					  ; CODE XREF: UpdateSpriteFrame+AAp
 		clr.w	d2
 
 loc_107A0:					  ; CODE XREF: sub_10794+8j
-		bset	#$07,Unk0A(a0)
+		bset	#$07,AnimCtrl(a0)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -469,7 +469,7 @@ loc_107A8:					  ; CODE XREF: sub_10794+2j
 LookupSpriteAnimFlags:				  ; CODE XREF: sub_12CAE+4p
 						  ; ROM:00016370p
 						  ; DATA XREF: ...
-		move.b	Unk0A(a1),d1
+		move.b	AnimCtrl(a1),d1
 		andi.b	#$7F,d1
 		beq.s	loc_107CE
 		move.b	SpriteGraphic(a1),d1

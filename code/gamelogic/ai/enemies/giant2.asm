@@ -5,9 +5,9 @@ EnemyAI_Giant2_B:				  ; CODE XREF: ROM:001A85BAj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Giant2_A:				  ; CODE XREF: ROM:001A85B6j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AB4B4
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AB4BA
 		cmpi.b	#$10,d0
 		beq.s	loc_1AB4E6
@@ -37,7 +37,7 @@ EnemyAI_Giant2:					  ; CODE XREF: ROM:EnemyAI_Giant2_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1AB4E6:					  ; CODE XREF: ROM:001AB4AEj
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AB516
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -71,7 +71,7 @@ sub_1AB51A:					  ; CODE XREF: ROM:001AB4FEp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00008,d7
 		bhi.s	loc_1AB552
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0014,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -98,7 +98,7 @@ sub_1AB556:					  ; CODE XREF: ROM:001AB502p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#$000C,d7
 		bhi.s	loc_1AB58E
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$000E,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -125,7 +125,7 @@ sub_1AB592:					  ; CODE XREF: ROM:001AB506p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00003,d7
 		bhi.s	loc_1AB5CA
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0011,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -152,19 +152,19 @@ sub_1AB5CE:					  ; CODE XREF: ROM:001AB50Cp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00040,d7
 		bcc.s	loc_1AB60A
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AB60A:					  ; CODE XREF: sub_1AB5CE+20j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -202,16 +202,16 @@ loc_1AB64A:					  ; CODE XREF: ROM:001AB632j
 ; ---------------------------------------------------------------------------
 
 loc_1AB65C:					  ; CODE XREF: ROM:001AB638j
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.s	loc_1AB690
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	loc_1AB690
 		bra.w	EnemyAI_Giant2
 ; ---------------------------------------------------------------------------
@@ -223,16 +223,16 @@ loc_1AB690:					  ; CODE XREF: ROM:001AB66Cj
 ; ---------------------------------------------------------------------------
 
 loc_1AB696:					  ; CODE XREF: ROM:001AB63Ej
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	locret_1AB6CA
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$2D,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$2D,AnimPhase(a5)
 		bcs.s	locret_1AB6CA
 		bra.w	EnemyAI_Giant2
 ; ---------------------------------------------------------------------------
@@ -243,8 +243,8 @@ locret_1AB6CA:					  ; CODE XREF: ROM:001AB6A6j
 ; ---------------------------------------------------------------------------
 
 loc_1AB6CC:					  ; CODE XREF: ROM:001AB640j
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0008,d0
 		lsl.w	#$05,d0
 		addi.w	#$0100,d0
@@ -257,6 +257,6 @@ loc_1AB6CC:					  ; CODE XREF: ROM:001AB640j
 		bsr.w	sub_1A880C
 
 loc_1AB6F8:					  ; CODE XREF: ROM:001AB6E6j
-		cmpi.b	#$60,Unk0D(a5)
+		cmpi.b	#$60,AnimPhase(a5)
 		bcc.w	EnemyAI_Giant2
 		rts

@@ -7,9 +7,9 @@ EnemyAI_StoneWarrior_B:				  ; CODE XREF: ROM:001A86AAj
 
 EnemyAI_StoneWarrior_A:				  ; CODE XREF: ROM:001A86A6j
 						  ; ROM:001A86CEj
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AEC72
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AEC78
 		cmpi.b	#$10,d0
 		beq.s	loc_1AECB0
@@ -50,7 +50,7 @@ sub_1AECAC:					  ; CODE XREF: ROM:001AEC9Cj
 ; ---------------------------------------------------------------------------
 
 loc_1AECB0:					  ; CODE XREF: ROM:001AEC6Cj
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AECD8
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -84,10 +84,10 @@ sub_1AECDC:					  ; CODE XREF: ROM:001AECC8p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00006,d7
 		bhi.s	loc_1AED2A
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -114,19 +114,19 @@ sub_1AED2E:					  ; CODE XREF: ROM:001AECCEp
 		bcc.s	loc_1AED6A
 
 loc_1AED50:					  ; CODE XREF: ROM:001AECA8j
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$000E,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AED6A:					  ; CODE XREF: sub_1AED2E+20j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -162,24 +162,24 @@ loc_1AEDAE:					  ; CODE XREF: ROM:001AED92j
 ; ---------------------------------------------------------------------------
 
 loc_1AEDB4:					  ; CODE XREF: ROM:001AED9Ej
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$00,CombatFlags(a5)
 		move.b	Action1(a5),d0
 		andi.b	#$30,d0
 		beq.w	loc_1AEDD2
-		bset	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$00,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AEDD2:					  ; CODE XREF: ROM:001AEDC2j
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AEDEA
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_DoorLock
 ; ---------------------------------------------------------------------------
-		move.w	#$0400,QueuedAction(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -189,13 +189,13 @@ loc_1AEDEA:					  ; CODE XREF: ROM:001AEDDCj
 ; ---------------------------------------------------------------------------
 
 loc_1AEDF0:					  ; CODE XREF: ROM:001AEDA0j
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$0F,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$0F,AICounter(a5)
 		bcs.w	locret_1AEED6
-		move.w	#$0200,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$1E,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$1E,AICounter(a5)
 		bcs.w	locret_1AEED6
 		bne.s	loc_1AEE1E
 		trap	#$00			  ; Trap00Handler
@@ -208,14 +208,14 @@ loc_1AEE1E:					  ; CODE XREF: ROM:001AEE18j
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$20,Unk4D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$20,AICounter(a5)
 		bne.w	loc_1AEEC4
 		bsr.w	sub_1AEE66
 		move.b	(Player_Z+1).l,d0
 		cmp.b	(Player_FloorHeight).l,d0
 		bne.s	loc_1AEE62
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AEE62
 		move.b	#$08,d0			  ; Stun player
 		jsr	(j_PlaybackInput).l
@@ -260,7 +260,7 @@ loc_1AEE74:					  ; CODE XREF: sub_1AEE66+4Ej
 ; ---------------------------------------------------------------------------
 
 loc_1AEEC4:					  ; CODE XREF: ROM:001AEE3Aj
-		cmpi.b	#$2D,Unk4D(a5)
+		cmpi.b	#$2D,AICounter(a5)
 		bcs.s	locret_1AEED6
 		bra.w	sub_1AECAC
 ; ---------------------------------------------------------------------------

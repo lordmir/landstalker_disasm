@@ -7,9 +7,9 @@ EnemyAI_Miro_B:					  ; CODE XREF: ROM:001A85E2j
 
 EnemyAI_Miro_A:					  ; CODE XREF: ROM:001A85DEj
 						  ; ROM:001A8686j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1ABC2E
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	EnemyAI_Miro
 		cmpi.b	#$10,d0
 		beq.s	loc_1ABC4C
@@ -25,13 +25,13 @@ EnemyAI_Miro:					  ; CODE XREF: ROM:EnemyAI_Miro_Bj
 						  ; ROM:001ABC22j ...
 		move.w	#$0180,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABC4C:					  ; CODE XREF: ROM:001ABC28j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1ABC8A
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -69,10 +69,10 @@ sub_1ABC8E:					  ; CODE XREF: ROM:001ABC64p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00009,d7
 		bhi.s	loc_1ABCCA
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0019,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -97,10 +97,10 @@ sub_1ABCCE:					  ; CODE XREF: ROM:001ABC68p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
 		bhi.s	loc_1ABD0A
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -125,10 +125,10 @@ sub_1ABD0E:					  ; CODE XREF: ROM:001ABC6Cp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
 		bhi.s	loc_1ABD4A
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0007,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -165,10 +165,10 @@ sub_1ABD4E:					  ; CODE XREF: ROM:001ABC72p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00090,d7
 		bhi.s	loc_1ABD96
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$017F,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -193,10 +193,10 @@ sub_1ABD9A:					  ; CODE XREF: ROM:001ABC78p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00007,d7
 		bhi.s	loc_1ABDD6
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0007,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -223,20 +223,20 @@ sub_1ABDDA:					  ; CODE XREF: ROM:001ABC80p
 		bcc.s	loc_1ABE18
 		bra.s	loc_1ABE18
 ; ---------------------------------------------------------------------------
-		move.b	#$25,ChestIndex(a5)
+		move.b	#$25,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABE18:					  ; CODE XREF: sub_1ABDDA+20j
 						  ; sub_1ABDDA+22j
-		move.b	#$26,ChestIndex(a5)
+		move.b	#$26,AIState(a5)
 		move.w	#$0181,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -270,25 +270,25 @@ loc_1ABE36:					  ; CODE XREF: ROM:001ABC2Aj
 
 sub_1ABE66:					  ; CODE XREF: ROM:001ABE58j
 						  ; ROM:001ABEC4j ...
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$04,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$04,AICounter(a5)
 		bcs.s	loc_1ABEBA
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$000D,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$08,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$08,AICounter(a5)
 		bcs.s	loc_1ABEBA
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$0C,Unk4D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$0C,AICounter(a5)
 		bcs.s	loc_1ABEBA
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$10,Unk4D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$10,AICounter(a5)
 		bcs.s	loc_1ABEBA
 		clr.w	QueuedAction(a5)
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 
 loc_1ABEBA:					  ; CODE XREF: sub_1ABE66+10j
 						  ; sub_1ABE66+2Ej ...
@@ -300,7 +300,7 @@ loc_1ABEBA:					  ; CODE XREF: sub_1ABE66+10j
 
 loc_1ABEC0:					  ; CODE XREF: ROM:001ABE3Aj
 						  ; ROM:001ABE42j
-		tst.b	Unk4D(a5)
+		tst.b	AICounter(a5)
 		bne.s	sub_1ABE66
 		btst	#$04,Action1(a5)
 		bne.s	sub_1ABE66
@@ -324,7 +324,7 @@ loc_1ABEDA:					  ; CODE XREF: ROM:001ABE5Ej
 loc_1ABEE6:					  ; CODE XREF: ROM:001ABE60j
 		tst.b	BehavCmd(a5)
 		bne.w	loc_1ABF26
-		tst.b	Unk4D(a5)
+		tst.b	AICounter(a5)
 		bne.w	sub_1ABE66
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -333,13 +333,13 @@ loc_1ABEE6:					  ; CODE XREF: ROM:001ABE60j
 		move.w	#$0018,d7
 		bsr.w	sub_1A8964
 		bcc.w	EnemyAI_Miro
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		beq.w	sub_1ABE66
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABF26:					  ; CODE XREF: ROM:001ABEEAj
 		clr.w	QueuedAction(a5)
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bsr.w	j_j_OnTick
 		rts

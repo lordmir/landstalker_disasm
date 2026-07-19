@@ -1,36 +1,28 @@
-; ---------------------------------------------------------------------------
+GameLogic1	module
 
-ResetGame:					  ; CODE XREF: ROM:000004D6j
-						  ; ROM:00000510j
+ResetGame:
 		lea	(ResetSP).w,sp
 		jsr	(j_DisplaySegaLogo).l
 		jsr	(j_DisplayTitle).l
 		bcc.w	ResetAll
 
-loc_16CA:					  ; CODE XREF: ROM:000004F8j
+; Entered from the title screen fall-through, and jumped to from
+; GameOver (system.asm) to reload the save and re-enter the main loop.
+RestartFromSave:
 		bsr.w	LoadGame
 		bsr.w	StartGame
 
-loc_16D2:					  ; CODE XREF: ROM:000016D6j
+_mainLoop:
 		bsr.w	GameLoop
-		bcc.s	loc_16D2
+		bcc.s	_mainLoop
 		bra.w	GameOver
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-GameLoop:					  ; CODE XREF: ROM:loc_16D2p
+; One frame of gameplay. Returns with d0 = nonzero (carry via tst) when
+; the player has died, which sends _mainLoop to GameOver.
+GameLoop:
 		bsr.w	ProcessFloorType
-		andi.w	#$1000,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		andi.w	#ACT_CLIMB,(Player_Action).l
 		bsr.w	ProcessControlScript
 		bsr.w	CheckForMenuOpen
 		bsr.w	CheckForDebugButtons
@@ -40,12 +32,12 @@ GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		bsr.w	HandleDirectionalInput
 		jsr	(j_HandleAttack).l
 		jsr	(sub_10358).l
-		bsr.w	sub_24F4
-		bsr.w	sub_21DE
+		bsr.w	FindSpritesUnderneath
+		bsr.w	ResetSpriteActions
 		jsr	(j_UpdateEntities).l
-		bsr.w	sub_2540
-		bsr.w	sub_1858
-		bsr.w	sub_17EE
+		bsr.w	ValidateSpritesUnderneath
+		bsr.w	MoveWithPlatformZ
+		bsr.w	MoveWithPlatform
 		jsr	(sub_103D8).l
 		jsr	(sub_1034C).l
 		bsr.w	sub_7274
@@ -58,7 +50,7 @@ GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		nop
 		jsr	(CheckAndDisplayIntroString).l
 		jsr	(j_RefreshHUD).l
-		bsr.w	sub_249A
+		bsr.w	QueueScrollUpdates
 		bsr.w	EnableVRAMCopyQueueProcessing
 		bsr.w	EnableDMAQueueProcessing
 		move.w	(SlowDown).w,d0
@@ -66,353 +58,272 @@ GameLoop:					  ; CODE XREF: ROM:loc_16D2p
 		jsr	(sub_10384).l
 		tst.b	d0
 		rts
-; End of function GameLoop
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessControlScript:				  ; CODE XREF: GameLoop+Cp
+; Feeds g_Controller1State either from the scripted-input stream
+; (g_ControllerPlayback: $FE = hold current input, 1 = fetch next
+; duration+input pair from g_InputPlaybackAddr, negative byte ends the
+; script) or from the real pad. While paralysed only START gets
+; through (menu still opens, no movement); during a special player
+; animation all input is blocked.
+ProcessControlScript:
 		move.w	(g_ControllerPlayback).l,d0
-		beq.s	loc_17C6
+		beq.s	_liveInput
 		move.b	(g_ControllerPlayback).l,(g_Controller1State).l
 		cmpi.b	#$FE,d0
-		beq.s	locret_17BE
+		beq.s	_keepInput
 		subq.b	#$01,d0
-		bne.s	loc_17B8
+		bne.s	_setPlayback
 		movea.l	(g_InputPlaybackAddr).l,a0
 		move.b	(a0)+,d0
-		bmi.s	loc_17C0
+		bmi.s	_scriptEnd
 		lsl.w	#$08,d0
 		move.b	(a0)+,d0
 		move.l	a0,(g_InputPlaybackAddr).l
 
-loc_17B8:					  ; CODE XREF: ProcessControlScript+1Aj
+_setPlayback:
 		move.w	d0,(g_ControllerPlayback).l
 
-locret_17BE:					  ; CODE XREF: ProcessControlScript+16j
+_keepInput:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_17C0:					  ; CODE XREF: ProcessControlScript+24j
+_scriptEnd:
 		clr.w	(g_ControllerPlayback).l
 
-loc_17C6:					  ; CODE XREF: ProcessControlScript+6j
+_liveInput:
 		tst.b	(g_PlayerAnimation).l
-		bne.s	loc_17E6
+		bne.s	_animLock
 		bsr.w	UpdateControllerInputs
-		btst	#$02,(g_PlayerStatus).l
-		beq.s	locret_17E4
+		btst	#STATUS_PARALYSIS,(g_PlayerStatus).l
+		beq.s	_ctrlDone
 		andi.b	#CTRLBF_START,(g_Controller1State).l
 
-locret_17E4:					  ; CODE XREF: ProcessControlScript+52j
+_ctrlDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_17E6:					  ; CODE XREF: ProcessControlScript+44j
+_animLock:
 		clr.b	(g_Controller1State).l
 		rts
-; End of function ProcessControlScript
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_17EE:					  ; CODE XREF: GameLoop+4Ap
-
-; FUNCTION CHUNK AT 0000192A SIZE 0000000C BYTES
-
+; Carries the player along with a moving sprite they stand on: adopts
+; the platform's speed and steers via the directional dispatch using
+; the platform's walk action bits (control nibbles $09/$06/$05/$0A =
+; NE/SW/NW/SE). Player_Action bit 11 ($0800) marks "riding".
+MoveWithPlatform:
 		move.w	(Player_SpriteUnderneath).l,d0
-		bmi.s	locret_1856
+		bmi.s	_mwpDone
 		lea	(Player_X).l,a0
 		adda.w	d0,a0
 		move.w	(g_PlayerSpeed).l,d2
 		move.b	Speed(a0),d0
 		andi.w	#$000F,d0
-		beq.s	locret_1856
+		beq.s	_mwpDone
 		move.w	d0,(g_PlayerSpeed).l
-		bset	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		bset	#$03,(Player_Action).l
 		move.b	Action1(a0),d1
 		move.b	#$09,d0
 		lsr.b	#$01,d1
-		bcs.w	loc_192A
+		bcs.w	_platformSteer
 		move.b	#$06,d0
 		lsr.b	#$01,d1
-		bcs.w	loc_192A
+		bcs.w	_platformSteer
 		move.b	#$05,d0
 		lsr.b	#$01,d1
-		bcs.w	loc_192A
+		bcs.w	_platformSteer
 		move.b	#$0A,d0
 		lsr.b	#$01,d1
-		bcs.w	loc_192A
+		bcs.w	_platformSteer
 		move.w	d2,(g_PlayerSpeed).l
-		bclr	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		bclr	#$03,(Player_Action).l
 
-locret_1856:					  ; CODE XREF: sub_17EE+6j
-						  ; sub_17EE+1Ej
+_mwpDone:
 		rts
-; End of function sub_17EE
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1858:					  ; CODE XREF: GameLoop+46p
-
-; FUNCTION CHUNK AT 00002242 SIZE 000001AE BYTES
-; FUNCTION CHUNK AT 000023F2 SIZE 00000018 BYTES
-
+; Keeps the player glued to a vertically-moving platform: while the
+; platform's jump bit is set the player rises to its top, while its
+; fall bit is set the player descends, shifting the view via
+; _viewRiseZ/_viewDropZ.
+MoveWithPlatformZ:
 		move.w	(Player_SpriteUnderneath).l,d0
-		bmi.s	locret_18C2
+		bmi.s	_mwpzDone
 		lea	(Player_X).l,a0
 		adda.w	d0,a0
-		btst	#$05,Action1(a0)
-		beq.s	loc_188E
+		btst	#ACTB_JUMP,Action1(a0)
+		beq.s	_platformDown
 		move.w	HitBoxZEnd(a0),d7
 		sub.w	(Player_Z).l,d7
 		addq.w	#$01,d7
-		beq.s	locret_18C2
+		beq.s	_mwpzDone
 		add.w	d7,(Player_Z).l
 		add.w	d7,(Player_HitBoxZEnd).l
-		bra.w	loc_2326
-; ---------------------------------------------------------------------------
+		bra.w	_viewRiseZ
 
-loc_188E:					  ; CODE XREF: sub_1858+16j
-		btst	#$04,Action1(a0)
-		beq.s	locret_18C2
+_platformDown:
+		btst	#ACTB_FALL,Action1(a0)
+		beq.s	_mwpzDone
 		move.w	(Player_Z).l,d7
 		sub.w	HitBoxZEnd(a0),d7
 		subq.w	#$01,d7
-		beq.s	locret_18C2
+		beq.s	_mwpzDone
 		lea	(Player_X).l,a0
 		bsr.w	sub_32C6
 		move.b	d5,d7
-		beq.s	locret_18C2
+		beq.s	_mwpzDone
 		sub.w	d7,(Player_Z).l
 		sub.w	d7,(Player_HitBoxZEnd).l
-		bra.w	loc_2242
-; ---------------------------------------------------------------------------
+		bra.w	_viewDropZ
 
-locret_18C2:					  ; CODE XREF: sub_1858+6j
-						  ; sub_1858+24j ...
+_mwpzDone:
 		rts
-; End of function sub_1858
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleDirectionalInput:				  ; CODE XREF: GameLoop+24p
+; Builds the 4-bit UP/DOWN/LEFT/RIGHT control value (bit 4 set while
+; confused, selecting the swapped half of the table below) and jumps
+; through HandleDirectionalControl. Debug: holding C on pad 2 gives
+; speed 8 instead of 2.
+HandleDirectionalInput:
 		bclr	#$06,(g_PlayerStatus).l
 		clr.w	d0
 		bsr.w	CheckForCollision
-		bcc.s	loc_18DC
+		bcc.s	_speedSel
 		bset	#$06,(g_PlayerStatus).l
 
-loc_18DC:					  ; CODE XREF: HandleDirectionalInput+Ej
+_speedSel:
 		tst.w	(DebugModeEnable).w
-		bmi.s	loc_18F4
+		bmi.s	_normalSpeed
 		move.w	#$0008,(g_PlayerSpeed).l
 		btst	#CTRL_C,(g_Controller2State).l
-		bne.s	loc_18FC
+		bne.s	_readInput
 
-loc_18F4:					  ; CODE XREF: HandleDirectionalInput+1Cj
+_normalSpeed:
 		move.w	#$0002,(g_PlayerSpeed).l
 
-loc_18FC:					  ; CODE XREF: HandleDirectionalInput+2Ej
+_readInput:
 		move.b	(g_Controller1State).l,d0
 		lea	(Player_X).l,a5
 		andi.b	#$0F,d0
 		tst.w	(g_ControllerPlayback).l
-		bne.s	loc_1922
+		bne.s	_dispatch
 		move.b	(g_PlayerStatus).l,d1
 		andi.b	#$02,d1			  ; Confusion
 		lsl.b	#$03,d1
 		or.b	d1,d0
 
-loc_1922:					  ; CODE XREF: HandleDirectionalInput+4Ej
-						  ; sub_17EE+146j
+_dispatch:
 		lsl.b	#$02,d0
 		ext.w	d0
 		jmp	HandleDirectionalControl(pc,d0.w)
-; End of function HandleDirectionalInput
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_17EE
 
-loc_192A:					  ; CODE XREF: sub_17EE+38j
-						  ; sub_17EE+42j ...
+; MoveWithPlatform enters the dispatch here with d0 = control nibble.
+_platformSteer:
 		lea	(Player_X).l,a5
 		andi.b	#$0F,d0
-		bra.s	loc_1922
-; END OF FUNCTION CHUNK	FOR sub_17EE
-
-; =============== S U B	R O U T	I N E =======================================
+		bra.s	_dispatch
 
 
+; Jump table indexed by control value * 4 (UP=1/DOWN=2/LEFT=4/RIGHT=8,
+; +16 while confused - the confused half swaps opposite directions).
+; The single buttons resolve to a diagonal via the Handle*Button
+; routines below based on the camera-relative facing.
 HandleDirectionalControl:
-
-; FUNCTION CHUNK AT 00001B7E SIZE 00000188 BYTES
-; FUNCTION CHUNK AT 00001D16 SIZE 00000172 BYTES
-; FUNCTION CHUNK AT 00001E98 SIZE 0000018A BYTES
-; FUNCTION CHUNK AT 00002024 SIZE 0000006A BYTES
-; FUNCTION CHUNK AT 0000209E SIZE 000000DA BYTES
-
-		bra.w	locret_19B6		  ; No input
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; No input
 		bra.w	HandleUpButton		  ; UP selected
-; ---------------------------------------------------------------------------
 		bra.w	HandleDownButton	  ; DOWN selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; UP + DOWN selected
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; UP + DOWN selected
 		bra.w	HandleLeftButton	  ; LEFT selected
-; ---------------------------------------------------------------------------
 		bra.w	HandleUpLeft		  ; UP + LEFT selected
-; ---------------------------------------------------------------------------
 		bra.w	HandleDownLeft		  ; DOWN + LEFT	selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; UP + DOWN +	LEFT selected
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; UP + DOWN +	LEFT selected
 		bra.w	HandleRightButton	  ; RIGHT selected
-; ---------------------------------------------------------------------------
 		bra.w	HandleUpRight		  ; RIGHT + UP selected
-; ---------------------------------------------------------------------------
 		bra.w	HandleDownRight		  ; RIGHT + DOWN selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + UP + DOWN selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT + UP selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT + DOWN	selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT + UP +	DOWN selected
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; No input, confusion
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; RIGHT + UP + DOWN selected
+		bra.w	_noMove		  ; RIGHT + LEFT selected
+		bra.w	_noMove		  ; RIGHT + LEFT + UP selected
+		bra.w	_noMove		  ; RIGHT + LEFT + DOWN	selected
+		bra.w	_noMove		  ; RIGHT + LEFT + UP +	DOWN selected
+		bra.w	_noMove		  ; No input, confusion
 		bra.w	HandleDownButton	  ; UP selected, confusion
-; ---------------------------------------------------------------------------
 		bra.w	HandleUpButton		  ; DOWN selected, confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; UP + DOWN selected,	confusion
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; UP + DOWN selected,	confusion
 		bra.w	HandleRightButton	  ; LEFT selected, confusion
-; ---------------------------------------------------------------------------
 		bra.w	HandleDownRight		  ; LEFT + UP selected,	confusion
-; ---------------------------------------------------------------------------
 		bra.w	HandleUpRight		  ; LEFT + DOWN	selected, confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; LEFT + UP +	DOWN selected, confusion
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; LEFT + UP +	DOWN selected, confusion
 		bra.w	HandleLeftButton	  ; RIGHT selected, confusion
-; ---------------------------------------------------------------------------
 		bra.w	HandleDownLeft		  ; RIGHT + UP selected, confusion
-; ---------------------------------------------------------------------------
 		bra.w	HandleUpLeft		  ; RIGHT + DOWN selected, confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + UP + DOWN selected,	confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT selected, confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT + UP selected,	confusion
-; ---------------------------------------------------------------------------
-		bra.w	locret_19B6		  ; RIGHT + LEFT + DOWN	selected, confusion
-; ---------------------------------------------------------------------------
+		bra.w	_noMove		  ; RIGHT + UP + DOWN selected,	confusion
+		bra.w	_noMove		  ; RIGHT + LEFT selected, confusion
+		bra.w	_noMove		  ; RIGHT + LEFT + UP selected,	confusion
+		bra.w	_noMove		  ; RIGHT + LEFT + DOWN	selected, confusion
 		bra.w	*+4			  ; RIGHT + LEFT + UP +	DOWN selected, confusion
-; ---------------------------------------------------------------------------
 
-locret_19B6:					  ; CODE XREF: HandleDirectionalControlj
-						  ; HandleDirectionalControl+Cj ...
+_noMove:
 		rts
-; ---------------------------------------------------------------------------
 
-HandleUpButton:					  ; CODE XREF: HandleDirectionalControl+4j
-						  ; HandleDirectionalControl+48j
+HandleUpButton:
 		tst.b	(g_PlayerStatus).l
-		bmi.s	loc_19CE
+		bmi.s	_upFlip
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		bra.w	HandleUpLeft		  ; Travel in the NW (-X) direction
-; ---------------------------------------------------------------------------
 
-loc_19CE:					  ; CODE XREF: HandleDirectionalControl+88j
+_upFlip:
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		bra.w	HandleUpRight		  ; Travel in the NE (-Y) direction
-; ---------------------------------------------------------------------------
 
-HandleRightButton:				  ; CODE XREF: HandleDirectionalControl+20j
-						  ; HandleDirectionalControl+50j
+HandleRightButton:
 		tst.b	(g_PlayerStatus).l
-		bmi.s	loc_19F2
+		bmi.s	_rightFlip
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		bra.w	HandleDownRight		  ; Travel in the SE (+X) direction
-; ---------------------------------------------------------------------------
 
-loc_19F2:					  ; CODE XREF: HandleDirectionalControl+ACj
+_rightFlip:
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleDownRight		  ; Travel in the SE (+X) direction
 		bra.w	HandleUpRight		  ; Travel in the NE (-Y) direction
-; ---------------------------------------------------------------------------
 
-HandleDownButton:				  ; CODE XREF: HandleDirectionalControl+8j
-						  ; HandleDirectionalControl+44j
+HandleDownButton:
 		tst.b	(g_PlayerStatus).l
-		bmi.s	loc_1A16
+		bmi.s	_downFlip
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 		bra.w	HandleDownRight		  ; Travel in the SE (+X) direction
-; ---------------------------------------------------------------------------
 
-loc_1A16:					  ; CODE XREF: HandleDirectionalControl+D0j
+_downFlip:
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleDownRight		  ; Travel in the SE (+X) direction
 		bra.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
-; ---------------------------------------------------------------------------
 
-HandleLeftButton:				  ; CODE XREF: HandleDirectionalControl+10j
-						  ; HandleDirectionalControl+60j
+HandleLeftButton:
 		tst.b	(g_PlayerStatus).l
-		bmi.s	loc_1A3A
+		bmi.s	_leftFlip
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
 		bra.w	HandleUpLeft		  ; Travel in the NW (-X) direction
-; ---------------------------------------------------------------------------
 
-loc_1A3A:					  ; CODE XREF: HandleDirectionalControl+F4j
+_leftFlip:
 		btst	#$06,RotationAndSize(a5)
 		beq.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		bra.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
-; ---------------------------------------------------------------------------
 
-HandleUpRight:					  ; CODE XREF: HandleDirectionalControl+24j
-						  ; HandleDirectionalControl+58j ...
+; The four movers below share one structure per direction: probe the
+; hitbox by speed, run the heightmap check, then either commit the move
+; (updating Centre/Sub coords, coarse cell + heightmap pointer, camera
+; and tile streaming), deflect along a wall at speed 1, start a ladder
+; climb (NE/NW only), or revert the probe on collision.
+HandleUpRight:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the NE (-Y) direction
-		bne.s	loc_1A58
+		bne.s	_neProbe
 		bclr	#$07,(g_PlayerStatus).l
 
-loc_1A58:					  ; CODE XREF: HandleDirectionalControl+118j
+_neProbe:
 		move.w	HitBoxYStart(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		sub.w	d0,HitBoxYStart(a5)
@@ -421,161 +332,110 @@ loc_1A58:					  ; CODE XREF: HandleDirectionalControl+118j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.w	loc_1B36
+		bcc.w	_neClip
 		bsr.w	sub_30E4
-		bcc.w	loc_1B36
-		btst	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		beq.s	loc_1A98
+		bcc.w	_neClip
+		btst	#$03,(Player_Action).l
+		beq.s	_neBlocked
 		btst	#$04,GroundHeight(a0)
-		bne.w	loc_1B36
+		bne.w	_neClip
 
-loc_1A98:					  ; CODE XREF: HandleDirectionalControl+156j
-		bsr.w	sub_1B6E
+_neBlocked:
+		bsr.w	_revertProbeNE
 		move.b	SubX(a5),d2
 		addq.b	#$01,d2
 		andi.b	#$FE,d2
 		cmpi.b	#$08,d2
-		bne.s	loc_1B0A
+		bne.s	_neDeflect
 		move.b	GroundType(a5),d2
 		andi.b	#$3F,d2
 		cmpi.b	#FLOOR_LADDER_NE,d2
-		bne.s	loc_1B0A
+		bne.s	_neDeflect
 		bsr.w	sub_33EA
 		tst.w	d5
-		bne.s	loc_1AC4
+		bne.s	_neLadder
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AC4:					  ; CODE XREF: HandleDirectionalControl+18Aj
+_neLadder:
 		addq.w	#$01,Z(a5)
 		addq.w	#$01,HitBoxZEnd(a5)
-		bset	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	loc_1AE6
+		bset	#ACTBH_CLIMB,(Player_Action).l
+		bne.s	_neLadderAnim
 		clr.w	AnimationFrame(a5)
-		move.b	#$FF,Unk0D(a5)
+		move.b	#$FF,AnimPhase(a5)
 		andi.b	#$E0,JumpRate(a5)
 
-loc_1AE6:					  ; CODE XREF: HandleDirectionalControl+19Ej
+_neLadderAnim:
 		andi.b	#$3F,RotationAndSize(a5)
-		addq.b	#$01,Unk0D(a5)
+		addq.b	#$01,AnimPhase(a5)
 		clr.b	FallRate(a5)
 		move.b	(byte_FF0F9D).l,d7
 		andi.b	#$03,d7
-		bne.s	loc_1B04
+		bne.s	_neLadderRise
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_JumpLand
-; ---------------------------------------------------------------------------
 
-loc_1B04:					  ; CODE XREF: HandleDirectionalControl+1C8j
-		moveq	#$00000001,d7
-		bra.w	loc_2326
-; ---------------------------------------------------------------------------
+_neLadderRise:
+		moveq	#$1,d7
+		bra.w	_viewRiseZ
 
-loc_1B0A:					  ; CODE XREF: HandleDirectionalControl+174j
-						  ; HandleDirectionalControl+182j
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_neDeflect:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
-		beq.w	loc_1C38
+		beq.w	_neFinish
 		cmp.b	d0,d3
 		bcc.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownRight		  ; Travel in the SE (+X) direction
-		bra.w	loc_1C38
-; ---------------------------------------------------------------------------
+		bra.w	_neFinish
 
-loc_1B36:					  ; CODE XREF: HandleDirectionalControl+142j
-						  ; HandleDirectionalControl+14Aj ...
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_neClip:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		clr.w	d0
-		tst.b	(byte_FF1142).l
-		beq.s	loc_1B4E
+		tst.b	(g_PlayerHurtTimer).l
+		beq.s	_neCollide
 
-loc_1B48:					  ; CODE XREF: HandleDirectionalControl+220j
+_neHurtPush:
 		bsr.w	sub_3058
-		bra.s	loc_1B5C
-; ---------------------------------------------------------------------------
+		bra.s	_neCollRes
 
-loc_1B4E:					  ; CODE XREF: HandleDirectionalControl+210j
+_neCollide:
 		btst	#$06,(g_PlayerStatus).l
 	if	FIX_COLL_2
-		bne.s	loc_1B48
+		bne.s	_neHurtPush
 	else
-		bne.s	loc_1B7E
+		bne.s	_neCommit
 	endif
 		bsr.w	CollisionDetect
 
-loc_1B5C:					  ; CODE XREF: HandleDirectionalControl+216j
-		bcc.s	loc_1B7E
-		tst.b	Flags2(a0)
-		bpl.s	loc_1B68
-		bsr.w	sub_25B2
+_neCollRes:
+		bcc.s	_neCommit
+		tst.b	InteractFlags(a0)
+		bpl.s	_neTouch
+		bsr.w	QueueContactDamage
 
-loc_1B68:					  ; CODE XREF: HandleDirectionalControl+22Cj
-		bsr.s	sub_1B6E
-		bra.w	loc_1C38
-; End of function HandleDirectionalControl
-
-
-; =============== S U B	R O U T	I N E =======================================
+_neTouch:
+		bsr.s	_revertProbeNE
+		bra.w	_neFinish
 
 
-sub_1B6E:					  ; CODE XREF: HandleDirectionalControl:loc_1A98p
-						  ; HandleDirectionalControl:loc_1B68p	...
+_revertProbeNE:
+						  ; HandleDirectionalControl:_neTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		add.w	d2,HitBoxYStart(a5)
 		add.w	d2,HitBoxYEnd(a5)
 		rts
-; End of function sub_1B6E
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR HandleDirectionalControl
 
-loc_1B7E:					  ; CODE XREF: HandleDirectionalControl:loc_1B5Cj
-		btst	#$04,Flags1(a5)
-		beq.s	loc_1B8E
+_neCommit:
+		btst	#$04,StateFlags(a5)
+		beq.s	_neApply
 		lsr	(g_PlayerSpeed).l
-		bsr.s	sub_1B6E
+		bsr.s	_revertProbeNE
 
-loc_1B8E:					  ; CODE XREF: HandleDirectionalControl+24Ej
+_neApply:
 		move.w	CentreY(a5),d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
@@ -585,14 +445,14 @@ loc_1B8E:					  ; CODE XREF: HandleDirectionalControl+24Ej
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.s	loc_1BD0
+		bcc.s	_neCamApply
 		subq.b	#$01,(Player_Y).l
 		subi.w	#$0094,(Player_HeightmapOffset).l
 		movea.w	HeightmapOffset(a5),a6
 		move.w	GroundHeight(a5),(word_FF1208).l
 		move.w	(a6),GroundHeight(a5)
 
-loc_1BD0:					  ; CODE XREF: HandleDirectionalControl+27Aj
+_neCamApply:
 		move.w	(word_FF1202).l,d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
@@ -602,71 +462,40 @@ loc_1BD0:					  ; CODE XREF: HandleDirectionalControl+27Aj
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.s	loc_1C30
+		bcc.s	_neScroll
 		subq.b	#$01,(g_PlayerYFlattened).l
 		subi.w	#$0020,(g_BlockTableIndex).l
-		bpl.s	loc_1C24
+		bpl.s	_neTiles
 		addi.w	#$0210,(g_BlockTableIndex).l
 		cmpi.w	#$0200,(g_BlockTableIndex).l
-		bcs.s	loc_1C24
+		bcs.s	_neTiles
 		subi.w	#$0020,(g_BlockTableIndex).l
 
-loc_1C24:					  ; CODE XREF: HandleDirectionalControl+2D2j
-						  ; HandleDirectionalControl+2E4j
+_neTiles:
 		jsr	(LoadRightTiles).l
 		jsr	(LoadTopTiles).l
 
-loc_1C30:					  ; CODE XREF: HandleDirectionalControl+2C2j
-		bsr.w	sub_240A
-		bsr.w	sub_2436
+_neScroll:
+		bsr.w	_scrollCamUp
+		bsr.w	_scrollCamRight
 
-loc_1C38:					  ; CODE XREF: HandleDirectionalControl+1ECj
-						  ; HandleDirectionalControl+1FCj ...
-		bclr	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	locret_1C5A
+_neFinish:
+		bclr	#$03,(Player_Action).l
+		bne.s	_neDone
 		andi.b	#$3F,(Player_RotationAndSize).l
-		bset	#$00,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bset	#$00,(Player_Unk6D).l
+		bset	#ACTB_WALK_NE,(Player_Action+1).l
+		bset	#$00,(Player_MovedDirFlags).l
 
-locret_1C5A:					  ; CODE XREF: HandleDirectionalControl+30Aj
+_neDone:
 		rts
-; ---------------------------------------------------------------------------
 
-HandleDownRight:				  ; CODE XREF: HandleDirectionalControl+28j
-						  ; HandleDirectionalControl+54j ...
+HandleDownRight:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the SE (+X) direction
-		bne.s	loc_1C6C
+		bne.s	_seProbe
 		bclr	#$07,(g_PlayerStatus).l
 
-loc_1C6C:					  ; CODE XREF: HandleDirectionalControl+32Cj
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_seProbe:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		move.w	HitBoxXEnd(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		add.w	d0,HitBoxXStart(a5)
@@ -675,88 +504,70 @@ loc_1C6C:					  ; CODE XREF: HandleDirectionalControl+32Cj
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bls.s	loc_1CD6
+		bls.s	_seClip
 		bsr.w	sub_3146
-		bcc.s	loc_1CD6
-		btst	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		beq.s	loc_1CB0
+		bcc.s	_seClip
+		btst	#$03,(Player_Action).l
+		beq.s	_seDeflect
 		btst	#$04,GroundHeight(a0)
-		bne.w	loc_1CD6
+		bne.w	_seClip
 
-loc_1CB0:					  ; CODE XREF: HandleDirectionalControl+36Ej
-		bsr.s	sub_1D06
+_seDeflect:
+		bsr.s	_revertProbeSE
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
-		beq.w	loc_1DC6
+		beq.w	_seFinish
 		cmp.b	d0,d3
 		bcc.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
-		bra.w	loc_1DC6
-; ---------------------------------------------------------------------------
+		bra.w	_seFinish
 
-loc_1CD6:					  ; CODE XREF: HandleDirectionalControl+35Ej
-						  ; HandleDirectionalControl+364j ...
+_seClip:
 		clr.w	d0
-		tst.b	(byte_FF1142).l
-		beq.s	loc_1CE6
+		tst.b	(g_PlayerHurtTimer).l
+		beq.s	_seCollide
 
-loc_1CE0:					  ; CODE XREF: HandleDirectionalControl+3B8j
+_seHurtPush:
 		bsr.w	sub_3058
-		bra.s	loc_1CF4
-; ---------------------------------------------------------------------------
+		bra.s	_seCollRes
 
-loc_1CE6:					  ; CODE XREF: HandleDirectionalControl+3A8j
+_seCollide:
 		btst	#$06,(g_PlayerStatus).l
 	if FIX_COLL_2
-		bne.s	loc_1CE0
+		bne.s	_seHurtPush
 	else
-		bne.s	loc_1D16
+		bne.s	_seCommit
 	endif
 		bsr.w	CollisionDetect
 
-loc_1CF4:					  ; CODE XREF: HandleDirectionalControl+3AEj
-		bcc.s	loc_1D16
-		tst.b	Flags2(a0)
-		bpl.s	loc_1D00
-		bsr.w	sub_25B2
+_seCollRes:
+		bcc.s	_seCommit
+		tst.b	InteractFlags(a0)
+		bpl.s	_seTouch
+		bsr.w	QueueContactDamage
 
-loc_1D00:					  ; CODE XREF: HandleDirectionalControl+3C4j
-		bsr.s	sub_1D06
-		bra.w	loc_1DC6
-; END OF FUNCTION CHUNK	FOR HandleDirectionalControl
-
-; =============== S U B	R O U T	I N E =======================================
+_seTouch:
+		bsr.s	_revertProbeSE
+		bra.w	_seFinish
 
 
-sub_1D06:					  ; CODE XREF: HandleDirectionalControl:loc_1CB0p
-						  ; HandleDirectionalControl:loc_1D00p	...
+_revertProbeSE:
+						  ; HandleDirectionalControl:_seTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		sub.w	d2,HitBoxXStart(a5)
 		sub.w	d2,HitBoxXEnd(a5)
 		rts
-; End of function sub_1D06
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR HandleDirectionalControl
 
-loc_1D16:					  ; CODE XREF: HandleDirectionalControl:loc_1CF4j
-		btst	#$04,Flags1(a5)
-		beq.s	loc_1D26
+_seCommit:
+		btst	#$04,StateFlags(a5)
+		beq.s	_seApply
 		lsr	(g_PlayerSpeed).l
-		bsr.s	sub_1D06
+		bsr.s	_revertProbeSE
 
-loc_1D26:					  ; CODE XREF: HandleDirectionalControl+3E6j
+_seApply:
 		move.w	CentreX(a5),d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
@@ -766,14 +577,14 @@ loc_1D26:					  ; CODE XREF: HandleDirectionalControl+3E6j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
-		bcc.s	loc_1D66
+		bcc.s	_seCamApply
 		addq.b	#$01,(Player_X).l
 		addi.w	#$0002,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
 		move.w	GroundHeight(a5),(word_FF1208).l
 		move.w	(a6),GroundHeight(a5)
 
-loc_1D66:					  ; CODE XREF: HandleDirectionalControl+412j
+_seCamApply:
 		move.w	(word_FF1200).l,d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
@@ -783,71 +594,41 @@ loc_1D66:					  ; CODE XREF: HandleDirectionalControl+412j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
-		bcc.s	loc_1DBE
+		bcc.s	_seScroll
 		addq.b	#$01,(g_PlayerXFlattened).l
 		move.w	(g_BlockTableIndex).l,d0
 		addq.w	#$01,d0
 		move.w	d0,(g_BlockTableIndex).l
 		andi.w	#$001F,d0
-		bne.s	loc_1DB2
+		bne.s	_seTiles
 		subi.w	#$0020,(g_BlockTableIndex).l
 
-loc_1DB2:					  ; CODE XREF: HandleDirectionalControl+472j
+_seTiles:
 		jsr	(LoadRightTiles).l
 		jsr	(LoadBottomTiles).l
 
-loc_1DBE:					  ; CODE XREF: HandleDirectionalControl+458j
-		bsr.w	sub_2452
-		bsr.w	sub_2436
+_seScroll:
+		bsr.w	_scrollCamDown
+		bsr.w	_scrollCamRight
 
-loc_1DC6:					  ; CODE XREF: HandleDirectionalControl+38Cj
-						  ; HandleDirectionalControl+39Cj ...
-		bclr	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	locret_1DF0
+_seFinish:
+		bclr	#$03,(Player_Action).l
+		bne.s	_seDone
 		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$40,(Player_RotationAndSize).l
-		bset	#$03,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bset	#$03,(Player_Unk6D).l
+		ori.b	#DIR_SE,(Player_RotationAndSize).l
+		bset	#ACTB_WALK_SE,(Player_Action+1).l
+		bset	#$03,(Player_MovedDirFlags).l
 
-locret_1DF0:					  ; CODE XREF: HandleDirectionalControl+498j
+_seDone:
 		rts
-; ---------------------------------------------------------------------------
 
-HandleDownLeft:					  ; CODE XREF: HandleDirectionalControl+18j
-						  ; HandleDirectionalControl+64j ...
+HandleDownLeft:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the SW (+Y) direction
-		bne.s	loc_1E02
+		bne.s	_swProbe
 		bclr	#$07,(g_PlayerStatus).l
 
-loc_1E02:					  ; CODE XREF: HandleDirectionalControl+4C2j
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_swProbe:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		move.w	HitBoxYEnd(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		add.w	d0,HitBoxYStart(a5)
@@ -856,73 +637,64 @@ loc_1E02:					  ; CODE XREF: HandleDirectionalControl+4C2j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bls.s	loc_1E58
+		bls.s	_swClip
 		bsr.w	sub_30DC
-		bcc.s	loc_1E58
-		bsr.s	sub_1E88
+		bcc.s	_swClip
+		bsr.s	_revertProbeSW
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
-		beq.w	loc_1F50
+		beq.w	_swFinish
 		cmp.b	d0,d3
 		bcc.w	HandleUpLeft		  ; Travel in the NW (-X) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownRight		  ; Travel in the SE (+X) direction
-		bra.w	loc_1F50
-; ---------------------------------------------------------------------------
+		bra.w	_swFinish
 
-loc_1E58:					  ; CODE XREF: HandleDirectionalControl+4F4j
-						  ; HandleDirectionalControl+4FAj
+_swClip:
 		clr.w	d0
-		tst.b	(byte_FF1142).l
-		beq.s	loc_1E68
+		tst.b	(g_PlayerHurtTimer).l
+		beq.s	_swCollide
 
-loc_1E62:					  ; CODE XREF: HandleDirectionalControl+53Aj
+_swHurtPush:
 		bsr.w	sub_3058
-		bra.s	loc_1E76
-; ---------------------------------------------------------------------------
+		bra.s	_swCollRes
 
-loc_1E68:					  ; CODE XREF: HandleDirectionalControl+52Aj
+_swCollide:
 		btst	#$06,(g_PlayerStatus).l
 	if FIX_COLL_2
-		bne.s	loc_1E62
+		bne.s	_swHurtPush
 	else
-		bne.s	loc_1E98
+		bne.s	_swCommit
 	endif
 		bsr.w	CollisionDetect
 
-loc_1E76:					  ; CODE XREF: HandleDirectionalControl+530j
-		bcc.s	loc_1E98
-		tst.b	Flags2(a0)
-		bpl.s	loc_1E82
-		bsr.w	sub_25B2
+_swCollRes:
+		bcc.s	_swCommit
+		tst.b	InteractFlags(a0)
+		bpl.s	_swTouch
+		bsr.w	QueueContactDamage
 
-loc_1E82:					  ; CODE XREF: HandleDirectionalControl+546j
-		bsr.s	sub_1E88
-		bra.w	loc_1F50
-; END OF FUNCTION CHUNK	FOR HandleDirectionalControl
-
-; =============== S U B	R O U T	I N E =======================================
+_swTouch:
+		bsr.s	_revertProbeSW
+		bra.w	_swFinish
 
 
-sub_1E88:					  ; CODE XREF: HandleDirectionalControl+4FCp
-						  ; HandleDirectionalControl:loc_1E82p	...
+_revertProbeSW:
+						  ; HandleDirectionalControl:_swTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		sub.w	d2,HitBoxYStart(a5)
 		sub.w	d2,HitBoxYEnd(a5)
 		rts
-; End of function sub_1E88
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR HandleDirectionalControl
 
-loc_1E98:					  ; CODE XREF: HandleDirectionalControl:loc_1E76j
-		btst	#$04,Flags1(a5)
-		beq.s	loc_1EA8
+_swCommit:
+		btst	#$04,StateFlags(a5)
+		beq.s	_swApply
 		lsr	(g_PlayerSpeed).l
-		bsr.s	sub_1E88
+		bsr.s	_revertProbeSW
 
-loc_1EA8:					  ; CODE XREF: HandleDirectionalControl+568j
+_swApply:
 		move.w	CentreY(a5),d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
@@ -932,14 +704,14 @@ loc_1EA8:					  ; CODE XREF: HandleDirectionalControl+568j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
-		bcc.s	loc_1EE8
+		bcc.s	_swCamApply
 		addq.b	#$01,(Player_Y).l
 		addi.w	#$0094,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
 		move.w	GroundHeight(a5),(word_FF1208).l
 		move.w	(a6),GroundHeight(a5)
 
-loc_1EE8:					  ; CODE XREF: HandleDirectionalControl+594j
+_swCamApply:
 		move.w	(word_FF1202).l,d0
 		move.b	d0,d1
 		add.w	(g_PlayerSpeed).l,d0
@@ -949,62 +721,40 @@ loc_1EE8:					  ; CODE XREF: HandleDirectionalControl+594j
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d1,d0
-		bcc.s	loc_1F48
+		bcc.s	_swScroll
 		addq.b	#$01,(g_PlayerYFlattened).l
 		addi.w	#$0020,(g_BlockTableIndex).l
 		cmpi.w	#$0200,(g_BlockTableIndex).l
-		bcs.s	loc_1F3C
+		bcs.s	_swTiles
 		subi.w	#$0210,(g_BlockTableIndex).l
-		bpl.s	loc_1F3C
+		bpl.s	_swTiles
 		addi.w	#$0020,(g_BlockTableIndex).l
 
-loc_1F3C:					  ; CODE XREF: HandleDirectionalControl+5F2j
-						  ; HandleDirectionalControl+5FCj
+_swTiles:
 		jsr	(LoadBottomTiles).l
 		jsr	(LoadLeftTiles).l
 
-loc_1F48:					  ; CODE XREF: HandleDirectionalControl+5DAj
-		bsr.w	sub_2452
-		bsr.w	sub_247E
+_swScroll:
+		bsr.w	_scrollCamDown
+		bsr.w	_scrollCamLeft
 
-loc_1F50:					  ; CODE XREF: HandleDirectionalControl+50Ej
-						  ; HandleDirectionalControl+51Ej ...
-		bclr	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	locret_1F7A
+_swFinish:
+		bclr	#$03,(Player_Action).l
+		bne.s	_swDone
 		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
-		bset	#$01,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bset	#$01,(Player_Unk6D).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
+		bset	#ACTB_WALK_SW,(Player_Action+1).l
+		bset	#$01,(Player_MovedDirFlags).l
 
-locret_1F7A:					  ; CODE XREF: HandleDirectionalControl+622j
+_swDone:
 		rts
-; ---------------------------------------------------------------------------
 
-HandleUpLeft:					  ; CODE XREF: HandleDirectionalControl+14j
-						  ; HandleDirectionalControl+68j ...
+HandleUpLeft:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the NW (-X) direction
-		bne.s	loc_1F8C
+		bne.s	_nwProbe
 		bclr	#$07,(g_PlayerStatus).l
 
-loc_1F8C:					  ; CODE XREF: HandleDirectionalControl+64Cj
+_nwProbe:
 		move.w	HitBoxXStart(a5),d1
 		move.w	(g_PlayerSpeed).l,d0
 		sub.w	d0,HitBoxXStart(a5)
@@ -1013,147 +763,104 @@ loc_1F8C:					  ; CODE XREF: HandleDirectionalControl+64Cj
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.w	loc_2056
+		bcc.w	_nwClip
 		bsr.w	sub_313E
-		bcc.w	loc_2056
-		bsr.w	sub_208E
+		bcc.w	_nwClip
+		bsr.w	_revertProbeNW
 		move.b	SubX(a5),d2
 		addq.b	#$01,d2
 		andi.b	#$FE,d2
 		cmpi.b	#$08,d2
-		bne.s	loc_202A
+		bne.s	_nwDeflect
 		move.b	GroundType(a5),d2
 		andi.b	#$3F,d2
 		cmpi.b	#FLOOR_LADDER_NW,d2
-		bne.s	loc_202A
+		bne.s	_nwDeflect
 		bsr.w	sub_33EA
 		tst.w	d5
-		bne.s	loc_1FE4
+		bne.s	_nwLadder
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1FE4:					  ; CODE XREF: HandleDirectionalControl+6AAj
+_nwLadder:
 		addq.w	#$01,Z(a5)
 		addq.w	#$01,HitBoxZEnd(a5)
-		bset	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	loc_2006
+		bset	#ACTBH_CLIMB,(Player_Action).l
+		bne.s	_nwLadderAnim
 		clr.w	AnimationFrame(a5)
-		move.b	#$FF,Unk0D(a5)
+		move.b	#$FF,AnimPhase(a5)
 		andi.w	#$60E0,FallRate(a5)
 
-loc_2006:					  ; CODE XREF: HandleDirectionalControl+6BEj
-		ori.b	#$C0,RotationAndSize(a5)
-		addq.b	#$01,Unk0D(a5)
+_nwLadderAnim:
+		ori.b	#DIR_NW,RotationAndSize(a5)
+		addq.b	#$01,AnimPhase(a5)
 		clr.b	FallRate(a5)
 		move.b	(byte_FF0F9D).l,d7
 		andi.b	#$03,d7
-		bne.s	loc_2024
+		bne.s	_nwLadderRise
 		trap	#$00			  ; Trap00Handler
-; END OF FUNCTION CHUNK	FOR HandleDirectionalControl
-; ---------------------------------------------------------------------------
 		dc.w SND_JumpLand
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR HandleDirectionalControl
 
-loc_2024:					  ; CODE XREF: HandleDirectionalControl+6E8j
-		moveq	#$00000001,d7
-		bra.w	loc_2326
-; ---------------------------------------------------------------------------
+_nwLadderRise:
+		moveq	#$1,d7
+		bra.w	_viewRiseZ
 
-loc_202A:					  ; CODE XREF: HandleDirectionalControl+694j
-						  ; HandleDirectionalControl+6A2j
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_nwDeflect:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		move.w	#$0001,(g_PlayerSpeed).l
 		andi.b	#$3F,d5
 		cmpi.b	#$0E,d5
-		beq.w	loc_2154
+		beq.w	_nwFinish
 		cmp.b	d0,d3
 		bcc.w	HandleUpRight		  ; Travel in the NE (-Y) direction
 		cmp.b	d1,d3
 		bcc.w	HandleDownLeft		  ; Travel in the SW (+Y) direction
-		bra.w	loc_2154
-; ---------------------------------------------------------------------------
+		bra.w	_nwFinish
 
-loc_2056:					  ; CODE XREF: HandleDirectionalControl+676j
-						  ; HandleDirectionalControl+67Ej
-		bclr	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+_nwClip:
+		bclr	#ACTBH_CLIMB,(Player_Action).l
 		clr.w	d0
-		tst.b	(byte_FF1142).l
-		beq.s	loc_206E
+		tst.b	(g_PlayerHurtTimer).l
+		beq.s	_nwCollide
 
-loc_2068:					  ; CODE XREF: HandleDirectionalControl+740j
+_nwHurtPush:
 		bsr.w	sub_3058
-		bra.s	loc_207C
-; ---------------------------------------------------------------------------
+		bra.s	_nwCollRes
 
-loc_206E:					  ; CODE XREF: HandleDirectionalControl+730j
+_nwCollide:
 		btst	#$06,(g_PlayerStatus).l
 	if FIX_COLL_2
-		bne.s	loc_2068
+		bne.s	_nwHurtPush
 	else
-		bne.s	loc_209E
+		bne.s	_nwCommit
 	endif
 		bsr.w	CollisionDetect
 
-loc_207C:					  ; CODE XREF: HandleDirectionalControl+736j
-		bcc.s	loc_209E
-		tst.b	Flags2(a0)
-		bpl.s	loc_2088
-		bsr.w	sub_25B2
+_nwCollRes:
+		bcc.s	_nwCommit
+		tst.b	InteractFlags(a0)
+		bpl.s	_nwTouch
+		bsr.w	QueueContactDamage
 
-loc_2088:					  ; CODE XREF: HandleDirectionalControl+74Cj
-		bsr.s	sub_208E
-		bra.w	loc_2154
-; END OF FUNCTION CHUNK	FOR HandleDirectionalControl
-
-; =============== S U B	R O U T	I N E =======================================
+_nwTouch:
+		bsr.s	_revertProbeNW
+		bra.w	_nwFinish
 
 
-sub_208E:					  ; CODE XREF: HandleDirectionalControl+682p
-						  ; HandleDirectionalControl:loc_2088p	...
+_revertProbeNW:
+						  ; HandleDirectionalControl:_nwTouchp	...
 		move.w	(g_PlayerSpeed).l,d2
 		add.w	d2,HitBoxXStart(a5)
 		add.w	d2,HitBoxXEnd(a5)
 		rts
-; End of function sub_208E
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR HandleDirectionalControl
 
-loc_209E:					  ; CODE XREF: HandleDirectionalControl:loc_207Cj
-		btst	#$04,Flags1(a5)
-		beq.w	loc_20B0
+_nwCommit:
+		btst	#$04,StateFlags(a5)
+		beq.w	_nwApply
 		lsr	(g_PlayerSpeed).l
-		bsr.s	sub_208E
+		bsr.s	_revertProbeNW
 
-loc_20B0:					  ; CODE XREF: HandleDirectionalControl+76Ej
+_nwApply:
 		move.w	CentreX(a5),d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
@@ -1163,14 +870,14 @@ loc_20B0:					  ; CODE XREF: HandleDirectionalControl+76Ej
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.s	loc_20F0
+		bcc.s	_nwCamApply
 		subq.b	#$01,(Player_X).l
 		subi.w	#$0002,HeightmapOffset(a5)
 		movea.w	HeightmapOffset(a5),a6
 		move.w	GroundHeight(a5),(word_FF1208).l
 		move.w	(a6),GroundHeight(a5)
 
-loc_20F0:					  ; CODE XREF: HandleDirectionalControl+79Cj
+_nwCamApply:
 		move.w	(word_FF1200).l,d0
 		move.b	d0,d1
 		sub.w	(g_PlayerSpeed).l,d0
@@ -1180,105 +887,67 @@ loc_20F0:					  ; CODE XREF: HandleDirectionalControl+79Cj
 		andi.b	#$08,d0
 		andi.b	#$08,d1
 		cmp.b	d0,d1
-		bcc.s	loc_214C
+		bcc.s	_nwScroll
 		subq.b	#$01,(g_PlayerXFlattened).l
 		move.w	(g_BlockTableIndex).l,d0
 		subq.w	#$01,d0
 		move.w	d0,(g_BlockTableIndex).l
 		andi.w	#$001F,d0
 		cmpi.w	#$001F,d0
-		bne.s	loc_2140
+		bne.s	_nwTiles
 		addi.w	#$0020,(g_BlockTableIndex).l
 
-loc_2140:					  ; CODE XREF: HandleDirectionalControl+800j
+_nwTiles:
 		jsr	(LoadTopTiles).l
 		jsr	(LoadLeftTiles).l
 
-loc_214C:					  ; CODE XREF: HandleDirectionalControl+7E2j
-		bsr.w	sub_240A
-		bsr.w	sub_247E
+_nwScroll:
+		bsr.w	_scrollCamUp
+		bsr.w	_scrollCamLeft
 
-loc_2154:					  ; CODE XREF: HandleDirectionalControl+70Cj
-						  ; HandleDirectionalControl+71Cj ...
-		bclr	#$03,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	locret_2176
-		ori.b	#$C0,(Player_RotationAndSize).l
-		bset	#$02,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bset	#$02,(Player_Unk6D).l
+_nwFinish:
+		bclr	#$03,(Player_Action).l
+		bne.s	_nwDone
+		ori.b	#DIR_NW,(Player_RotationAndSize).l
+		bset	#ACTB_WALK_NW,(Player_Action+1).l
+		bset	#$02,(Player_MovedDirFlags).l
 
-locret_2176:					  ; CODE XREF: HandleDirectionalControl+826j
+_nwDone:
 		rts
-; END OF FUNCTION CHUNK	FOR HandleDirectionalControl
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-CheckForLadderClimb:				  ; CODE XREF: GameLoop+1Cp
+; While not already climbing (ACTBH_CLIMB clear): descend if there is
+; room below (_climbDownCheck), else try to rise via HandleJump
+; (_climbUpCheck), shifting the view by the Z delta either way.
+CheckForLadderClimb:
 		move.b	(g_Controller1State).l,d1
 		and.b	d1,(g_LadderClimbJumpState).l
-		btst	#$04,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
-		bne.s	locret_21AC
-		bsr.s	sub_21AE
+		btst	#ACTBH_CLIMB,(Player_Action).l
+		bne.s	_climbDone
+		bsr.s	_climbDownCheck
 		tst.b	d7
-		bne.w	loc_2242
+		bne.w	_viewDropZ
 		btst	#$04,(Player_Unk2F).l
-		beq.s	loc_21A4
+		beq.s	_tryAscend
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_LadderClimb
-; ---------------------------------------------------------------------------
 
-loc_21A4:					  ; CODE XREF: CheckForLadderClimb+26j
-		bsr.s	sub_21B6
+_tryAscend:
+		bsr.s	_climbUpCheck
 		tst.b	d7
-		bne.w	loc_2326
+		bne.w	_viewRiseZ
 
-locret_21AC:					  ; CODE XREF: CheckForLadderClimb+14j
+_climbDone:
 		rts
-; End of function CheckForLadderClimb
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_21AE:					  ; CODE XREF: CheckForLadderClimb+16p
+_climbDownCheck:
 		bsr.w	sub_324C
 		move.w	d6,d7
 		rts
-; End of function sub_21AE
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_21B6:					  ; CODE XREF: CheckForLadderClimb:loc_21A4p
+_climbUpCheck:
 		lea	(Player_X).l,a0
 		move.w	Z(a0),d7
 		movem.w	d7,-(sp)
@@ -1286,94 +955,72 @@ sub_21B6:					  ; CODE XREF: CheckForLadderClimb:loc_21A4p
 		movem.w	(sp)+,d6
 		move.w	Z(a0),d7
 		sub.w	d6,d7
-		beq.s	locret_21DC
-		bset	#$05,(Player_Action+1).l  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		beq.s	_noRise
+		bset	#ACTB_JUMP,(Player_Action+1).l
 
-locret_21DC:					  ; CODE XREF: sub_21B6+1Cj
+_noRise:
 		rts
-; End of function sub_21B6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_21DE:					  ; CODE XREF: GameLoop+38p
+; Per-tick sprite action reset: clears each sprite's queued action word
+; (keeping refresh+damage, plus the attack bits for a reviving mummy so
+; its get-up animation survives), then flags sprites with no ground
+; under them as falling.
+ResetSpriteActions:
 		lea	(Sprite1_X).l,a0
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_21E6:					  ; CODE XREF: sub_21DE+4Ej
+_rsaLoop:
 		cmpi.b	#SPR_MUMMY3,SpriteType(a0)
-		bne.s	loc_21FC
-		tst.b	Unk4D(a0)
-		beq.s	loc_21FC
-		andi.w	#$6700,QueuedAction(a0)
-		bra.s	loc_2202
-; ---------------------------------------------------------------------------
+		bne.s	_clearActions
+		tst.b	AICounter(a0)
+		beq.s	_clearActions
+		andi.w	#(ACT_REFRESH+ACT_DAMAGE+ACT_ATTACK_MASK),QueuedAction(a0)
+		bra.s	_chkSprite
 
-loc_21FC:					  ; CODE XREF: sub_21DE+Ej
-						  ; sub_21DE+14j
-		andi.w	#$6000,QueuedAction(a0)
+_clearActions:
+		andi.w	#(ACT_REFRESH+ACT_DAMAGE),QueuedAction(a0)
 
-loc_2202:					  ; CODE XREF: sub_21DE+1Cj
+_chkSprite:
 		move.b	(a0),d0
-		bmi.s	locret_2230
+		bmi.s	_rsaDone
 		cmpi.b	#$7F,d0
-		beq.s	loc_2228
+		beq.s	_rsaNext
 		movem.l	d7-a0,-(sp)
-		bsr.s	sub_2232
+		bsr.s	_fallDistCheck
 		tst.b	d7
-		beq.s	loc_2222
+		beq.s	_groundTick
 		movem.l	(sp)+,d7-a0
-		bset	#$04,Action1(a0)
-		bra.s	loc_2228
-; ---------------------------------------------------------------------------
+		bset	#ACTB_FALL,Action1(a0)
+		bra.s	_rsaNext
 
-loc_2222:					  ; CODE XREF: sub_21DE+36j
-		bsr.s	sub_223A
+_groundTick:
+		bsr.s	_spriteGroundTick
 		movem.l	(sp)+,d7-a0
 
-loc_2228:					  ; CODE XREF: sub_21DE+2Cj
-						  ; sub_21DE+42j
+_rsaNext:
 		lea	SPRITE_SIZE(a0),a0
-		dbf	d7,loc_21E6
+		dbf	d7,_rsaLoop
 
-locret_2230:					  ; CODE XREF: sub_21DE+26j
+_rsaDone:
 		rts
-; End of function sub_21DE
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2232:					  ; CODE XREF: sub_21DE+32p
+_fallDistCheck:
 		bsr.w	sub_3252
 		move.w	d6,d7
 		rts
-; End of function sub_2232
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_223A:					  ; CODE XREF: sub_21DE:loc_2222p
+_spriteGroundTick:
 		jsr	(sub_103D2).l
 		rts
-; End of function sub_223A
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1858
 
-loc_2242:					  ; CODE XREF: sub_1858+66j
-						  ; CheckForLadderClimb+1Aj
+; The player dropped d7 units of Z: shift the flattened camera position
+; +d7 on both axes, stream in newly exposed tiles, and scroll the view
+; down by 2*d7. _viewRiseZ is the mirror for rising.
+_viewDropZ:
 		clr.b	d1
 		move.w	(word_FF1200).l,d2
 		move.b	d2,d3
@@ -1384,22 +1031,22 @@ loc_2242:					  ; CODE XREF: sub_1858+66j
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d3,d2
-		bcc.s	loc_229C
+		bcc.s	_dropY
 		addq.b	#$01,(g_PlayerXFlattened).l
 		move.w	(g_BlockTableIndex).l,d0
 		addq.w	#$01,d0
 		move.w	d0,(g_BlockTableIndex).l
 		andi.w	#$001F,d0
-		bne.s	loc_228C
+		bne.s	_dropTilesX
 		subi.w	#$0020,(g_BlockTableIndex).l
 
-loc_228C:					  ; CODE XREF: sub_1858+A2Aj
+_dropTilesX:
 		movem.w	d7,-(sp)
 		jsr	(LoadBottomTiles).l
 		movem.w	(sp)+,d7
-		moveq	#$00000001,d1
+		moveq	#$1,d1
 
-loc_229C:					  ; CODE XREF: sub_1858+A10j
+_dropY:
 		move.w	(word_FF1202).l,d2
 		move.b	d2,d3
 		add.w	d7,d2
@@ -1409,45 +1056,41 @@ loc_229C:					  ; CODE XREF: sub_1858+A10j
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d3,d2
-		bcc.s	loc_230C
+		bcc.s	_dropNoY
 		addq.b	#$01,(g_PlayerYFlattened).l
 		addi.w	#$0020,(g_BlockTableIndex).l
 		cmpi.w	#$0200,(g_BlockTableIndex).l
-		bcs.s	loc_22EC
+		bcs.s	_dropTilesY
 		subi.w	#$0210,(g_BlockTableIndex).l
-		bpl.s	loc_22EC
+		bpl.s	_dropTilesY
 		addi.w	#$0020,(g_BlockTableIndex).l
 
-loc_22EC:					  ; CODE XREF: sub_1858+A80j
-						  ; sub_1858+A8Aj
+_dropTilesY:
 		movem.w	d7,-(sp)
 		tst.b	d1
-		bne.s	loc_22FA
+		bne.s	_dropBottom
 		jsr	(LoadLeftTiles).l
 
-loc_22FA:					  ; CODE XREF: sub_1858+A9Aj
+_dropBottom:
 		jsr	(LoadBottomTiles).l
 		movem.w	(sp)+,d7
 		add.w	d7,d7
-		bsr.w	sub_2458
+		bsr.w	_scrollCamDownBy
 		rts
-; ---------------------------------------------------------------------------
 
-loc_230C:					  ; CODE XREF: sub_1858+A68j
+_dropNoY:
 		tst.b	d1
-		beq.s	loc_231E
+		beq.s	_dropScroll
 		movem.w	d7,-(sp)
 		jsr	(LoadRightTiles).l
 		movem.w	(sp)+,d7
 
-loc_231E:					  ; CODE XREF: sub_1858+AB6j
+_dropScroll:
 		add.w	d7,d7
-		bsr.w	sub_2458
+		bsr.w	_scrollCamDownBy
 		rts
-; ---------------------------------------------------------------------------
 
-loc_2326:					  ; CODE XREF: sub_1858+32j
-						  ; HandleDirectionalControl+1D0j ...
+_viewRiseZ:
 		clr.b	d1
 		move.w	(word_FF1200).l,d2
 		move.b	d2,d3
@@ -1458,23 +1101,23 @@ loc_2326:					  ; CODE XREF: sub_1858+32j
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d2,d3
-		bcc.s	loc_2384
+		bcc.s	_riseY
 		subq.b	#$01,(g_PlayerXFlattened).l
 		move.w	(g_BlockTableIndex).l,d0
 		subq.w	#$01,d0
 		move.w	d0,(g_BlockTableIndex).l
 		andi.w	#$001F,d0
 		cmpi.w	#$001F,d0
-		bne.s	loc_2374
+		bne.s	_riseTilesX
 		addi.w	#$0020,(g_BlockTableIndex).l
 
-loc_2374:					  ; CODE XREF: sub_1858+B12j
+_riseTilesX:
 		movem.w	d7,-(sp)
 		jsr	(LoadTopTiles).l
 		movem.w	(sp)+,d7
-		moveq	#$00000001,d1
+		moveq	#$1,d1
 
-loc_2384:					  ; CODE XREF: sub_1858+AF4j
+_riseY:
 		move.w	(word_FF1202).l,d2
 		move.w	d2,d3
 		sub.w	d7,d2
@@ -1484,143 +1127,105 @@ loc_2384:					  ; CODE XREF: sub_1858+AF4j
 		andi.b	#$08,d2
 		andi.b	#$08,d3
 		cmp.b	d2,d3
-		bcc.s	loc_23F2
+		bcc.s	_riseNoY
 		subq.b	#$01,(g_PlayerYFlattened).l
 		subi.w	#$0020,(g_BlockTableIndex).l
-		bpl.s	loc_23D4
+		bpl.s	_riseTilesY
 		addi.w	#$0210,(g_BlockTableIndex).l
 		cmpi.w	#$0200,(g_BlockTableIndex).l
-		bcs.s	loc_23D4
+		bcs.s	_riseTilesY
 		subi.w	#$0020,(g_BlockTableIndex).l
 
-loc_23D4:					  ; CODE XREF: sub_1858+B60j
-						  ; sub_1858+B72j
+_riseTilesY:
 		movem.w	d7,-(sp)
 		tst.b	d1
-		bne.s	loc_23E2
+		bne.s	_riseTop
 		jsr	(LoadRightTiles).l
 
-loc_23E2:					  ; CODE XREF: sub_1858+B82j
+_riseTop:
 		jsr	(LoadTopTiles).l
 		movem.w	(sp)+,d7
 		add.w	d7,d7
-		bsr.s	sub_2410
-; END OF FUNCTION CHUNK	FOR sub_1858
+		bsr.s	_scrollCamUpBy
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-nullsub_4:
+; fall-through return for the path above
+_ret:
 		rts
-; End of function nullsub_4
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1858
 
-loc_23F2:					  ; CODE XREF: sub_1858+B50j
+_riseNoY:
 		tst.b	d1
-		beq.s	loc_2404
+		beq.s	_riseScroll
 		movem.w	d7,-(sp)
 		jsr	(LoadLeftTiles).l
 		movem.w	(sp)+,d7
 
-loc_2404:					  ; CODE XREF: sub_1858+B9Cj
+_riseScroll:
 		add.w	d7,d7
-		bsr.s	sub_2410
+		bsr.s	_scrollCamUpBy
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1858
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-sub_240A:					  ; CODE XREF: HandleDirectionalControl:loc_1C30p
-						  ; HandleDirectionalControl:loc_214Cp
+; Scroll the view up by the player speed (falls through to the by-d7
+; core, which moves VSRAM one line every other step - vertical camera
+; movement is half the horizontal rate in this projection).
+_scrollCamUp:
 		move.w	(g_PlayerSpeed).l,d7
-; End of function sub_240A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2410:					  ; CODE XREF: sub_1858+B96p
-						  ; sub_1858+BAEp
+_scrollCamUpBy:
 		subq.w	#$01,d7
 
-loc_2412:					  ; CODE XREF: sub_2410:loc_2428j
+_scuLoop:
 		eori.w	#$0001,(word_FF1180).l
-		bne.s	loc_2428
+		bne.s	_scuNext
 		subq.w	#$01,(g_VSRAMData).l
 		subq.w	#$01,(g_VSRAMData+2).l
 
-loc_2428:					  ; CODE XREF: sub_2410+Aj
-		dbf	d7,loc_2412
+_scuNext:
+		dbf	d7,_scuLoop
 		move.b	#$01,(g_PlayerMoving).l
 		rts
-; End of function sub_2410
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2436:					  ; CODE XREF: HandleDirectionalControl+2FEp
-						  ; HandleDirectionalControl+48Cp
+_scrollCamRight:
 		move.w	(g_PlayerSpeed).l,d7
 		sub.w	d7,(g_HorizontalScrollData).l
 		sub.w	d7,(g_HorizontalScrollData+2).l
 		move.b	#$01,(g_PlayerMoving).l
 		rts
-; End of function sub_2436
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2452:					  ; CODE XREF: HandleDirectionalControl:loc_1DBEp
-						  ; HandleDirectionalControl:loc_1F48p
+_scrollCamDown:
 		move.w	(g_PlayerSpeed).l,d7
-; End of function sub_2452
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2458:					  ; CODE XREF: sub_1858+AAEp
-						  ; sub_1858+AC8p
+_scrollCamDownBy:
 		subq.w	#$01,d7
 
-loc_245A:					  ; CODE XREF: sub_2458:loc_2470j
+_scdLoop:
 		eori.w	#$0001,(word_FF1180).l
-		beq.s	loc_2470
+		beq.s	_scdNext
 		addq.w	#$01,(g_VSRAMData).l
 		addq.w	#$01,(g_VSRAMData+2).l
 
-loc_2470:					  ; CODE XREF: sub_2458+Aj
-		dbf	d7,loc_245A
+_scdNext:
+		dbf	d7,_scdLoop
 		move.b	#$01,(g_PlayerMoving).l
 		rts
-; End of function sub_2458
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_247E:					  ; CODE XREF: HandleDirectionalControl+616p
-						  ; HandleDirectionalControl+81Ap
+_scrollCamLeft:
 		move.w	(g_PlayerSpeed).l,d7
 		add.w	d7,(g_HorizontalScrollData).l
 		add.w	d7,(g_HorizontalScrollData+2).l
 		move.b	#$01,(g_PlayerMoving).l
 		rts
-; End of function sub_247E
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_249A:					  ; CODE XREF: sub_404j
-						  ; GameLoop+8Ep
+; If the player moved this frame, queue the horizontal scroll table
+; upload (VRAM $D000) and the VSRAM DMA for the new camera position.
+QueueScrollUpdates:
 		tst.b	(g_PlayerMoving).l
-		beq.s	locret_24F2
+		beq.s	_qsuDone
 		clr.b	(g_PlayerMoving).l
 		movea.l	(g_VRAMCopyQueuePtr).l,a0
 		move.w	#$0001,(a0)+
@@ -1636,71 +1241,64 @@ sub_249A:					  ; CODE XREF: sub_404j
 		move.l	a6,(g_DMAOpQueuePtr).l
 		addq.b	#$01,(g_NumQueuedDMAOps).l
 
-locret_24F2:					  ; CODE XREF: sub_249A+6j
+_qsuDone:
 		rts
-; End of function sub_249A
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_24F4:					  ; CODE XREF: GameLoop+34p
+; For every entity, finds the sprite it is standing on (struct offset
+; into SpriteUnderneath, $FFFF = none) and queues contact damage when
+; standing directly on something hostile.
+FindSpritesUnderneath:
 		lea	(Player_X).l,a5
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_24FC:					  ; CODE XREF: sub_24F4+3Ej
-						  ; sub_24F4+48j
+_fsuCheck:
 		movem.w	d7,-(sp)
 		bsr.w	sub_3498
 		movem.w	(sp)+,d7
-		bra.s	loc_250E
-; ---------------------------------------------------------------------------
+		bra.s	_fsuStore
 
-loc_250A:					  ; CODE XREF: sub_24F4+38j
-						  ; sub_24F4+46j
+_fsuNone:
 		move.w	#$FFFF,d0
 
-loc_250E:					  ; CODE XREF: sub_24F4+14j
+_fsuStore:
 		move.w	d0,SpriteUnderneath(a5)
-		bne.s	loc_2520
-		tst.b	Flags2(a5)
-		bpl.s	loc_2520
+		bne.s	_fsuNext
+		tst.b	InteractFlags(a5)
+		bpl.s	_fsuNext
 		movea.l	a5,a0
-		bsr.w	sub_25B2
+		bsr.w	QueueContactDamage
 
-loc_2520:					  ; CODE XREF: sub_24F4+1Ej
-						  ; sub_24F4+24j
+_fsuNext:
 		lea	SPRITE_SIZE(a5),a5
 		move.w	(a5),d0
-		bmi.s	locret_253E
+		bmi.s	_fsuDone
 		cmpi.b	#$7F,d0
-		beq.s	loc_250A
+		beq.s	_fsuNone
 		tst.w	BehavParam(a5)
-		bne.s	loc_24FC
-		btst	#$05,Flags2(a5)
-		beq.s	loc_250A
-		bra.s	loc_24FC
-; ---------------------------------------------------------------------------
+		bne.s	_fsuCheck
+		btst	#$05,InteractFlags(a5)
+		beq.s	_fsuNone
+		bra.s	_fsuCheck
 
-locret_253E:					  ; CODE XREF: sub_24F4+32j
+_fsuDone:
 		rts
-; End of function sub_24F4
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2540:					  ; CODE XREF: GameLoop+42p
+; Re-checks each stored SpriteUnderneath after everyone has moved:
+; clears it ($FFFF) once the hitboxes no longer overlap, and queues
+; contact damage if the player is still on a hostile sprite.
+ValidateSpritesUnderneath:
 		lea	(Player_X).l,a5
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_2548:					  ; CODE XREF: sub_2540+6Cj
+_vsuLoop:
 		move.w	(a5),d0
-		bmi.s	locret_25B0
+		bmi.s	_vsuDone
 		move.w	SpriteUnderneath(a5),d1
-		bmi.s	loc_25A8
+		bmi.s	_vsuNext
 		cmpi.b	#$7F,d0
-		beq.s	loc_25A8
+		beq.s	_vsuNext
 		lea	(Player_X).l,a0
 		adda.w	d1,a0
 		move.w	Z(a5),d0
@@ -1710,45 +1308,39 @@ loc_2548:					  ; CODE XREF: sub_2540+6Cj
 		move.w	HitBoxYStart(a5),d3
 		move.w	HitBoxYEnd(a5),d4
 		cmp.w	HitBoxXEnd(a0),d1
-		bhi.s	loc_25A2
+		bhi.s	_vsuClear
 		cmp.w	HitBoxXStart(a0),d2
-		bcs.s	loc_25A2
+		bcs.s	_vsuClear
 		cmp.w	HitBoxYEnd(a0),d3
-		bhi.s	loc_25A2
+		bhi.s	_vsuClear
 		cmp.w	HitBoxYStart(a0),d4
-		bcs.s	loc_25A2
+		bcs.s	_vsuClear
 		cmpa.l	#Player_X,a5
-		bne.s	loc_25A8
-		tst.b	Flags2(a0)
-		bpl.s	loc_25A8
-		bsr.w	sub_25B2
-		bra.s	loc_25A8
-; ---------------------------------------------------------------------------
+		bne.s	_vsuNext
+		tst.b	InteractFlags(a0)
+		bpl.s	_vsuNext
+		bsr.w	QueueContactDamage
+		bra.s	_vsuNext
 
-loc_25A2:					  ; CODE XREF: sub_2540+3Aj
-						  ; sub_2540+40j ...
+_vsuClear:
 		move.w	#$FFFF,SpriteUnderneath(a5)
 
-loc_25A8:					  ; CODE XREF: sub_2540+10j
-						  ; sub_2540+16j ...
+_vsuNext:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_2548
+		dbf	d7,_vsuLoop
 
-locret_25B0:					  ; CODE XREF: sub_2540+Aj
+_vsuDone:
 		rts
-; End of function sub_2540
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_25B2:					  ; CODE XREF: HandleDirectionalControl+22Ep
-						  ; HandleDirectionalControl+3C6p ...
+; Touching sprite a0: latch its attack strength and flag a contact hit
+; ($80 = recoil away from facing) for ProcessPlayerDamage.
+QueueContactDamage:
 		move.w	AttackStrength(a0),(Player_AttackStrength).l
-		beq.s	locret_25C4
-		move.b	#$80,(byte_FF1143).l
+		beq.s	_qcdDone
+		move.b	#$80,(g_PlayerPendingHit).l
 
-locret_25C4:					  ; CODE XREF: sub_25B2+8j
+_qcdDone:
 		rts
-; End of function sub_25B2
 
+		modend

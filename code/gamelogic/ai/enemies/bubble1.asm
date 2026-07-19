@@ -5,9 +5,9 @@ EnemyAI_Bubble1_B:				  ; CODE XREF: ROM:001A85CAj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Bubble1_A:				  ; CODE XREF: ROM:001A85C6j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AB9B4
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AB9BA
 		cmpi.b	#$10,d0
 		beq.s	loc_1ABA0C
@@ -39,31 +39,31 @@ loc_1AB9E2:					  ; CODE XREF: ROM:001AB9BEj
 ; ---------------------------------------------------------------------------
 
 loc_1AB9E8:					  ; CODE XREF: ROM:001AB9D4j
-		move.b	#$10,ChestIndex(a5)
-		clr.b	Unk0D(a5)
+		move.b	#$10,AIState(a5)
+		clr.b	AnimPhase(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Bubble1:				  ; CODE XREF: ROM:EnemyAI_Bubble1_Bj
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$00,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$00,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1ABA0C:					  ; CODE XREF: ROM:001AB9B2j
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
 		addi.w	#$0300,d0
 		move.w	d0,QueuedAction(a5)
-		cmpi.b	#$40,Unk0D(a5)
+		cmpi.b	#$40,AnimPhase(a5)
 		bcs.s	locret_1ABA38
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
-		clr.b	ChestIndex(a5)
+		clr.b	AIState(a5)
 
 locret_1ABA38:					  ; CODE XREF: ROM:001ABA28j
 		rts

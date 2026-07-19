@@ -99,9 +99,9 @@ locret_17B3E:					  ; CODE XREF: OnTick+234j
 
 
 sub_17B40:					  ; CODE XREF: OnTick:EB_MoveNoClipp
-		bset	#$06,Unk48(a5)
+		bset	#$06,RenderFlags(a5)
 		bsr.s	loc_17B56
-		bclr	#$06,Unk48(a5)
+		bclr	#$06,RenderFlags(a5)
 		rts
 ; End of function sub_17B40
 
@@ -111,7 +111,7 @@ sub_17B40:					  ; CODE XREF: OnTick:EB_MoveNoClipp
 
 sub_17B50:					  ; CODE XREF: OnTick:EB_MoveTimedp
 						  ; OnTick:EB_MoveRelativep ...
-		bclr	#$06,Unk48(a5)
+		bclr	#$06,RenderFlags(a5)
 
 loc_17B56:					  ; CODE XREF: sub_17B40+6p
 		move.b	RotationAndSize(a5),d0
@@ -128,11 +128,11 @@ loc_17B56:					  ; CODE XREF: sub_17B40+6p
 loc_17B70:					  ; CODE XREF: sub_17B50+Ej
 						  ; sub_1914C+Ej
 		move.w	HitBoxYStart(a5),d1
-		move.w	Flags1(a5),d0
+		move.w	StateFlags(a5),d0
 		andi.w	#$000F,d0
 		sub.w	d0,HitBoxYStart(a5)
 		sub.w	d0,HitBoxYEnd(a5)
-		btst	#$06,Unk48(a5)
+		btst	#$06,RenderFlags(a5)
 		bne.w	loc_17BDA
 		move.w	HitBoxYStart(a5),d0
 		andi.b	#$08,d0
@@ -152,7 +152,7 @@ loc_17BAE:					  ; CODE XREF: sub_1914C-1574j
 		bcs.s	loc_17BDA
 
 loc_17BB4:					  ; CODE XREF: sub_1914C-15A0j
-		move.w	Flags1(a5),d0
+		move.w	StateFlags(a5),d0
 		andi.w	#$000F,d0
 		add.w	d0,HitBoxYStart(a5)
 		add.w	d0,HitBoxYEnd(a5)
@@ -171,7 +171,7 @@ loc_17BDA:					  ; CODE XREF: sub_1914C-15C2j
 						  ; sub_1914C-159Aj
 		move.w	CentreY(a5),d0
 		move.w	d0,d1
-		move.w	Flags1(a5),d2
+		move.w	StateFlags(a5),d2
 		andi.w	#$000F,d2
 		sub.w	d2,d0
 		move.w	d0,CentreY(a5)
@@ -190,7 +190,7 @@ loc_17C14:					  ; CODE XREF: sub_1914C-154Cj
 		btst	#$03,QueuedAction(a5)
 		bne.s	loc_17C28
 		bset	#$00,Action1(a5)
-		bset	#$00,Unk6D(a5)
+		bset	#$00,MovedDirFlags(a5)
 
 loc_17C28:					  ; CODE XREF: sub_1914C-1532j
 		tst.b	d0
@@ -202,16 +202,16 @@ loc_17C28:					  ; CODE XREF: sub_1914C-1532j
 
 sub_17C2C:					  ; CODE XREF: sub_1914C:loc_17BAEp
 						  ; sub_1914C:loc_17CE8p ...
-		tst.b	Flags2(a5)
+		tst.b	InteractFlags(a5)
 		bpl.s	loc_17C94
 		cmpa.l	#Player_X,a0
 		bne.s	loc_17C82
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_17C7A
 		move.b	RotationAndSize(a5),d7
 		lsr.b	#$06,d7
 		ori.b	#$40,d7
-		move.b	d7,(byte_FF1143).l
+		move.b	d7,(g_PlayerPendingHit).l
 		move.w	AttackStrength(a5),(Player_AttackStrength).l
 		cmpi.b	#SPR_SMLFIREBALL,SpriteType(a5)
 		beq.s	loc_17C72
@@ -222,7 +222,7 @@ sub_17C2C:					  ; CODE XREF: sub_1914C:loc_17BAEp
 
 loc_17C72:					  ; CODE XREF: sub_17C2C+34j
 						  ; sub_17C2C+3Cj
-		bset	#$00,(Player_Unk48).l
+		bset	#$00,(Player_RenderFlags).l
 
 loc_17C7A:					  ; CODE XREF: sub_17C2C+14j
 						  ; sub_17C2C+44j ...
@@ -318,7 +318,7 @@ loc_17D4A:					  ; CODE XREF: sub_1914C-1412j
 		btst	#$03,$0000002C(a5)
 		bne.s	loc_17D5E
 		bset	#$03,$0000002D(a5)
-		bset	#$03,$0000006D(a5)
+		bset	#$03,MovedDirFlags(a5)
 
 loc_17D5E:					  ; CODE XREF: sub_1914C-13FCj
 		tst.b	d0
@@ -390,7 +390,7 @@ loc_17E06:					  ; CODE XREF: sub_1914C-135Aj
 		btst	#$03,$0000002C(a5)
 		bne.s	loc_17E1A
 		bset	#$01,$0000002D(a5)
-		bset	#$01,$0000006D(a5)
+		bset	#$01,MovedDirFlags(a5)
 
 loc_17E1A:					  ; CODE XREF: sub_1914C-1340j
 		tst.b	d0
@@ -462,7 +462,7 @@ loc_17EBC:					  ; CODE XREF: sub_1914C-12A0j
 		btst	#$03,$0000002C(a5)
 		bne.s	loc_17ED0
 		bset	#$02,$0000002D(a5)
-		bset	#$02,$0000006D(a5)
+		bset	#$02,MovedDirFlags(a5)
 
 loc_17ED0:					  ; CODE XREF: sub_1914C-128Aj
 		tst.b	d0
@@ -506,7 +506,7 @@ EB_TurnNWImmediate:				  ; CODE XREF: OnTick+8Ej
 
 sub_17EF8:					  ; CODE XREF: EB_TurnCW+2j
 						  ; EB_TurnCCW+2j ...
-		btst	#$00,Flags2(a5)
+		btst	#$00,InteractFlags(a5)
 		bne.s	locret_17F02
 		bsr.s	sub_17F0A
 
@@ -830,12 +830,12 @@ loc_180DC:					  ; CODE XREF: ROM:000180D4j
 		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,$0000003E(a5)
 		bhi.s	loc_180FC
-		bsr.w	sub_16134
+		bsr.w	MarkEnemyDead
 		bra.s	loc_18104
 ; ---------------------------------------------------------------------------
 
 loc_180FC:					  ; CODE XREF: ROM:000180F4j
-		bsr.w	sub_1602A
+		bsr.w	StartEnemyHitstun
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_EnemyHit1
@@ -848,7 +848,7 @@ loc_18108:					  ; CODE XREF: ROM:0001809Aj
 						  ; ROM:000180A8j ...
 		cmpi.b	#SpriteB_Vase,SpriteGraphic(a5)
 		bne.s	loc_18122
-		bclr	#$05,Flags2(a5)
+		bclr	#$05,InteractFlags(a5)
 		move.w	#$0055,BehavParam(a5)
 		clr.b	Speed(a5)
 		rts
@@ -875,18 +875,18 @@ loc_18140:					  ; CODE XREF: OnTick+838j
 
 loc_18150:					  ; CODE XREF: OnTick+848j
 						  ; OnTick+8A6j
-		cmpi.b	#$10,$00000069(a5)
+		cmpi.b	#$10,SavedBehavCmd(a5)
 		beq.s	loc_1818A
-		cmpi.b	#$16,$00000069(a5)
+		cmpi.b	#$16,SavedBehavCmd(a5)
 		beq.s	loc_1818A
-		cmpi.b	#$2F,$00000069(a5)
+		cmpi.b	#$2F,SavedBehavCmd(a5)
 		beq.s	loc_18190
-		cmpi.b	#$32,$00000069(a5)
+		cmpi.b	#$32,SavedBehavCmd(a5)
 		beq.s	loc_1818A
-		move.l	$0000005E(a5),$00000032(a5)
-		move.b	$00000067(a5),$0000002A(a5)
-		move.b	$00000069(a5),$0000002B(a5)
-		move.b	$00000049(a5),$00000009(a5)
+		move.l	SavedBehaviourLUTPtr(a5),BehaviourLUTPtr(a5)
+		move.b	SavedBehavParam(a5),BehavParam(a5)
+		move.b	SavedBehavCmd(a5),BehavCmd(a5)
+		move.b	SavedSpeed(a5),Speed(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -930,18 +930,18 @@ loc_181C0:					  ; CODE XREF: OnTick+8B4j
 		bcc.s	locret_1820C
 
 loc_181C6:					  ; CODE XREF: OnTick+8C0j
-		cmpi.b	#$10,$00000069(a5)
+		cmpi.b	#$10,SavedBehavCmd(a5)
 		beq.s	loc_18208
-		cmpi.b	#$16,$00000069(a5)
+		cmpi.b	#$16,SavedBehavCmd(a5)
 		beq.s	loc_18208
-		cmpi.b	#$2F,$00000069(a5)
+		cmpi.b	#$2F,SavedBehavCmd(a5)
 		beq.s	loc_18208
-		cmpi.b	#$32,$00000069(a5)
+		cmpi.b	#$32,SavedBehavCmd(a5)
 		beq.s	loc_18200
-		move.l	$0000005E(a5),$00000032(a5)
-		move.b	$00000067(a5),$0000002A(a5)
-		move.b	$00000069(a5),$0000002B(a5)
-		move.b	$00000049(a5),$00000009(a5)
+		move.l	SavedBehaviourLUTPtr(a5),BehaviourLUTPtr(a5)
+		move.b	SavedBehavParam(a5),BehavParam(a5)
+		move.b	SavedBehavCmd(a5),BehavCmd(a5)
+		move.b	SavedSpeed(a5),Speed(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1545,12 +1545,12 @@ EB_Jump:					  ; CODE XREF: OnTick+B6j
 ; ---------------------------------------------------------------------------
 
 EB_EnableRotation:				  ; CODE XREF: OnTick+BAj
-		bclr	#$00,Flags2(a5)
+		bclr	#$00,InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
 EB_DisableRotation:				  ; CODE XREF: OnTick+BEj
-		bset	#$00,Flags2(a5)
+		bset	#$00,InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
@@ -1850,7 +1850,7 @@ sub_189F0:					  ; CODE XREF: OnTick+107Ap
 		bpl.s	loc_18A1E
 		cmpa.l	#Player_X,a0
 		bne.s	loc_18A24
-		move.b	#$80,(byte_FF1143).l
+		move.b	#$80,(g_PlayerPendingHit).l
 		move.w	$0000003C(a5),(Player_AttackStrength).l
 
 loc_18A1E:					  ; CODE XREF: sub_189F0+14j
@@ -2177,25 +2177,25 @@ EB_ResetToInitParams:				  ; CODE XREF: OnTick+14Ej
 		andi.b	#$1F,TileSource(a5)
 		move.b	InitTileSource(a5),d0
 		or.b	d0,TileSource(a5)
-		move.w	InitUnk0A(a5),Unk0A(a5)
-		move.b	InitFlags2(a5),Flags2(a5)
+		move.w	InitAnimCtrl(a5),AnimCtrl(a5)
+		move.b	InitInteractFlags(a5),InteractFlags(a5)
 		move.w	InitZ(a5),Z(a5)
 		move.b	InitGoldOrChestCont(a5),GoldOrChestContents(a5)
-		move.b	Unk68(a5),Flags4(a5)	  ; Bit	0 = Invincible / Solid
+		move.b	InitCombatFlags(a5),CombatFlags(a5)
 		move.w	InitDialogue(a5),Dialogue(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
-		clr.b	ChestIndex(a5)
+		clr.b	AIState(a5)
 		movea.l	a5,a1
 		jsr	(LookupSpriteAnimFlags).l
 		jsr	(sub_19AC8).l
 		jsr	(sub_3BC).l
 		bcc.s	loc_18CD6
-		bset	#$00,Flags1(a5)
+		bset	#$00,StateFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_18CD6:					  ; CODE XREF: OnTick+13CEj
-		bclr	#$00,Flags1(a5)
+		bclr	#$00,StateFlags(a5)
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
@@ -2226,7 +2226,7 @@ EB_RotatePlayer:				  ; CODE XREF: OnTick+15Aj
 		lea	(Player_X).l,a0
 		andi.b	#$3F,RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(sub_3FE).l
 		jsr	(j_LoadSprites).l
@@ -2235,16 +2235,16 @@ EB_RotatePlayer:				  ; CODE XREF: OnTick+15Aj
 ; ---------------------------------------------------------------------------
 
 EB_MakeHostile:					  ; CODE XREF: OnTick+15Ej
-		bset	#$07,Flags2(a5)
-		bset	#$07,InitFlags2(a5)
+		bset	#$07,InteractFlags(a5)
+		bset	#$07,InitInteractFlags(a5)
 		movea.l	a5,a1
 		bsr.w	GetEnemyStats		  ; sprite type
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
 EB_MakeNonHostile:				  ; CODE XREF: OnTick+162j
-		bclr	#$07,Flags2(a5)
-		bclr	#$07,InitFlags2(a5)
+		bclr	#$07,InteractFlags(a5)
+		bclr	#$07,InitInteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 ; END OF FUNCTION CHUNK	FOR OnTick
 
@@ -2265,12 +2265,12 @@ EB_LoadSpecialAI:				  ; CODE XREF: OnTick+C6j
 ; ---------------------------------------------------------------------------
 
 EB_EnableWalkBackwards:				  ; CODE XREF: OnTick+166j
-		bclr	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$01,CombatFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
 EB_DisableWalkBackwards:			  ; CODE XREF: OnTick+16Aj
-		bset	#$01,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$01,CombatFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 ; ---------------------------------------------------------------------------
 
@@ -2285,7 +2285,7 @@ EB_SpecialAnimation:				  ; CODE XREF: OnTick+16Ej
 ; ---------------------------------------------------------------------------
 		move.w	#$0008,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2294,7 +2294,7 @@ loc_18DAE:					  ; CODE XREF: OnTick+1498j
 		bne.s	loc_18DC8
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2304,14 +2304,14 @@ loc_18DC8:					  ; CODE XREF: OnTick+14B4j
 		bne.s	loc_18DF0
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0008,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		subi.w	#$000C,HitBoxZEnd(a5)
 		subi.b	#$0C,Height(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_18DF0:					  ; CODE XREF: OnTick+14D0j
-		bchg	#$06,Flags2(a5)
+		bchg	#$06,InteractFlags(a5)
 		cmpi.b	#$1E,d0
 		bcs.s	locret_18E02
 		jmp	(j_HideSprite).l
@@ -2385,9 +2385,9 @@ loc_18E8C:					  ; CODE XREF: OnTick+1580j
 		tst.b	d7
 		bpl.s	locret_18EDC
 		movea.l	a0,a5
-		btst	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$00,CombatFlags(a5)
 		bne.s	locret_18EDC
-		move.b	Flags2(a5),d0
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
 		bne.s	locret_18EDC
@@ -2395,12 +2395,12 @@ loc_18E8C:					  ; CODE XREF: OnTick+1580j
 		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,CurrentHealth(a5)
 		bhi.s	loc_18EC8
-		bsr.w	sub_16134
+		bsr.w	MarkEnemyDead
 		bra.s	locret_18EDC
 ; ---------------------------------------------------------------------------
 
 loc_18EC8:					  ; CODE XREF: OnTick+15C2j
-		bsr.w	sub_1602A
+		bsr.w	StartEnemyHitstun
 		move.w	#$013E,BehaviourLUTIndex(a5)
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
@@ -2605,7 +2605,7 @@ loc_1900C:					  ; CODE XREF: OnTick+171Aj
 		beq.s	locret_1902E
 		cmp.b	BehavParam(a5),d0
 		bne.s	loc_1900C
-		bchg	#$06,Flags2(a5)
+		bchg	#$06,InteractFlags(a5)
 		cmpi.b	#$FF,$00000001(a0)
 		bne.s	locret_1902E
 		moveq	#$00000002,d0
@@ -2647,7 +2647,7 @@ loc_19074:					  ; CODE XREF: OnTick+175Cj
 		or.b	d1,RotationAndSize(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		bra.w	EB_DecayFlash
 ; ---------------------------------------------------------------------------
 
@@ -2712,7 +2712,7 @@ sub_19114:					  ; CODE XREF: sub_190D4+20p
 		bsr.w	sub_19206
 		move.w	SpriteUnderneath(a5),d0	  ; Sprite under current sprite
 		bmi.s	locret_1917C
-		btst	#$02,Flags2(a5)		  ; Frictionless
+		btst	#$02,InteractFlags(a5)		  ; Frictionless
 		bne.s	locret_1917C
 		lea	(Player_X).l,a0
 		adda.w	d0,a0			  ; Sprite underneath
@@ -2763,7 +2763,7 @@ locret_1917C:					  ; CODE XREF: sub_19114+8j
 sub_1917E:					  ; CODE XREF: sub_190D4+28p
 		move.w	SpriteUnderneath(a5),d0
 		bmi.s	locret_191B2
-		btst	#$06,Flags1(a5)
+		btst	#$06,StateFlags(a5)
 		bne.s	locret_191B2
 		lea	(Player_X).l,a0
 		adda.w	d0,a0
@@ -2837,7 +2837,7 @@ locret_19204:					  ; CODE XREF: sub_191E4+12j
 
 sub_19206:					  ; CODE XREF: OnTick+4p
 						  ; sub_19114p
-		btst	#$06,Flags1(a5)
+		btst	#$06,StateFlags(a5)
 		beq.s	loc_19276
 		move.w	(Player_HitBoxZEnd).l,d0
 		move.w	d0,HitBoxZEnd(a5)
@@ -2865,7 +2865,7 @@ loc_19242:					  ; CODE XREF: sub_19206+26j
 ; ---------------------------------------------------------------------------
 
 loc_19276:					  ; CODE XREF: sub_19206+6j
-		btst	#$05,Flags1(a5)
+		btst	#$05,StateFlags(a5)
 		beq.s	locret_19286
 		move.w	(Player_SpriteUnderneath).l,SpriteUnderneath(a5)
 
@@ -2887,7 +2887,7 @@ loc_19292:					  ; CODE XREF: sub_19288+20j
 		bmi.s	loc_192B2
 		cmpi.w	#$7F7F,d0
 		bne.s	loc_192A4
-		btst	#$00,Flags1(a1)
+		btst	#$00,StateFlags(a1)
 		bne.s	loc_192B2
 
 loc_192A4:					  ; CODE XREF: sub_19288+12j
@@ -2910,9 +2910,9 @@ loc_192B2:					  ; CODE XREF: sub_19288+Cj
 sub_192B6:					  ; DATA XREF: sub_103B8t
 						  ; ROM:000161E0t
 		movem.l	a1/a5,-(sp)
-		clr.b	Flags1(a1)
-		clr.b	Flags2(a1)
-		move.b	#$01,Unk0A(a1)
+		clr.b	StateFlags(a1)
+		clr.b	InteractFlags(a1)
+		move.b	#$01,AnimCtrl(a1)
 		move.b	d2,d0
 		move.b	d0,SpriteType(a1)
 		bsr.w	LookupSpriteGfxIndex
@@ -2924,7 +2924,7 @@ sub_192B6:					  ; DATA XREF: sub_103B8t
 		movem.l	(sp)+,a1
 		move.b	RotationAndSize(a1),d1
 		bsr.w	SetSpriteRotationAnimFlags
-		bset	#$07,Unk48(a1)
+		bset	#$07,RenderFlags(a1)
 		tst.w	SPRITE_SIZE(a1)
 		bne.s	loc_19306
 		move.w	#$FFFF,SPRITE_SIZE(a1)

@@ -480,7 +480,7 @@ UpdateHUDDigits:				  ; CODE XREF: UpdateMaxHealthHUD:loc_169A8p
 RefreshSwordChargeHUD:				  ; CODE XREF: RefreshAllHUD+Cp
 						  ; IncrementSwordCharge:loc_178AEp ...
 		clr.w	d0
-		move.b	(g_SwordCharge_0).l,d0
+		move.b	(g_SwordChargeMeter).l,d0
 		mulu.w	#$0007,d0
 		moveq	#$00000006,d7
 		lea	((g_HUD_Row2+8)).l,a0

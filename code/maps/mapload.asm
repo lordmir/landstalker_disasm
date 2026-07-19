@@ -111,8 +111,8 @@ sub_2726:					  ; CODE XREF: LoadGamep
 loc_2744:					  ; CODE XREF: sub_2726+20j
 		clr.b	(a0)+
 		dbf	d7,loc_2744
-		clr.b	(byte_FF1143).l
-		clr.b	(byte_FF1142).l
+		clr.b	(g_PlayerPendingHit).l
+		clr.b	(g_PlayerHurtTimer).l
 		clr.b	(g_PlayerAnimation).l
 		clr.b	(byte_FF1128).l
 		clr.b	(g_ControllerPlayback).l
@@ -124,7 +124,7 @@ loc_2744:					  ; CODE XREF: sub_2726+20j
 		move.b	#$FF,(g_CurPalIdx).l
 		move.b	#$08,(Player_SubX).l
 		move.b	#$08,(Player_SubY).l
-		move.w	#$0000,(Player_Unk0A).l
+		move.w	#$0000,(Player_AnimCtrl).l
 		rts
 ; End of function sub_2726
 
@@ -370,7 +370,7 @@ sub_2A46:					  ; CODE XREF: LoadRoom_0+24p
 		clr.b	(byte_FF1133).l
 		clr.w	(g_CarriedEntity).l
 		clr.b	(byte_FF1147).l
-		clr.b	(byte_FF1148).l
+		clr.b	(g_PoisonStepCounter).l
 		lea	(Player_X).l,a1
 		move.w	#$00C0,d1
 		move.w	(Player_Action).l,d0	  ; Bit0 - Walk	NE (-Y)
@@ -447,13 +447,13 @@ loc_2B08:					  ; CODE XREF: sub_2AF2+1Aj
 		cmp.w	(a0)+,d0
 		beq.s	loc_2B22
 		dbf	d7,loc_2B08
-		move.w	#$0141,(Player_Unk0A).l
+		move.w	#$0141,(Player_AnimCtrl).l
 		move.b	#SPR_POCKETS,(Player_SpriteType).l
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_2B22:					  ; CODE XREF: sub_2AF2+18j
-		move.w	#$0000,(Player_Unk0A).l
+		move.w	#$0000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_Unk6F).l
 		bclr	#$04,(g_Flags+3).l
 		andi.b	#$F8,(g_LockPlayerActions).l ; Bit 0: Can't pick up items

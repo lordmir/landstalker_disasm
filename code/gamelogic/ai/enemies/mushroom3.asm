@@ -5,9 +5,9 @@ EnemyAI_Mushroom3_B:				  ; CODE XREF: ROM:001A85AAj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Mushroom3_A:				  ; CODE XREF: ROM:001A85A6j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AAED2
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AAED8
 		cmpi.b	#$10,d0
 		beq.s	loc_1AAF1E
@@ -33,11 +33,11 @@ loc_1AAED8:					  ; CODE XREF: ROM:001AAEC6j
 
 EnemyAI_Mushroom3:				  ; CODE XREF: ROM:EnemyAI_Mushroom3_Bj
 						  ; ROM:001AAEFCj ...
-		bclr	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$06,CombatFlags(a5)
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ loc_1AAF1E:					  ; CODE XREF: ROM:001AAECCj
 
 loc_1AAF42:					  ; CODE XREF: ROM:001AAF30j
 						  ; ROM:001AAF36j ...
-		btst	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a5)
 		bne.s	locret_1AAF4E
 		bsr.w	j_j_OnTick
 
@@ -68,7 +68,7 @@ sub_1AAF50:					  ; CODE XREF: ROM:001AAF2Ep
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
 		bne.w	loc_1AAFEC
-		btst	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a5)
 		bne.s	loc_1AAFAE
 		move.w	#$0020,d5
 		move.w	#$0020,d6
@@ -79,11 +79,11 @@ sub_1AAF50:					  ; CODE XREF: ROM:001AAF2Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
 		bhi.s	loc_1AAFEC
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		bset	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$06,CombatFlags(a5)
 		move.w	Z(a5),HitBoxZEnd(a5)
 		ori	#$01,ccr
 		rts
@@ -99,10 +99,10 @@ loc_1AAFAE:					  ; CODE XREF: sub_1AAF50+12j
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00037,d7
 		bhi.s	loc_1AAFEC
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$1F,Unk0D(a5)
+		move.b	#$1F,AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ loc_1AAFEC:					  ; CODE XREF: sub_1AAF50+8j
 
 
 sub_1AAFF0:					  ; CODE XREF: ROM:001AAF32p
-		btst	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a5)
 		bne.s	loc_1AB034
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
@@ -129,9 +129,9 @@ sub_1AAFF0:					  ; CODE XREF: ROM:001AAF32p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
 		bhi.s	loc_1AB034
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0013,BehaviourLUTIndex(a5)
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
 		rts
@@ -148,7 +148,7 @@ loc_1AB034:					  ; CODE XREF: sub_1AAFF0+6j
 
 
 sub_1AB038:					  ; CODE XREF: ROM:001AAF38p
-		btst	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a5)
 		bne.s	loc_1AB07C
 		move.w	#$0020,d5
 		move.w	#$FFE8,d6
@@ -159,10 +159,10 @@ sub_1AB038:					  ; CODE XREF: ROM:001AAF38p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00087,d7
 		bhi.s	loc_1AB07C
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ loc_1AB07C:					  ; CODE XREF: sub_1AB038+6j
 
 
 sub_1AB080:					  ; CODE XREF: ROM:001AAF3Ep
-		btst	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		btst	#$06,CombatFlags(a5)
 		bne.s	loc_1AB0DE
 		move.w	#$0018,d5
 		move.w	#$0000,d6
@@ -189,19 +189,19 @@ sub_1AB080:					  ; CODE XREF: ROM:001AAF3Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00070,d7
 		bcc.s	loc_1AB0C4
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AB0C4:					  ; CODE XREF: sub_1AB080+28j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0011,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -227,8 +227,8 @@ loc_1AB0E2:					  ; CODE XREF: ROM:001AAECEj
 ; ---------------------------------------------------------------------------
 
 loc_1AB104:					  ; CODE XREF: ROM:001AB0E6j
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$01,Unk0D(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$01,AnimPhase(a5)
 		bne.s	loc_1AB11E
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
@@ -236,7 +236,7 @@ loc_1AB104:					  ; CODE XREF: ROM:001AB0E6j
 ; ---------------------------------------------------------------------------
 
 loc_1AB11E:					  ; CODE XREF: ROM:001AB10Ej
-		cmpi.b	#$08,Unk0D(a5)
+		cmpi.b	#$08,AnimPhase(a5)
 		bne.s	loc_1AB134
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
@@ -244,7 +244,7 @@ loc_1AB11E:					  ; CODE XREF: ROM:001AB10Ej
 ; ---------------------------------------------------------------------------
 
 loc_1AB134:					  ; CODE XREF: ROM:001AB124j
-		cmpi.b	#$10,Unk0D(a5)
+		cmpi.b	#$10,AnimPhase(a5)
 		bne.s	loc_1AB14A
 		move.b	#$FF,Action1(a5)
 		move.w	#$00C0,PrevAction(a5)
@@ -252,7 +252,7 @@ loc_1AB134:					  ; CODE XREF: ROM:001AB124j
 ; ---------------------------------------------------------------------------
 
 loc_1AB14A:					  ; CODE XREF: ROM:001AB13Aj
-		cmpi.b	#$18,Unk0D(a5)
+		cmpi.b	#$18,AnimPhase(a5)
 		bne.s	loc_1AB160
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
@@ -260,7 +260,7 @@ loc_1AB14A:					  ; CODE XREF: ROM:001AB13Aj
 ; ---------------------------------------------------------------------------
 
 loc_1AB160:					  ; CODE XREF: ROM:001AB150j
-		cmpi.b	#$20,Unk0D(a5)
+		cmpi.b	#$20,AnimPhase(a5)
 		bne.s	loc_1AB196
 		clr.w	d0
 		move.b	#$20,d0
@@ -269,7 +269,7 @@ loc_1AB160:					  ; CODE XREF: ROM:001AB150j
 		jsr	(sub_3BC).l
 		bcc.s	loc_1AB188
 		move.w	Z(a5),HitBoxZEnd(a5)
-		subq.b	#$01,Unk0D(a5)
+		subq.b	#$01,AnimPhase(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -280,7 +280,7 @@ loc_1AB188:					  ; CODE XREF: ROM:001AB17Aj
 ; ---------------------------------------------------------------------------
 
 loc_1AB196:					  ; CODE XREF: ROM:001AB166j
-		cmpi.b	#$28,Unk0D(a5)
+		cmpi.b	#$28,AnimPhase(a5)
 		bne.s	loc_1AB1AC
 		move.b	#$FF,Action1(a5)
 		move.w	#$0080,PrevAction(a5)
@@ -288,11 +288,11 @@ loc_1AB196:					  ; CODE XREF: ROM:001AB166j
 ; ---------------------------------------------------------------------------
 
 loc_1AB1AC:					  ; CODE XREF: ROM:001AB19Cj
-		cmpi.b	#$30,Unk0D(a5)
+		cmpi.b	#$30,AnimPhase(a5)
 		bne.s	locret_1AB1CA
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
-		bclr	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$06,CombatFlags(a5)
 		bra.w	EnemyAI_Mushroom3
 ; ---------------------------------------------------------------------------
 
@@ -307,13 +307,13 @@ loc_1AB1CC:					  ; CODE XREF: ROM:001AB0ECj
 ; ---------------------------------------------------------------------------
 
 loc_1AB1D2:					  ; CODE XREF: ROM:001AB0F4j
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
 		addi.w	#$0300,d0
 		move.w	d0,QueuedAction(a5)
-		cmpi.b	#$20,Unk0D(a5)
+		cmpi.b	#$20,AnimPhase(a5)
 		bcs.s	locret_1AB22C
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -341,17 +341,17 @@ locret_1AB22C:					  ; CODE XREF: ROM:001AB1EEj
 ; ---------------------------------------------------------------------------
 
 loc_1AB22E:					  ; CODE XREF: ROM:001AB0FCj
-		addq.b	#$01,Unk0D(a5)
+		addq.b	#$01,AnimPhase(a5)
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.b	Unk0D(a5),d0
+		move.b	AnimPhase(a5),d0
 		andi.w	#$0004,d0
 		lsl.w	#$06,d0
 		addi.w	#$0100,d0
 		move.w	d0,QueuedAction(a5)
-		cmpi.b	#$20,Unk0D(a5)
+		cmpi.b	#$20,AnimPhase(a5)
 		bcs.s	locret_1AB260
 		bra.w	EnemyAI_Mushroom3
 ; ---------------------------------------------------------------------------

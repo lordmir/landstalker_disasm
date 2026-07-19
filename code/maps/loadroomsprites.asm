@@ -89,11 +89,11 @@ loc_195CE:					  ; CODE XREF: InitialiseSprites+8Ej
 		lsr.b	#$03,d2
 		andi.b	#$01,d2
 		or.b	d2,d0
-		move.b	d0,Flags2(a1)
+		move.b	d0,InteractFlags(a1)
 		move.b	-$00000001(a2),d0	  ; a2 = &data[3]
 						  ; d0 = data[2]
 		andi.w	#$0007,d0
-		move.b	#$01,Unk0A(a1)
+		move.b	#$01,AnimCtrl(a1)
 		move.b	SpeedLUT(pc,d0.w),Speed(a1)
 		bra.s	loc_195F6		  ; a2 = &data[3]
 ; ---------------------------------------------------------------------------
@@ -262,7 +262,7 @@ loc_1973C:					  ; CODE XREF: InitialiseSprites+1DAj
 						  ; d3 - height
 		movem.w	d0,-(sp)
 		jsr	(j_LookupChestContents).l
-		move.b	#$01,Flags2(a1)
+		move.b	#$01,InteractFlags(a1)
 		jsr	(j_CheckIfChestOpened).l
 		beq.w	loc_1983E
 		cmpi.w	#$0291,(g_RmNum1).l	  ; Crypt Bogus	Chest Room
@@ -292,7 +292,7 @@ SetSpriteRotationAnimFlags:			  ; CODE XREF: sub_12CAE+Cp
 		addi.b	#$40,d1
 		andi.b	#$80,d1
 		beq.s	loc_197B6		  ; branch if d0 = 0xC0	or 0x40
-		btst	#$00,Flags2(a1)		  ; Check bit0 of spr[0xC]
+		btst	#$00,InteractFlags(a1)		  ; Check bit0 of spr[0xC]
 		bne.s	loc_197B6		  ; Only true for Zak
 		move.b	#$04,d2
 
@@ -309,8 +309,8 @@ loc_197C0:					  ; CODE XREF: SetSpriteRotationAnimFlags+20j
 
 loc_197CC:					  ; CODE XREF: SetSpriteRotationAnimFlags+52j
 		move.w	#$0018,AnimationIndex(a1)
-		move.b	#$10,ChestIndex(a1)
-		move.b	#$40,Flags4(a1)		  ; Bit	0 = Invincible / Solid
+		move.b	#$10,AIState(a1)
+		move.b	#$40,CombatFlags(a1)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -410,10 +410,10 @@ loc_19874:					  ; CODE XREF: InitialiseSprites+30Ej
 loc_19894:					  ; CODE XREF: InitialiseSprites+354j
 		move.b	d1,d0
 		andi.b	#$10,d1
-		move.b	d1,Flags1(a1)
+		move.b	d1,StateFlags(a1)
 		andi.b	#$20,d0
 		lsr.b	#$05,d0
-		or.b	d0,Flags1(a1)
+		or.b	d0,StateFlags(a1)
 		clr.w	d0
 		move.b	-$00000003(a2),d0	  ; a2 = &bytes[7]
 						  ; d0 = byte[4]
@@ -428,7 +428,7 @@ loc_19894:					  ; CODE XREF: InitialiseSprites+354j
 loc_198C0:					  ; CODE XREF: InitialiseSprites+380j
 		clr.w	QueuedAction(a1)
 		clr.w	PrevAction(a1)
-		move.b	#$FF,Unk6D(a1)
+		move.b	#$FF,MovedDirFlags(a1)
 		cmpi.b	#SpriteB_Ghost,SpriteGraphic(a1)
 		bne.s	loc_198E0
 		move.w	#$0008,AnimationIndex(a1)
@@ -439,7 +439,7 @@ loc_198E0:					  ; CODE XREF: InitialiseSprites+39Aj
 		bne.s	loc_198FA
 		tst.w	BehavParam(a1)
 		bne.s	loc_198FA
-		btst	#$05,Flags2(a1)
+		btst	#$05,InteractFlags(a1)
 		bne.s	loc_198FA
 		bset	#$07,FallRate(a1)
 
@@ -465,14 +465,14 @@ loc_19932:					  ; CODE XREF: InitialiseSprites+3DEj
 		beq.s	loc_19952
 		cmpi.b	#SpriteB_Mushroom,SpriteGraphic(a1)
 		beq.s	loc_19952
-		clr.b	ChestIndex(a1)
+		clr.b	AIState(a1)
 
 loc_1994E:					  ; CODE XREF: InitialiseSprites+3FEj
-		clr.b	Flags4(a1)		  ; Bit	0 = Invincible / Solid
+		clr.b	CombatFlags(a1)
 
 loc_19952:					  ; CODE XREF: InitialiseSprites+406j
 						  ; InitialiseSprites+40Ej
-		tst.b	Flags2(a1)
+		tst.b	InteractFlags(a1)
 		bpl.w	loc_199E6
 		bsr.s	GetEnemyStats		  ; sprite type
 		bra.w	loc_199E6
@@ -495,7 +495,7 @@ loc_19968:					  ; CODE XREF: GetEnemyStats+74j
 		move.b	$00000001(a0),CurrentHealth(a1)	; Health
 		cmpi.b	#$FF,CurrentHealth(a1)	  ; 0xFF - indestructable
 		bne.s	loc_19986
-		bset	#$00,Flags4(a1)		  ; Bit	0 = Invincible / Solid
+		bset	#$00,CombatFlags(a1)
 
 loc_19986:					  ; CODE XREF: GetEnemyStats+1Ej
 		clr.b	CurrentSubHealth(a1)
@@ -518,7 +518,7 @@ loc_19986:					  ; CODE XREF: GetEnemyStats+1Ej
 		lsr.b	#$05,d0
 		or.b	d1,d0
 		ext.w	d0
-		move.w	ItemDropProbabilityLookup(pc,d0.w),InitFlags4_DropProbability(a1) ; 1/64
+		move.w	ItemDropProbabilityLookup(pc,d0.w),ItemDropProbability(a1) ; 1/64
 		andi.b	#$3F,d2
 		move.b	d2,ItemDrop(a1)
 
@@ -532,15 +532,15 @@ loc_199D2:					  ; CODE XREF: GetEnemyStats+10j
 ; End of function GetEnemyStats
 
 ; ---------------------------------------------------------------------------
-ItemDropProbabilityLookup:dc.w $0040		  ; DATA XREF: GetEnemyStats+62r
-						  ; 1/64
-		dc.w $0080			  ; 1/128
-		dc.w $0100			  ; 1/256
-		dc.w $0200			  ; 1/512
-		dc.w $0400			  ; 1/1024
-		dc.w $0800			  ; 1/2048
-		dc.w $0000			  ; None
-		dc.w $0001			  ; Guaranteed
+ItemDropProbabilityLookup:
+		dc.w $0040        ; 1/64
+		dc.w $0080        ; 1/128
+		dc.w $0100        ; 1/256
+		dc.w $0200        ; 1/512
+		dc.w $0400        ; 1/1024
+		dc.w $0800        ; 1/2048
+		dc.w $0000        ; None
+		dc.w $0001        ; Guaranteed
 ; ---------------------------------------------------------------------------
 ; START	OF FUNCTION CHUNK FOR InitialiseSprites
 
@@ -550,13 +550,13 @@ loc_199E6:					  ; CODE XREF: InitialiseSprites+41Cj
 		move.w	SubX(a1),InitSubX(a1)
 		move.w	RotationAndSize(a1),InitRotAndSize(a1)
 		move.b	TileSource(a1),InitTileSource(a1)
-		move.w	Unk0A(a1),InitUnk0A(a1)
-		move.b	Flags2(a1),InitFlags2(a1)
+		move.w	AnimCtrl(a1),InitAnimCtrl(a1)
+		move.b	InteractFlags(a1),InitInteractFlags(a1)
 		move.w	Z(a1),InitZ(a1)
-		move.w	BehavParam(a1),Unk6A(a1)
+		move.w	BehavParam(a1),InitBehavParam(a1)
 		move.l	BehaviourLUTPtr(a1),InitBehaviourLUTPtr(a1)
 		move.b	GoldOrChestContents(a1),InitGoldOrChestCont(a1)
-		move.b	Flags4(a1),Unk68(a1)	  ; Bit	0 = Invincible / Solid
+		move.b	CombatFlags(a1),InitCombatFlags(a1)
 		move.w	Dialogue(a1),InitDialogue(a1)
 		move.w	CurrentHealth(a1),MaxHealth(a1)
 		lea	SPRITE_SIZE(a1),a1
@@ -589,7 +589,7 @@ loc_19A4A:					  ; CODE XREF: sub_19A40+82j
 		movem.l	(sp)+,a1
 		cmpa.l	#Player_X,a1
 		beq.s	loc_19AB6
-		btst	#$00,Flags1(a1)
+		btst	#$00,StateFlags(a1)
 		bne.s	loc_19AB6
 		movea.l	a1,a5
 		jsr	(sub_3BC).l

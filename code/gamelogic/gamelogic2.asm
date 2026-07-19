@@ -216,7 +216,7 @@ loc_2F98:					  ; CODE XREF: CollisionDetect+6Ej
 		cmp.w	Z(a0),d5
 		bcs.s	loc_2FD8
 		movea.l	a0,a1
-		tst.b	Flags1(a0)
+		tst.b	StateFlags(a0)
 		bne.s	loc_2FD8
 		cmp.w	SpriteUnderneath(a0),d0
 		beq.s	loc_2FD8
@@ -270,7 +270,7 @@ loc_300C:					  ; CODE XREF: CheckForCollision+68j
 		cmp.w	Z(a0),d5
 		bcs.s	loc_3046
 		movea.l	a0,a1
-		tst.b	Flags1(a0)
+		tst.b	StateFlags(a0)
 		bne.s	loc_3046
 		ori	#$01,ccr
 		rts
@@ -308,7 +308,7 @@ sub_3058:					  ; CODE XREF: HandleDirectionalControl:loc_1B48p
 loc_3080:					  ; CODE XREF: sub_3058+7Ej
 		tst.w	(a0)
 		bmi.s	loc_30D8
-		tst.b	Flags2(a0)
+		tst.b	InteractFlags(a0)
 		bmi.s	loc_30BC
 
 loc_308A:					  ; CODE XREF: sub_3058+70j
@@ -325,7 +325,7 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 		cmp.w	Z(a0),d5
 		bcs.s	loc_30CA
 		movea.l	a0,a1
-		tst.b	Flags1(a0)
+		tst.b	StateFlags(a0)
 		bne.s	loc_30CA
 		ori	#$01,ccr
 		rts
@@ -333,7 +333,7 @@ loc_308A:					  ; CODE XREF: sub_3058+70j
 
 loc_30BC:					  ; CODE XREF: sub_3058+30j
 	if FIX_COLL_1
-		cmpi.w	#$0001,InitFlags4_DropProbability(a0)
+		cmpi.w	#$0001,ItemDropProbability(a0)
 		bne.s	loc_30CA
 		tst.b	GoldOrChestContents(a0)
 		beq.s	loc_308A
@@ -627,7 +627,7 @@ sub_32C6:					  ; CODE XREF: sub_1858+52p
 		movem.w	d0/d2/d6-d7,-(sp)
 		clr.w	d4
 		move.b	FloorHeight(a0),d4
-		move.b	Unk6D(a0),d7
+		move.b	MovedDirFlags(a0),d7
 		andi.b	#$0F,d7
 		beq.s	loc_32E4
 		move.w	Z(a0),d7
@@ -746,7 +746,7 @@ loc_33AA:					  ; CODE XREF: sub_338C+58j
 		bls.s	loc_33DE
 		cmp.w	HitBoxZEnd(a1),d5
 		bhi.s	loc_33DE
-		tst.b	Flags1(a1)
+		tst.b	StateFlags(a1)
 		bne.s	loc_33DE
 		move.w	HitBoxZEnd(a1),d5
 		addq.w	#$01,d5
@@ -777,7 +777,7 @@ sub_33EA:					  ; CODE XREF: HandleDirectionalControl+184p
 loc_340A:					  ; CODE XREF: sub_33EA+60j
 		cmpa.l	a5,a1
 		beq.s	loc_3444
-		btst	#$06,Flags1(a1)
+		btst	#$06,StateFlags(a1)
 		bne.s	loc_3444
 		cmp.w	HitBoxXEnd(a1),d1
 		bhi.s	loc_3444
@@ -791,7 +791,7 @@ loc_340A:					  ; CODE XREF: sub_33EA+60j
 		bcc.s	loc_3444
 		cmp.w	Z(a1),d5
 		bls.s	loc_3444
-		tst.b	Flags1(a1)
+		tst.b	StateFlags(a1)
 		bne.s	loc_3444
 		move.w	Z(a1),d5
 

@@ -73,7 +73,7 @@ TA_02:						  ; CODE XREF: ROM:00010D10j
 loc_10FF0:					  ; CODE XREF: ROM:00011010j
 		move.w	(a0),d0
 		bmi.w	TriggerComplete
-		tst.b	Flags2(a0)
+		tst.b	InteractFlags(a0)
 		bpl.s	loc_1100C
 		cmpi.b	#$FF,CurrentHealth(a0)
 		beq.s	loc_1100C
@@ -88,7 +88,7 @@ loc_1100C:					  ; CODE XREF: ROM:00010FFAj
 ; ---------------------------------------------------------------------------
 
 TA_03:						  ; CODE XREF: ROM:00010D14j
-		tst.b	(Sprite6_Flags2).l
+		tst.b	(Sprite6_InteractFlags).l
 		bpl.w	TriggerComplete
 		btst	#$03,(g_Flags+$A).l
 		bne.w	TriggerComplete
@@ -96,7 +96,7 @@ TA_03:						  ; CODE XREF: ROM:00010D14j
 ; ---------------------------------------------------------------------------
 
 TA_04:						  ; CODE XREF: ROM:00010D18j
-		tst.b	(Sprite7_Flags2).l
+		tst.b	(Sprite7_InteractFlags).l
 		bpl.w	TriggerComplete
 		btst	#$03,(g_Flags+$A).l
 		bne.w	TriggerComplete
@@ -104,7 +104,7 @@ TA_04:						  ; CODE XREF: ROM:00010D18j
 ; ---------------------------------------------------------------------------
 
 TA_05:						  ; CODE XREF: ROM:00010D1Cj
-		tst.b	(Sprite8_Flags2).l
+		tst.b	(Sprite8_InteractFlags).l
 		bpl.w	TriggerComplete
 		btst	#$03,(g_Flags+$A).l
 		bne.w	TriggerComplete
@@ -314,7 +314,7 @@ TA_16:						  ; CODE XREF: ROM:00010D60j
 ; ---------------------------------------------------------------------------
 		dc.w SND_Rumble
 ; ---------------------------------------------------------------------------
-		bclr	#$04,Flags1(a5)
+		bclr	#$04,StateFlags(a5)
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------
 
@@ -507,7 +507,7 @@ TA_27:						  ; CODE XREF: ROM:00010DA4j
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicKayla
 ; ---------------------------------------------------------------------------
-		bset	#$01,(Player_Flags4).l
+		bset	#$01,(Player_CombatFlags).l
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------
 
@@ -582,25 +582,25 @@ TA_2F:						  ; CODE XREF: ROM:00010DC4j
 TA_30:						  ; CODE XREF: ROM:00010DC8j
 		tst.b	(Sprite1_FallRate).l
 		bmi.w	TriggerCompleteOnD0
-		tst.b	(Sprite1_Flags2).l
+		tst.b	(Sprite1_InteractFlags).l
 		bmi.w	TriggerCompleteOnD0
-		tst.b	(Sprite2_Flags2).l
+		tst.b	(Sprite2_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
-		tst.b	(Sprite3_Flags2).l
+		tst.b	(Sprite3_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------
 
 TA_31:						  ; CODE XREF: ROM:00010DCCj
-		tst.b	(Sprite2_Flags2).l
+		tst.b	(Sprite2_InteractFlags).l
 		bmi.w	TriggerCompleteOnD0
-		tst.b	(Sprite3_Flags2).l
+		tst.b	(Sprite3_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------
 
 TA_32:						  ; CODE XREF: ROM:00010DD0j
-		tst.b	(Sprite3_Flags2).l
+		tst.b	(Sprite3_InteractFlags).l
 		bmi.w	TriggerCompleteOnD0
 		bra.w	TriggerComplete
 ; ---------------------------------------------------------------------------
@@ -684,13 +684,13 @@ TA_37:						  ; CODE XREF: ROM:00010DE4j
 ; ---------------------------------------------------------------------------
 
 TA_38:						  ; CODE XREF: ROM:00010DE8j
-		tst.b	(Sprite1_Flags2).l
+		tst.b	(Sprite1_InteractFlags).l
 		bmi.w	TriggerCompleteOnD0
-		tst.b	(Sprite2_Flags2).l
+		tst.b	(Sprite2_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
-		tst.b	(Sprite3_Flags2).l
+		tst.b	(Sprite3_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
-		tst.b	(Sprite4_Flags2).l
+		tst.b	(Sprite4_InteractFlags).l
 		bpl.w	TriggerCompleteOnD0
 		movem.l	a5,-(sp)
 		lea	(Sprite2_X).l,a5
@@ -1449,7 +1449,7 @@ TA_89:						  ; CODE XREF: ROM:00010F2Cj
 ; ---------------------------------------------------------------------------
 
 TA_8A:						  ; CODE XREF: ROM:00010F30j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.w	TriggerCompleteOnD0
 		tst.b	(g_PlayerAnimation).l
 		bne.w	TriggerCompleteOnD0

@@ -83,7 +83,7 @@ j_CopyBasePalleteToActivePalette:		  ; CODE XREF: sub_620A+444p
 ; Attributes: thunk
 
 j_QueueFullPaletteDMA:				  ; CODE XREF: sub_15B88+2Cp
-						  ; sub_16602+6Cp ...
+						  ; UpdatePlayerStatusEffects+6Cp ...
 		jmp	(QueueFullPaletteDMA).l
 ; End of function j_QueueFullPaletteDMA
 
@@ -683,7 +683,7 @@ sub_3FE:					  ; CODE XREF: LoadPlayerSpecialAnimation+188p
 
 sub_404:					  ; CODE XREF: ROM:0001273Cp
 						  ; ROM:00012792p ...
-		jmp	(sub_249A).l
+		jmp	(QueueScrollUpdates).l
 ; End of function sub_404
 
 

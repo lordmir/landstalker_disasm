@@ -467,9 +467,9 @@ HandleFloorSwamp:				  ; CODE XREF: sub_604C+64j
 loc_6464:					  ; CODE XREF: sub_620A+24Aj
 		bsr.w	loc_667C
 		bcc.s	locret_6480
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	locret_6480
-		move.b	#$80,(byte_FF1143).l
+		move.b	#$80,(g_PlayerPendingHit).l
 		move.w	d1,(Player_AttackStrength).l
 
 locret_6480:					  ; CODE XREF: sub_620A+244j
@@ -674,7 +674,7 @@ ProcessActionButton:				  ; CODE XREF: GameLoop+20p
 		and.b	d1,(g_SwordButtonMask).l
 		move.b	(byte_FF1133).l,d0
 		bne.w	loc_674E
-		move.b	(byte_FF113F).l,d0
+		move.b	(g_SwordSwingFrame).l,d0
 		bne.w	loc_6B30
 		tst.b	(g_SwordButtonMask).l
 		bne.w	UpdateSwordCharge
@@ -741,7 +741,7 @@ loc_674E:					  ; CODE XREF: ProcessActionButton+1Ej
 		move.b	d0,(byte_FF1133).l
 		cmpi.b	#$02,d0
 		bne.s	loc_6782
-		bset	#$05,Flags1(a1,d1.w)
+		bset	#$05,StateFlags(a1,d1.w)
 
 loc_6782:					  ; CODE XREF: ProcessActionButton+CEj
 		andi.w	#$FF3F,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
@@ -796,8 +796,8 @@ loc_67B0:					  ; CODE XREF: ProcessActionButton+EEj
 		cmpi.b	#$10,d0
 		bcs.w	loc_69FA
 		bne.s	loc_67D6
-		bset	#$06,Flags1(a1,d1.w)
-		bclr	#$05,Flags1(a1,d1.w)
+		bset	#$06,StateFlags(a1,d1.w)
+		bclr	#$05,StateFlags(a1,d1.w)
 
 loc_67D6:					  ; CODE XREF: ProcessActionButton+11Cj
 		andi.w	#$FF3F,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
@@ -882,9 +882,9 @@ loc_6880:					  ; CODE XREF: ProcessActionButton+176j
 		move.b	Height(a1,d1.w),d2
 		sub.w	d2,d0
 		move.w	d0,(Player_HitBoxZEnd).l
-		bclr	#$06,Flags1(a1,d1.w)
+		bclr	#$06,StateFlags(a1,d1.w)
 		bclr	#$07,FallRate(a1,d1.w)
-		bset	#$06,QueuedAction(a1,d1.w)
+		bset	#ACTBH_REFRESH,QueuedAction(a1,d1.w)
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		lsr.b	#$05,d0
@@ -988,7 +988,7 @@ loc_6996:					  ; CODE XREF: ProcessActionButton+2DEj
 		move.b	Height(a1,d1.w),d2
 		sub.b	d2,d0
 		move.w	d0,(Player_HitBoxZEnd).l
-		bclr	#$06,Flags1(a1,d1.w)
+		bclr	#$06,StateFlags(a1,d1.w)
 		bclr	#$07,FallRate(a1,d1.w)
 		move.b	#SND_Throw,d0
 		trap	#$00			  ; Trap00Handler
@@ -1125,7 +1125,7 @@ loc_6AA4:					  ; CODE XREF: sub_6A42+20j
 
 
 SwordSwing:					  ; CODE XREF: ProcessActionButton+72p
-		move.b	#$01,(byte_FF113F).l
+		move.b	#$01,(g_SwordSwingFrame).l
 		andi.w	#$F8FF,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -1136,7 +1136,7 @@ SwordSwing:					  ; CODE XREF: ProcessActionButton+72p
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		ori.w	#$0100,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
+		ori.w	#ACT_ATTACK1,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
 						  ; Bit3 - Walk	SE (+X)
@@ -1157,7 +1157,7 @@ loc_6AE2:					  ; CODE XREF: SwordSwing+1Ej
 		dc.w SND_SwordSwing
 ; ---------------------------------------------------------------------------
 		clr.w	d2
-		cmpi.w	#$3200,(g_SwordCharge_0).l
+		cmpi.w	#$3200,(g_SwordChargeMeter).l
 		bcs.s	loc_6B28
 		move.b	(g_EquippedSword).l,d1
 		cmpi.b	#ITM_MAGICSWORD,d1
@@ -1185,7 +1185,7 @@ loc_6B24:					  ; CODE XREF: SwordSwing+62j
 
 loc_6B28:					  ; CODE XREF: SwordSwing+3Ej
 						  ; SwordSwing+50j ...
-		move.w	d2,(g_MagicSwordEffect).l
+		move.w	d2,(g_ChargedSwordW).l
 		rts
 ; End of function SwordSwing
 
@@ -1194,7 +1194,7 @@ loc_6B28:					  ; CODE XREF: SwordSwing+3Ej
 
 loc_6B30:					  ; CODE XREF: ProcessActionButton+28j
 		addq.b	#$01,d0
-		move.b	d0,(byte_FF113F).l
+		move.b	d0,(g_SwordSwingFrame).l
 		andi.w	#$F8FF,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -1205,7 +1205,7 @@ loc_6B30:					  ; CODE XREF: ProcessActionButton+28j
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		ori.w	#$0100,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
+		ori.w	#ACT_ATTACK1,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
 						  ; Bit3 - Walk	SE (+X)
@@ -1229,7 +1229,7 @@ loc_6B30:					  ; CODE XREF: ProcessActionButton+28j
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		ori.w	#$0200,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
+		ori.w	#ACT_ATTACK2,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
 						  ; Bit3 - Walk	SE (+X)
@@ -1251,7 +1251,7 @@ loc_6B30:					  ; CODE XREF: ProcessActionButton+28j
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		ori.w	#$0300,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
+		ori.w	#ACT_ATTACK3,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
 						  ; Bit3 - Walk	SE (+X)
@@ -1273,7 +1273,7 @@ loc_6B30:					  ; CODE XREF: ProcessActionButton+28j
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		ori.w	#$0400,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
+		ori.w	#ACT_ATTACK4,(Player_Action).l  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
 						  ; Bit3 - Walk	SE (+X)
@@ -1297,7 +1297,7 @@ loc_6B94:					  ; CODE XREF: ProcessActionButton+4A4j
 						  ; Bit8-Bit11 - Sword swing, attack
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
-		clr.b	(byte_FF113F).l
+		clr.b	(g_SwordSwingFrame).l
 
 loc_6BA2:					  ; CODE XREF: ProcessActionButton+4A0j
 						  ; ProcessActionButton+4BAj ...
@@ -1419,7 +1419,7 @@ CheckPickUpEntity:				  ; CODE XREF: ProcessActionButton+4Cp
 		lea	(Player_X).l,a5
 		bsr.w	sub_3456
 		bcc.s	loc_6CC6
-		btst	#$05,Flags2(a1)
+		btst	#$05,InteractFlags(a1)
 		bne.w	loc_6DCA
 
 loc_6CC6:					  ; CODE XREF: CheckPickUpEntity+Aj
@@ -1429,11 +1429,11 @@ loc_6CC6:					  ; CODE XREF: CheckPickUpEntity+Aj
 loc_6CCE:					  ; CODE XREF: CheckPickUpEntity+60j
 		tst.w	(a4)
 		bmi.s	loc_6D14
-		btst	#$00,Flags1(a4)
+		btst	#$00,StateFlags(a4)
 		bne.s	loc_6D0C
 		tst.w	SpriteUnderneath(a4)
 		bne.s	loc_6D0C
-		btst	#$05,Flags2(a4)
+		btst	#$05,InteractFlags(a4)
 		beq.s	loc_6D0C
 		cmpi.b	#$10,BehavCmd(a4)
 		beq.s	loc_6D0C
@@ -1458,7 +1458,7 @@ loc_6D14:					  ; CODE XREF: CheckPickUpEntity+20j
 loc_6D1A:					  ; CODE XREF: CheckPickUpEntity+E4j
 		tst.w	(a0)
 		bmi.s	loc_6D98
-		btst	#$05,Flags2(a0)
+		btst	#$05,InteractFlags(a0)
 		beq.s	loc_6D90
 		cmpi.b	#$10,BehavCmd(a0)
 		beq.s	loc_6D90
@@ -1470,7 +1470,7 @@ loc_6D1A:					  ; CODE XREF: CheckPickUpEntity+E4j
 		bne.s	loc_6D90
 
 loc_6D42:					  ; CODE XREF: CheckPickUpEntity+8Aj
-		btst	#$04,Flags2(a0)
+		btst	#$04,InteractFlags(a0)
 		beq.s	loc_6D6C
 		movem.w	d0-d1,-(sp)
 		move.b	RotationAndSize(a0),d0
@@ -1513,7 +1513,7 @@ loc_6D98:					  ; CODE XREF: CheckPickUpEntity+6Cj
 		clr.w	d0
 		move.b	Height(a4),d0
 		sub.w	d0,HitBoxZEnd(a5)
-		btst	#$05,Flags2(a1)
+		btst	#$05,InteractFlags(a1)
 		bne.s	loc_6DCA
 
 loc_6DC6:					  ; CODE XREF: CheckPickUpEntity+ECj
@@ -1532,10 +1532,10 @@ loc_6DCA:					  ; CODE XREF: CheckPickUpEntity+12j
 loc_6DDC:					  ; CODE XREF: CheckPickUpEntity+58j
 						  ; CheckPickUpEntity+102j
 		move.b	#$01,(byte_FF1133).l
-		move.l	BehaviourLUTPtr(a4),Unk5E(a4)
-		move.b	BehavParam(a4),Unk67(a4)
-		move.b	BehavCmd(a4),Unk69(a4)
-		move.b	Speed(a4),Unk49(a4)
+		move.l	BehaviourLUTPtr(a4),SavedBehaviourLUTPtr(a4)
+		move.b	BehavParam(a4),SavedBehavParam(a4)
+		move.b	BehavCmd(a4),SavedBehavCmd(a4)
+		move.b	Speed(a4),SavedSpeed(a4)
 		suba.l	#Player_X,a4
 		move.w	a4,(g_CarriedEntity).l
 		clr.b	(g_Controller1State).l
@@ -1587,9 +1587,9 @@ loc_6E58:					  ; CODE XREF: CheckTalk+8Cj
 						  ; CheckTalk+C2j
 		tst.w	(a0)
 		bmi.s	loc_6EB0
-		btst	#$04,Flags2(a0)
+		btst	#$04,InteractFlags(a0)
 		beq.s	loc_6EA8
-		btst	#$00,Flags1(a0)
+		btst	#$00,StateFlags(a0)
 		bne.s	loc_6EA8
 		movea.w	d2,a5
 		cmpa.w	(a0,d1.w),a5
@@ -1661,7 +1661,7 @@ loc_6EF6:					  ; CODE XREF: CheckTalk+92j
 		move.b	Dialogue(a0),d0
 		lsr.b	#$02,d0
 		move.b	d0,(g_currentSpeakerScriptID).l
-		btst	#$00,Flags2(a0)
+		btst	#$00,InteractFlags(a0)
 		bne.w	loc_6FFA
 		andi.b	#$3F,RotationAndSize(a0)
 		move.b	(Player_RotationAndSize).l,d0
@@ -1783,7 +1783,7 @@ loc_702C:					  ; CODE XREF: sub_701A+Cj
 		andi.b	#$40,d0
 		lsr.b	#$03,d0
 		or.b	d0,TileSource(a0)
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		rts
 ; End of function sub_701A
 
@@ -1800,7 +1800,7 @@ loc_7058:					  ; CODE XREF: CheckOpenChest+4Ej
 		bmi.s	loc_70A4
 		cmpi.b	#SpriteB_Chest,SpriteGraphic(a0)
 		bne.s	loc_709C
-		btst	#$00,Flags1(a0)
+		btst	#$00,StateFlags(a0)
 		bne.s	loc_709C
 		cmp.w	(a0,d1.w),d2
 		beq.s	loc_7078
@@ -1917,7 +1917,7 @@ loc_7190:					  ; CODE XREF: CheckOpenChest+C2j
 loc_719C:					  ; CODE XREF: CheckOpenChest+10Ej
 						  ; CheckOpenChest+122j
 		move.w	#$000C,AnimationFrame(a4)
-		ori.b	#$80,Unk0A(a4)
+		ori.b	#$80,AnimCtrl(a4)
 		bsr.w	LoadSprites
 		bsr.w	sub_9DA2
 		bsr.w	FlushDMACopyQueue
@@ -1999,7 +1999,7 @@ sub_7234:					  ; CODE XREF: CheckOpenChest+17Ap
 
 sub_7250:					  ; CODE XREF: CheckOpenChest+19Ap
 						  ; CheckOpenChest+1A2p ...
-		ori.b	#$80,Unk0A(a4)
+		ori.b	#$80,AnimCtrl(a4)
 		movem.l	a4,-(sp)
 		bsr.w	LoadSprites
 		bsr.w	sub_9DA2
@@ -2040,7 +2040,7 @@ UpdatePlayerSpriteFrame:			  ; CODE XREF: sub_7274+Cj
 						  ; Bit12 - Ladder Climb
 						  ; Bit13 - Receive Damage
 		move.w	d0,(Player_AnimAction).l
-		btst	#$00,Flags2(a0)
+		btst	#$00,InteractFlags(a0)
 		bne.s	locret_72E2
 		tst.w	d0
 		beq.s	loc_72E4
@@ -2150,8 +2150,8 @@ sub_739A:					  ; CODE XREF: sub_7274:loc_72E4p
 						  ; sub_7274:PlayerPickUpp ...
 		cmp.w	d0,d2
 		beq.s	locret_73AA
-		bset	#$07,Unk0A(a0)
-		bset	#$07,Unk48(a0)
+		bset	#$07,AnimCtrl(a0)
+		bset	#$07,RenderFlags(a0)
 
 locret_73AA:					  ; CODE XREF: sub_739A+2j
 		rts
@@ -2164,7 +2164,7 @@ PlayerMove:					  ; CODE XREF: sub_7274+58j
 		andi.b	#$0F,d2
 		cmp.b	d1,d2
 		beq.s	loc_73B8
-		clr.b	Unk0D(a0)
+		clr.b	AnimPhase(a0)
 
 loc_73B8:					  ; CODE XREF: sub_7274+13Ej
 		move.w	#$0008,AnimationIndex(a0)
@@ -2177,7 +2177,7 @@ loc_73B8:					  ; CODE XREF: sub_7274+13Ej
 
 loc_73D6:					  ; CODE XREF: sub_7274+150j
 						  ; sub_7274+15Aj
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		move.b	d0,d1
 		move.b	(g_PlayerSpeed+1).l,d7
 		bne.s	loc_73E8
@@ -2187,13 +2187,13 @@ loc_73E8:					  ; CODE XREF: sub_7274+16Ej
 		add.b	d7,d1
 		neg.b	d7
 		and.b	d7,d1
-		move.b	d1,Unk0D(a0)
+		move.b	d1,AnimPhase(a0)
 		andi.b	#$07,d0
 		bne.s	loc_7426
 		move.b	AnimationFrame1(a0),d0
 		move.b	d0,d1
 		andi.b	#$E0,AnimationFrame1(a0)
-		btst	#$01,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$01,CombatFlags(a0)
 		beq.s	loc_7410
 		subq.b	#$04,d1
 		bra.s	loc_7412
@@ -2205,12 +2205,12 @@ loc_7410:					  ; CODE XREF: sub_7274+196j
 loc_7412:					  ; CODE XREF: sub_7274+19Aj
 		andi.b	#$1C,d1
 		or.b	d1,AnimationFrame1(a0)
-		bset	#$07,Unk0A(a0)
-		bset	#$07,Unk48(a0)
+		bset	#$07,AnimCtrl(a0)
+		bset	#$07,RenderFlags(a0)
 
 loc_7426:					  ; CODE XREF: sub_7274+182j
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,Flags4(a0)		  ; Bit	0 = Invincible / Solid
+		btst	#$01,CombatFlags(a0)
 		beq.s	loc_7436
 		eori.b	#$80,d0
 
@@ -2253,7 +2253,7 @@ PlayerJump:					  ; CODE XREF: sub_7274+4Ej
 
 loc_7492:					  ; CODE XREF: sub_7274+216j
 		clr.w	AnimationIndex(a0)
-		clr.b	Unk0D(a0)
+		clr.b	AnimPhase(a0)
 		andi.b	#$C0,d0
 		beq.s	loc_74C6
 		cmpi.b	#$C0,d0
@@ -2356,15 +2356,15 @@ loc_759C:					  ; CODE XREF: sub_7274+31Ej
 		bclr	#$03,TileSource(a0)
 
 loc_75A2:					  ; CODE XREF: sub_7274+326j
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		andi.b	#$03,d0
 		bne.s	locret_75C8
-		move.b	Unk0D(a0),d0
+		move.b	AnimPhase(a0),d0
 		andi.w	#$000C,d0
 		lsr.b	#$01,d0
 		move.w	FrameNumbers(pc,d0.w),AnimationFrame(a0)
-		bset	#$07,Unk0A(a0)
-		bset	#$07,Unk48(a0)
+		bset	#$07,AnimCtrl(a0)
+		bset	#$07,RenderFlags(a0)
 
 locret_75C8:					  ; CODE XREF: sub_7274+336j
 		rts

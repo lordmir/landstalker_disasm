@@ -7,9 +7,9 @@ EnemyAI_Spinner_B:				  ; CODE XREF: ROM:001A8682j
 
 EnemyAI_Spinner_A:				  ; CODE XREF: ROM:001A867Ej
 						  ; ROM:001A86C6j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AE156
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		cmpi.b	#$10,d0
 		beq.s	loc_1AE180
 		bra.w	loc_1AE2DC
@@ -22,17 +22,17 @@ loc_1AE156:					  ; CODE XREF: ROM:001AE146j
 
 EnemyAI_Spinner:				  ; CODE XREF: ROM:EnemyAI_Spinner_Bj
 						  ; ROM:001AE394j
-		bclr	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$06,CombatFlags(a5)
+		bclr	#$00,CombatFlags(a5)
 		move.w	#$0180,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AE180:					  ; CODE XREF: ROM:001AE150j
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$00,CombatFlags(a5)
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
 		bsr.s	sub_1AE1B4
@@ -63,10 +63,10 @@ sub_1AE1B4:					  ; CODE XREF: ROM:001AE196p
 		andi.b	#$C0,d0
 		cmpi.b	#$40,d0
 		cmpi.b	#$80,d0
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -90,10 +90,10 @@ sub_1AE1F4:					  ; CODE XREF: ROM:001AE19Ap
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
 		bhi.s	loc_1AE230
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$001A,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -118,10 +118,10 @@ sub_1AE234:					  ; CODE XREF: ROM:001AE19Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00016,d7
 		bhi.s	loc_1AE270
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -142,10 +142,10 @@ sub_1AE274:					  ; CODE XREF: ROM:001AE1A4p
 		move.w	#$0008,d7
 		bsr.w	sub_1A8964
 		bcc.s	loc_1AE2D8
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; End of function sub_1AE274
@@ -172,10 +172,10 @@ sub_1AE2A0:					  ; CODE XREF: ROM:001AE1AAp
 						  ; Bit13 - Receive Damage
 		andi.b	#$07,d0
 		beq.s	loc_1AE2D8
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$017F,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -201,17 +201,17 @@ loc_1AE2DC:					  ; CODE XREF: ROM:001AE152j
 ; ---------------------------------------------------------------------------
 
 loc_1AE2F8:					  ; CODE XREF: ROM:001AE2E0j
-		cmpi.b	#$14,Unk4D(a5)
+		cmpi.b	#$14,AICounter(a5)
 		bhi.s	loc_1AE336
-		move.w	#$0500,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$0A,Unk4D(a5)
+		move.w	#ACT_ATTACK5,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$0A,AICounter(a5)
 		bcs.s	loc_1AE336
-		move.w	#$0600,QueuedAction(a5)
-		cmpi.b	#$14,Unk4D(a5)
+		move.w	#ACT_ATTACK6,QueuedAction(a5)
+		cmpi.b	#$14,AICounter(a5)
 		bcs.s	loc_1AE336
-		bset	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		bset	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$06,CombatFlags(a5)
+		bset	#$00,CombatFlags(a5)
 		move.w	#$0320,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 
@@ -223,10 +223,10 @@ loc_1AE336:					  ; CODE XREF: ROM:001AE2FEj
 
 loc_1AE33C:					  ; CODE XREF: ROM:001AE2E6j
 						  ; ROM:001AE2ECj ...
-		bset	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$05,Unk4D(a5)
+		bset	#$00,CombatFlags(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$05,AICounter(a5)
 		bcs.s	loc_1AE398
 		bne.s	loc_1AE35A
 		trap	#$00			  ; Trap00Handler
@@ -235,18 +235,18 @@ loc_1AE33C:					  ; CODE XREF: ROM:001AE2E6j
 ; ---------------------------------------------------------------------------
 
 loc_1AE35A:					  ; CODE XREF: ROM:001AE354j
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$0A,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$0A,AICounter(a5)
 		bcs.s	loc_1AE398
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$0F,Unk4D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$0F,AICounter(a5)
 		bcs.s	loc_1AE398
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$14,Unk4D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$14,AICounter(a5)
 		bcs.s	loc_1AE398
 		beq.w	EnemyAI_Spinner
 

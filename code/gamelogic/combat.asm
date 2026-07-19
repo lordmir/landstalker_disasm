@@ -1,8 +1,10 @@
-; ---------------------------------------------------------------------------
+Combat		module
 
-HandleAttack:					  ; DATA XREF: j_HandleAttackt
+; Per-tick attack processing. First clears every sprite's queued action
+; word, keeping only the layout-refresh bit.
+HandleAttack:
 		lea	(Player_X).l,a0
-		move.w	#$4000,d0
+		move.w	#ACT_REFRESH,d0
 		and.w	d0,(SPRITE_SIZE+QueuedAction)(a0)
 		and.w	d0,(2*SPRITE_SIZE+QueuedAction)(a0)
 		and.w	d0,(3*SPRITE_SIZE+QueuedAction)(a0)
@@ -19,847 +21,770 @@ HandleAttack:					  ; DATA XREF: j_HandleAttackt
 		and.w	d0,(14*SPRITE_SIZE+QueuedAction)(a0)
 		and.w	d0,(15*SPRITE_SIZE+QueuedAction)(a0)
 		lea	SPRITE_SIZE(a0),a5
-		moveq	#$0000000E,d7
-		bclr	#$00,(byte_FF1157).l
-		bne.w	loc_15CB4
+		moveq	#$E,d7
+		bclr	#$00,(g_GaiaAttackQueued).l
+		bne.w	_GaiaStatueQuake
 		move.w	QueuedAction(a0),d0
-		andi.w	#$0700,d0
-		cmpi.w	#$0200,d0
-		bcs.w	locret_16378
-		lea	word_15D0C(pc),a1
-		cmpi.w	#$0200,d0
-		beq.s	loc_15CC0
-		lea	word_15D1C(pc),a1
-		cmpi.w	#$0300,d0
-		bne.s	loc_15CC0
-		lea	word_15D14(pc),a1
-		cmpi.b	#$02,(g_SwordCharge).l
-		bne.s	loc_15CC0
-		cmpi.b	#$0B,(byte_FF113F).l
-		bne.s	loc_15CC0
-		bra.w	loc_1616E
-; ---------------------------------------------------------------------------
+		andi.w	#ACT_ATTACK_MASK,d0
+		cmpi.w	#ACT_ATTACK2,d0
+		bcs.w	_exit
+		lea	_AttackBoxSideA(pc),a1
+		cmpi.w	#ACT_ATTACK2,d0
+		beq.s	_CheckFullCharge
+		lea	_AttackBoxSideB(pc),a1
+		cmpi.w	#ACT_ATTACK3,d0
+		bne.s	_CheckFullCharge
+		lea	_AttackBoxWide(pc),a1
+		cmpi.b	#ITM_ICESWORD,(g_ChargedSword).l
+		bne.s	_CheckFullCharge
+		cmpi.b	#$0B,(g_SwordSwingFrame).l
+		bne.s	_CheckFullCharge
+		bra.w	_SpawnChargeProjectile
 
-loc_15CB4:					  ; CODE XREF: ROM:00015C70j
-		move.b	#$04,(g_SwordCharge).l
-		bra.w	loc_160B6
-; ---------------------------------------------------------------------------
+; Statue of Gaia was used (items2 sets g_GaiaAttackQueued): pretend a
+; charged Gaia Sword release and run the screen-wide quake attack.
+_GaiaStatueQuake:
+		move.b	#ITM_GAIASWORD,(g_ChargedSword).l
+		bra.w	_ScreenQuakeAttack
 
-loc_15CC0:					  ; CODE XREF: ROM:00015C8Cj
-						  ; ROM:00015C96j ...
-		lea	word_15D14(pc),a1
-		cmpi.b	#$04,(g_SwordCharge).l
-		bne.s	loc_15CDC
-		cmpi.b	#$0B,(byte_FF113F).l
-		bne.s	loc_15CDC
-		bra.w	loc_160B6
-; ---------------------------------------------------------------------------
+; Charged Gaia Sword released on swing frame $0B -> screen-wide quake;
+; otherwise fall through to the normal melee sweep.
+_CheckFullCharge:
+		lea	_AttackBoxWide(pc),a1
+		cmpi.b	#ITM_GAIASWORD,(g_ChargedSword).l
+		bne.s	_SweepAttackHitbox
+		cmpi.b	#$0B,(g_SwordSwingFrame).l
+		bne.s	_SweepAttackHitbox
+		bra.w	_ScreenQuakeAttack
 
-loc_15CDC:					  ; CODE XREF: ROM:00015CCCj
-						  ; ROM:00015CD6j
+_SweepAttackHitbox:
 		move.w	CentreY(a0),d1
 		move.w	d1,d2
 		move.w	CentreX(a0),d3
 		move.w	d3,d4
 		move.w	Z(a0),d6
 		lea	SPRITE_SIZE(a0),a5
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 		move.b	RotationAndSize(a0),d5
-		andi.b	#$C0,d5
-		beq.w	loc_15DE6
-		cmpi.b	#$80,d5
-		beq.w	loc_15EA8
-		bcs.w	loc_15F6A
-		bra.s	loc_15D24
-; ---------------------------------------------------------------------------
-word_15D0C:	dc.w $0018,$0010,$0000,$0000	  ; DATA XREF: ROM:00015C84t
-word_15D14:	dc.w $0020,$0010,$0010,$FFF8	  ; DATA XREF: ROM:00015C98t
-						  ; ROM:loc_15CC0t
-word_15D1C:	dc.w $0018,$0000,$0010,$0000	  ; DATA XREF: ROM:00015C8Et
-; ---------------------------------------------------------------------------
+		andi.b	#DIR_MASK,d5
+		beq.w	_SweepFacingNE
+		cmpi.b	#DIR_SW,d5
+		beq.w	_SweepFacingSW
+		bcs.w	_SweepFacingSE
+		bra.s	_SweepFacingNW
+; Sword hitbox extents relative to the player centre, rotated to the
+; facing direction by the four _SweepFacing chunks:
+;   {forward reach, sideways one way, sideways the other, near-edge offset}
+; SideA/SideB are mirrored one-sided sweeps, Wide covers both sides and
+; reaches $8 behind the centre. Selected by attack action at HandleAttack
+; (ACT_ATTACK2 -> SideA, ACT_ATTACK3 -> Wide, others -> SideB), but
+; _CheckFullCharge reloads _AttackBoxWide unconditionally, so in practice
+; every attack uses the Wide box and the one-sided tables are vestigial.
+_ATKBOX_FWD:	equ 0	; forward reach (accessed as plain (a1))
+_ATKBOX_SIDE1:	equ 2
+_ATKBOX_SIDE2:	equ 4
+_ATKBOX_NEAR:	equ 6
+_AttackBoxSideA:    dc.w $0018,$0010,$0000,$0000
+_AttackBoxWide:     dc.w $0020,$0010,$0010,$FFF8
+_AttackBoxSideB:    dc.w $0018,$0000,$0010,$0000
 
-loc_15D24:					  ; CODE XREF: ROM:00015D0Aj
-		sub.w	$00000004(a1),d1
-		add.w	$00000002(a1),d2
-		add.w	$00000006(a1),d3
+_SweepFacingNW:
+		sub.w	_ATKBOX_SIDE2(a1),d1
+		add.w	_ATKBOX_SIDE1(a1),d2
+		add.w	_ATKBOX_NEAR(a1),d3
 		sub.w	(a1),d4
 
-loc_15D32:					  ; CODE XREF: ROM:00015DE0j
+_sweepLoopNW:
 		move.b	(a5),d5
-		bmi.w	locret_15DE4
+		bmi.w	_sweepDoneNW
 		cmpi.b	#$7F,d5
-		beq.w	loc_15DDC
-		move.b	Flags2(a5),d0
+		beq.w	_sweepNextNW
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.w	loc_15DDC
+		bne.w	_sweepNextNW
 		cmp.w	HitBoxYStart(a5),d2
-		bcs.w	loc_15DDC
+		bcs.w	_sweepNextNW
 		cmp.w	HitBoxYEnd(a5),d1
-		bhi.s	loc_15DDC
+		bhi.s	_sweepNextNW
 		cmp.w	HitBoxXStart(a5),d3
-		bcs.s	loc_15DDC
+		bcs.s	_sweepNextNW
 		cmp.w	HitBoxXEnd(a5),d4
-		bhi.s	loc_15DDC
+		bhi.s	_sweepNextNW
 		cmp.w	HitBoxZEnd(a5),d6
-		bcc.s	loc_15DDC
+		bcc.s	_sweepNextNW
 		addi.w	#$001F,d6
 		cmp.w	Z(a5),d6
-		bcc.s	loc_15D80		  ; Invincible / Solid
+		bcc.s	_sweepHitNW
 
-loc_15D7A:					  ; CODE XREF: ROM:00015D94j
+_sweepZRestoreNW:
 		subi.w	#$001F,d6
-		bra.s	loc_15DDC
-; ---------------------------------------------------------------------------
+		bra.s	_sweepNextNW
 
-loc_15D80:					  ; CODE XREF: ROM:00015D78j
-		btst	#$00,Flags4(a5)		  ; Invincible / Solid
-		beq.s	loc_15D96
+_sweepHitNW:
+		btst	#$00,CombatFlags(a5)
+		beq.s	_sweepDamageNW
 		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
-; ---------------------------------------------------------------------------
-		bra.s	loc_15D7A
-; ---------------------------------------------------------------------------
+		bra.s	_sweepZRestoreNW
 
-loc_15D96:					  ; CODE XREF: ROM:00015D86j
+_sweepDamageNW:
 		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
 		sub.w	d0,CurrentHealth(a5)
-		bhi.s	loc_15DAA
-		bsr.w	sub_16134
-		bra.s	loc_15DDC
-; ---------------------------------------------------------------------------
+		bhi.s	_sweepHitstunNW
+		bsr.w	MarkEnemyDead
+		bra.s	_sweepNextNW
 
-loc_15DAA:					  ; CODE XREF: ROM:00015DA2j
-		bsr.w	sub_1602A
-		move.w	#Unk0D,BehaviourLUTIndex(a5)
+_sweepHitstunNW:
+		bsr.w	StartEnemyHitstun
+		move.w	#$000D,BehaviourLUTIndex(a5)
 		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
-		bne.s	loc_15DC4
+		bne.s	_sweepChkGolaNW
 		move.w	#$0268,BehaviourLUTIndex(a5)
-		bra.s	loc_15DD2
-; ---------------------------------------------------------------------------
+		bra.s	_sweepBehavNW
 
-loc_15DC4:					  ; CODE XREF: ROM:00015DBAj
-		cmpi.b	#$04,SpriteGraphic(a5)
-		bne.s	loc_15DD2
+_sweepChkGolaNW:
+		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
+		bne.s	_sweepBehavNW
 		move.w	#$0364,BehaviourLUTIndex(a5)
 
-loc_15DD2:					  ; CODE XREF: ROM:00015DC2j
-						  ; ROM:00015DCAj
+_sweepBehavNW:
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyHit1
-; ---------------------------------------------------------------------------
 
-loc_15DDC:					  ; CODE XREF: ROM:00015D3Cj
-						  ; ROM:00015D4Cj ...
+_sweepNextNW:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_15D32
+		dbf	d7,_sweepLoopNW
 
-locret_15DE4:					  ; CODE XREF: ROM:00015D34j
+_sweepDoneNW:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_15DE6:					  ; CODE XREF: ROM:00015CFAj
-		add.w	$00000006(a1),d1
+_SweepFacingNE:
+		add.w	_ATKBOX_NEAR(a1),d1
 		sub.w	(a1),d2
-		sub.w	$00000004(a1),d3
-		add.w	$00000002(a1),d4
+		sub.w	_ATKBOX_SIDE2(a1),d3
+		add.w	_ATKBOX_SIDE1(a1),d4
 
-loc_15DF4:					  ; CODE XREF: ROM:00015EA2j
+_sweepLoopNE:
 		move.b	(a5),d5
-		bmi.w	locret_15EA6
+		bmi.w	_sweepDoneNE
 		cmpi.b	#$7F,d5
-		beq.w	loc_15E9E
-		move.b	$0000000C(a5),d0
+		beq.w	_sweepNextNE
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.w	loc_15E9E
-		cmp.w	$0000001E(a5),d2
-		bhi.w	loc_15E9E
-		cmp.w	$0000001C(a5),d1
-		bcs.s	loc_15E9E
-		cmp.w	$0000001A(a5),d3
-		bhi.s	loc_15E9E
-		cmp.w	$00000018(a5),d4
-		bcs.s	loc_15E9E
-		cmp.w	$00000054(a5),d6
-		bcc.s	loc_15E9E
+		bne.w	_sweepNextNE
+		cmp.w	HitBoxYEnd(a5),d2
+		bhi.w	_sweepNextNE
+		cmp.w	HitBoxYStart(a5),d1
+		bcs.s	_sweepNextNE
+		cmp.w	HitBoxXEnd(a5),d3
+		bhi.s	_sweepNextNE
+		cmp.w	HitBoxXStart(a5),d4
+		bcs.s	_sweepNextNE
+		cmp.w	HitBoxZEnd(a5),d6
+		bcc.s	_sweepNextNE
 		addi.w	#$001F,d6
-		cmp.w	$00000012(a5),d6
-		bcc.s	loc_15E42
+		cmp.w	Z(a5),d6
+		bcc.s	_sweepHitNE
 
-loc_15E3C:					  ; CODE XREF: ROM:00015E56j
+_sweepZRestoreNE:
 		subi.w	#$001F,d6
-		bra.s	loc_15E9E
-; ---------------------------------------------------------------------------
+		bra.s	_sweepNextNE
 
-loc_15E42:					  ; CODE XREF: ROM:00015E3Aj
-		btst	#$00,$00000038(a5)
-		beq.s	loc_15E58
+_sweepHitNE:
+		btst	#$00,CombatFlags(a5)
+		beq.s	_sweepDamageNE
 		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
-; ---------------------------------------------------------------------------
-		bra.s	loc_15E3C
-; ---------------------------------------------------------------------------
+		bra.s	_sweepZRestoreNE
 
-loc_15E58:					  ; CODE XREF: ROM:00015E48j
-		move.w	$0000007C(a5),d0
+_sweepDamageNE:
+		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
-		sub.w	d0,$0000003E(a5)
-		bhi.s	loc_15E6C
-		bsr.w	sub_16134
-		bra.s	loc_15E9E
-; ---------------------------------------------------------------------------
+		sub.w	d0,CurrentHealth(a5)
+		bhi.s	_sweepHitstunNE
+		bsr.w	MarkEnemyDead
+		bra.s	_sweepNextNE
 
-loc_15E6C:					  ; CODE XREF: ROM:00015E64j
-		bsr.w	sub_1602A
-		move.w	#$000A,$00000034(a5)
-		cmpi.b	#$11,$0000000B(a5)
-		bne.s	loc_15E86
-		move.w	#$0268,$00000034(a5)
-		bra.s	loc_15E94
-; ---------------------------------------------------------------------------
+_sweepHitstunNE:
+		bsr.w	StartEnemyHitstun
+		move.w	#$000A,BehaviourLUTIndex(a5)
+		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
+		bne.s	_sweepChkGolaNE
+		move.w	#$0268,BehaviourLUTIndex(a5)
+		bra.s	_sweepBehavNE
 
-loc_15E86:					  ; CODE XREF: ROM:00015E7Cj
-		cmpi.b	#$04,$0000000B(a5)
-		bne.s	loc_15E94
-		move.w	#$0364,$00000034(a5)
+_sweepChkGolaNE:
+		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
+		bne.s	_sweepBehavNE
+		move.w	#$0364,BehaviourLUTIndex(a5)
 
-loc_15E94:					  ; CODE XREF: ROM:00015E84j
-						  ; ROM:00015E8Cj
+_sweepBehavNE:
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyHit1
-; ---------------------------------------------------------------------------
 
-loc_15E9E:					  ; CODE XREF: ROM:00015DFEj
-						  ; ROM:00015E0Ej ...
-		lea	$00000080(a5),a5
-		dbf	d7,loc_15DF4
+_sweepNextNE:
+		lea	SPRITE_SIZE(a5),a5
+		dbf	d7,_sweepLoopNE
 
-locret_15EA6:					  ; CODE XREF: ROM:00015DF6j
+_sweepDoneNE:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_15EA8:					  ; CODE XREF: ROM:00015D02j
-		sub.w	$00000006(a1),d1
+_SweepFacingSW:
+		sub.w	_ATKBOX_NEAR(a1),d1
 		add.w	(a1),d2
-		sub.w	$00000004(a1),d3
-		add.w	$00000002(a1),d4
+		sub.w	_ATKBOX_SIDE2(a1),d3
+		add.w	_ATKBOX_SIDE1(a1),d4
 
-loc_15EB6:					  ; CODE XREF: ROM:00015F64j
+_sweepLoopSW:
 		move.b	(a5),d5
-		bmi.w	locret_15F68
+		bmi.w	_sweepDoneSW
 		cmpi.b	#$7F,d5
-		beq.w	loc_15F60
-		move.b	$0000000C(a5),d0
+		beq.w	_sweepNextSW
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.w	loc_15F60
-		cmp.w	$0000001C(a5),d2
-		bcs.w	loc_15F60
-		cmp.w	$0000001E(a5),d1
-		bhi.s	loc_15F60
-		cmp.w	$0000001A(a5),d3
-		bhi.s	loc_15F60
-		cmp.w	$00000018(a5),d4
-		bcs.s	loc_15F60
-		cmp.w	$00000054(a5),d6
-		bcc.s	loc_15F60
+		bne.w	_sweepNextSW
+		cmp.w	HitBoxYStart(a5),d2
+		bcs.w	_sweepNextSW
+		cmp.w	HitBoxYEnd(a5),d1
+		bhi.s	_sweepNextSW
+		cmp.w	HitBoxXEnd(a5),d3
+		bhi.s	_sweepNextSW
+		cmp.w	HitBoxXStart(a5),d4
+		bcs.s	_sweepNextSW
+		cmp.w	HitBoxZEnd(a5),d6
+		bcc.s	_sweepNextSW
 		addi.w	#$001F,d6
-		cmp.w	$00000012(a5),d6
-		bcc.s	loc_15F04
+		cmp.w	Z(a5),d6
+		bcc.s	_sweepHitSW
 
-loc_15EFE:					  ; CODE XREF: ROM:00015F18j
+_sweepZRestoreSW:
 		subi.w	#$001F,d6
-		bra.s	loc_15F60
-; ---------------------------------------------------------------------------
+		bra.s	_sweepNextSW
 
-loc_15F04:					  ; CODE XREF: ROM:00015EFCj
-		btst	#$00,$00000038(a5)
-		beq.s	loc_15F1A
+_sweepHitSW:
+		btst	#$00,CombatFlags(a5)
+		beq.s	_sweepDamageSW
 		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
-; ---------------------------------------------------------------------------
-		bra.s	loc_15EFE
-; ---------------------------------------------------------------------------
+		bra.s	_sweepZRestoreSW
 
-loc_15F1A:					  ; CODE XREF: ROM:00015F0Aj
-		move.w	$0000007C(a5),d0
+_sweepDamageSW:
+		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
-		sub.w	d0,$0000003E(a5)
-		bhi.s	loc_15F2E
-		bsr.w	sub_16134
-		bra.s	loc_15F60
-; ---------------------------------------------------------------------------
+		sub.w	d0,CurrentHealth(a5)
+		bhi.s	_sweepHitstunSW
+		bsr.w	MarkEnemyDead
+		bra.s	_sweepNextSW
 
-loc_15F2E:					  ; CODE XREF: ROM:00015F26j
-		bsr.w	sub_1602A
-		move.w	#$000C,$00000034(a5)
-		cmpi.b	#$11,$0000000B(a5)
-		bne.s	loc_15F48
-		move.w	#$0268,$00000034(a5)
-		bra.s	loc_15F56
-; ---------------------------------------------------------------------------
+_sweepHitstunSW:
+		bsr.w	StartEnemyHitstun
+		move.w	#$000C,BehaviourLUTIndex(a5)
+		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
+		bne.s	_sweepChkGolaSW
+		move.w	#$0268,BehaviourLUTIndex(a5)
+		bra.s	_sweepBehavSW
 
-loc_15F48:					  ; CODE XREF: ROM:00015F3Ej
-		cmpi.b	#$04,$0000000B(a5)
-		bne.s	loc_15F56
-		move.w	#$0364,$00000034(a5)
+_sweepChkGolaSW:
+		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
+		bne.s	_sweepBehavSW
+		move.w	#$0364,BehaviourLUTIndex(a5)
 
-loc_15F56:					  ; CODE XREF: ROM:00015F46j
-						  ; ROM:00015F4Ej
+_sweepBehavSW:
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyHit1
-; ---------------------------------------------------------------------------
 
-loc_15F60:					  ; CODE XREF: ROM:00015EC0j
-						  ; ROM:00015ED0j ...
-		lea	$00000080(a5),a5
-		dbf	d7,loc_15EB6
+_sweepNextSW:
+		lea	SPRITE_SIZE(a5),a5
+		dbf	d7,_sweepLoopSW
 
-locret_15F68:					  ; CODE XREF: ROM:00015EB8j
+_sweepDoneSW:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_15F6A:					  ; CODE XREF: ROM:00015D06j
-		sub.w	$00000004(a1),d1
-		add.w	$00000002(a1),d2
-		sub.w	$00000006(a1),d3
+_SweepFacingSE:
+		sub.w	_ATKBOX_SIDE2(a1),d1
+		add.w	_ATKBOX_SIDE1(a1),d2
+		sub.w	_ATKBOX_NEAR(a1),d3
 		add.w	(a1),d4
 
-loc_15F78:					  ; CODE XREF: ROM:00016024j
+_sweepLoopSE:
 		move.b	(a5),d5
-		bmi.w	locret_16028
+		bmi.w	_sweepDoneSE
 		cmpi.b	#$7F,d5
-		beq.w	loc_16020
-		move.b	$0000000C(a5),d0
+		beq.w	_sweepNextSE
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.w	loc_16020
-		cmp.w	$0000001C(a5),d2
-		bcs.w	loc_16020
-		cmp.w	$0000001E(a5),d1
-		bhi.s	loc_16020
-		cmp.w	$0000001A(a5),d3
-		bhi.s	loc_16020
-		cmp.w	$00000018(a5),d4
-		bcs.s	loc_16020
-		cmp.w	$00000054(a5),d6
-		bcc.s	loc_16020
+		bne.w	_sweepNextSE
+		cmp.w	HitBoxYStart(a5),d2
+		bcs.w	_sweepNextSE
+		cmp.w	HitBoxYEnd(a5),d1
+		bhi.s	_sweepNextSE
+		cmp.w	HitBoxXEnd(a5),d3
+		bhi.s	_sweepNextSE
+		cmp.w	HitBoxXStart(a5),d4
+		bcs.s	_sweepNextSE
+		cmp.w	HitBoxZEnd(a5),d6
+		bcc.s	_sweepNextSE
 		addi.w	#$001F,d6
-		cmp.w	$00000012(a5),d6
-		bcc.s	loc_15FC6
+		cmp.w	Z(a5),d6
+		bcc.s	_sweepHitSE
 
-loc_15FC0:					  ; CODE XREF: ROM:00015FDAj
+_sweepZRestoreSE:
 		subi.w	#$001F,d6
-		bra.s	loc_16020
-; ---------------------------------------------------------------------------
+		bra.s	_sweepNextSE
 
-loc_15FC6:					  ; CODE XREF: ROM:00015FBEj
-		btst	#$00,$00000038(a5)
-		beq.s	loc_15FDC
+_sweepHitSE:
+		btst	#$00,CombatFlags(a5)
+		beq.s	_sweepDamageSE
 		bset	#$03,(g_AdditionalFlags+8).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordHit
-; ---------------------------------------------------------------------------
-		bra.s	loc_15FC0
-; ---------------------------------------------------------------------------
+		bra.s	_sweepZRestoreSE
 
-loc_15FDC:					  ; CODE XREF: ROM:00015FCCj
-		move.w	$0000007C(a5),d0
+_sweepDamageSE:
+		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
-		sub.w	d0,$0000003E(a5)
-		bhi.s	loc_15FF0
-		bsr.w	sub_16134
-		bra.s	loc_16020
-; ---------------------------------------------------------------------------
+		sub.w	d0,CurrentHealth(a5)
+		bhi.s	_sweepHitstunSE
+		bsr.w	MarkEnemyDead
+		bra.s	_sweepNextSE
 
-loc_15FF0:					  ; CODE XREF: ROM:00015FE8j
-		bsr.s	sub_1602A
-		move.w	#$000B,$00000034(a5)
-		cmpi.b	#$11,$0000000B(a5)
-		bne.s	loc_16008
-		move.w	#$0268,$00000034(a5)
-		bra.s	loc_16016
-; ---------------------------------------------------------------------------
+_sweepHitstunSE:
+		bsr.s	StartEnemyHitstun
+		move.w	#$000B,BehaviourLUTIndex(a5)
+		cmpi.b	#SpriteB_GhostGen,SpriteGraphic(a5)
+		bne.s	_sweepChkGolaSE
+		move.w	#$0268,BehaviourLUTIndex(a5)
+		bra.s	_sweepBehavSE
 
-loc_16008:					  ; CODE XREF: ROM:00015FFEj
-		cmpi.b	#$04,$0000000B(a5)
-		bne.s	loc_16016
-		move.w	#$0364,$00000034(a5)
+_sweepChkGolaSE:
+		cmpi.b	#SpriteB_Gola,SpriteGraphic(a5)
+		bne.s	_sweepBehavSE
+		move.w	#$0364,BehaviourLUTIndex(a5)
 
-loc_16016:					  ; CODE XREF: ROM:00016006j
-						  ; ROM:0001600Ej
+_sweepBehavSE:
 		jsr	(j_LoadSpriteBehaviour).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyHit1
-; ---------------------------------------------------------------------------
 
-loc_16020:					  ; CODE XREF: ROM:00015F82j
-						  ; ROM:00015F92j ...
-		lea	$00000080(a5),a5
-		dbf	d7,loc_15F78
+_sweepNextSE:
+		lea	SPRITE_SIZE(a5),a5
+		dbf	d7,_sweepLoopSE
 
-locret_16028:					  ; CODE XREF: ROM:00015F7Aj
+_sweepDoneSE:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
+; Puts an enemy into hitstun; if a charged sword landed the hit, records
+; which one in RenderFlags bits 0-2 (Magic/Ice/Thunder) so
+; BuildVdpSpriteEntry overlays that sword's hit effect.
+StartEnemyHitstun:
+		bset	#ACTBH_DAMAGE,QueuedAction(a5)
+		clr.b	AIState(a5)
+		bset	#$01,InteractFlags(a5)
+		andi.b	#$F8,RenderFlags(a5)
+		move.b	(g_ChargedSword).l,d0
+		beq.s	_hitstunDone
+		cmpi.b	#ITM_MAGICSWORD,d0
+		bne.s	_notMagic
+		bset	#$00,RenderFlags(a5)
+		bra.s	_hitstunDone
 
-sub_1602A:					  ; CODE XREF: ROM:loc_15DAAp
-						  ; ROM:loc_15E6Cp ...
-		bset	#$05,QueuedAction(a5)
-		clr.b	ChestIndex(a5)
-		bset	#$01,Flags2(a5)
-		andi.b	#$F8,Unk48(a5)
-		move.b	(g_SwordCharge).l,d0
-		beq.s	locret_16074
-		cmpi.b	#$01,d0
-		bne.s	loc_16056
-		bset	#$00,Unk48(a5)
-		bra.s	locret_16074
-; ---------------------------------------------------------------------------
+_notMagic:
+		cmpi.b	#ITM_THUNDERSWORD,d0
+		bne.s	_notThunder
+		bset	#$02,RenderFlags(a5)
+		bra.s	_hitstunDone
 
-loc_16056:					  ; CODE XREF: sub_1602A+22j
-		cmpi.b	#$03,d0
-		bne.s	loc_16064
-		bset	#$02,Unk48(a5)
-		bra.s	locret_16074
-; ---------------------------------------------------------------------------
+_notThunder:
+		cmpi.b	#ITM_ICESWORD,d0
+		bne.s	_notIce
+		bset	#$01,RenderFlags(a5)
+		bra.s	_hitstunDone
 
-loc_16064:					  ; CODE XREF: sub_1602A+30j
-		cmpi.b	#$02,d0
-		bne.s	loc_16072
-		bset	#$01,Unk48(a5)
-		bra.s	locret_16074
-; ---------------------------------------------------------------------------
-
-loc_16072:					  ; CODE XREF: sub_1602A+3Ej
+_notIce:
 		nop
 
-locret_16074:					  ; CODE XREF: sub_1602A+1Cj
-						  ; sub_1602A+2Aj ...
+_hitstunDone:
 		rts
-; End of function sub_1602A
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_16076:					  ; DATA XREF: sub_103C4t
+; Returns carry set if any vulnerable hostile enemy is present in the
+; room (ignoring respawning ghosts, i.e. guaranteed-drop-of-nothing
+; sprites). Used by the Statue of Gaia to refuse activation otherwise.
+AnyHostileEnemies:
 		lea	(Sprite1_X).l,a5
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_1607E:					  ; CODE XREF: sub_16076+32j
+_anyLoop:
 		move.b	(a5),d5
-		bmi.s	loc_160AC
+		bmi.s	_anyNone
 		cmpi.b	#$7F,d5
-		beq.s	loc_160A4
-		move.b	Flags2(a5),d0
+		beq.s	_anyNext
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.s	loc_160A4
-		cmpi.w	#$0001,InitFlags4_DropProbability(a5)
-		bne.s	loc_160B0
+		bne.s	_anyNext
+		cmpi.w	#$0001,ItemDropProbability(a5)
+		bne.s	_anyFound
 		tst.b	GoldOrChestContents(a5)
-		bne.s	loc_160B0
+		bne.s	_anyFound
 
-loc_160A4:					  ; CODE XREF: sub_16076+10j
-						  ; sub_16076+1Ej
+_anyNext:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_1607E
+		dbf	d7,_anyLoop
 
-loc_160AC:					  ; CODE XREF: sub_16076+Aj
+_anyNone:
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_160B0:					  ; CODE XREF: sub_16076+26j
-						  ; sub_16076+2Cj
+_anyFound:
 		ori	#$01,ccr
 		rts
-; End of function sub_16076
 
-; ---------------------------------------------------------------------------
 
-loc_160B6:					  ; CODE XREF: ROM:00015CBCj
-						  ; ROM:00015CD8j
+; Damage every on-screen vulnerable enemy (charged Gaia Sword release or
+; Statue of Gaia), then run GaiaEffect if anything was hit. The Lava
+; Room ($20A) triggers GaiaEffect even with no enemies hit.
+_ScreenQuakeAttack:
 		clr.b	d6
 
-loc_160B8:					  ; CODE XREF: ROM:0001611Aj
+_quakeLoop:
 		move.b	(a5),d5
-		bmi.w	loc_1611E		  ; Lava Room
+		bmi.w	_quakeCheckRoom
 		cmpi.b	#$7F,d5
-		beq.s	loc_16116
-		move.b	$0000000C(a5),d0
+		beq.s	_quakeNext
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.s	loc_16116
-		cmpi.w	#$0001,$00000078(a5)
-		bne.s	loc_160E0
-		tst.b	$00000036(a5)
-		beq.s	loc_16116
+		bne.s	_quakeNext
+		cmpi.w	#$0001,ItemDropProbability(a5)
+		bne.s	_quakeDamage
+		tst.b	GoldOrChestContents(a5)
+		beq.s	_quakeNext
 
-loc_160E0:					  ; CODE XREF: ROM:000160D8j
-		tst.l	$0000000E(a5)
-		beq.s	loc_16112
-		btst	#$00,$00000038(a5)
-		bne.s	loc_16112
-		move.w	$0000007C(a5),d0
+_quakeDamage:
+		tst.l	ScreenX(a5)
+		beq.s	_quakeMark
+		btst	#$00,CombatFlags(a5)
+		bne.s	_quakeMark
+		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
-		sub.w	d0,$0000003E(a5)
-		bhi.s	loc_16102
-		bsr.w	sub_16134
-		bra.s	loc_16112
-; ---------------------------------------------------------------------------
+		sub.w	d0,CurrentHealth(a5)
+		bhi.s	_quakeHitstun
+		bsr.w	MarkEnemyDead
+		bra.s	_quakeMark
 
-loc_16102:					  ; CODE XREF: ROM:000160FAj
-		bsr.w	sub_1602A
+_quakeHitstun:
+		bsr.w	StartEnemyHitstun
 		move.w	#$00E3,BehaviourLUTIndex(a5)
 		jsr	(j_LoadSpriteBehaviour).l
 
-loc_16112:					  ; CODE XREF: ROM:000160E4j
-						  ; ROM:000160ECj ...
+_quakeMark:
 		move.b	#$01,d6
 
-loc_16116:					  ; CODE XREF: ROM:000160C2j
-						  ; ROM:000160D0j ...
+_quakeNext:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_160B8
+		dbf	d7,_quakeLoop
 
-loc_1611E:					  ; CODE XREF: ROM:000160BAj
+_quakeCheckRoom:
 		cmpi.w	#$020A,(g_RmNum1).l	  ; Lava Room
-		beq.s	loc_1612C
+		beq.s	_quakeEffect
 		tst.b	d6
-		beq.s	locret_16132
+		beq.s	_quakeDone
 
-loc_1612C:					  ; CODE XREF: ROM:00016126j
+_quakeEffect:
 		bsr.w	GaiaEffect
 		rts
-; ---------------------------------------------------------------------------
 
-locret_16132:					  ; CODE XREF: ROM:0001612Aj
+_quakeDone:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-sub_16134:					  ; CODE XREF: ROM:00015DA4p
-						  ; ROM:00015E66p ...
-		andi.b	#$7F,Flags2(a5)
+MarkEnemyDead:
+		andi.b	#$7F,InteractFlags(a5)
 		clr.w	BehavParam(a5)
-		bset	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		clr.b	Unk4D(a5)
+		bset	#$02,CombatFlags(a5)
+		clr.b	AICounter(a5)
 		cmpi.b	#SPR_MUMMY3,SpriteType(a5)
-		bne.s	locret_1616C
-		move.w	#00100,d6
+		bne.s	_markDeadDone
+		move.w	#100,d6
 		jsr	(j_GenerateRandomNumber).l
-		cmpi.w	#00050,d7
-		bcs.s	locret_1616C
-		move.b	#$01,Unk4D(a5)
-		andi.b	#$7F,InitFlags2(a5)
+		cmpi.w	#50,d7
+		bcs.s	_markDeadDone
+		move.b	#$01,AICounter(a5)
+		andi.b	#$7F,InitInteractFlags(a5)
 
-locret_1616C:					  ; CODE XREF: sub_16134+1Aj
-						  ; sub_16134+2Aj
+_markDeadDone:
 		rts
-; End of function sub_16134
 
-; ---------------------------------------------------------------------------
 
-loc_1616E:					  ; CODE XREF: ROM:00015CB0j
-		bsr.w	sub_161E8
+; Charged Ice Sword released on swing frame $0B: spawn the ice
+; projectile in a free sprite slot in front of the player.
+_SpawnChargeProjectile:
+		bsr.w	HostileEnemiesPresent
 		tst.b	d6
-		beq.w	locret_161E6
+		beq.w	_projDone
 		jsr	(sub_19288).l
-		bcs.w	locret_161E6
+		bcs.w	_projDone
 		move.w	(Player_X).l,d0
 		move.b	(Player_RotationAndSize).l,d1
-		andi.b	#$C0,d1
-		beq.s	loc_161A2
-		cmpi.b	#$80,d1
-		bcs.s	loc_161A6
-		beq.s	loc_161AC
-		subi.w	#$0200,d0
-		bra.s	loc_161AE
-; ---------------------------------------------------------------------------
+		andi.b	#DIR_MASK,d1
+		beq.s	_projNE
+		cmpi.b	#DIR_SW,d1
+		bcs.s	_projSE
+		beq.s	_projSW
+		subi.w	#$0200,d0	; NW
+		bra.s	_projSet
 
-loc_161A2:					  ; CODE XREF: ROM:00016192j
+_projNE:
 		subq.b	#$02,d0
-		bra.s	loc_161AE
-; ---------------------------------------------------------------------------
+		bra.s	_projSet
 
-loc_161A6:					  ; CODE XREF: ROM:00016198j
+_projSE:
 		addi.w	#$0200,d0
-		bra.s	loc_161AE
-; ---------------------------------------------------------------------------
+		bra.s	_projSet
 
-loc_161AC:					  ; CODE XREF: ROM:0001619Aj
+_projSW:
 		addq.b	#$02,d0
 
-loc_161AE:					  ; CODE XREF: ROM:000161A0j
-						  ; ROM:000161A4j ...
+_projSet:
 		move.w	d0,(a1)
-		move.b	d1,$00000004(a1)
+		move.b	d1,RotationAndSize(a1)
 		move.b	#$78,d2
 		move.w	(Player_Z).l,d3
 		addi.w	#$0010,d3
-		move.w	d3,$00000012(a1)
-		move.w	(Player_SubX).l,$00000002(a1)
-		move.w	#$47C0,$00000006(a1)
-		move.w	#$013C,$00000034(a1)
-		move.b	#$04,$00000009(a1)
+		move.w	d3,Z(a1)
+		move.w	(Player_SubX).l,SubX(a1)
+		move.w	#$47C0,TileSource(a1)
+		move.w	#$013C,BehaviourLUTIndex(a1)
+		move.b	#$04,Speed(a1)
 		jsr	(sub_192B6).l
 
-locret_161E6:					  ; CODE XREF: ROM:00016174j
-						  ; ROM:0001617Ej
+_projDone:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
 
-
-sub_161E8:					  ; CODE XREF: ROM:loc_1616Ep
+; Same predicate as AnyHostileEnemies but returns d6 = 1 instead of
+; carry; used to require a target before spawning the charge projectile.
+HostileEnemiesPresent:
 		clr.b	d6
 
-loc_161EA:					  ; CODE XREF: sub_161E8+32j
+_presLoop:
 		move.b	(a5),d5
-		bmi.w	locret_1621E
+		bmi.w	_presDone
 		cmpi.b	#$7F,d5
-		beq.s	loc_16216
-		move.b	Flags2(a5),d0
+		beq.s	_presNext
+		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
-		bne.s	loc_16216
-		cmpi.w	#$0001,InitFlags4_DropProbability(a5)
-		bne.s	loc_16212
+		bne.s	_presNext
+		cmpi.w	#$0001,ItemDropProbability(a5)
+		bne.s	_presMark
 		tst.b	GoldOrChestContents(a5)
-		beq.s	loc_16216
+		beq.s	_presNext
 
-loc_16212:					  ; CODE XREF: sub_161E8+22j
+_presMark:
 		move.b	#$01,d6
 
-loc_16216:					  ; CODE XREF: sub_161E8+Cj
-						  ; sub_161E8+1Aj ...
+_presNext:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_161EA
+		dbf	d7,_presLoop
 
-locret_1621E:					  ; CODE XREF: sub_161E8+4j
+_presDone:
 		rts
-; End of function sub_161E8
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_16220:					  ; DATA XREF: sub_10358t
-
-; FUNCTION CHUNK AT 0001638E SIZE 00000092 BYTES
-
+ProcessDeadEnemies:
 		lea	(Sprite1_X).l,a5
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_16228:					  ; CODE XREF: sub_16220+22j
+_deadLoop:
 		tst.w	(a5)
-		bmi.s	locret_16246
-		bclr	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		beq.s	loc_1623E
-		tst.b	Unk4D(a5)
-		bne.w	loc_1638E
-		bsr.s	loc_16248
+		bmi.s	_deadDone
+		bclr	#$02,CombatFlags(a5)
+		beq.s	_deadNext
+		tst.b	AICounter(a5)
+		bne.w	_MummyRevive
+		bsr.s	_HandleEnemyDeath
 
-loc_1623E:					  ; CODE XREF: sub_16220+12j
-						  ; sub_16220+1F2j ...
+_deadNext:
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_16228
+		dbf	d7,_deadLoop
 
-locret_16246:					  ; CODE XREF: sub_16220+Aj
+_deadDone:
 		rts
-; End of function sub_16220
 
-; ---------------------------------------------------------------------------
 
-loc_16248:					  ; CODE XREF: sub_16220+1Cp
+; Enemy death: respawning ghosts (guaranteed drop of nothing) either
+; re-hostile with $100 health or hide once their story flag is set;
+; everyone else rolls the item drop -- transforming the corpse into an
+; item box or moneybag sprite -- or just despawns.
+_HandleEnemyDeath:
 		tst.b	(g_Flags+5).l
-		bmi.w	loc_1637A
-		move.w	InitFlags4_DropProbability(a5),d6
+		bmi.w	_deathScripted
+		move.w	ItemDropProbability(a5),d6
 		cmpi.w	#$0001,d6
-		bne.s	loc_16284
+		bne.s	_deathNormal
 		tst.b	GoldOrChestContents(a5)
-		bne.s	loc_16284
+		bne.s	_deathNormal
 		btst	#$00,(g_Flags+3).l
-		beq.s	loc_16276
+		beq.s	_ghostRespawn
 		bsr.w	sub_1A56A
 
-loc_16270:					  ; CODE XREF: ROM:000162DCj
+_deathHide:
 		jmp	(j_HideSprite).l
-; ---------------------------------------------------------------------------
 
-loc_16276:					  ; CODE XREF: ROM:0001626Aj
-		bset	#$07,Flags2(a5)
+_ghostRespawn:
+		bset	#$07,InteractFlags(a5)
 		move.w	#$0100,CurrentHealth(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_16284:					  ; CODE XREF: ROM:0001625Aj
-						  ; ROM:00016260j
+_deathNormal:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyDie1
-; ---------------------------------------------------------------------------
 		tst.w	d6
-		beq.s	loc_162D8
+		beq.s	_dropMoney
 		jsr	(j_GenerateRandomNumber).l
 		tst.w	d7
-		bne.s	loc_162D8
+		bne.s	_dropMoney
 		lea	(Sprite1_X).l,a0
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_1629E:					  ; CODE XREF: ROM:000162B4j
+_boxScanLoop:
 		move.b	(a0),d0
-		bmi.s	loc_162B8
+		bmi.s	_dropItemBox
 		cmpi.b	#$7F,d0
-		beq.s	loc_162B0
+		beq.s	_boxScanNext
 		cmpi.b	#SpriteB_ItemBox,SpriteGraphic(a0)
-		beq.s	loc_162D8
+		beq.s	_dropMoney
 
-loc_162B0:					  ; CODE XREF: ROM:000162A6j
+_boxScanNext:
 		lea	SPRITE_SIZE(a0),a0
-		dbf	d7,loc_1629E
+		dbf	d7,_boxScanLoop
 
-loc_162B8:					  ; CODE XREF: ROM:000162A0j
+_dropItemBox:
 		move.b	ItemDrop(a5),d0
 		jsr	(j_GetRemainingItemAllowedCount).l
 		tst.w	d1
-		beq.s	loc_162D8
+		beq.s	_dropMoney
 		move.w	#$0060,Dialogue(a5)
 		move.b	#SpriteB_ItemBox,SpriteGraphic(a5)
 		clr.b	GoldOrChestContents(a5)
-		bra.s	loc_162EC
-; ---------------------------------------------------------------------------
+		bra.s	_dropCommon
 
-loc_162D8:					  ; CODE XREF: ROM:0001628Aj
-						  ; ROM:00016294j ...
+_dropMoney:
 		tst.b	GoldOrChestContents(a5)
-		beq.w	loc_16270
+		beq.w	_deathHide
 		move.w	#$000A,Dialogue(a5)
 		move.b	#SpriteB_Moneybag,SpriteGraphic(a5)
 
-loc_162EC:					  ; CODE XREF: ROM:000162D6j
+_dropCommon:
 		move.w	#$002D,BehavParam(a5)
 		cmpi.b	#$10,Height(a5)
-		bcc.s	loc_16308
+		bcc.s	_dropTall
 
-loc_162FA:					  ; CODE XREF: ROM:00016314j
+_dropShort:
 		move.w	Z(a5),d0
-		addi.w	#Unk0F,d0
+		addi.w	#$000F,d0
 		move.w	d0,HitBoxZEnd(a5)
-		bra.s	loc_1631A
-; ---------------------------------------------------------------------------
+		bra.s	_dropFinish
 
-loc_16308:					  ; CODE XREF: ROM:000162F8j
+_dropTall:
 		move.w	HitBoxZEnd(a5),d0
 		subi.w	#$000F,d0
 		cmp.b	FloorHeight(a5),d0
-		bcs.s	loc_162FA
+		bcs.s	_dropShort
 		move.w	d0,Z(a5)
 
-loc_1631A:					  ; CODE XREF: ROM:00016306j
+_dropFinish:
 		move.b	#$08,RotationAndSize(a5)
 		move.b	#$10,Height(a5)
 		clr.l	BehaviourLUTPtr(a5)
 		clr.w	CurrentHealth(a5)
-		clr.b	Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		clr.b	CombatFlags(a5)
 		clr.w	FallRate(a5)
-		andi.b	#$7F,Flags2(a5)
+		andi.b	#$7F,InteractFlags(a5)
 		andi.b	#$3F,RotationAndSize(a5)
-		bset	#$07,Unk0A(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,AnimCtrl(a5)
+		bset	#$07,RenderFlags(a5)
 		andi.b	#$9F,TileSource(a5)
 		ori.b	#$40,TileSource(a5)
 		clr.w	AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$00,Flags2(a5)
-		bclr	#$06,Flags2(a5)
+		bset	#$00,InteractFlags(a5)
+		bclr	#$06,InteractFlags(a5)
 		movea.l	a5,a1
 		bsr.w	LookupSpriteAnimFlags
 		bsr.w	sub_19AC8
 
-locret_16378:					  ; CODE XREF: ROM:00015C80j
+_exit:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1637A:					  ; CODE XREF: ROM:0001624Ej
+_deathScripted:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_EnemyDie1
-; ---------------------------------------------------------------------------
-		andi.b	#$7F,Flags2(a5)
+		andi.b	#$7F,InteractFlags(a5)
 		bset	#$00,(g_Flags+1).l
 		rts
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_16220
 
-loc_1638E:					  ; CODE XREF: sub_16220+18j
-		move.w	#$0300,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$08,Unk4D(a5)
-		bcs.w	loc_16416
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$10,Unk4D(a5)
-		bcs.w	loc_16416
-		move.w	#$0500,QueuedAction(a5)
-		cmpi.b	#$20,Unk4D(a5)
-		bcs.w	loc_16416
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$28,Unk4D(a5)
-		bcs.w	loc_16416
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$30,Unk4D(a5)
-		bcs.w	loc_16416
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$38,Unk4D(a5)
-		bcs.w	loc_16416
-		ori.b	#$80,Flags2(a5)
-		ori.b	#$80,InitFlags2(a5)
+; Mummy revival: steps a $38-frame get-up animation, then re-hostiles
+; the mummy at full health (see AICounter in entity.inc).
+_MummyRevive:
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$08,AICounter(a5)
+		bcs.w	_reviveStep
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$10,AICounter(a5)
+		bcs.w	_reviveStep
+		move.w	#ACT_ATTACK5,QueuedAction(a5)
+		cmpi.b	#$20,AICounter(a5)
+		bcs.w	_reviveStep
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$28,AICounter(a5)
+		bcs.w	_reviveStep
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$30,AICounter(a5)
+		bcs.w	_reviveStep
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$38,AICounter(a5)
+		bcs.w	_reviveStep
+		ori.b	#$80,InteractFlags(a5)
+		ori.b	#$80,InitInteractFlags(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
 		movem.w	d7,-(sp)
 		jsr	(sub_1A440C).l
 		movem.w	(sp)+,d7
-		bra.w	loc_1623E
-; ---------------------------------------------------------------------------
+		bra.w	_deadNext
 
-loc_16416:					  ; CODE XREF: sub_16220+17Ej
-						  ; sub_16220+18Ej ...
-		bset	#$02,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		bra.w	loc_1623E
-; END OF FUNCTION CHUNK	FOR sub_16220
-
-; =============== S U B	R O U T	I N E =======================================
+_reviveStep:
+		bset	#$02,CombatFlags(a5)
+		bra.w	_deadNext
 
 
-sub_16420:					  ; DATA XREF: sub_1034Ct
-
-; FUNCTION CHUNK AT 00016512 SIZE 0000006C BYTES
-
+; Per-tick player damage handler: consumes g_PlayerPendingHit ($80 =
+; contact hit, recoil away from facing; else bits 0-1 = hit direction),
+; applies CalculateEnemyDamageOutput, rolls to shake off paralysis,
+; plays the recoil, and runs the hurt/invulnerability timer
+; (g_PlayerHurtTimer) with its blink flicker.
+ProcessPlayerDamage:
 		tst.b	(g_PlayerAnimation).l
-		bne.w	locret_164E4
-		tst.b	(byte_FF1142).l
-		bne.w	loc_16512
-		move.b	(byte_FF1143).l,d1
-		beq.w	locret_164E4
+		bne.w	_dmgDone
+		tst.b	(g_PlayerHurtTimer).l
+		bne.w	_UpdateHurtTimer
+		move.b	(g_PlayerPendingHit).l,d1
+		beq.w	_dmgDone
 		movem.w	d1,-(sp)
 		lea	(Player_X).l,a5
 		bsr.w	CalculateEnemyDamageOutput
@@ -868,172 +793,137 @@ sub_16420:					  ; DATA XREF: sub_1034Ct
 		tst.w	CurrentHealth(a5)
 		beq.w	PlayerDeath
 		btst	#STATUS_PARALYSIS,(g_PlayerStatus).l
-		beq.s	loc_1648A
+		beq.s	_dmgKnockback
 		move.b	(g_ParalysisCheckCount).l,d0
 		addq.b	#$02,(g_ParalysisCheckCount).l
 		ext.w	d0
 		move.w	ParalysisClearChance(pc,d0.w),d6
 		jsr	(j_GenerateRandomNumber).l
 		tst.w	d7
-		bne.s	loc_1648A
+		bne.s	_dmgKnockback
 		move.b	#STATUS_PARALYSIS,d0
 		bsr.w	ClearPlayerStatus
 
-loc_1648A:					  ; CODE XREF: sub_16420+44j
-						  ; sub_16420+60j
+_dmgKnockback:
 		tst.b	d1
-		bmi.s	loc_164B0
+		bmi.s	_dmgFromFacing
 		andi.b	#$03,d1
 		eori.b	#$02,d1
 		andi.b	#$3F,(Player_RotationAndSize).l
 		move.b	d1,d0
 		lsl.b	#$06,d0
 		or.b	d0,(Player_RotationAndSize).l
-		bra.s	loc_164B8
-; ---------------------------------------------------------------------------
-ParalysisClearChance:				  ; DATA XREF: sub_16420+54r
+		bra.s	_dmgRecoil
+ParalysisClearChance:
 		dc.w $0003
 		dc.w $0002
 		dc.w $0001
-; ---------------------------------------------------------------------------
 
-loc_164B0:					  ; CODE XREF: sub_16420+6Cj
+_dmgFromFacing:
 		move.b	(Player_RotationAndSize).l,d1
 		lsr.b	#$06,d1
 
-loc_164B8:					  ; CODE XREF: sub_16420+88j
+_dmgRecoil:
 		ext.w	d1
 		move.b	DamageRecoilCmd(pc,d1.w),d0
 		bsr.w	PlaybackInput
-		move.b	#$01,(byte_FF1142).l
-		bset	#$05,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		move.b	#$01,(g_PlayerHurtTimer).l
+		bset	#ACTBH_DAMAGE,(Player_Action).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_NigelHit1
-; ---------------------------------------------------------------------------
-		bset	#$01,(Player_Flags2).l
-		clr.b	(byte_FF1143).l
+		bset	#$01,(Player_InteractFlags).l
+		clr.b	(g_PlayerPendingHit).l
 
-locret_164E4:					  ; CODE XREF: sub_16420+6j
-						  ; sub_16420+1Aj
+_dmgDone:
 		rts
-; End of function sub_16420
 
-; ---------------------------------------------------------------------------
-DamageRecoilCmd:dc.b $07, $05, $06, $04		  ; DATA XREF: sub_16420+9Ar
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_16602
+DamageRecoilCmd:dc.b $07, $05, $06, $04
 
-PlayerDeath:					  ; CODE XREF: sub_16420+38j
-						  ; sub_16602+58j
-						  ; DATA XREF: ...
-		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1143).l
+PlayerDeath:
+		clr.b	(g_PlayerHurtTimer).l
+		clr.b	(g_PlayerPendingHit).l
 		move.b	#$01,(g_PlayerAnimation).l
 		move.b	#$08,d0
 		bsr.w	PlaybackInput
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_NigelDie
-; ---------------------------------------------------------------------------
 		clr.b	(g_PlayerStatus).l
-; END OF FUNCTION CHUNK	FOR sub_16602
 		rts
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_16420
 
-loc_16512:					  ; CODE XREF: sub_16420+10j
-		clr.b	(byte_FF1143).l
-		addq.b	#$01,(byte_FF1142).l
-		cmpi.b	#$02,(byte_FF1142).l
-		bne.s	loc_16532
-		bset	#$00,(Player_Flags2).l
+_UpdateHurtTimer:
+		clr.b	(g_PlayerPendingHit).l
+		addq.b	#$01,(g_PlayerHurtTimer).l
+		cmpi.b	#$02,(g_PlayerHurtTimer).l
+		bne.s	_hurtChk10
+		bset	#$00,(Player_InteractFlags).l
 		rts
-; ---------------------------------------------------------------------------
 
-loc_16532:					  ; CODE XREF: sub_16420+106j
-		cmpi.b	#$10,(byte_FF1142).l
-		bcs.s	locret_1657C
-		bne.s	loc_16550
-		andi.b	#$F8,(Player_Unk48).l
-		bclr	#$00,(Player_Flags2).l
+_hurtChk10:
+		cmpi.b	#$10,(g_PlayerHurtTimer).l
+		bcs.s	_hurtDone
+		bne.s	_hurtChk40
+		andi.b	#$F8,(Player_RenderFlags).l
+		bclr	#$00,(Player_InteractFlags).l
 		rts
-; ---------------------------------------------------------------------------
 
-loc_16550:					  ; CODE XREF: sub_16420+11Cj
-		cmpi.b	#$40,(byte_FF1142).l
-		bne.s	loc_16568
-		clr.b	(byte_FF1142).l
-		bclr	#$01,(Player_Flags2).l
+_hurtChk40:
+		cmpi.b	#$40,(g_PlayerHurtTimer).l
+		bne.s	_hurtFlicker
+		clr.b	(g_PlayerHurtTimer).l
+		bclr	#$01,(Player_InteractFlags).l
 
-loc_16568:					  ; CODE XREF: sub_16420+138j
-		move.b	(Player_Unk48).l,d0
+_hurtFlicker:
+		move.b	(Player_RenderFlags).l,d0
 		andi.b	#$07,d0
-		bne.s	locret_1657C
-		bchg	#$06,(Player_Flags2).l
+		bne.s	_hurtDone
+		bchg	#$06,(Player_InteractFlags).l
 
-locret_1657C:					  ; CODE XREF: sub_16420+11Aj
-						  ; sub_16420+152j
+_hurtDone:
 		rts
-; END OF FUNCTION CHUNK	FOR sub_16420
-
-; =============== S U B	R O U T	I N E =======================================
 
 
-CalculatePlayerDamageOutput:			  ; CODE XREF: ROM:00015D9Ap
-						  ; ROM:00015E5Cp ...
+CalculatePlayerDamageOutput:
 		movem.w	d1/d6-d7,-(sp)
 		move.w	d0,d1
 		move.w	(Player_MaxHealth).l,d0
 		lsr.w	#$02,d0
 		sub.w	d1,d0
-		bmi.s	loc_16596
+		bmi.s	_clampMin
 		cmpi.w	#$0100,d0
-		bcc.s	loc_1659A
+		bcc.s	_rollDamage
 
-loc_16596:					  ; CODE XREF: CalculatePlayerDamageOutput+10j
+_clampMin:
 		move.w	#$0100,d0
 
-loc_1659A:					  ; CODE XREF: CalculatePlayerDamageOutput+16j
+_rollDamage:
 		move.w	d0,d1
 		lsr.w	#$08,d0
 		move.w	#$0060,d6
 		jsr	(j_GenerateRandomNumber).l
 		mulu.w	d7,d0
 		add.w	d1,d0
-		move.b	(g_SwordCharge).l,d1
-		beq.s	loc_165C2
+		move.b	(g_ChargedSword).l,d1
+		beq.s	_pdmgDone
 		ext.w	d1
 		add.b	d1,d1
-		move.w	(MagicSwordBoost-2)(pc,d1.w),d1
+		move.w	(ChargedSwordBoost-2)(pc,d1.w),d1
 		mulu.w	d1,d0
 		divu.w	#$0100,d0
 
-loc_165C2:					  ; CODE XREF: CalculatePlayerDamageOutput+34j
+_pdmgDone:
 		movem.w	(sp)+,d1/d6-d7
 		rts
-; End of function CalculatePlayerDamageOutput
 
-; ---------------------------------------------------------------------------
-MagicSwordBoost:dc.w $01C0, $0180, $0200, $0140	  ; DATA XREF: CalculatePlayerDamageOutput+3At
-
-; =============== S U B	R O U T	I N E =======================================
+; Charged-hit damage multiplier per sword (/$100):
+; Magic 1.75x, Ice 1.5x, Thunder 2x, Gaia 1.25x
+ChargedSwordBoost:dc.w $01C0, $0180, $0200, $0140
 
 
-CalculateEnemyDamageOutput:			  ; CODE XREF: sub_16420+28p
+CalculateEnemyDamageOutput:
 		movem.w	d1/d6-d7,-(sp)
-		moveq	#$00000000,d0
+		moveq	#$0,d0
 		move.w	(Player_AttackStrength).l,d0
-		beq.w	loc_165FC
+		beq.w	_edmgDone
 		move.w	(Player_Defence).l,d1
 		mulu.w	d1,d0
 		lsr.l	#$08,d0
@@ -1044,132 +934,102 @@ CalculateEnemyDamageOutput:			  ; CODE XREF: sub_16420+28p
 		mulu.w	d7,d0
 		add.w	d1,d0
 
-loc_165FC:					  ; CODE XREF: CalculateEnemyDamageOutput+Cj
+_edmgDone:
 		movem.w	(sp)+,d1/d6-d7
 		rts
-; End of function CalculateEnemyDamageOutput
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_16602:					  ; DATA XREF: sub_10380t
-
-; FUNCTION CHUNK AT 000164EA SIZE 00000026 BYTES
-
-		cmpi.b	#$01,(Player_Unk0A).l
-		beq.w	locret_166DE
+; Per-tick status effects: poison damages $0100 every $80 steps while
+; walking (white palette flash, wears off after g_PoisonHitsLeft hits),
+; paralysis counts down g_ParalysisTimer, and Healing Boots restore
+; $0100 every 256 steps.
+UpdatePlayerStatusEffects:
+		cmpi.b	#$01,(Player_AnimCtrl).l
+		beq.w	_statusDone
 		move.b	(g_PlayerStatus).l,d0
 		andi.b	#$11,d0
-		cmpi.b	#STATUS_CONFUSION,d0
-		bne.s	loc_1667C
-		move.b	(Player_Action+1).l,d0	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		cmpi.b	#$01,d0			  ; poisoned (bit 0) and NOHEAL (bit 4) clear
+		bne.s	_chkParalysis
+		move.b	(Player_Action+1).l,d0
 		andi.b	#$0F,d0
-		beq.s	loc_1667C
+		beq.s	_chkParalysis
 		cmpi.b	#$01,(g_PlayerSpeed+1).l
-		beq.s	loc_1667C
-		move.b	(byte_FF1148).l,d0
-		addq.b	#$01,(byte_FF1148).l
+		beq.s	_chkParalysis
+		move.b	(g_PoisonStepCounter).l,d0
+		addq.b	#$01,(g_PoisonStepCounter).l
 		andi.b	#$7F,d0
-		bne.s	loc_1667C
+		bne.s	_chkParalysis
 		move.w	#$0100,d0
 		lea	(Player_X).l,a5
 		bsr.w	RemoveHealth
 		tst.w	(Player_CurrentHealth).l
 		beq.w	PlayerDeath
 		lea	(g_Pal0Active).l,a0
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_16666:					  ; CODE XREF: sub_16602+68j
+_whiteFlashLoop:
 		move.w	#$0EEE,(a0)+
-		dbf	d7,loc_16666
+		dbf	d7,_whiteFlashLoop
 		jsr	(j_QueueFullPaletteDMA).l
-		subq.b	#$01,(byte_FF1149).l
-		beq.s	loc_166E0
+		subq.b	#$01,(g_PoisonHitsLeft).l
+		beq.s	_poisonWornOff
 
-loc_1667C:					  ; CODE XREF: sub_16602+1Aj
-						  ; sub_16602+26j ...
+_chkParalysis:
 		btst	#STATUS_PARALYSIS,(g_PlayerStatus).l
-		beq.s	loc_16696
-		subq.w	#$01,(word_FF12E2).l
-		bne.s	loc_16696
+		beq.s	_chkHealBoots
+		subq.w	#$01,(g_ParalysisTimer).l
+		bne.s	_chkHealBoots
 		move.b	#STATUS_PARALYSIS,d0
 		bsr.w	ClearPlayerStatus
 
-loc_16696:					  ; CODE XREF: sub_16602+82j
-						  ; sub_16602+8Aj
+_chkHealBoots:
 		cmpi.b	#ITM_HEALINGBOOTS,(g_EquippedBoots).l
-		bne.s	locret_166DE
+		bne.s	_statusDone
 		move.b	(g_PlayerStatus).l,d0
 		andi.b	#$10,d0
-		bne.s	locret_166DE
-		move.b	(Player_Action+1).l,d0	  ; Bit0 - Walk	NE (-Y)
-						  ; Bit1 - Walk	SW (+Y)
-						  ; Bit2 - Walk	NW (-X)
-						  ; Bit3 - Walk	SE (+X)
-						  ; Bit4 - Fall
-						  ; Bit5 - Jump
-						  ; Bit6-Bit7 -	Pick up	/ Put down
-						  ; Bit8-Bit11 - Sword swing, attack
-						  ; Bit12 - Ladder Climb
-						  ; Bit13 - Receive Damage
+		bne.s	_statusDone
+		move.b	(Player_Action+1).l,d0
 		andi.b	#$0F,d0
-		beq.s	locret_166DE
+		beq.s	_statusDone
 		cmpi.b	#$01,(g_PlayerSpeed+1).l
-		beq.s	locret_166DE
+		beq.s	_statusDone
 		move.b	(g_StepCounter).l,d0
 		addq.b	#$01,(g_StepCounter).l
-		bne.s	locret_166DE
+		bne.s	_statusDone
 		move.w	#$0100,d0
 		lea	(Player_X).l,a5
 		bsr.w	AddHealth
 
-locret_166DE:					  ; CODE XREF: sub_16602+8j
-						  ; sub_16602+9Cj ...
+_statusDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_166E0:					  ; CODE XREF: sub_16602+78j
+_poisonWornOff:
 		clr.b	d0
 		bsr.w	ClearPlayerStatus
-		bra.s	loc_1667C
-; End of function sub_16602
+		bra.s	_chkParalysis
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_166E8:					  ; DATA XREF: sub_10384t
+RestorePalette0:
 		tst.w	(g_Pal0Active).l
-		beq.s	locret_16710
+		beq.s	_palDone
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
-		moveq	#$0000000F,d7
+		moveq	#$F,d7
 
-loc_166FE:					  ; CODE XREF: sub_166E8+18j
+_palLoop:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_166FE
+		dbf	d7,_palLoop
 		jsr	(j_QueueFullPaletteDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 
-locret_16710:					  ; CODE XREF: sub_166E8+6j
+_palDone:
 		rts
-; End of function sub_166E8
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GaiaEffect:					  ; CODE XREF: ROM:loc_1612Cp
+; Earthquake effect: temporarily equips the Gaia Sword (graphics and
+; palette), rumbles, and runs the screen shake + falling debris via
+; RunQuakeEffect, then restores the real equipment.
+GaiaEffect:
 		move.b	(g_EquippedSword).l,d0
 		movem.w	d0,-(sp)
 		move.b	#ITM_GAIASWORD,(g_EquippedSword).l
@@ -1180,10 +1040,8 @@ GaiaEffect:					  ; CODE XREF: ROM:loc_1612Cp
 		move.w	(g_VSRAMData+2).l,d1
 		movem.w	d0-d1,-(sp)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Rumble
-; ---------------------------------------------------------------------------
-		bsr.s	sub_16794
+		bsr.s	RunQuakeEffect
 		move.b	#$10,(g_VDPSpr15_Link).l
 		move.b	#$4F,(g_VDPSpr78_Link).l
 		movem.w	(sp)+,d0-d1
@@ -1196,48 +1054,44 @@ GaiaEffect:					  ; CODE XREF: ROM:loc_1612Cp
 		jsr	(j_UpdateEquipPal).l
 		jsr	(j_CopyBasePalleteToActivePalette).l
 		jmp	(j_FlushDMACopyQueue).l
-; End of function GaiaEffect
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_16794:					  ; CODE XREF: GaiaEffect+38p
+; Drives the quake: claims the free tail of the VDP sprite table for
+; debris particles, then loops shake + debris updates until
+; CheckQuakeDone unwinds the loop (see note there).
+RunQuakeEffect:
 		lea	(g_VDPSpr16_Y).l,a0
 		move.b	#$10,d3
 		move.w	#$003E,d7
 
-loc_167A2:					  ; CODE XREF: sub_16794+16j
+_findFreeSpr:
 		tst.w	(a0)
-		beq.s	loc_167B0
+		beq.s	_clampDebrisCount
 		addq.b	#$01,d3
 		addq.w	#$08,a0
-		dbf	d7,loc_167A2
+		dbf	d7,_findFreeSpr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_167B0:					  ; CODE XREF: sub_16794+10j
+_clampDebrisCount:
 		cmpi.b	#$28,d7
-		bcs.s	loc_167BA
+		bcs.s	_startQuake
 		move.b	#$28,d7
 
-loc_167BA:					  ; CODE XREF: sub_16794+20j
+_startQuake:
 		move.b	d3,(g_VDPSpr15_Link).l
-		bsr.s	sub_167D6
+		bsr.s	InitQuakeDebris
 
-loc_167C2:					  ; CODE XREF: sub_16794+40j
-		bsr.w	sub_16848
-		bsr.w	sub_1685E
+_quakeMainLoop:
+		bsr.w	QuakeScreenShake
+		bsr.w	UpdateQuakeDebris
 		jsr	(j_FlushDMACopyQueue).l
-		bsr.w	sub_168F4
-		bra.s	loc_167C2
-; End of function sub_16794
+		bsr.w	CheckQuakeDone
+		bra.s	_quakeMainLoop
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_167D6:					  ; CODE XREF: sub_16794+2Cp
+; Fills the claimed VDP sprites with debris: random X/Y above the
+; screen, cycling rock tiles ($C78C/$C79C/$C7AC).
+InitQuakeDebris:
 		movea.l	a0,a1
 		move.w	d7,d6
 		move.w	#$C78C,d0
@@ -1246,128 +1100,121 @@ sub_167D6:					  ; CODE XREF: sub_16794+2Cp
 		clr.b	d5
 		movem.w	d6-d7,-(sp)
 
-loc_167EA:					  ; CODE XREF: sub_167D6+5Cj
+_debrisInitLoop:
 		movem.w	d7,-(sp)
 		move.w	#$00E0,d6
 		jsr	(j_GenerateRandomNumber).l
 		subi.w	#$0060,d7
 		move.w	d7,(a0)
-		move.b	#$0F,$00000002(a0)
-		move.w	d0,$00000004(a0)
+		move.b	#$0F,$2(a0)
+		move.w	d0,$4(a0)
 		move.w	#$0140,d6
 		jsr	(j_GenerateRandomNumber).l
 		addi.w	#$0080,d7
-		move.w	d7,$00000006(a0)
+		move.w	d7,$6(a0)
 		addi.w	#$0010,d0
 		addq.b	#$01,d1
 		cmpi.b	#$03,d1
-		bcs.s	loc_1682C
+		bcs.s	_debrisInitNext
 		clr.b	d1
 		subi.w	#$0030,d0
 
-loc_1682C:					  ; CODE XREF: sub_167D6+4Ej
+_debrisInitNext:
 		addq.w	#$08,a0
 		movem.w	(sp)+,d7
-		dbf	d7,loc_167EA
+		dbf	d7,_debrisInitLoop
 		movem.w	(sp)+,d6-d7
-		move.w	#$0001,-$00000008(a0)
-		move.b	#$10,-$00000005(a0)
+		move.w	#$0001,-$8(a0)
+		move.b	#$10,-$5(a0)
 		rts
-; End of function sub_167D6
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_16848:					  ; CODE XREF: sub_16794:loc_167C2p
+; Screen shake: offsets both vertical scroll values by +/-d4,
+; alternating each frame.
+QuakeScreenShake:
 		add.w	d4,(g_VSRAMData).l
 		add.w	d4,(g_VSRAMData+2).l
 		jsr	(j_QueueVSRAMUpdate).l
 		neg.w	d4
 		rts
-; End of function sub_16848
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1685E:					  ; CODE XREF: sub_16794+32p
+; Advances each debris particle downwards (fall speed by rock tile:
+; 7/5/3), recycling it at the bottom of the screen at a random X until
+; two waves have fallen, then despawning it.
+UpdateQuakeDebris:
 		movea.l	a1,a0
 		move.w	d6,d7
 		clr.b	d0
 
-loc_16864:					  ; CODE XREF: sub_1685E+6Aj
-		tst.l	$00000004(a0)
-		beq.s	loc_168C6
+_debrisLoop:
+		tst.l	$4(a0)
+		beq.s	_debrisNext
 		move.w	#$0007,d1
-		cmpi.w	#$C78C,$00000004(a0)
-		beq.s	loc_16886
+		cmpi.w	#$C78C,$4(a0)
+		beq.s	_debrisFall
 		move.w	#$0005,d1
-		cmpi.w	#$C79C,$00000004(a0)
-		beq.s	loc_16886
+		cmpi.w	#$C79C,$4(a0)
+		beq.s	_debrisFall
 		move.w	#$0003,d1
 
-loc_16886:					  ; CODE XREF: sub_1685E+16j
-						  ; sub_1685E+22j
+_debrisFall:
 		add.w	d1,(a0)
 		tst.w	(a0)
-		bmi.s	loc_168C6
+		bmi.s	_debrisNext
 		cmpi.w	#$0138,(a0)
-		bcs.s	loc_168C6
+		bcs.s	_debrisNext
 		cmpi.b	#$02,d5
-		bne.s	loc_168A8
+		bne.s	_debrisRecycle
 		clr.w	(a0)
-		clr.b	$00000002(a0)
-		clr.w	$00000004(a0)
-		clr.w	$00000006(a0)
-		bra.s	loc_168C6
-; ---------------------------------------------------------------------------
+		clr.b	$2(a0)
+		clr.w	$4(a0)
+		clr.w	$6(a0)
+		bra.s	_debrisNext
 
-loc_168A8:					  ; CODE XREF: sub_1685E+38j
+_debrisRecycle:
 		move.w	#$0088,(a0)
 		movem.w	d6-d7,-(sp)
 		move.w	#$0140,d6
 		jsr	(j_GenerateRandomNumber).l
 		addi.w	#$0080,d7
-		move.w	d7,$00000006(a0)
+		move.w	d7,$6(a0)
 		movem.w	(sp)+,d6-d7
 
-loc_168C6:					  ; CODE XREF: sub_1685E+Aj
-						  ; sub_1685E+2Cj ...
+_debrisNext:
 		addq.w	#$08,a0
-		dbf	d7,loc_16864
-		cmpi.w	#$00F8,-$00000008(a0)
-		bcs.s	locret_168F2
-		move.w	#$0001,-$00000008(a0)
+		dbf	d7,_debrisLoop
+		cmpi.w	#$00F8,-$8(a0)
+		bcs.s	_debrisDone
+		move.w	#$0001,-$8(a0)
 		addq.b	#$01,d5
 		cmpi.b	#$02,d5
-		bcs.s	locret_168F2
-		clr.w	-$00000008(a0)
-		clr.b	-$00000006(a0)
-		clr.w	-$00000004(a0)
-		clr.w	-$00000002(a0)
+		bcs.s	_debrisDone
+		clr.w	-$8(a0)
+		clr.b	-$6(a0)
+		clr.w	-$4(a0)
+		clr.w	-$2(a0)
 
-locret_168F2:					  ; CODE XREF: sub_1685E+74j
-						  ; sub_1685E+82j
+_debrisDone:
 		rts
-; End of function sub_1685E
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_168F4:					  ; CODE XREF: sub_16794+3Cp
+; Ends the quake: if any debris particle is still active, returns
+; normally; once all are gone it pops its own return address (the
+; movem.l below), so the rts exits RunQuakeEffect's infinite loop
+; straight back to RunQuakeEffect's caller.
+CheckQuakeDone:
 		movea.l	a1,a0
 		move.w	d6,d7
 
-loc_168F8:					  ; CODE XREF: sub_168F4+Cj
-		tst.w	$00000004(a0)
-		bne.s	locret_16908
+_chkDebrisLoop:
+		tst.w	$4(a0)
+		bne.s	_chkDebrisDone
 		addq.w	#$08,a0
-		dbf	d7,loc_168F8
+		dbf	d7,_chkDebrisLoop
 		movem.l	(sp)+,a0
 
-locret_16908:					  ; CODE XREF: sub_168F4+8j
+_chkDebrisDone:
 		rts
-; End of function sub_168F4
 
+		modend

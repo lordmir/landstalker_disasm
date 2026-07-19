@@ -8,9 +8,9 @@ EnemyAI_Gola_B:					  ; CODE XREF: ROM:001A869Aj
 EnemyAI_Gola_A:					  ; CODE XREF: ROM:001A8696j
 						  ; DATA XREF: j_InitSpritePalettes+8t
 		move.b	#$02,Speed(a5)
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AEEF8
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AEF4C
 		cmpi.b	#$10,d0
 		beq.s	loc_1AEF4C
@@ -32,12 +32,12 @@ EnemyAI_Gola:					  ; CODE XREF: ROM:EnemyAI_Gola_Bj
 
 sub_1AEF04:					  ; CODE XREF: ROM:EnemyAI_Golap
 						  ; j_InitSpritePalettes+ACCAj	...
-		bclr	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$06,CombatFlags(a5)
+		bclr	#$00,CombatFlags(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
@@ -80,10 +80,10 @@ sub_1AEF72:					  ; CODE XREF: j_InitSpritePalettes:loc_1AEF4Cp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
 		bcc.w	loc_1AF0BA
-		move.b	#$27,ChestIndex(a5)
+		move.b	#$27,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
@@ -122,7 +122,7 @@ loc_1AEFE2:					  ; CODE XREF: sub_1AEFAC+14j
 		bset	#$03,TileSource(a5)
 
 loc_1AF000:					  ; CODE XREF: sub_1AEFAC+34j
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		clr.w	SubX(a5)
 		movea.l	a5,a1
 		jsr	(sub_1A8AE6).l
@@ -145,10 +145,10 @@ sub_1AF01A:					  ; CODE XREF: j_InitSpritePalettes+AB3Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00030,d7
 		bhi.w	loc_1AF04E
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -171,9 +171,9 @@ sub_1AF052:					  ; CODE XREF: j_InitSpritePalettes+AB48p
 		move.w	#$0383,BehaviourLUTIndex(a5)
 
 loc_1AF068:					  ; CODE XREF: j_InitSpritePalettes+AF5Aj
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Fireball1
@@ -198,10 +198,10 @@ sub_1AF084:					  ; CODE XREF: j_InitSpritePalettes+AB4Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00085,d7
 		bcc.s	loc_1AF0BA
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0363,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
@@ -220,10 +220,10 @@ loc_1AF0BA:					  ; CODE XREF: sub_1AEF72+6j
 ; START	OF FUNCTION CHUNK FOR sub_1AEFAC
 
 loc_1AF0BE:					  ; CODE XREF: sub_1AEFAC+66j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0361,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; END OF FUNCTION CHUNK	FOR sub_1AEFAC
@@ -265,16 +265,16 @@ loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
 		move.b	d3,SubY(a5)
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
-		bset	#$07,Unk48(a5)
-		bset	#$07,Unk0A(a5)
+		bset	#$07,RenderFlags(a5)
+		bset	#$07,AnimCtrl(a5)
 		movea.l	a5,a1
 		jsr	(sub_1A8AE6).l
 		movem.l	(sp)+,d0
 		bcs.s	loc_1AF184
-		move.b	#$26,ChestIndex(a5)
+		move.b	#$26,AIState(a5)
 		move.w	#$0361,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		subi.w	#$0020,Z(a5)
 		subi.w	#$0020,HitBoxZEnd(a5)
 		ori	#$01,ccr
@@ -307,10 +307,10 @@ sub_1AF18A:					  ; CODE XREF: j_InitSpritePalettes+AB54p
 loc_1AF1BA:					  ; CODE XREF: ROM:001AEF00j
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
-		move.b	#$25,ChestIndex(a5)
+		move.b	#$25,AIState(a5)
 		move.w	#$0362,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -353,15 +353,15 @@ locret_1AF234:					  ; CODE XREF: j_InitSpritePalettes+ADECj
 ; ---------------------------------------------------------------------------
 
 loc_1AF236:					  ; CODE XREF: j_InitSpritePalettes+ADF2j
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		beq.w	loc_1AF27A
-		cmpi.b	#$10,Unk4D(a5)
+		cmpi.b	#$10,AICounter(a5)
 		bne.w	loc_1AF292
 		move.b	(Player_Z+1).l,d0
 		cmp.b	(Player_FloorHeight).l,d0
 		bne.s	loc_1AF26E
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AF26E
 		move.b	#$08,d0
 		jsr	(j_PlaybackInput).l
@@ -396,15 +396,15 @@ sub_1AF27E:					  ; CODE XREF: j_InitSpritePalettes+AE5Ep
 ; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
 
 loc_1AF292:					  ; CODE XREF: j_InitSpritePalettes+AE36j
-		cmpi.b	#$11,Unk4D(a5)
+		cmpi.b	#$11,AICounter(a5)
 		beq.w	loc_1AF0D8
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AF29E:					  ; CODE XREF: j_InitSpritePalettes+ADF8j
-		move.w	#$0200,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AF2F4
 		lea	($00009880).l,a2
 		move.b	#$01,d0
@@ -420,7 +420,7 @@ loc_1AF29E:					  ; CODE XREF: j_InitSpritePalettes+ADF8j
 ; ---------------------------------------------------------------------------
 
 loc_1AF2F4:					  ; CODE XREF: j_InitSpritePalettes+AE9Aj
-		cmpi.b	#$02,Unk4D(a5)
+		cmpi.b	#$02,AICounter(a5)
 		bne.w	loc_1AF332
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
@@ -433,11 +433,11 @@ loc_1AF2F4:					  ; CODE XREF: j_InitSpritePalettes+AE9Aj
 ; ---------------------------------------------------------------------------
 
 loc_1AF332:					  ; CODE XREF: j_InitSpritePalettes+AEE6j
-		cmpi.b	#$03,Unk4D(a5)
+		cmpi.b	#$03,AICounter(a5)
 		bne.w	loc_1AF348
 		move.w	#$0368,d6
 		bsr.w	sub_1AF448
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 
 loc_1AF348:					  ; CODE XREF: j_InitSpritePalettes+AEDCj
 						  ; j_InitSpritePalettes+AF1Aj	...
@@ -466,9 +466,9 @@ loc_1AF368:					  ; CODE XREF: j_InitSpritePalettes+AF50j
 ; ---------------------------------------------------------------------------
 
 loc_1AF372:					  ; CODE XREF: j_InitSpritePalettes+AE00j
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AF398
 		lea	($00009880).l,a2
 		move.b	#$01,d0
@@ -477,7 +477,7 @@ loc_1AF372:					  ; CODE XREF: j_InitSpritePalettes+AE00j
 ; ---------------------------------------------------------------------------
 
 loc_1AF398:					  ; CODE XREF: j_InitSpritePalettes+AF6Ej
-		cmpi.b	#$02,Unk4D(a5)
+		cmpi.b	#$02,AICounter(a5)
 		bne.w	loc_1AF3B2
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
@@ -486,10 +486,10 @@ loc_1AF398:					  ; CODE XREF: j_InitSpritePalettes+AF6Ej
 ; ---------------------------------------------------------------------------
 
 loc_1AF3B2:					  ; CODE XREF: j_InitSpritePalettes+AF8Aj
-		cmpi.b	#$0A,Unk4D(a5)
+		cmpi.b	#$0A,AICounter(a5)
 		bhi.w	loc_1AF3D4
 		bcs.w	loc_1AF3E4
-		move.w	#$0200,QueuedAction(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		move.w	#$0345,d6
 		bsr.w	sub_1AF448
 		bcs.w	loc_1AF43A
@@ -497,8 +497,8 @@ loc_1AF3B2:					  ; CODE XREF: j_InitSpritePalettes+AF8Aj
 ; ---------------------------------------------------------------------------
 
 loc_1AF3D4:					  ; CODE XREF: j_InitSpritePalettes+AFA4j
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$14,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$14,AICounter(a5)
 		beq.w	loc_1AF43A
 
 loc_1AF3E4:					  ; CODE XREF: j_InitSpritePalettes+AF80j
@@ -540,8 +540,8 @@ loc_1AF430:					  ; CODE XREF: j_InitSpritePalettes+AFF0j
 
 loc_1AF43A:					  ; CODE XREF: j_InitSpritePalettes+AFBAj
 						  ; j_InitSpritePalettes+AFCCj
-		bclr	#$00,Flags2(a5)
-		clr.b	Unk4D(a5)
+		bclr	#$00,InteractFlags(a5)
+		clr.b	AICounter(a5)
 		bra.w	sub_1AEF04
 ; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
 
@@ -603,9 +603,9 @@ loc_1AF492:					  ; CODE XREF: sub_1AF448+38j
 		move.b	#$04,Speed(a1)
 		move.b	#$80,FallRate(a1)
 		jsr	(sub_103B8).l
-		bset	#$00,Flags4(a1)		  ; Bit	0 = Invincible / Solid
-		bset	#$07,Flags2(a1)
-		bset	#$07,InitFlags2(a1)
+		bset	#$00,CombatFlags(a1)
+		bset	#$07,InteractFlags(a1)
+		bset	#$07,InitInteractFlags(a1)
 		tst.b	d0
 		rts
 ; ---------------------------------------------------------------------------
@@ -619,9 +619,9 @@ loc_1AF4F8:					  ; CODE XREF: sub_1AF448+1Aj
 ; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
 
 loc_1AF4FE:					  ; CODE XREF: j_InitSpritePalettes+AE1Cj
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AF520
 		lea	($00009880).l,a2
 		move.b	#$01,d0
@@ -629,7 +629,7 @@ loc_1AF4FE:					  ; CODE XREF: j_InitSpritePalettes+AE1Cj
 ; ---------------------------------------------------------------------------
 
 loc_1AF520:					  ; CODE XREF: j_InitSpritePalettes+B0FAj
-		cmpi.b	#$02,Unk4D(a5)
+		cmpi.b	#$02,AICounter(a5)
 		bne.w	loc_1AF536
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
@@ -637,10 +637,10 @@ loc_1AF520:					  ; CODE XREF: j_InitSpritePalettes+B0FAj
 ; ---------------------------------------------------------------------------
 
 loc_1AF536:					  ; CODE XREF: j_InitSpritePalettes+B112j
-		cmpi.b	#$10,Unk4D(a5)
+		cmpi.b	#$10,AICounter(a5)
 		bhi.w	loc_1AF56C
 		bcs.w	locret_1AF57C
-		move.w	#$0200,QueuedAction(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		move.w	#$0345,d6
 		bsr.w	sub_1AF448
 		bcs.w	loc_1AF57E
@@ -653,8 +653,8 @@ loc_1AF536:					  ; CODE XREF: j_InitSpritePalettes+B112j
 ; ---------------------------------------------------------------------------
 
 loc_1AF56C:					  ; CODE XREF: j_InitSpritePalettes+B128j
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$20,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$20,AICounter(a5)
 		beq.w	loc_1AF57E
 
 locret_1AF57C:					  ; CODE XREF: j_InitSpritePalettes+B12Cj
@@ -663,6 +663,6 @@ locret_1AF57C:					  ; CODE XREF: j_InitSpritePalettes+B12Cj
 
 loc_1AF57E:					  ; CODE XREF: j_InitSpritePalettes+B13Ej
 						  ; j_InitSpritePalettes+B14Aj	...
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bra.w	sub_1AEF04
 ; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes

@@ -21,7 +21,7 @@ ItemUseAntiparalyze:				  ; CODE XREF: ROM:00008650j
 ; ---------------------------------------------------------------------------
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
-		move.b	#$01,(Player_Unk0A).l
+		move.b	#$01,(Player_AnimCtrl).l
 		move.b	#SpriteB_Dog,(Player_SpriteGraphic).l
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
@@ -389,7 +389,7 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		movem.l	d0,-(sp)
 		move.w	#$0230,(g_RmNum1).l	  ; Wood cutter	area
 		move.w	#$1732,(Player_X).l
-		bset	#$06,(Player_Flags2).l
+		bset	#$06,(Player_InteractFlags).l
 		bset	#$00,(g_AdditionalFlags+6).l
 		bsr.w	WarpToRoom
 		trap	#$00			  ; Trap00Handler
@@ -402,7 +402,7 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		move.w	#$0234,(g_RmNum1).l	  ; Sunstone
 		movem.l	(sp)+,d0
 		move.l	d0,(Player_X).l
-		bclr	#$06,(Player_Flags2).l
+		bclr	#$06,(Player_InteractFlags).l
 		bclr	#$00,(g_AdditionalFlags+6).l
 		bsr.w	WarpToRoom
 		move.b	(g_BGM).l,d0

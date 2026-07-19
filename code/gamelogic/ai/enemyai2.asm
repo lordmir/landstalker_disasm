@@ -18,7 +18,7 @@ MoveSpriteOffscreen:				  ; CODE XREF: ROM:loc_1A78B4p
 
 
 HideSprite:					  ; DATA XREF: j_HideSpritet
-		ori.b	#$01,Flags1(a5)
+		ori.b	#$01,StateFlags(a5)
 		bra.s	MoveSpriteOffscreen
 ; End of function HideSprite
 
@@ -29,17 +29,17 @@ loc_1A87D2:					  ; CODE XREF: RespawnGhost+3BEj
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
-		ori.b	#$80,Unk0A(a5)
+		ori.b	#$80,AnimCtrl(a5)
 		cmpi.b	#$18,SpriteGraphic(a5)
 		bne.s	loc_1A8800
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		bsr.w	sub_1A86D6
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1A8800:					  ; CODE XREF: RespawnGhost+406j
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		clr.w	AnimationIndex(a5)
 		rts
 ; END OF FUNCTION CHUNK	FOR RespawnGhost
@@ -51,7 +51,7 @@ sub_1A880C:					  ; CODE XREF: ROM:001A4E9Cp
 						  ; ROM:001A50C8p ...
 		bsr.s	sub_1A8824
 		bcc.s	locret_1A8822
-		move.b	d0,(byte_FF1143).l
+		move.b	d0,(g_PlayerPendingHit).l
 		move.w	AttackStrength(a5),(Player_AttackStrength).l
 		ori	#$01,ccr
 
@@ -309,8 +309,8 @@ loc_1A8AB6:					  ; CODE XREF: ROM:EnemyAI_Orc1j
 						  ; ROM:EnemyAI_Orc2j ...
 		move.w	#$0006,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		move.b	#$10,ChestIndex(a5)
-		bclr	#$01,Flags2(a5)
+		move.b	#$10,AIState(a5)
+		bclr	#$01,InteractFlags(a5)
 		rts
 ; END OF FUNCTION CHUNK	FOR sub_1ACD54
 

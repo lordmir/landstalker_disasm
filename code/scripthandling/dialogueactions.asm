@@ -212,7 +212,7 @@ CSA_0014:					  ; CODE XREF: ROM:0001214Cj
 		bsr.w	PlaybackInput
 		move.w	#$0019,d0		  ; Cutscene 0x019: 0x025460
 		bsr.w	LoadCutsceneDialogue
-		bset	#$01,(Player_Flags4).l
+		bset	#$01,(Player_CombatFlags).l
 		bset	#$00,(g_Flags+1).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -220,7 +220,7 @@ CSA_0014:					  ; CODE XREF: ROM:0001214Cj
 CSA_0015:					  ; CODE XREF: ROM:00012150j
 		move.w	#$001A,d0		  ; Cutscene 0x01A: 0x025462
 		bsr.w	LoadCutsceneDialogue
-		bclr	#$01,(Player_Flags4).l
+		bclr	#$01,(Player_CombatFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -297,7 +297,7 @@ CSA_001D:					  ; CODE XREF: ROM:00012170j
 		jsr	(j_FadeOutToDarkness).l
 		move.b	#$11,(Player_X).l
 		move.b	#$10,(Player_Y).l
-		bclr	#$06,(Player_Flags2).l
+		bclr	#$06,(Player_InteractFlags).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitVDPAndFadeIn).l
@@ -364,7 +364,7 @@ CSA_0023:					  ; CODE XREF: ROM:00012188j
 		andi.b	#$C0,d0
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
-		bset	#$07,Unk0A(a5)
+		bset	#$07,AnimCtrl(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -515,9 +515,9 @@ CSA_0031:					  ; CODE XREF: ROM:000121C0j
 		movem.l	a5,-(sp)
 		move.b	#$01,(Sprite1_Speed).l
 		lea	(Sprite1_X).l,a1
-		bset	#$07,Flags2(a1)
-		bset	#$07,InitFlags2(a1)
-		bclr	#$04,Flags2(a1)
+		bset	#$07,InteractFlags(a1)
+		bset	#$07,InitInteractFlags(a1)
+		bclr	#$04,InteractFlags(a1)
 		clr.w	d0
 		move.b	(g_AdditionalFlags+$1A).l,d0
 		move.b	FahlEnemyList(pc,d0.w),d0
@@ -552,7 +552,7 @@ sub_12CAE:					  ; CODE XREF: ROM:00012C90p
 ; ---------------------------------------------------------------------------
 		jsr	(j_CopyBasePalleteToActivePalette).l
 		lea	(Sprite1_X).l,a1
-		bset	#$07,Unk48(a1)
+		bset	#$07,RenderFlags(a1)
 		jmp	(j_LoadSprites).l
 ; End of function sub_12CAE
 
@@ -612,8 +612,8 @@ FahlEnemyList:	dc.b SPR_ORC1			  ; DATA XREF: ROM:00012C7Cr
 CSA_0032:					  ; CODE XREF: ROM:000121C4j
 		lea	(Sprite1_X).l,a1
 		clr.w	BehavParam(a1)
-		bclr	#$07,Flags2(a1)
-		bclr	#$07,InitFlags2(a1)
+		bclr	#$07,InteractFlags(a1)
+		bclr	#$07,InitInteractFlags(a1)
 		move.b	#$01,d0
 		move.b	d0,SpriteType(a1)
 		bsr.w	LookupSpriteGfxIndex
@@ -686,10 +686,10 @@ loc_12DCE:					  ; CODE XREF: ROM:00012DB4j
 		bsr.w	RefreshHUD
 		jsr	(j_EnableDMAQueueProcessing).l
 		clr.b	(g_PlayerAnimation).l
-		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1143).l
+		clr.b	(g_PlayerHurtTimer).l
+		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
-		bclr	#$00,(Player_Flags2).l
+		bclr	#$00,(Player_InteractFlags).l
 		bclr	#$04,(g_PlayerStatus).l
 		bclr	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
 						  ; Bit	1: Can't attack
@@ -704,10 +704,10 @@ loc_12DCE:					  ; CODE XREF: ROM:00012DB4j
 ; ---------------------------------------------------------------------------
 
 CSA_0033:					  ; CODE XREF: ROM:000121C8j
-		bset	#$04,Flags2(a5)
+		bset	#$04,InteractFlags(a5)
 		lea	(Player_X).l,a0
-		bset	#$07,Unk0A(a0)
-		bset	#$07,Unk48(a0)
+		bset	#$07,AnimCtrl(a0)
+		bset	#$07,RenderFlags(a0)
 		jsr	(sub_3FE).l
 		jsr	(j_LoadSprites).l
 		move.w	(Player_TempHealth).l,(Player_CurrentHealth).l
@@ -716,10 +716,10 @@ CSA_0033:					  ; CODE XREF: ROM:000121C8j
 		bsr.w	RefreshHUD
 		jsr	(j_EnableDMAQueueProcessing).l
 		clr.b	(g_PlayerAnimation).l
-		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1143).l
+		clr.b	(g_PlayerHurtTimer).l
+		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
-		bclr	#$00,(Player_Flags2).l
+		bclr	#$00,(Player_InteractFlags).l
 		bclr	#$04,(g_PlayerStatus).l
 		bclr	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
 						  ; Bit	1: Can't attack
@@ -734,7 +734,7 @@ CSA_0034:					  ; CODE XREF: ROM:000121CCj
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	locret_12EE0
 		bset	#$00,(g_Flags+1).l
-		bset	#$05,(Sprite2_Flags2).l
+		bset	#$05,(Sprite2_InteractFlags).l
 
 locret_12EE0:					  ; CODE XREF: ROM:00012ECEj
 		rts
@@ -849,7 +849,7 @@ sub_12FE6:					  ; CODE XREF: ROM:00012FDAp
 		move.b	#$07,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu
-		move.w	#$8141,(Player_Unk0A).l
+		move.w	#$8141,(Player_AnimCtrl).l
 		move.b	#SPR_POCKETS,(Player_SpriteType).l
 		move.b	#$01,(Player_Unk6F).l
 		lea	(Player_X).l,a1
@@ -916,7 +916,7 @@ loc_1309C:					  ; CODE XREF: ROM:000130E0j
 		andi.b	#$C0,d0
 		andi.b	#$3F,RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(sub_3FE).l
 		jsr	(j_LoadSprites).l
@@ -927,7 +927,7 @@ loc_1309C:					  ; CODE XREF: ROM:000130E0j
 		bsr.s	sub_13140
 		movem.w	(sp)+,d7
 		dbf	d7,loc_13090
-		move.w	#$8000,(Player_Unk0A).l
+		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_Unk6F).l
 		bclr	#$04,(g_Flags+3).l
 		andi.b	#$F8,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
@@ -981,20 +981,20 @@ CSA_0046:					  ; CODE XREF: ROM:00012214j
 CSA_0047:					  ; CODE XREF: ROM:00012218j
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		move.w	#$0054,d0
 		bsr.w	LoadCutsceneDialogue
 		movem.l	(sp)+,a5
 		clr.w	AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_0048:					  ; CODE XREF: ROM:0001221Cj
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1009,7 +1009,7 @@ CSA_0049:					  ; CODE XREF: ROM:00012220j
 CSA_004A:					  ; CODE XREF: ROM:00012224j
 		move.w	#$0004,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		move.w	#$0055,d0
 		bra.w	LoadCutsceneDialogue
@@ -1069,12 +1069,12 @@ CSA_0052:					  ; CODE XREF: ROM:00012244j
 		movem.w	d1,-(sp)
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
 		movem.w	(sp)+,d1
 		lea	(Player_X).l,a0
-		bset	#$07,Unk0A(a0)
+		bset	#$07,AnimCtrl(a0)
 		andi.b	#$3F,RotationAndSize(a0)
 		eori.b	#$80,d1
 		or.b	d1,RotationAndSize(a0)
@@ -1105,10 +1105,10 @@ loc_132D8:					  ; CODE XREF: ROM:CSA_0056j
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitVDP).l
-		clr.b	(byte_FF1142).l
-		clr.b	(byte_FF1143).l
-		bclr	#$06,(Player_Flags2).l
-		bclr	#$00,(Player_Flags2).l
+		clr.b	(g_PlayerHurtTimer).l
+		clr.b	(g_PlayerPendingHit).l
+		bclr	#$06,(Player_InteractFlags).l
+		bclr	#$00,(Player_InteractFlags).l
 		bclr	#$05,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -1122,7 +1122,7 @@ loc_132D8:					  ; CODE XREF: ROM:CSA_0056j
 		bclr	#$05,(Player_AnimAction).l
 		move.w	#$0044,(Player_AnimationIndex).l
 		move.w	#$0008,(Player_AnimationFrame).l
-		bset	#$07,(Player_Unk48).l
+		bset	#$07,(Player_RenderFlags).l
 		jsr	(j_LoadSprites).l
 		jsr	(j_FadeInFromDarkness).l
 		movem.l	(sp)+,d0
@@ -1133,7 +1133,7 @@ loc_132D8:					  ; CODE XREF: ROM:CSA_0056j
 ; ---------------------------------------------------------------------------
 
 loc_13370:					  ; CODE XREF: ROM:000132C4j
-		bset	#$01,(Player_Flags4).l
+		bset	#$01,(Player_CombatFlags).l
 		move.b	#$1B,d0
 		bra.w	PlaybackInput
 ; ---------------------------------------------------------------------------
@@ -1161,7 +1161,7 @@ loc_133AE:					  ; CODE XREF: ROM:000133A8j
 		move.b	#$31,(g_FridayAnimation1).l
 		lea	(Player_X).l,a0
 		jsr	(sub_3FE).l
-		bset	#$07,(Player_Unk48).l
+		bset	#$07,(Player_RenderFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1170,9 +1170,9 @@ CSA_0056:					  ; CODE XREF: ROM:00012254j
 ; ---------------------------------------------------------------------------
 
 CSA_0057:					  ; CODE XREF: ROM:00012258j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1341E
-		move.b	#$11,(byte_FF1142).l
+		move.b	#$11,(g_PlayerHurtTimer).l
 		bset	#$05,(Player_Action).l	  ; Bit0 - Walk	NE (-Y)
 						  ; Bit1 - Walk	SW (+Y)
 						  ; Bit2 - Walk	NW (-X)
@@ -1188,7 +1188,7 @@ CSA_0057:					  ; CODE XREF: ROM:00012258j
 ; ---------------------------------------------------------------------------
 		dc.w SND_NigelHit2
 ; ---------------------------------------------------------------------------
-		clr.b	(byte_FF1143).l
+		clr.b	(g_PlayerPendingHit).l
 		move.w	#$0100,d6
 		jsr	(j_GenerateRandomNumber).l
 		andi.b	#$C0,d7
@@ -1215,7 +1215,7 @@ CSA_0058:					  ; CODE XREF: ROM:0001225Cj
 
 CSA_0059:					  ; CODE XREF: ROM:00012260j
 		jsr	(j_SetUpTextDisplay).l
-		bclr	#$01,(Player_Flags4).l
+		bclr	#$01,(Player_CombatFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1379,7 +1379,7 @@ sub_135F6:					  ; CODE XREF: ROM:loc_134D2p
 		cmpi.b	#$02,(g_PlayerAnimation).l
 		bne.s	loc_13620
 		move.w	#$0004,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_Unk0A).l
+		ori.b	#$80,(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1387,7 +1387,7 @@ loc_13620:					  ; CODE XREF: sub_135F6+16j
 		cmpi.b	#$0F,(g_PlayerAnimation).l
 		bne.s	loc_1363C
 		move.w	#$0008,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_Unk0A).l
+		ori.b	#$80,(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1395,7 +1395,7 @@ loc_1363C:					  ; CODE XREF: sub_135F6+32j
 		cmpi.b	#$14,(g_PlayerAnimation).l
 		bne.s	loc_13658
 		move.w	#$000C,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_Unk0A).l
+		ori.b	#$80,(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1403,7 +1403,7 @@ loc_13658:					  ; CODE XREF: sub_135F6+4Ej
 		cmpi.b	#$19,(g_PlayerAnimation).l
 		bne.s	locret_13672
 		move.w	#$0010,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_Unk0A).l
+		ori.b	#$80,(Player_AnimCtrl).l
 
 locret_13672:					  ; CODE XREF: sub_135F6+6Aj
 		rts
@@ -1496,7 +1496,7 @@ sub_1375A:					  ; CODE XREF: ROM:0001373Cp
 						  ; ROM:00013748p
 		movem.l	a5,-(sp)
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -1535,7 +1535,7 @@ CSA_006B:					  ; CODE XREF: ROM:000122A8j
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		eori.b	#$80,d1
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
 		jsr	(j_LoadSprites).l
@@ -1576,7 +1576,7 @@ CSA_006F:					  ; CODE XREF: ROM:000122B8j
 ; ---------------------------------------------------------------------------
 
 CSA_0070:					  ; CODE XREF: ROM:000122BCj
-		bset	#$05,Flags2(a5)
+		bset	#$05,InteractFlags(a5)
 		move.w	#$0070,d0		  ; Cutscene 0x070: 0x02550E
 		bsr.w	LoadCutsceneDialogue
 		move.b	#$31,(g_FridayAnimation1).l
@@ -1594,7 +1594,7 @@ CSA_0071:					  ; CODE XREF: ROM:000122C0j
 CSA_0072:					  ; CODE XREF: ROM:000122C4j
 		move.w	#$000C,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
 		move.w	#$0028,d0		  ; Cutscene 0x028: 0x02547E
@@ -1843,10 +1843,10 @@ CSA_008C:					  ; CODE XREF: ROM:0001232Cj
 		movem.l	a5,-(sp)
 		move.w	#$0038,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
-		move.b	#$40,(byte_FF1143).l
+		move.b	#$40,(g_PlayerPendingHit).l
 		clr.w	(Player_AttackStrength).l
 		bsr.w	sub_13140
 		movem.l	(sp)+,a5
@@ -1866,7 +1866,7 @@ CSA_008E:					  ; CODE XREF: ROM:00012334j
 loc_13B56:					  ; CODE XREF: ROM:00013B04j
 						  ; ROM:00013B4Aj
 		move.w	#$0038,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
 		movem.l	(sp)+,a5
@@ -1916,8 +1916,8 @@ CSA_0094:					  ; CODE XREF: ROM:0001234Cj
 ; ---------------------------------------------------------------------------
 
 CSA_0095:					  ; CODE XREF: ROM:00012350j
-		bclr	#$07,(Sprite9_Flags2).l
-		bclr	#$07,(Sprite9_InitFlags2).l
+		bclr	#$07,(Sprite9_InteractFlags).l
+		bclr	#$07,(Sprite9_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1929,10 +1929,10 @@ CSA_0096:					  ; CODE XREF: ROM:00012354j
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	$00000001(a1),BehavParam(a5)
-		bclr	#$07,Flags2(a5)
-		bclr	#$07,InitFlags2(a5)
-		bclr	#$01,Flags2(a5)
-		bclr	#$06,Flags2(a5)
+		bclr	#$07,InteractFlags(a5)
+		bclr	#$07,InitInteractFlags(a5)
+		bclr	#$01,InteractFlags(a5)
+		bclr	#$06,InteractFlags(a5)
 		rts
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1940,8 +1940,8 @@ CSA_0096:					  ; CODE XREF: ROM:00012354j
 
 CSA_0097:					  ; CODE XREF: ROM:00012358j
 						  ; ROM:CSA_0099p
-		bclr	#$07,(Sprite4_Flags2).l
-		bclr	#$07,(Sprite4_InitFlags2).l
+		bclr	#$07,(Sprite4_InteractFlags).l
+		bclr	#$07,(Sprite4_InitInteractFlags).l
 		rts
 ; End of function CSA_0097
 
@@ -2062,7 +2062,7 @@ sub_13D3C:					  ; CODE XREF: sub_13D16+Ep
 						  ; sub_13D16+1Ap
 		movem.l	a5,-(sp)
 		move.w	#$0010,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -2372,13 +2372,13 @@ arg_38		=  $3C
 		move.w	#$0014,AnimationIndex(a5)
 
 loc_13F74:					  ; CODE XREF: sub_13F66+6j
-		addq.b	#$01,Unk0D(a5)
-		move.b	Unk0D(a5),d0
+		addq.b	#$01,AnimPhase(a5)
+		move.b	AnimPhase(a5),d0
 		andi.b	#$03,d0
 		bne.s	locret_13F96
 		addq.b	#$04,AnimationFrame1(a5)
 		andi.b	#$0C,AnimationFrame1(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
@@ -2410,7 +2410,7 @@ CSA_00B4:					  ; CODE XREF: ROM:000123CCj
 sub_13FB2:					  ; CODE XREF: ZakFlapWings+38p
 		movem.l	a5,-(sp)
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -2495,7 +2495,7 @@ loc_14058:					  ; CODE XREF: ROM:00014052j
 		lea	(Player_X).l,a0
 		andi.b	#$3F,RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(sub_3FE).l
 		jsr	(j_LoadSprites).l
@@ -2546,7 +2546,7 @@ CSA_00C6:					  ; CODE XREF: ROM:00012414j
 		lea	(Player_X).l,a0
 		andi.b	#$3F,RotationAndSize(a0)
 		ori.b	#$80,RotationAndSize(a0)
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(sub_3FE).l
 		jsr	(j_LoadSprites).l
@@ -2899,7 +2899,7 @@ CSA_00E8:					  ; CODE XREF: ROM:0001249Cj
 ; ---------------------------------------------------------------------------
 
 CSA_00E9:					  ; CODE XREF: ROM:000124A0j
-		bset	#$05,Flags2(a5)
+		bset	#$05,InteractFlags(a5)
 		move.w	#$00D6,d0		  ; Cutscene 0x0D6: 0x0255DA
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -2989,7 +2989,7 @@ CSA_00F2:					  ; CODE XREF: ROM:000124C4j
 sub_145E2:					  ; CODE XREF: ROM:000145DAp
 		movem.l	a5,-(sp)
 		move.w	#$0028,AnimationIndex(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -3010,20 +3010,20 @@ CSA_00F3:					  ; CODE XREF: ROM:000124C8j
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	$00000001(a1),BehavParam(a5)
-		bclr	#$07,Flags2(a5)
-		bclr	#$07,InitFlags2(a5)
-		bclr	#$01,Flags2(a5)
-		bclr	#$06,Flags2(a5)
-		bclr	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		bclr	#$00,Flags2(a5)
+		bclr	#$07,InteractFlags(a5)
+		bclr	#$07,InitInteractFlags(a5)
+		bclr	#$01,InteractFlags(a5)
+		bclr	#$06,InteractFlags(a5)
+		bclr	#$06,CombatFlags(a5)
+		bclr	#$00,InteractFlags(a5)
 		move.b	#$01,AnimFlags(a5)
-		bset	#$04,Flags2(a5)
+		bset	#$04,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_00F4:					  ; CODE XREF: ROM:000124CCj
-		bclr	#$07,(Sprite5_Flags2).l
-		bclr	#$07,(Sprite5_InitFlags2).l
+		bclr	#$07,(Sprite5_InteractFlags).l
+		bclr	#$07,(Sprite5_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3083,7 +3083,7 @@ loc_14704:					  ; CODE XREF: ROM:0001472Cj
 		move.w	#$1718,(Player_X).l
 		clr.w	(Player_SubX).l
 		bsr.w	SpecialWarp
-		clr.b	(byte_FF1142).l
+		clr.b	(g_PlayerHurtTimer).l
 		clr.b	(g_PlayerAnimation).l
 		move.w	#$00DD,d0		  ; Cutscene 0x0DD: 0x0255E8
 		bsr.w	LoadCutsceneDialogue
@@ -3116,7 +3116,7 @@ loc_14704:					  ; CODE XREF: ROM:0001472Cj
 
 CSA_00F7:					  ; CODE XREF: ROM:000124D8j
 		move.w	#$0120,Z(a5)
-		bset	#$06,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bset	#$06,CombatFlags(a5)
 		rts
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3182,14 +3182,14 @@ CSA_00FA:					  ; CODE XREF: ROM:000124E4j
 ; ---------------------------------------------------------------------------
 
 CSA_00FB:					  ; CODE XREF: ROM:000124E8j
-		bclr	#$07,(Sprite4_Flags2).l
-		bclr	#$07,(Sprite4_InitFlags2).l
+		bclr	#$07,(Sprite4_InteractFlags).l
+		bclr	#$07,(Sprite4_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_00FC:					  ; CODE XREF: ROM:000124ECj
 		bsr.w	RestoreBGM_0
-		bset	#$04,(Sprite4_Flags2).l
+		bset	#$04,(Sprite4_InteractFlags).l
 		move.w	#$00E2,d0		  ; Cutscene 0x0E2: 0x0255F2
 		bsr.w	LoadCutsceneDialogue
 		movea.l	a5,a0
@@ -3199,13 +3199,13 @@ CSA_00FC:					  ; CODE XREF: ROM:000124ECj
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	Y(a1),BehavParam(a5)
-		bclr	#$07,Flags2(a5)
-		bclr	#$07,InitFlags2(a5)
+		bclr	#$07,InteractFlags(a5)
+		bclr	#$07,InitInteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_00FD:					  ; CODE XREF: ROM:000124F0j
-		bclr	#$04,(Sprite4_Flags2).l
+		bclr	#$04,(Sprite4_InteractFlags).l
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		andi.b	#$3F,RotationAndSize(a5)
@@ -3335,8 +3335,8 @@ CSA_010C:					  ; CODE XREF: ROM:0001252Cj
 loc_14A26:					  ; CODE XREF: ROM:00014A40j
 		tst.w	(a0)
 		bmi.s	locret_14A44
-		bclr	#$07,Flags2(a0)
-		bclr	#$07,InitFlags2(a0)
+		bclr	#$07,InteractFlags(a0)
+		bclr	#$07,InitInteractFlags(a0)
 		beq.s	loc_14A3C
 		clr.w	BehavParam(a0)
 
@@ -3385,7 +3385,7 @@ CSA_010F:					  ; CODE XREF: ROM:00012538j
 		move.w	#$2F1D,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
 		ori.b	#$C0,(Player_RotationAndSize).l
-		ori.b	#$40,(Player_Flags2).l
+		ori.b	#$40,(Player_InteractFlags).l
 		jsr	(j_WarpToRoom).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
@@ -3401,7 +3401,7 @@ CSA_010F:					  ; CODE XREF: ROM:00012538j
 ; ---------------------------------------------------------------------------
 
 CSA_0110:					  ; CODE XREF: ROM:0001253Cj
-		andi.b	#$BF,(Player_Flags2).l
+		andi.b	#$BF,(Player_InteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3692,7 +3692,7 @@ CSA_0125:					  ; CODE XREF: ROM:00012590j
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu
 		bset	#STATUS_NOHEAL,(g_PlayerStatus).l
-		move.w	#$814D,(Player_Unk0A).l
+		move.w	#$814D,(Player_AnimCtrl).l
 		move.b	#SPR_DOG,(Player_SpriteType).l
 		move.b	#$01,(Player_Unk6F).l
 		lea	(Player_X).l,a1
@@ -3717,7 +3717,7 @@ CSA_0128:					  ; CODE XREF: ROM:0001259Cj
 ; ---------------------------------------------------------------------------
 
 CSA_0129:					  ; CODE XREF: ROM:000125A0j
-		move.w	#$8000,(Player_Unk0A).l
+		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_Unk6F).l
 		bclr	#$04,(g_Flags+3).l
 		andi.b	#$F8,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
@@ -3965,10 +3965,10 @@ CSA_0143:					  ; CODE XREF: ROM:00012608j
 ; ---------------------------------------------------------------------------
 
 CSA_0144:					  ; CODE XREF: ROM:0001260Cj
-		bclr	#$07,(Sprite3_Flags2).l
-		bclr	#$07,(Sprite3_InitFlags2).l
-		bclr	#$04,(Sprite3_Flags2).l
-		bclr	#$04,(Sprite3_InitFlags2).l
+		bclr	#$07,(Sprite3_InteractFlags).l
+		bclr	#$07,(Sprite3_InitInteractFlags).l
+		bclr	#$04,(Sprite3_InteractFlags).l
+		bclr	#$04,(Sprite3_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3982,10 +3982,10 @@ CSA_0145:					  ; CODE XREF: ROM:00012610j
 ; ---------------------------------------------------------------------------
 
 CSA_0146:					  ; CODE XREF: ROM:00012614j
-		bclr	#$07,(Sprite2_Flags2).l
-		bclr	#$07,(Sprite2_InitFlags2).l
-		bclr	#$04,(Sprite2_Flags2).l
-		bclr	#$04,(Sprite2_InitFlags2).l
+		bclr	#$07,(Sprite2_InteractFlags).l
+		bclr	#$07,(Sprite2_InitInteractFlags).l
+		bclr	#$04,(Sprite2_InteractFlags).l
+		bclr	#$04,(Sprite2_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4105,11 +4105,11 @@ CSA_014E:					  ; CODE XREF: ROM:00012634j
 		or.w	d0,$00000940(a2)
 		move.w	#$0140,d0		  ; Cutscene 0x140: 0x0256AE
 		bsr.w	LoadCutsceneDialogue
-		bclr	#$06,Flags2(a5)
-		bclr	#$06,InitFlags2(a5)
+		bclr	#$06,InteractFlags(a5)
+		bclr	#$06,InitInteractFlags(a5)
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0014,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4118,7 +4118,7 @@ CSA_014E:					  ; CODE XREF: ROM:00012634j
 		jsr	(j_Sleep).l
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0010,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4127,13 +4127,13 @@ CSA_014E:					  ; CODE XREF: ROM:00012634j
 		jsr	(j_Sleep).l
 		move.w	#$0004,AnimationIndex(a5)
 		move.w	#$0000,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 CSA_014F:					  ; CODE XREF: ROM:00012638j
-		bclr	#$07,(Sprite3_Flags2).l
-		bclr	#$07,(Sprite3_InitFlags2).l
+		bclr	#$07,(Sprite3_InteractFlags).l
+		bclr	#$07,(Sprite3_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4159,8 +4159,8 @@ CSA_0151:					  ; CODE XREF: ROM:00012640j
 ; ---------------------------------------------------------------------------
 
 CSA_0152:					  ; CODE XREF: ROM:00012644j
-		bclr	#$07,(Sprite2_Flags2).l
-		bclr	#$07,(Sprite2_InitFlags2).l
+		bclr	#$07,(Sprite2_InteractFlags).l
+		bclr	#$07,(Sprite2_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4171,7 +4171,7 @@ CSA_0153:					  ; CODE XREF: ROM:00012648j
 ; ---------------------------------------------------------------------------
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,Unk48(a5)
+		bset	#$07,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4218,9 +4218,9 @@ sub_15530:					  ; CODE XREF: ROM:000154FAp
 		moveq	#$00000005,d7
 
 loc_15532:					  ; CODE XREF: sub_15530+36j
-		bset	#$07,(Sprite3_Unk48).l
-		bset	#$00,(Sprite3_Unk48).l
-		bset	#$01,(Sprite3_Flags2).l
+		bset	#$07,(Sprite3_RenderFlags).l
+		bset	#$00,(Sprite3_RenderFlags).l
+		bset	#$01,(Sprite3_InteractFlags).l
 		movem.w	d7,-(sp)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
@@ -4263,7 +4263,7 @@ loc_15594:					  ; CODE XREF: ROM:00015598j
 		move.w	#$1C19,(Player_X).l
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$80,(Player_RotationAndSize).l
-		ori.b	#$80,Unk0A(a0)
+		ori.b	#$80,AnimCtrl(a0)
 		jsr	(sub_3FE).l
 		jsr	(sub_434).l
 		clr.b	d0
@@ -4429,7 +4429,7 @@ loc_157EE:					  ; CODE XREF: ROM:00015802j
 		tst.b	(a1)
 		bmi.s	locret_15806
 		move.b	#$01,Speed(a1)
-		bclr	#$05,Flags2(a1)
+		bclr	#$05,InteractFlags(a1)
 		lea	SPRITE_SIZE(a1),a1
 		dbf	d7,loc_157EE
 
@@ -4527,9 +4527,9 @@ loc_1589C:					  ; CODE XREF: sub_1587C+26j
 		move.w	TileSource(a0),d0
 		move.w	TileSource(a1),TileSource(a0)
 		move.w	d0,TileSource(a1)
-		move.w	Unk0A(a0),d0
-		move.w	Unk0A(a1),Unk0A(a0)
-		move.w	d0,Unk0A(a1)
+		move.w	AnimCtrl(a0),d0
+		move.w	AnimCtrl(a1),AnimCtrl(a0)
+		move.w	d0,AnimCtrl(a1)
 		move.l	AnimationIndex(a0),d0
 		move.l	AnimationIndex(a1),AnimationIndex(a0)
 		move.l	d0,AnimationIndex(a1)

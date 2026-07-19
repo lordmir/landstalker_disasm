@@ -5,9 +5,9 @@ EnemyAI_Orc3_B:					  ; CODE XREF: ROM:001A84BAj
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Orc3_A:					  ; CODE XREF: ROM:001A84B6j
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1A5134
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1A513A
 		cmpi.b	#$10,d0
 		beq.s	loc_1A5166
@@ -37,7 +37,7 @@ EnemyAI_Orc3:					  ; CODE XREF: ROM:EnemyAI_Orc3_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1A5166:					  ; CODE XREF: ROM:001A512Ej
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1A5196
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
@@ -76,7 +76,7 @@ sub_1A519A:					  ; CODE XREF: ROM:001A517Ep
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00008,d7
 		bhi.s	loc_1A51E4
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$000E,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -108,7 +108,7 @@ sub_1A51E8:					  ; CODE XREF: ROM:001A5182p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
 		bhi.s	loc_1A5232
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -140,7 +140,7 @@ sub_1A5236:					  ; CODE XREF: ROM:001A5186p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
 		bhi.s	loc_1A5280
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0011,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -167,7 +167,7 @@ sub_1A5284:					  ; CODE XREF: ROM:001A518Cp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#$0032,d7
 		bcc.s	loc_1A52C0
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	$0000000D(a5)
@@ -176,7 +176,7 @@ sub_1A5284:					  ; CODE XREF: ROM:001A518Cp
 ; ---------------------------------------------------------------------------
 
 loc_1A52C0:					  ; CODE XREF: sub_1A5284+20j
-		move.b	#$24,ChestIndex(a5)
+		move.b	#$24,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	$0000000D(a5)
@@ -212,16 +212,16 @@ loc_1A52F8:					  ; CODE XREF: ROM:001A52E2j
 ; ---------------------------------------------------------------------------
 
 loc_1A530A:					  ; CODE XREF: ROM:001A52F4j
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.s	locret_1A533E
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	locret_1A533E
 		beq.w	EnemyAI_Orc3
 
@@ -232,16 +232,16 @@ locret_1A533E:					  ; CODE XREF: ROM:001A531Aj
 
 loc_1A5340:					  ; CODE XREF: ROM:001A52E8j
 						  ; ROM:001A52EEj ...
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$0F,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$0F,AnimPhase(a5)
 		bcs.s	loc_1A5374
 		move.w	#$0019,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$1E,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$1E,AnimPhase(a5)
 		bcs.s	loc_1A5374
 		beq.w	EnemyAI_Orc3
 

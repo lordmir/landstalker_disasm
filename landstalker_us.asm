@@ -10,6 +10,9 @@
 
 Defines:                    include "code\include\landstalker.inc"
                             include "code\include\landstalker_us.inc"
+                            include "code\include\sram.inc"
+                            include "code\include\io.inc"
+                            include "code\include\vdp.inc"
                             include "code\include\ram.inc"
                             include "code\include\macros.inc"
 

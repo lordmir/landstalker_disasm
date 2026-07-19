@@ -5,9 +5,9 @@ EnemyAI_Reaper1_B:				  ; CODE XREF: ROM:001A85F2j
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Reaper1_A:				  ; CODE XREF: ROM:001A85EEj
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AC13A
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AC140
 		cmpi.b	#$10,d0
 		beq.s	loc_1AC16C
@@ -37,17 +37,17 @@ EnemyAI_Reaper1:				  ; CODE XREF: ROM:EnemyAI_Reaper1_Bj
 ; ---------------------------------------------------------------------------
 
 loc_1AC16C:					  ; CODE XREF: ROM:001AC134j
-		tst.b	(byte_FF1142).l
+		tst.b	(g_PlayerHurtTimer).l
 		bne.s	loc_1AC1CC
 		move.w	CentreX(a5),(word_FF1800).l
 		move.w	CentreY(a5),(dword_FF1804).l
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$3C,Unk4D(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$3C,AICounter(a5)
 		bcs.s	loc_1AC1B8
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bsr.s	sub_1AC1D0
 		bcs.s	loc_1AC1B2
-		ori.b	#$40,Flags2(a5)
+		ori.b	#$40,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		bsr.s	sub_1AC200
@@ -61,7 +61,7 @@ loc_1AC1B2:					  ; CODE XREF: ROM:001AC196j
 ; ---------------------------------------------------------------------------
 
 loc_1AC1B8:					  ; CODE XREF: ROM:001AC18Ej
-		ori.b	#$40,Flags2(a5)
+		ori.b	#$40,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		rts
@@ -79,10 +79,10 @@ sub_1AC1D0:					  ; CODE XREF: ROM:001AC194p
 		move.w	#$0010,d7
 		bsr.w	sub_1A8964
 		bcc.s	loc_1AC1FC
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ sub_1AC200:					  ; CODE XREF: ROM:001AC1AAp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00200,d7
 		bhi.s	loc_1AC226
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		ori	#$01,ccr
@@ -122,10 +122,10 @@ sub_1AC22A:					  ; CODE XREF: ROM:001AC1AEp
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00200,d7
 		bhi.s	loc_1AC254
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -138,7 +138,7 @@ loc_1AC254:					  ; CODE XREF: sub_1AC22A+Ej
 ; ---------------------------------------------------------------------------
 
 loc_1AC258:					  ; CODE XREF: ROM:001AC136j
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		andi.b	#$0F,d0
 		beq.w	loc_1AC368
 		cmpi.b	#$01,d0
@@ -232,39 +232,39 @@ loc_1AC338:					  ; CODE XREF: ROM:001AC314j
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		movem.l	(sp)+,d0
-		move.b	#$20,ChestIndex(a5)
-		clr.b	Unk4D(a5)
+		move.b	#$20,AIState(a5)
+		clr.b	AICounter(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 loc_1AC368:					  ; CODE XREF: ROM:001AC260j
-		andi.b	#$BF,Flags2(a5)
+		andi.b	#$BF,InteractFlags(a5)
 		clr.w	d0
 		move.b	FloorHeight(a5),d0
 		move.w	d0,Z(a5)
 		addi.w	#$001F,d0
 		move.w	d0,HitBoxZEnd(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$01,Unk4D(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$01,AICounter(a5)
 		bne.s	loc_1AC3A2
-		move.w	#$0100,QueuedAction(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		lea	($00009880).l,a2
 		move.b	#$01,d0
 		jmp	(j_LoadMagicSwordEffect).l
 ; ---------------------------------------------------------------------------
 
 loc_1AC3A2:					  ; CODE XREF: ROM:001AC38Aj
-		cmpi.b	#$02,Unk4D(a5)
+		cmpi.b	#$02,AICounter(a5)
 		bne.w	loc_1AC3B4
 		move.b	#$01,d0
 		bra.w	LoadProjectilePalette
 ; ---------------------------------------------------------------------------
 
 loc_1AC3B4:					  ; CODE XREF: ROM:001AC3A8j
-		cmpi.b	#$2D,Unk4D(a5)
+		cmpi.b	#$2D,AICounter(a5)
 		bhi.w	loc_1AC3DA
 		bcs.w	locret_1AC3EA
-		move.w	#$0200,QueuedAction(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1
 		bsr.w	SpawnSmallProjectile
@@ -273,8 +273,8 @@ loc_1AC3B4:					  ; CODE XREF: ROM:001AC3A8j
 ; ---------------------------------------------------------------------------
 
 loc_1AC3DA:					  ; CODE XREF: ROM:001AC3BAj
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$46,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$46,AICounter(a5)
 		beq.w	loc_1AC3EC
 
 locret_1AC3EA:					  ; CODE XREF: ROM:001AC3BEj
@@ -283,5 +283,5 @@ locret_1AC3EA:					  ; CODE XREF: ROM:001AC3BEj
 
 loc_1AC3EC:					  ; CODE XREF: ROM:001AC3D4j
 						  ; ROM:001AC3E6j
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bra.w	EnemyAI_Reaper1

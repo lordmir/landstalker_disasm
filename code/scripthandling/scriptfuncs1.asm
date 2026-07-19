@@ -11,7 +11,7 @@ loc_24EC8:					  ; CODE XREF: GetSpriteDialogue+2Aj
 		bmi.s	loc_24EEA
 		cmpi.w	#$7F7F,d0
 		beq.s	loc_24EE4
-		btst	#$04,Flags2(a0)		  ; Has	dialogue
+		btst	#$04,InteractFlags(a0)		  ; Has	dialogue
 		beq.s	loc_24EE4
 		move.b	Dialogue(a0),d0		  ; Dialogue Script
 		andi.b	#$FC,d0

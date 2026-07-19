@@ -5,9 +5,9 @@ EnemyAI_Nole_B:					  ; CODE XREF: ROM:001A86A2j
 ; ---------------------------------------------------------------------------
 
 EnemyAI_Nole_A:					  ; CODE XREF: ROM:001A869Ej
-		btst	#$01,Flags2(a5)
+		btst	#$01,InteractFlags(a5)
 		bne.s	loc_1AE896
-		move.b	ChestIndex(a5),d0
+		move.b	AIState(a5),d0
 		beq.s	loc_1AE89C
 		cmpi.b	#$10,d0
 		beq.s	loc_1AE8CE
@@ -47,12 +47,12 @@ sub_1AE8CA:					  ; CODE XREF: ROM:001AE8C0j
 ; ---------------------------------------------------------------------------
 
 loc_1AE8CE:					  ; CODE XREF: ROM:001AE890j
-		btst	#$06,Flags2(a5)
+		btst	#$06,InteractFlags(a5)
 		beq.s	loc_1AE8E6
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$1E,Unk4D(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$1E,AICounter(a5)
 		bcs.s	loc_1AE912
-		subq.b	#$01,Unk4D(a5)
+		subq.b	#$01,AICounter(a5)
 
 loc_1AE8E6:					  ; CODE XREF: ROM:001AE8D4j
 		move.w	CentreX(a5),(word_FF1800).l
@@ -81,7 +81,7 @@ sub_1AE91C:					  ; CODE XREF: ROM:001AE8F6p
 
 ; FUNCTION CHUNK AT 001AE9D4 SIZE 0000001A BYTES
 
-		btst	#$06,Flags2(a5)
+		btst	#$06,InteractFlags(a5)
 		beq.w	loc_1AE9CA
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -155,10 +155,10 @@ loc_1AE9CE:					  ; CODE XREF: sub_1AE944+78j
 ; START	OF FUNCTION CHUNK FOR sub_1AE91C
 
 loc_1AE9D4:					  ; CODE XREF: sub_1AE91C+22j
-		move.b	#$25,ChestIndex(a5)
+		move.b	#$25,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; END OF FUNCTION CHUNK	FOR sub_1AE91C
@@ -173,10 +173,10 @@ sub_1AE9EE:					  ; CODE XREF: ROM:001AE8FCp
 		bhi.s	loc_1AEA18
 
 loc_1AE9FE:					  ; CODE XREF: ROM:001AE8C6j
-		move.b	#$20,ChestIndex(a5)
+		move.b	#$20,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -191,7 +191,7 @@ loc_1AEA18:					  ; CODE XREF: sub_1AE9EE+Ej
 
 
 sub_1AEA1C:					  ; CODE XREF: ROM:001AE902p
-		btst	#$06,Flags2(a5)
+		btst	#$06,InteractFlags(a5)
 		bne.s	loc_1AEA60
 		move.w	#$00A0,d5
 		move.w	#$FFD8,d6
@@ -202,10 +202,10 @@ sub_1AEA1C:					  ; CODE XREF: ROM:001AE902p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00300,d7
 		bhi.s	loc_1AEA60
-		move.b	#$21,ChestIndex(a5)
+		move.b	#$21,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -221,7 +221,7 @@ loc_1AEA60:					  ; CODE XREF: sub_1AEA1C+6j
 
 
 sub_1AEA64:					  ; CODE XREF: ROM:001AE908p
-		btst	#$06,Flags2(a5)
+		btst	#$06,InteractFlags(a5)
 		bne.s	loc_1AEAA8
 		move.w	#$0048,d5
 		move.w	#$0030,d6
@@ -232,10 +232,10 @@ sub_1AEA64:					  ; CODE XREF: ROM:001AE908p
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
 		bhi.s	loc_1AEAA8
-		move.b	#$22,ChestIndex(a5)
+		move.b	#$22,AIState(a5)
 		move.w	#$0012,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -251,17 +251,17 @@ loc_1AEAA8:					  ; CODE XREF: sub_1AEA64+6j
 
 
 sub_1AEAAC:					  ; CODE XREF: ROM:001AE90Ep
-		btst	#$06,Flags2(a5)
+		btst	#$06,InteractFlags(a5)
 		bne.s	loc_1AEAE0
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	sub_1A8964
 		bcc.s	loc_1AEAE0
-		move.b	#$23,ChestIndex(a5)
+		move.b	#$23,AIState(a5)
 		move.w	#$0000,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		clr.b	Unk0D(a5)
+		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
@@ -289,19 +289,19 @@ loc_1AEAE4:					  ; CODE XREF: ROM:001AE892j
 ; ---------------------------------------------------------------------------
 
 loc_1AEB0C:					  ; CODE XREF: ROM:001AEAE8j
-		bset	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
-		move.w	#$0500,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$04,Unk4D(a5)
+		bset	#$00,CombatFlags(a5)
+		move.w	#ACT_ATTACK5,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$04,AICounter(a5)
 		bcs.s	locret_1AEB52
-		move.w	#$0600,QueuedAction(a5)
-		cmpi.b	#$08,Unk4D(a5)
+		move.w	#ACT_ATTACK6,QueuedAction(a5)
+		cmpi.b	#$08,AICounter(a5)
 		bcs.s	locret_1AEB52
-		bset	#$06,Flags2(a5)
+		bset	#$06,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		bset	#$07,FallRate(a5)
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bra.w	sub_1AE8CA
 ; ---------------------------------------------------------------------------
 
@@ -311,15 +311,15 @@ locret_1AEB52:					  ; CODE XREF: ROM:001AEB22j
 ; ---------------------------------------------------------------------------
 
 loc_1AEB54:					  ; CODE XREF: ROM:001AEB0Aj
-		bclr	#$06,Flags2(a5)
-		move.w	#$0600,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$04,Unk4D(a5)
+		bclr	#$06,InteractFlags(a5)
+		move.w	#ACT_ATTACK6,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$04,AICounter(a5)
 		bcs.s	locret_1AEB8A
-		move.w	#$0500,QueuedAction(a5)
-		cmpi.b	#$08,Unk4D(a5)
+		move.w	#ACT_ATTACK5,QueuedAction(a5)
+		cmpi.b	#$08,AICounter(a5)
 		bcs.s	locret_1AEB8A
-		bclr	#$00,Flags4(a5)		  ; Bit	0 = Invincible / Solid
+		bclr	#$00,CombatFlags(a5)
 		bclr	#$07,FallRate(a5)
 		bra.w	sub_1AE8CA
 ; ---------------------------------------------------------------------------
@@ -330,15 +330,15 @@ locret_1AEB8A:					  ; CODE XREF: ROM:001AEB6Aj
 ; ---------------------------------------------------------------------------
 
 loc_1AEB8C:					  ; CODE XREF: ROM:001AEAEEj
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk4D(a5)
-		cmpi.b	#$08,Unk4D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AICounter(a5)
+		cmpi.b	#$08,AICounter(a5)
 		bcs.s	locret_1AEBF2
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$10,Unk4D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$10,AICounter(a5)
 		bcs.s	locret_1AEBF2
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$18,Unk4D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$18,AICounter(a5)
 		bhi.w	loc_1AEBE2
 		bcs.w	locret_1AEBF2
 		trap	#$00			  ; Trap00Handler
@@ -355,8 +355,8 @@ loc_1AEB8C:					  ; CODE XREF: ROM:001AEAEEj
 ; ---------------------------------------------------------------------------
 
 loc_1AEBE2:					  ; CODE XREF: ROM:001AEBB8j
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$20,Unk4D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$20,AICounter(a5)
 		beq.w	loc_1AEBF4
 
 locret_1AEBF2:					  ; CODE XREF: ROM:001AEB9Cj
@@ -366,18 +366,18 @@ locret_1AEBF2:					  ; CODE XREF: ROM:001AEB9Cj
 
 loc_1AEBF4:					  ; CODE XREF: ROM:001AEBD0j
 						  ; ROM:001AEBEEj
-		clr.b	Unk4D(a5)
+		clr.b	AICounter(a5)
 		bra.w	sub_1AE8CA
 ; ---------------------------------------------------------------------------
 
 loc_1AEBFC:					  ; CODE XREF: ROM:001AEAF6j
 						  ; ROM:001AEAFEj ...
-		move.w	#$0100,QueuedAction(a5)
-		addq.b	#$01,Unk0D(a5)
-		cmpi.b	#$08,Unk0D(a5)
+		move.w	#ACT_ATTACK1,QueuedAction(a5)
+		addq.b	#$01,AnimPhase(a5)
+		cmpi.b	#$08,AnimPhase(a5)
 		bcs.s	loc_1AEC52
-		move.w	#$0200,QueuedAction(a5)
-		cmpi.b	#$10,Unk0D(a5)
+		move.w	#ACT_ATTACK2,QueuedAction(a5)
+		cmpi.b	#$10,AnimPhase(a5)
 		bcs.s	loc_1AEC52
 		bhi.s	loc_1AEC22
 		trap	#$00			  ; Trap00Handler
@@ -390,11 +390,11 @@ loc_1AEC22:					  ; CODE XREF: ROM:001AEC1Cj
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	sub_1A880C
-		move.w	#$0300,QueuedAction(a5)
-		cmpi.b	#$18,Unk0D(a5)
+		move.w	#ACT_ATTACK3,QueuedAction(a5)
+		cmpi.b	#$18,AnimPhase(a5)
 		bcs.s	loc_1AEC52
-		move.w	#$0400,QueuedAction(a5)
-		cmpi.b	#$20,Unk0D(a5)
+		move.w	#ACT_ATTACK4,QueuedAction(a5)
+		cmpi.b	#$20,AnimPhase(a5)
 		bcs.s	loc_1AEC52
 		beq.w	sub_1AE8CA
 

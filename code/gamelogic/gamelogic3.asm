@@ -66,8 +66,8 @@ LoadSprites:					  ; CODE XREF: j_LoadSpritesj
 		move.l	(loc_403C,pc),(JumpInstr2).l
 		move.w	((loc_403C+4),pc),(JumpInstr2+4).l
 		bsr.s	ResetVdpSprites
-		bsr.w	sub_40F2
-		bsr.w	sub_4980
+		bsr.w	ProjectAllSprites
+		bsr.w	SortSpritesByDepth
 		bsr.w	LoadSpriteFrames
 		rts
 ; End of function LoadSprites
@@ -157,14 +157,14 @@ loc_40B4:					  ; CODE XREF: ResetVdpSprites+30j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_40F2:					  ; CODE XREF: LoadSprites+12p
+ProjectAllSprites:					  ; CODE XREF: LoadSprites+12p
 		lea	(unk_FF11DE).l,a2
 		lea	(Player_X).l,a6
 		clr.w	d6
 		movea.w	#$0000,a5
 		move.w	#$0100,d4
 		move.w	#$0200,d5
-		bsr.w	sub_4144
+		bsr.w	ProjectSpriteToScreen
 		move.w	(word_FF1180).l,d3
 		eori.w	#$0001,d3
 		movea.w	d3,a5
@@ -172,28 +172,28 @@ sub_40F2:					  ; CODE XREF: LoadSprites+12p
 		move.w	#SPRITE_SIZE,d6
 		moveq	#$0000000E,d7
 
-loc_4128:					  ; CODE XREF: sub_40F2+4Cj
+loc_4128:					  ; CODE XREF: ProjectAllSprites+4Cj
 		tst.b	(a6)
 		bmi.s	locret_4142
-		move.l	Unk0E(a6),Unk4E(a6)
-		bsr.w	sub_4144
+		move.l	ScreenX(a6),PrevScreenX(a6)
+		bsr.w	ProjectSpriteToScreen
 		addi.w	#SPRITE_SIZE,d6
 		lea	SPRITE_SIZE(a6),a6
 		dbf	d7,loc_4128
 
-locret_4142:					  ; CODE XREF: sub_40F2+38j
+locret_4142:					  ; CODE XREF: ProjectAllSprites+38j
 		rts
-; End of function sub_40F2
+; End of function ProjectAllSprites
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4144:					  ; CODE XREF: sub_40F2+1Ap
-						  ; sub_40F2+40p
-		btst	#$06,Flags2(a6)
+ProjectSpriteToScreen:					  ; CODE XREF: ProjectAllSprites+1Ap
+						  ; ProjectAllSprites+40p
+		btst	#$06,InteractFlags(a6)
 		bne.w	loc_41DE
-		btst	#$00,Flags1(a6)
+		btst	#$00,StateFlags(a6)
 		bne.w	loc_41DE
 		move.w	Z(a6),d2
 		move.w	CentreX(a6),d0
@@ -227,8 +227,8 @@ sub_4144:					  ; CODE XREF: sub_40F2+1Ap
 		bcs.s	loc_41DE
 		cmpi.w	#$01E0,d0
 		bcc.s	loc_41DE
-		move.w	d2,Unk0E(a6)
-		move.w	d0,Unk10(a6)
+		move.w	d2,ScreenX(a6)
+		move.w	d0,ScreenY(a6)
 		move.w	d6,(a2)+
 		move.w	HitBoxXStart(a6),d0
 		add.w	HitBoxYStart(a6),d0
@@ -238,23 +238,23 @@ sub_4144:					  ; CODE XREF: sub_40F2+1Ap
 		add.w	d1,d0
 		add.w	Z(a6),d0
 		add.w	HitBoxZEnd(a6),d0
-		move.w	d0,Unk56(a6)
+		move.w	d0,DrawOrder(a6)
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_41DE:					  ; CODE XREF: sub_4144+6j
-						  ; sub_4144+10j ...
-		clr.l	Unk0E(a6)
-		bclr	#$07,Unk48(a6)
+loc_41DE:					  ; CODE XREF: ProjectSpriteToScreen+6j
+						  ; ProjectSpriteToScreen+10j ...
+		clr.l	ScreenX(a6)
+		bclr	#$07,RenderFlags(a6)
 		beq.s	loc_41EE
 		move.w	d6,(a2)+
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_41EE:					  ; CODE XREF: sub_4144+A4j
-		bclr	#$07,Unk0A(a6)
+loc_41EE:					  ; CODE XREF: ProjectSpriteToScreen+A4j
+		bclr	#$07,AnimCtrl(a6)
 		rts
-; End of function sub_4144
+; End of function ProjectSpriteToScreen
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -268,7 +268,7 @@ loc_41F8:					  ; CODE XREF: LoadSpriteFrames:loc_420Ej
 		bmi.s	locret_4212
 		lea	(Player_X).l,a1
 		adda.w	d0,a1
-		btst	#$00,Flags1(a1)
+		btst	#$00,StateFlags(a1)
 		bne.s	loc_420E
 		bsr.s	LoadSpriteFrame
 
@@ -374,10 +374,10 @@ loc_42BE:					  ; CODE XREF: ROM:000042A8j
 		movem.l	(sp)+,a1-a2
 		tst.b	d0
 		beq.s	loc_42DC
-		bset	#$00,Flags2(a1)
+		bset	#$00,InteractFlags(a1)
 
 loc_42DC:					  ; CODE XREF: ROM:000042D4j
-		bsr.w	sub_4374
+		bsr.w	BuildVdpSpriteEntry
 		movem.w	(sp)+,d2/d6
 		cmpi.w	#$03FF,d2		  ; Flush every	87 tiles
 		bcs.s	loc_4318
@@ -433,14 +433,14 @@ j_DoDMACopy:					  ; DATA XREF: ROM:0000470Ct
 ; ---------------------------------------------------------------------------
 
 loc_433E:					  ; CODE XREF: ROM:loc_403Cj
-		bclr	#$07,Unk48(a1)
+		bclr	#$07,RenderFlags(a1)
 		beq.s	loc_434E
-		bclr	#$07,Unk0A(a1)
+		bclr	#$07,AnimCtrl(a1)
 		bra.s	loc_4356
 ; ---------------------------------------------------------------------------
 
 loc_434E:					  ; CODE XREF: ROM:00004344j
-		bclr	#$07,Unk0A(a1)
+		bclr	#$07,AnimCtrl(a1)
 		beq.s	loc_436A
 
 loc_4356:					  ; CODE XREF: ROM:0000434Cj
@@ -448,7 +448,7 @@ loc_4356:					  ; CODE XREF: ROM:0000434Cj
 		bsr.w	sub_45DE
 		bsr.w	LoadSpriteTiles
 		movem.l	(sp)+,a0-a2
-		bsr.s	sub_4374
+		bsr.s	BuildVdpSpriteEntry
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -466,7 +466,7 @@ j_QueueDMAOp_0:					  ; DATA XREF: sub_4042t
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4374:					  ; CODE XREF: ROM:loc_42DCp
+BuildVdpSpriteEntry:					  ; CODE XREF: ROM:loc_42DCp
 						  ; ROM:00004366p
 		movem.l	a3-a6,-(sp)
 		bra.s	loc_43B2
@@ -474,9 +474,9 @@ sub_4374:					  ; CODE XREF: ROM:loc_42DCp
 
 loc_437A:					  ; CODE XREF: ROM:loc_436Ap
 		movem.l	a3-a6,-(sp)
-		bclr	#$06,QueuedAction(a1)
+		bclr	#ACTBH_REFRESH,QueuedAction(a1)
 		bne.s	loc_43B2
-		btst	#$06,Flags1(a1)
+		btst	#$06,StateFlags(a1)
 		bne.s	loc_43B2
 		move.w	SpriteUnderneath(a1),d0
 		bmi.s	loc_43A6
@@ -486,19 +486,19 @@ loc_437A:					  ; CODE XREF: ROM:loc_436Ap
 		andi.b	#$0F,d0
 		bne.s	loc_43B2
 
-loc_43A6:					  ; CODE XREF: sub_4374+1Ej
+loc_43A6:					  ; CODE XREF: BuildVdpSpriteEntry+1Ej
 		move.b	AnimAction1(a1),d0
 		andi.b	#$3F,d0
 		beq.w	loc_43B8
 
-loc_43B2:					  ; CODE XREF: sub_4374+4j
-						  ; sub_4374+10j ...
+loc_43B2:					  ; CODE XREF: BuildVdpSpriteEntry+4j
+						  ; BuildVdpSpriteEntry+10j ...
 		bsr.w	sub_44C4
 		bra.s	loc_43D8
 ; ---------------------------------------------------------------------------
 
-loc_43B8:					  ; CODE XREF: sub_4374+3Aj
-		tst.l	Unk4E(a1)
+loc_43B8:					  ; CODE XREF: BuildVdpSpriteEntry+3Aj
+		tst.l	PrevScreenX(a1)
 		beq.s	loc_43B2
 		move.l	a1,d7
 		subi.l	#Player_X,d7
@@ -508,7 +508,7 @@ loc_43B8:					  ; CODE XREF: sub_4374+3Aj
 		move.w	$00000004(a3),d0
 		andi.w	#$8000,d0
 
-loc_43D8:					  ; CODE XREF: sub_4374+42j
+loc_43D8:					  ; CODE XREF: BuildVdpSpriteEntry+42j
 		cmpa.l	#Player_X,a1
 		bne.s	loc_4420
 		move.b	(g_PlayerStatus).l,d1
@@ -517,7 +517,7 @@ loc_43D8:					  ; CODE XREF: sub_4374+42j
 		movem.l	d0/a1-a3,-(sp)
 		jsr	(j_LoadStatusGfx).l
 		movem.l	(sp)+,d0/a1-a3
-		move.w	Unk10(a1),d1
+		move.w	ScreenY(a1),d1
 		subi.w	#$0040,d1
 		move.w	d1,(a2)+
 		move.w	#$0F00,d1
@@ -526,15 +526,15 @@ loc_43D8:					  ; CODE XREF: sub_4374+42j
 		move.w	#$4514,d1
 		or.w	d0,d1
 		move.w	d1,(a2)+
-		move.w	Unk0E(a1),d1
+		move.w	ScreenX(a1),d1
 		subi.w	#$0010,d1
 		move.w	d1,(a2)+
 
-loc_4420:					  ; CODE XREF: sub_4374+6Aj
-						  ; sub_4374+76j
-		btst	#$01,Flags2(a1)
+loc_4420:					  ; CODE XREF: BuildVdpSpriteEntry+6Aj
+						  ; BuildVdpSpriteEntry+76j
+		btst	#$01,InteractFlags(a1)
 		beq.s	loc_448C
-		move.b	Unk48(a1),d3
+		move.b	RenderFlags(a1),d3
 		andi.b	#$07,d3
 		beq.s	loc_448C
 		move.w	#$24C4,d3
@@ -542,23 +542,23 @@ loc_4420:					  ; CODE XREF: sub_4374+6Aj
 		beq.s	loc_4442
 		move.w	#$478C,d3
 
-loc_4442:					  ; CODE XREF: sub_4374+C8j
+loc_4442:					  ; CODE XREF: BuildVdpSpriteEntry+C8j
 		btst	#$00,(byte_FF0F9D).l
 		beq.s	loc_4450
 		addi.w	#$0018,d3
 
-loc_4450:					  ; CODE XREF: sub_4374+D6j
+loc_4450:					  ; CODE XREF: BuildVdpSpriteEntry+D6j
 		or.w	d0,d3
-		move.w	Unk10(a1),d2
+		move.w	ScreenY(a1),d2
 		subi.w	#$0028,d2
 		move.w	d2,(a2)+
 		move.b	#$0F,(a2)
 		addq.w	#$02,a2
 		move.w	d3,(a2)+
-		move.w	Unk0E(a1),d1
+		move.w	ScreenX(a1),d1
 		subi.w	#$0010,d1
 		move.w	d1,(a2)+
-		move.w	Unk10(a1),d2
+		move.w	ScreenY(a1),d2
 		subi.w	#$0008,d2
 		move.w	d2,(a2)+
 		move.b	#$0D,(a2)
@@ -570,11 +570,11 @@ loc_4450:					  ; CODE XREF: sub_4374+D6j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_448C:					  ; CODE XREF: sub_4374+B2j
-						  ; sub_4374+BCj
+loc_448C:					  ; CODE XREF: BuildVdpSpriteEntry+B2j
+						  ; BuildVdpSpriteEntry+BCj
 		moveq	#$00000007,d7
 
-loc_448E:					  ; CODE XREF: sub_4374+146j
+loc_448E:					  ; CODE XREF: BuildVdpSpriteEntry+146j
 		move.w	(a3)+,d1
 		cmpi.w	#$FFFF,d1
 		beq.s	loc_44BE
@@ -593,17 +593,17 @@ loc_448E:					  ; CODE XREF: sub_4374+146j
 		move.w	d1,(a2)+
 		dbf	d7,loc_448E
 
-loc_44BE:					  ; CODE XREF: sub_4374+120j
+loc_44BE:					  ; CODE XREF: BuildVdpSpriteEntry+120j
 		movem.l	(sp)+,a3-a6
 		rts
-; End of function sub_4374
+; End of function BuildVdpSpriteEntry
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
 sub_44C4:					  ; CODE XREF: ROM:000003C2j
-						  ; sub_4374:loc_43B2p
+						  ; BuildVdpSpriteEntry:loc_43B2p
 		clr.w	d0
 		move.w	Z(a1),d1
 		lsr.w	#$04,d1
@@ -974,24 +974,24 @@ Zeros:		dcb.w $F0,$0000			  ; DATA XREF: LoadSpriteTiles:loc_476Et
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4980:					  ; CODE XREF: LoadSprites+16p
+SortSpritesByDepth:					  ; CODE XREF: LoadSprites+16p
 		bra.w	loc_49BA
 ; ---------------------------------------------------------------------------
 		lea	(Player_X).l,a0
 		lea	(unk_FF11DE).l,a2
 
-loc_4990:					  ; CODE XREF: sub_4980+36j
+loc_4990:					  ; CODE XREF: SortSpritesByDepth+36j
 		movea.l	a2,a3
 		tst.w	(a3)+
 		move.w	(a2),d2
 		bmi.s	locret_49B8
 
-loc_4998:					  ; CODE XREF: sub_4980+2Ej
-						  ; sub_4980+32j
+loc_4998:					  ; CODE XREF: SortSpritesByDepth+2Ej
+						  ; SortSpritesByDepth+32j
 		move.w	(a3),d3
 		bmi.s	loc_49B4
-		move.w	Unk56(a0,d2.w),d0
-		cmp.w	Unk56(a0,d3.w),d0
+		move.w	DrawOrder(a0,d2.w),d0
+		cmp.w	DrawOrder(a0,d3.w),d0
 		bhi.s	loc_49B0
 		move.w	(a2),d0
 		move.w	(a3),(a2)
@@ -1000,31 +1000,31 @@ loc_4998:					  ; CODE XREF: sub_4980+2Ej
 		bra.s	loc_4998
 ; ---------------------------------------------------------------------------
 
-loc_49B0:					  ; CODE XREF: sub_4980+24j
+loc_49B0:					  ; CODE XREF: SortSpritesByDepth+24j
 		tst.w	(a3)+
 		bra.s	loc_4998
 ; ---------------------------------------------------------------------------
 
-loc_49B4:					  ; CODE XREF: sub_4980+1Aj
+loc_49B4:					  ; CODE XREF: SortSpritesByDepth+1Aj
 		tst.w	(a2)+
 		bra.s	loc_4990
 ; ---------------------------------------------------------------------------
 
-locret_49B8:					  ; CODE XREF: sub_4980+16j
+locret_49B8:					  ; CODE XREF: SortSpritesByDepth+16j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_49BA:					  ; CODE XREF: sub_4980j
+loc_49BA:					  ; CODE XREF: SortSpritesByDepthj
 		bsr.s	sub_49C0
 		bsr.s	sub_4A3A
 		rts
-; End of function sub_4980
+; End of function SortSpritesByDepth
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_49C0:					  ; CODE XREF: sub_4980:loc_49BAp
+sub_49C0:					  ; CODE XREF: SortSpritesByDepth:loc_49BAp
 		lea	(Player_X).l,a0
 		lea	(unk_FF11DE).l,a2
 		moveq	#$0000000E,d7
@@ -1088,7 +1088,7 @@ loc_4A30:					  ; CODE XREF: sub_49C0+1Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_4A3A:					  ; CODE XREF: sub_4980+3Cp
+sub_4A3A:					  ; CODE XREF: SortSpritesByDepth+3Cp
 		lea	(unk_FF11DE).l,a3
 		lea	(Player_X).l,a1
 

@@ -150,7 +150,7 @@ j_HandleAttack:					  ; DATA XREF: GameLoop+28t
 ; Attributes: thunk
 
 sub_1034C:					  ; DATA XREF: GameLoop+54t
-		jmp	sub_16420(pc)
+		jmp	ProcessPlayerDamage(pc)
 ; End of function sub_1034C
 
 
@@ -167,7 +167,7 @@ j_LoadPlayerSpecialAnimation:			  ; DATA XREF: GameLoop+64t
 
 ; Attributes: thunk
 
-j_LoadStatusGfx:				  ; DATA XREF: sub_4374+7Ct
+j_LoadStatusGfx:				  ; DATA XREF: BuildVdpSpriteEntry+7Ct
 		jmp	LoadStatusGfx(pc)
 ; End of function j_LoadStatusGfx
 
@@ -177,7 +177,7 @@ j_LoadStatusGfx:				  ; DATA XREF: sub_4374+7Ct
 ; Attributes: thunk
 
 sub_10358:					  ; DATA XREF: GameLoop+2Et
-		jmp	sub_16220(pc)
+		jmp	ProcessDeadEnemies(pc)
 ; End of function sub_10358
 
 ; ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ j_GetPlayerStatus:				  ; DATA XREF: ROM:ItemUseDetoxGrasst
 ; Attributes: thunk
 
 sub_10380:					  ; DATA XREF: GameLoop+76t
-		jmp	sub_16602(pc)
+		jmp	UpdatePlayerStatusEffects(pc)
 ; End of function sub_10380
 
 
@@ -249,7 +249,7 @@ sub_10380:					  ; DATA XREF: GameLoop+76t
 ; Attributes: thunk
 
 sub_10384:					  ; DATA XREF: GameLoop+A2t
-		jmp	sub_166E8(pc)
+		jmp	RestorePalette0(pc)
 ; End of function sub_10384
 
 
@@ -365,9 +365,9 @@ j_CheckUnlockDoor:				  ; DATA XREF: ROM:loc_8B2At
 
 ; Attributes: thunk
 
-sub_103C4:					  ; DATA XREF: ROM:loc_8758t
-		jmp	sub_16076(pc)
-; End of function sub_103C4
+j_AnyHostileEnemies:					  ; DATA XREF: ROM:loc_8758t
+		jmp	AnyHostileEnemies(pc)
+; End of function j_AnyHostileEnemies
 
 
 ; =============== S U B	R O U T	I N E =======================================

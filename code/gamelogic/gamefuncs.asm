@@ -1,257 +1,202 @@
+GameFuncs	module
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-AddStatusEffect:				  ; DATA XREF: j_AddStatusEffectt
+; Inflicts status d0 (STATUS_* bit number) on the player, unless the
+; equipped ring blocks it: Mars Stone blocks poison AND paralysis
+; (paralysis falls through the bne below into the Mars check, despite
+; the manual claiming poison only), Moon Stone blocks the others
+; (confusion/curse). Paralysis is inflicted by mushroom3/worm3 and the
+; Death Statue's random roll.
+AddStatusEffect:
 		tst.b	d0
-		beq.s	loc_17776
+		beq.s	_chkMarsStone
 		cmpi.b	#STATUS_PARALYSIS,d0
-		bne.s	loc_17782
+		bne.s	_chkMoonStone
 
-loc_17776:					  ; CODE XREF: AddStatusEffect+2j
+_chkMarsStone:
 		cmpi.b	#ITM_MARSSTONE,(g_EquippedRing).l
-		beq.s	locret_177A2
-		bra.s	loc_1778C
-; ---------------------------------------------------------------------------
+		beq.s	_blocked
+		bra.s	_applyStatus
 
-loc_17782:					  ; CODE XREF: AddStatusEffect+8j
+_chkMoonStone:
 		cmpi.b	#ITM_MOONSTONE,(g_EquippedRing).l
-		beq.s	locret_177A2
+		beq.s	_blocked
 
-loc_1778C:					  ; CODE XREF: AddStatusEffect+14j
+_applyStatus:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
-		dc.w SND_Poison			  ; "U		     "
-; ---------------------------------------------------------------------------
+		dc.w SND_Poison
 		bset	d0,(g_PlayerStatus).l
 		cmpi.b	#$01,d0
-		bcs.s	loc_177A4
-		cmpi.b	#$02,d0
-		beq.s	loc_177B4
+		bcs.s	_initPoison
+		cmpi.b	#STATUS_PARALYSIS,d0
+		beq.s	_initParalysis
 
-locret_177A2:					  ; CODE XREF: AddStatusEffect+12j
-						  ; AddStatusEffect+1Ej
+_blocked:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_177A4:					  ; CODE XREF: AddStatusEffect+2Ej
-		clr.b	(byte_FF1148).l
-		move.b	#$08,(byte_FF1149).l
+_initPoison:
+		clr.b	(g_PoisonStepCounter).l
+		move.b	#$08,(g_PoisonHitsLeft).l
 		rts
-; ---------------------------------------------------------------------------
 
-loc_177B4:					  ; CODE XREF: AddStatusEffect+34j
-		move.w	#$04B0,(word_FF12E2).l
+_initParalysis:
+		move.w	#1200,(g_ParalysisTimer).l
 		clr.b	(g_ParalysisCheckCount).l
 		rts
-; End of function AddStatusEffect
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearPlayerStatus:				  ; CODE XREF: sub_16420+66p
-						  ; sub_16602+90p ...
+ClearPlayerStatus:
 		bclr	d0,(g_PlayerStatus).l
 		rts
-; End of function ClearPlayerStatus
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetPlayerStatus:				  ; DATA XREF: j_GetPlayerStatust
+GetPlayerStatus:
 		move.b	(g_PlayerStatus).l,d0
 		rts
-; End of function GetPlayerStatus
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetGold:					  ; DATA XREF: j_GetGoldt
+GetGold:
 		move.w	(g_Gold).l,d0
 		rts
-; End of function GetGold
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-AddGold:					  ; CODE XREF: ROM:00012F0Cp
-						  ; DATA XREF: j_AddGoldt ...
+AddGold:
 		add.w	d0,(g_Gold).l
-		bcc.s	loc_177EC
+		bcc.s	_goldHUD
 		move.w	#$FFFF,(g_Gold).l
 
-loc_177EC:					  ; CODE XREF: AddGold+6j
+_goldHUD:
 		bsr.w	RefreshGoldHUD
 		rts
-; End of function AddGold
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-RemoveGold:					  ; CODE XREF: ROM:00012F56p
-						  ; DATA XREF: j_RemoveGoldt
+; Returns carry set if the player cannot afford d0 gold.
+RemoveGold:
 		cmp.w	(g_Gold).l,d0
-		bhi.s	loc_17808
+		bhi.s	_notEnough
 		sub.w	d0,(g_Gold).l
 		bsr.w	RefreshGoldHUD
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_17808:					  ; CODE XREF: RemoveGold+6j
+_notEnough:
 		ori	#$01,ccr
 		rts
-; End of function RemoveGold
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-AddHealth:					  ; CODE XREF: ROM:00014774p
-						  ; sub_16602+D8p
-						  ; DATA XREF: ...
+AddHealth:
 		add.w	CurrentHealth(a5),d0
-		bcs.s	loc_1781A
+		bcs.s	_capMax
 		cmp.w	MaxHealth(a5),d0
-		bls.s	loc_1781E
+		bls.s	_setHealth
 
-loc_1781A:					  ; CODE XREF: AddHealth+4j
+_capMax:
 		move.w	MaxHealth(a5),d0
 
-loc_1781E:					  ; CODE XREF: AddHealth+Aj
+_setHealth:
 		move.w	d0,CurrentHealth(a5)
 		cmpa.l	#Player_X,a5
-		bne.s	locret_1782E
+		bne.s	_addDone
 		bsr.w	RefreshCurrentHealthHUD
 
-locret_1782E:					  ; CODE XREF: AddHealth+1Aj
+_addDone:
 		rts
-; End of function AddHealth
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-RemoveHealth:					  ; CODE XREF: sub_13140+12p
-						  ; ROM:000146C2p ...
+RemoveHealth:
 		sub.w	d0,CurrentHealth(a5)
-		bcc.s	loc_1783A
+		bcc.s	_chkPlayer
 		clr.w	CurrentHealth(a5)
 
-loc_1783A:					  ; CODE XREF: RemoveHealth+4j
+_chkPlayer:
 		cmpa.l	#Player_X,a5
-		bne.s	locret_17846
+		bne.s	_remDone
 		bsr.w	RefreshCurrentHealthHUD
 
-locret_17846:					  ; CODE XREF: RemoveHealth+10j
+_remDone:
 		rts
-; End of function RemoveHealth
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-AddToMaxHealth:					  ; DATA XREF: j_AddToMaxHealtht
+AddToMaxHealth:
 		add.w	d0,MaxHealth(a5)
 		bsr.w	RefreshMaxHealthHUD
 		rts
-; End of function AddToMaxHealth
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetMaxHealth:					  ; DATA XREF: j_GetMaxHealtht
+GetMaxHealth:
 		move.w	MaxHealth(a5),d0
 		rts
-; End of function GetMaxHealth
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-IncrementSwordCharge:				  ; DATA XREF: j_IncrementSwordCharget
+; Per-tick charge meter fill (cap $3200 = full). Rate $20, or $40 with
+; the Saturn Stone, $60 with the Venus Stone; a running Statue of Golden
+; charges at $0A00 (full in 5 ticks) while its timer counts down.
+IncrementSwordCharge:
 		move.w	(g_GoldenStatueTimer).l,d0
-		beq.s	loc_1786C
+		beq.s	_ringRate
 		subq.w	#$01,(g_GoldenStatueTimer).l
 		move.w	#$0A00,d0
-		bra.s	loc_1788C
-; ---------------------------------------------------------------------------
+		bra.s	_applyRate
 
-loc_1786C:					  ; CODE XREF: IncrementSwordCharge+6j
+_ringRate:
 		move.w	#$0060,d0
 		cmpi.b	#ITM_VENUSSTONE,(g_EquippedRing).l
-		beq.s	loc_1788C
+		beq.s	_applyRate
 		move.w	#$0040,d0
 		cmpi.b	#ITM_SATURNSTONE,(g_EquippedRing).l
-		beq.s	loc_1788C
+		beq.s	_applyRate
 		move.w	#$0020,d0
 
-loc_1788C:					  ; CODE XREF: IncrementSwordCharge+12j
-						  ; IncrementSwordCharge+20j ...
-		cmpi.w	#$3200,(g_SwordCharge_0).l
-		bcc.s	locret_178B2
-		add.w	d0,(g_SwordCharge_0).l
-		cmpi.w	#$3200,(g_SwordCharge_0).l
-		bls.s	loc_178AE
-		move.w	#$3200,(g_SwordCharge_0).l
+_applyRate:
+		cmpi.w	#$3200,(g_SwordChargeMeter).l
+		bcc.s	_incDone
+		add.w	d0,(g_SwordChargeMeter).l
+		cmpi.w	#$3200,(g_SwordChargeMeter).l
+		bls.s	_chargeHUD
+		move.w	#$3200,(g_SwordChargeMeter).l
 
-loc_178AE:					  ; CODE XREF: IncrementSwordCharge+4Cj
+_chargeHUD:
 		bsr.w	RefreshSwordChargeHUD
 
-locret_178B2:					  ; CODE XREF: IncrementSwordCharge+3Cj
+_incDone:
 		rts
-; End of function IncrementSwordCharge
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecreaseSwordCharge:				  ; DATA XREF: j_DecreaseSwordCharget
-		sub.w	d0,(g_SwordCharge_0).l
-		bpl.s	locret_178C6
-		clr.w	(g_SwordCharge_0).l
+DecreaseSwordCharge:
+		sub.w	d0,(g_SwordChargeMeter).l
+		bpl.s	_decDone
+		clr.w	(g_SwordChargeMeter).l
 		bsr.w	RefreshSwordChargeHUD
 
-locret_178C6:					  ; CODE XREF: DecreaseSwordCharge+6j
+_decDone:
 		rts
-; End of function DecreaseSwordCharge
 
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdateEntities:					  ; DATA XREF: j_UpdateEntitiest
+; Runs OnTick for every active sprite (enemies get sub_1A4404 instead
+; when InitInteractFlags bit 7 is set).
+UpdateEntities:
 		lea	(Sprite1_X).l,a5
-		moveq	#$0000000E,d7
+		moveq	#$E,d7
 
-loc_178D0:					  ; CODE XREF: UpdateEntities+28j
+_entLoop:
 		move.b	(a5),d0
-		bmi.s	locret_178F4
+		bmi.s	_entDone
 		movem.l	d7/a5,-(sp)
-		tst.b	InitFlags2(a5)
-		bmi.s	loc_178F6
+		tst.b	InitInteractFlags(a5)
+		bmi.s	_entEnemy
 		cmpi.b	#$7F,d0
-		beq.s	loc_178E8
+		beq.s	_entNext
 		bsr.w	OnTick
 
-loc_178E8:					  ; CODE XREF: UpdateEntities+1Aj
-						  ; UpdateEntities+34j
+_entNext:
 		movem.l	(sp)+,d7/a5
 		lea	SPRITE_SIZE(a5),a5
-		dbf	d7,loc_178D0
+		dbf	d7,_entLoop
 
-locret_178F4:					  ; CODE XREF: UpdateEntities+Aj
+_entDone:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_178F6:					  ; CODE XREF: UpdateEntities+14j
+_entEnemy:
 		jsr	(sub_1A4404).l
-		bra.s	loc_178E8
-; End of function UpdateEntities
+		bra.s	_entNext
 
+		modend
