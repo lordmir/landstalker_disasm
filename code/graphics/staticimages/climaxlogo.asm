@@ -1,8 +1,10 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisplayClimaxLogo:				  ; CODE XREF: DisplayTitlep
+ClimaxLogoScreen	module
+; Shows the Climax Entertainment logo at boot (called from
+; DisplayTitle): scroll cleared, logo tiles to VRAM 0, the tilemap
+; reindexed from tile 0 and copied to plane A (row 8, column 8),
+; eight palette colours, then fade in, hold three seconds (or a
+; button press) and fade back out.
+DisplayClimaxLogo:
 		jsr	(j_DisableDisplayAndInts).l
 		clr.w	d6
 		jsr	(j_FillHScrollData).l
@@ -33,6 +35,5 @@ DisplayClimaxLogo:				  ; CODE XREF: DisplayTitlep
 		jsr	(j_Wait3SecondsOrUntilButtonPushed).l
 		jsr	(j_FadeToBlack).l
 		rts
-; End of function DisplayClimaxLogo
 
-; ---------------------------------------------------------------------------
+		modend

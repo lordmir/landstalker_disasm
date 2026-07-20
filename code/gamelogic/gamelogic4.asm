@@ -1364,7 +1364,7 @@ _talkNoFace:
 
 
 _processPendingDialogue:
-		move.w	(g_Character).l,d0
+		move.w	(g_PendingCutsceneAction).l,d0
 		bmi.s	_ppdDone
 		jsr	(j_ProcessDialogueScriptAction).l
 
@@ -1516,7 +1516,7 @@ _chOpenAnim:
 		move.w	#$000C,AnimationFrame(a4)
 		ori.b	#$80,AnimCtrl(a4)
 		bsr.w	LoadSprites
-		bsr.w	sub_9DA2
+		bsr.w	UpdateAnimTiles
 		bsr.w	FlushDMACopyQueue
 
 _chText:
@@ -1582,7 +1582,7 @@ _chestAnimStep:
 		ori.b	#$80,AnimCtrl(a4)
 		movem.l	a4,-(sp)
 		bsr.w	LoadSprites
-		bsr.w	sub_9DA2
+		bsr.w	UpdateAnimTiles
 		bsr.w	EnableDMAQueueProcessing
 		move.w	#$0004,d0
 		bsr.w	Sleep			  ; Sleeps for d0 frames

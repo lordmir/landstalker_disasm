@@ -512,7 +512,11 @@ g_UpdateHUDFlag:                  equ $FF1132
 ; jumping only when 0 or >= $17 (carrying, not mid-animation), and
 ; walk animation switches to the carry variant while >= $18.
 g_CarryPhase:                     equ $FF1133
-byte_FF1134:                      equ $FF1134
+; Two animated-tile slots, 4 bytes each: {frame delay, frame count,
+; tick counter, current frame}. Set up by LoadAnimTiles, ticked by
+; UpdateAnimTiles (VRAM target/source in g_AnimTileTargets and
+; g_AnimTileGfxPtrs). IDA called it byte_FF1134.
+g_AnimTileState:                  equ $FF1134
 g_PlayerMoving:                   equ $FF113C
 g_SwordButtonMask:                equ $FF113D
 ; Buttons held since the last jump (and.b'd with the pad each frame);
@@ -597,7 +601,10 @@ g_PrevGroundHeight:               equ $FF1208
 g_SwordChargeMeter:               equ $FF120A
 g_CarriedEntity:                  equ $FF120C
 g_Gold:                           equ $FF120E
-word_FF1210:                      equ $FF1210
+; Animated-tile slot VDP targets, 4 bytes each: {VRAM address, DMA
+; length in words}. Zero address = slot unused. IDA called it
+; word_FF1210.
+g_AnimTileTargets:                equ $FF1210
 WarpTbl:                          equ $FF1218
 g_RoomFallDest:                   equ $FF12DA
 g_RoomClimbDest:                  equ $FF12DC
@@ -655,7 +662,10 @@ g_ComprCharPtr:                   equ $FF1848
 g_TextItemPtr:                    equ $FF184C
 JmpInstr1:                        equ $FF1850
 JumpInstr2:                       equ $FF1858
-unk_FF1860:                       equ $FF1860
+; Animated-tile slot source graphics addresses (one long per slot),
+; read from the TilesetXXAnimYYPtr pointer table. IDA called it
+; unk_FF1860.
+g_AnimTileGfxPtrs:                equ $FF1860
 g_InputPlaybackAddr:              equ $FF1870
 ; Write pointer past the primary blockset in g_Blockset, where the
 ; room's secondary blockset is decompressed to (GetBlockset).
@@ -680,15 +690,23 @@ g_GameFlagProgress1:              equ $FF1906
 g_GameFlagProgress2:              equ $FF1907
 g_GameFlagProgress3:              equ $FF1908
 unk_FF190E:                       equ $FF190E
-byte_FF1916:                      equ $FF1916
-byte_FF1917:                      equ $FF1917
+; Debug menu: buttons held at the last poll, for new-press edge
+; detection. IDA called it byte_FF1916.
+g_DebugMenuButtons:               equ $FF1916
+; Debug menu control flags: bit 0 = redraw request (cursor moved),
+; bit 1 = close the menu. IDA called it byte_FF1917.
+g_DebugMenuFlags:                 equ $FF1917
 ; Partially consumed source byte / bits left in it, kept between
 ; DecodeChar calls.
 g_HuffSrcByte:                    equ $FF1920
 g_HuffSrcBitCount:                equ $FF1922
 ; Character id of the current speaker (GetSpeakerCharacter).
 g_SpeakerCharId:                  equ $FF1924
-g_Character:                      equ $FF1926
+; Cutscene action id to run once the current dialogue ends ($FFFF =
+; none): set by script action 7 (QueueCutsceneAction) or directly by
+; the casino/tree-guard dialogue Asm, dispatched by gamelogic4's
+; _processPendingDialogue after PlayerTalk. IDA called it g_Character.
+g_PendingCutsceneAction:          equ $FF1926
 g_SpeakerSpriteId:                equ $FF1928
 ; Visual effect state (script_visualfx): per-scanline visibility
 ; bitmask and per-line vertical offset table for the raster loop.
@@ -707,8 +725,11 @@ g_CurrentEquippedItems:           equ $FF1BF0
 g_InvSelectedSlot:                equ $FF1BF2
 g_InvCursorPos:                   equ $FF1BF3
 g_EquipCursorPos:                 equ $FF1BF4
-byte_FF1BFA:                      equ $FF1BFA
-unk_FF1BFB:                       equ $FF1BFB
+; End-credits text colours: background palette index, then the
+; three font ink shades used by the 2bpp glyph renderer. IDA called
+; them byte_FF1BFA/unk_FF1BFB.
+g_CreditBGColour:                 equ $FF1BFA
+g_CreditInkColours:               equ $FF1BFB
 g_HUD_Row1:                       equ $FF1C00
 g_HUD_Row2:                       equ $FF1C80
 g_HUD_Row3:                       equ $FF1D00
@@ -723,7 +744,10 @@ g_TextBoxLine7:                   equ $FF2900
 g_TextBoxLine8:                   equ $FF2980
 g_Buffer:                         equ $FF2C00
 unk_FF34C2:                       equ $FF34C2
-unk_FF3562:                       equ $FF3562
+; Pristine copy of a save window's 18x10 cells ($50-byte row
+; stride), taken from the first window at load and stamped back
+; before a window is redrawn. IDA called it unk_FF3562.
+g_SaveWindowTemplate:             equ $FF3562
 g_ScreenBuffer:                   equ $FF3900
 Player_X:                         equ $FF5400
 Player_Y:                         equ $FF5401

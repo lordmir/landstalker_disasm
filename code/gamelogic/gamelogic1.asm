@@ -44,7 +44,7 @@ GameLoop:
 		jsr	(j_UpdateFrames).l
 		jsr	(j_LoadPlayerSpecialAnimation).l
 		jsr	(LoadSprites).l
-		jsr	(sub_9DA2).l
+		jsr	(UpdateAnimTiles).l
 		jsr	(j_UpdatePlayerStatusEffects).l
 		jsr	CheckAndDoLavaPaletteFx(pc)
 		nop

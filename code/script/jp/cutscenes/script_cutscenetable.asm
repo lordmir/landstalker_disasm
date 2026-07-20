@@ -1,5 +1,4 @@
-		ScriptID	$4F8,$0	; DATA XREF: ROM:000262E2t
-					; ID 0x000 : Run text script at	offset 0x0290AC
+		ScriptID    $4F8,$0	; ID 0x000 : Run text script at	offset 0x0290AC
 					; 0x1BE9: LOAD SPECIAL CHARACTER 0x01
 					; 0xE484: PRINT	MSG 0x04D1, MSGBOX CLEARED, END
 		ScriptID    $4FA,$1	; ID 0x001 : Run text script at	offset 0x0290B0

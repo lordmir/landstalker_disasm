@@ -5,42 +5,42 @@ HandleStatusCure:
 		bsr.w	GetItemShopSellPrice
 		move.b	$16(a0),d0
 		bsr.w	TestPlayerStatus
-		bne.s	loc_24D04
+		bne.s	HandleStatusCure_1
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $14		; No Poison
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24D66
+		bra.s	HandleStatusCure_4
 ; ---------------------------------------------------------------------------
 
-loc_24D04:				; CODE XREF: ROM:00024CFCj
+HandleStatusCure_1:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $A			; Price	Message
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24D14
+		bcs.s	HandleStatusCure_2
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $12		; Sale Refused
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24D66
+		bra.s	HandleStatusCure_4
 ; ---------------------------------------------------------------------------
 
-loc_24D14:				; CODE XREF: ROM:00024D0Cj
+HandleStatusCure_2:
 		move.w	d1,d0
 		jsr	(j_RemoveGold).l
-		bcc.s	loc_24D2C
+		bcc.s	HandleStatusCure_3
 		bsr.w	NoMoneyEffect
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $10		; Not enough golds
 ; ---------------------------------------------------------------------------
 		bsr.w	RestoreFromNoMoneyEffect
-		bra.s	loc_24D66
+		bra.s	HandleStatusCure_4
 ; ---------------------------------------------------------------------------
 
-loc_24D2C:				; CODE XREF: ROM:00024D1Cj
+HandleStatusCure_3:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $C			; Sale Confirmed
@@ -72,8 +72,7 @@ loc_24D2C:				; CODE XREF: ROM:00024D1Cj
 ; ---------------------------------------------------------------------------
 		move.b	#$FF,(g_ShopItemId).l
 
-loc_24D66:				; CODE XREF: ROM:00024D02j
-					; ROM:00024D12j ...
+HandleStatusCure_4:
 		movem.l	(sp)+,d0-d1
 		rts
 ; ---------------------------------------------------------------------------
@@ -86,15 +85,15 @@ HandleRecordBookUse:
 		dc.w $A			; Request Game Save
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24D84
+		bcs.s	HandleRecordBookUse_1
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $10		; Game Save Refused
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24DAE
+		bra.s	HandleRecordBookUse_2
 ; ---------------------------------------------------------------------------
 
-loc_24D84:				; CODE XREF: ROM:00024D7Cj
+HandleRecordBookUse_1:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $C			; Game Save Initiated
@@ -119,13 +118,13 @@ loc_24D84:				; CODE XREF: ROM:00024D7Cj
 		dc.w $E			; Game Save Complete
 ; ---------------------------------------------------------------------------
 
-loc_24DAE:				; CODE XREF: ROM:00024D82j
+HandleRecordBookUse_2:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $12		; Request Game Continue
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24DC6
+		bcs.s	HandleRecordBookUse_3
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $16		; Game Stop
@@ -134,7 +133,7 @@ loc_24DAE:				; CODE XREF: ROM:00024D82j
 		jmp	(j_EndGame).l
 ; ---------------------------------------------------------------------------
 
-loc_24DC6:				; CODE XREF: ROM:00024DB6j
+HandleRecordBookUse_3:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $14		; Game Continue
@@ -151,28 +150,28 @@ HandleInnStay:
 		dc.w $A			; Sale Price Message
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24DE8
+		bcs.s	HandleInnStay_1
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $12		; Sale refused
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24E38
+		bra.s	HandleInnStay_3
 ; ---------------------------------------------------------------------------
 
-loc_24DE8:				; CODE XREF: ROM:00024DE0j
+HandleInnStay_1:
 		move.w	d1,d0
 		jsr	j_RemoveGold
-		bcc.s	loc_24E00
+		bcc.s	HandleInnStay_2
 		bsr.w	NoMoneyEffect
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $10		; Not enough money
 ; ---------------------------------------------------------------------------
 		bsr.w	RestoreFromNoMoneyEffect
-		bra.s	loc_24E38
+		bra.s	HandleInnStay_3
 ; ---------------------------------------------------------------------------
 
-loc_24E00:				; CODE XREF: ROM:00024DF0j
+HandleInnStay_2:
 		trap	#2
 ; ---------------------------------------------------------------------------
 		dc.w $C			; Rest Begin
@@ -201,8 +200,7 @@ loc_24E00:				; CODE XREF: ROM:00024DF0j
 ; ---------------------------------------------------------------------------
 		move.b	#$FF,(g_ShopItemId).l
 
-loc_24E38:				; CODE XREF: ROM:00024DE6j
-					; ROM:00024DFEj
+HandleInnStay_3:
 		movem.l	(sp)+,d0-d1/a0/a5
 		rts
 ; ---------------------------------------------------------------------------
@@ -215,12 +213,12 @@ HandleMap:
 		dc.w $A			; I'll show you the map...
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24E56
+		bcs.s	HandleMap_1
 		bsr.w	ClearTextbox
-		bra.s	loc_24E86
+		bra.s	HandleMap_2
 ; ---------------------------------------------------------------------------
 
-loc_24E56:				; CODE XREF: ROM:00024E4Ej
+HandleMap_1:
 		bsr.w	ClearTextbox
 		trap	#0
 ; ---------------------------------------------------------------------------
@@ -235,7 +233,7 @@ loc_24E56:				; CODE XREF: ROM:00024E4Ej
 		bsr.w	RestartBGM
 		move.b	#$FF,(g_ShopItemId).l
 
-loc_24E86:				; CODE XREF: ROM:00024E54j
+HandleMap_2:
 		movem.l	(sp)+,d0-d1/a0/a5
 		rts
 ; ---------------------------------------------------------------------------
@@ -248,16 +246,16 @@ HandleSpellbook:
 					; 0xA022: PRINT	MSG 0x0070, END: "{47}UM HIMMELS{43}WILLEN! ES IST WIRKLICH{43}KEIN SPIELZEUG {45}.{45}.{45}.{43}WILLST	DU ES IMMER NOCH LESEN?{44}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcs.s	loc_24E9E
+		bcs.s	HandleSpellbook_1
 		trap	#1		; Trap1
 ; ---------------------------------------------------------------------------
 		ScriptID    $25,$0	; Run text script at offset 0x027644
 					; 0xE025: PRINT	MSG 0x0073, MSGBOX CLEARED, END: "{47}WEISE ENTSCHEI-{43}DUNG, MEIN KIND. DU BRINGST{43}ES SICHER NOCH ZU ETWAS.{4A}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24ECE
+		bra.s	HandleSpellbook_2
 ; ---------------------------------------------------------------------------
 
-loc_24E9E:				; CODE XREF: ROM:00024E96j
+HandleSpellbook_1:
 		trap	#1		; Trap1
 ; ---------------------------------------------------------------------------
 		ScriptID    $23,$0	; Run text script at offset 0x027640
@@ -292,7 +290,7 @@ loc_24E9E:				; CODE XREF: ROM:00024E96j
 ; ---------------------------------------------------------------------------
 		move.b	#$FF,(g_ShopItemId).l
 
-loc_24ECE:				; CODE XREF: ROM:00024E9Cj
+HandleSpellbook_2:
 		move.l	(sp)+,d0
 		rts
 ; ---------------------------------------------------------------------------
@@ -301,23 +299,23 @@ ShopLeave_08:
 		move.l	d0,-(sp)
 		move.w	#$154,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_24EE4_a
+		beq.s	ShopLeave_08_1
 		trap	#1		; Trap1
 ; ---------------------------------------------------------------------------
 		ScriptID    $6EC,$0	; Run text script at offset 0x0283D2
 					; 0xE4F5: PRINT	MSG 0x0543, MSGBOX CLEARED, END: "{47}VIELEN DANK!{43}BIS BALD!{43}BIS ZUM NÄCHSTEN MONAT!{4A}"
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24EE8
+		bra.s	ShopLeave_08_2
 ; ---------------------------------------------------------------------------
 
-loc_24EE4_a:				; CODE XREF: ROM:00024EDCj
+ShopLeave_08_1:
 		trap	#1		; Trap1
 ; ---------------------------------------------------------------------------
 		ScriptID    $6EB,$0	; Run text script at offset 0x0283D0
 					; 0xE4F4: PRINT	MSG 0x0542, MSGBOX CLEARED, END: "{47}KAUF JETZT, ODER{43}DU MUSST EINEN GANZEN{43}MONAT WARTEN!{4A}"
 ; ---------------------------------------------------------------------------
 
-loc_24EE8:				; CODE XREF: ROM:00024EE2j
+ShopLeave_08_2:
 		move.l	(sp)+,d0
 		rts
 ; ---------------------------------------------------------------------------
@@ -335,8 +333,7 @@ ShopPrice_08:
 		movem.l	(sp)+,d0/a0
 		rts
 ; ---------------------------------------------------------------------------
-Shop_08_Msgs:	ScriptID    $3C,$0	; DATA XREF: ROM:00024F02o
-					; Neuter: Run text script at offset 0x027672
+Shop_08_Msgs:	ScriptID    $3C,$0	; Neuter: Run text script at offset 0x027672
 					; 0xE03C: PRINT	MSG 0x008A, MSGBOX CLEARED, END: "{47}UNSER BESTES{43}{4B}.{43}SEHR GUTE QUALITÄT.{4A}"
 		ScriptID    $3D,$1	; Fem:	  Run text script at offset 0x027674
 					; 0xE03D: PRINT	MSG 0x008B, MSGBOX CLEARED, END: "{47}UNSER BESTE{43}{4B}.{43}SEHR GUTE	QUALITÄT.{4A}"
@@ -355,22 +352,22 @@ Shop_08:
 					; 0xA4F6: PRINT	MSG 0x0544, END: "{47}GEFÄLLT ES DIR?{44}"
 ; ---------------------------------------------------------------------------
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_24F38
+		bcc.s	Shop_08_1
 		trap	#1
 ; ---------------------------------------------------------------------------
 		ScriptID    $6EE,$0	; Run text script at offset 0x0283D6
 					; 0xE4F7: PRINT	MSG 0x0545, MSGBOX CLEARED, END: "{47}ICH SCHICKE ES{43}DIREKT ZU DEINEM LADEN!{4A}"
 ; ---------------------------------------------------------------------------
 		move.b	#$FF,(g_ShopItemId).l
-		bra.s	locret_24F3C
+		bra.s	Shop_08_2
 ; ---------------------------------------------------------------------------
 
-loc_24F38:				; CODE XREF: ROM:00024F28j
+Shop_08_1:
 		trap	#1
 ; ---------------------------------------------------------------------------
 		ScriptID    $6EF,$0	; Run text script at offset 0x0283D8
 					; 0xE4F8: PRINT	MSG 0x0546, MSGBOX CLEARED, END: "{47}WARUM ZÖGERST{43}DU?{4A}"
 ; ---------------------------------------------------------------------------
 
-locret_24F3C:				; CODE XREF: ROM:00024F36j
+Shop_08_2:
 		rts

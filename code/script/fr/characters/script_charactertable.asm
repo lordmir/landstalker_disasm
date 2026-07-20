@@ -1,4 +1,4 @@
-		ScriptJump	CS_0000,$0	; Maire	(0x00) : Jump to address 0x0260BC
+		ScriptJump  CS_0000,$0	; Maire	(0x00) : Jump to address 0x0260BC
 		ScriptJump  CS_0001,$1	; Fara (0x01) :	Jump to	address	0x0260D6
 		ScriptJump  CS_0002,$2	; Hahna	(0x02) : Jump to address 0x026114
 		ScriptJump  CS_0003,$3	; Pockets (0x03) : Jump	to address 0x02618A

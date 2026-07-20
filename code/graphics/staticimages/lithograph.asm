@@ -1,8 +1,10 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisplayLithograph:				  ; DATA XREF: j_DisplayLithographt
+LithographScreen	module
+; Full-screen view of the Lithograph artwork (invoked from the
+; cutscene action that shows it, via j_DisplayLithograph): fade
+; out, set the window to the top three cell rows with HInt on line
+; 24, load the tiles/tilemap/palette, fade back in. The caller
+; restores the display afterwards.
+DisplayLithograph:
 		jsr	(j_FadeOutToDarkness).l
 		move.w	#$0000,d0
 		move.b	#$10,d1
@@ -16,26 +18,19 @@ DisplayLithograph:				  ; DATA XREF: j_DisplayLithographt
 		bsr.w	LoadLithographPalette
 		jsr	(j_FadeInFromDarkness).l
 		rts
-; End of function DisplayLithograph
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadLithographTiles:				  ; CODE XREF: DisplayLithograph+2Ep
+LoadLithographTiles:
 		lea	Lithograph(pc),a0
 		lea	(g_Buffer).l,a1
 		lea	($00002000).w,a2
 		jsr	(j_DecompressAndQueueGfxCopy).l
 		jsr	(j_FlushDMACopyQueue).l
 		rts
-; End of function LoadLithographTiles
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadLithographTilemap:				  ; CODE XREF: DisplayLithograph+30p
+; Clears sprites and scroll, then copies the decompressed tilemap
+; (first two bytes = width and height in cells) row by row into
+; plane A at VRAM $C29E.
+LoadLithographTilemap:
 		jsr	(j_DisableInterrupts).l
 		jsr	(j_ClearAndRefreshVDPSpriteTableDMA).l
 		jsr	(j_EnableInterrupts).l
@@ -55,26 +50,20 @@ LoadLithographTilemap:				  ; CODE XREF: DisplayLithograph+30p
 		subq.w	#$01,d7
 		lea	($429E0003).l,a0	  ; Write VRAM 0xC29E
 
-loc_38A7E:					  ; CODE XREF: LoadLithographTilemap+6Ej
+_tmRow:
 		movem.l	d6/a0,-(sp)
 		move.l	a0,(VDP_CTRL_REG).l
 
-loc_38A88:					  ; CODE XREF: LoadLithographTilemap+60j
+_tmCell:
 		move.w	(a1)+,(VDP_DATA_REG).l
-		dbf	d6,loc_38A88
+		dbf	d6,_tmCell
 		movem.l	(sp)+,d6/a0
 		adda.l	#$00800000,a0		  ; Increment VRAM Dest	by 0x80
-		dbf	d7,loc_38A7E
+		dbf	d7,_tmRow
 		rts
-; End of function LoadLithographTilemap
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadLithographPalette:				  ; CODE XREF: DisplayLithograph+32p
+LoadLithographPalette:
 		lea	LithographPalette(pc),a0
 		jmp	(j_LoadPaletteToRAM).l
-; End of function LoadLithographPalette
 
-; ---------------------------------------------------------------------------
+		modend

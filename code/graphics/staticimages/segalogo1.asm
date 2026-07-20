@@ -1,8 +1,9 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisplaySegaLogo:				  ; DATA XREF: j_DisplaySegaLogot
+SegaLogo1	module
+; The boot SEGA logo (via j_DisplaySegaLogo). Split across
+; segalogo1/2 because the palette and tile assets are incbin'd
+; between them (pc-relative reach). Shown for 240 frames or until
+; any button is pressed.
+DisplaySegaLogo:
 		jsr	(j_DisableDisplayAndInts).l
 		bsr.w	LoadSegaLogoPalette
 		bsr.w	LoadSegaLogoTiles
@@ -11,20 +12,18 @@ DisplaySegaLogo:				  ; DATA XREF: j_DisplaySegaLogot
 		jsr	(j_FadeFromBlack).l
 		move.w	#00240,d7
 
-loc_38634:					  ; CODE XREF: DisplaySegaLogo+36j
+_slWait:
 		jsr	(j_WaitUntilVBlank).l
 		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
 		andi.b	#CTRLBF_BUTTONS,d0
-		dbne	d7,loc_38634
+		dbne	d7,_slWait
 		jmp	(j_FadeToBlack).l
-; End of function DisplaySegaLogo
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadSegaLogoTilemap:				  ; CODE XREF: DisplaySegaLogo+Ep
+; Writes the logo cells (12 x 4, ascending tile numbers from 1)
+; into plane A. The JP/FR/DE builds place the logo two cell rows
+; higher (row 10) than the others (row 12).
+LoadSegaLogoTilemap:
 		move.w	#$0001,d0
 	if ((REGION=JP)!(REGION=FR)!(REGION=DE))
 		move.l	#$451C0003,(VDP_CTRL_REG).l ; VDP VRAM WRITE 0xC51C
@@ -46,37 +45,27 @@ LoadSegaLogoTilemap:				  ; CODE XREF: DisplaySegaLogo+Ep
 		bsr.s	FillAscendingTileNums
 	endif
 		rts
-; End of function LoadSegaLogoTilemap
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-FillAscendingTileNums:				  ; CODE XREF: LoadSegaLogoTilemap+Ep
-						  ; LoadSegaLogoTilemap+1Ap ...
+; Writes 12 cells with ascending tile numbers from d0.
+FillAscendingTileNums:
 		move.w	#$000B,d1
 
-loc_3868E:					  ; CODE XREF: FillAscendingTileNums+Cj
+_fatnCell:
 		move.w	d0,(VDP_DATA_REG).l
 		addq.b	#$01,d0
-		dbf	d1,loc_3868E
+		dbf	d1,_fatnCell
 		rts
-; End of function FillAscendingTileNums
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadSegaLogoPalette:				  ; CODE XREF: DisplaySegaLogo+6p
+; Clears all 64 CRAM colours, then loads the logo's seven colours.
+LoadSegaLogoPalette:
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$003F,d7
 
-loc_386AA:					  ; CODE XREF: LoadSegaLogoPalette+16j
+_slpClear:
 		move.w	#$0000,(VDP_DATA_REG).l
-		dbf	d7,loc_386AA
+		dbf	d7,_slpClear
 		lea	SegaLogoPalette(pc),a0
 		moveq	#$00000006,d0
 		jmp	(j_LoadPaletteToRAM).l
-; End of function LoadSegaLogoPalette
 
-; ---------------------------------------------------------------------------
+		modend

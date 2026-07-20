@@ -1,58 +1,58 @@
+GameSelectScreen2	module
+; Save-window content renderers for the select screen
+; (gameloadscreen1): play time, gold, slot number, health and the
+; heart gauge, drawn as tile cells straight into a window's spot in
+; g_Buffer, plus the shared text-buffer helpers. Everything draws
+; 2-tile columns: top tile at (a1), bottom on the next tile row
+; (+$50).
+;
+; Digit bytes from ConvertToBase10 are one-based: value n+1 is the
+; glyph pair for digit n (tiles $82/$83 + 2n); 0 is a suppressed
+; leading zero (blank pair $80/$81).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetPlayTimeDigits:				  ; CODE XREF: sub_F78E+50p
+; Play time at a1 as "HHHH:MM": up to four hour digits (leading
+; blanks), a gap column for the colon, two forced minute digits.
+GetPlayTimeDigits:
 		moveq	#$00000000,d7
 		move.w	(g_HourCount).l,d7
 		mulu.w	#00100,d7
 		add.w	(g_MinuteCount).l,d7
 		jsr	(j_ConvertToBase10).l
 		lea	(g_Base10Digit4).l,a0
-		bsr.s	sub_F374
-		bsr.s	sub_F374
-		bsr.s	sub_F374
-		bsr.s	sub_F38C
-		addq.l	#$02,a1
-		bsr.s	sub_F38C
-		bsr.s	sub_F38C
+		bsr.s	_drawDigit
+		bsr.s	_drawDigit
+		bsr.s	_drawDigit
+		bsr.s	_drawDigitZero
+		addq.l	#$02,a1			  ; the colon column
+		bsr.s	_drawDigitZero
+		bsr.s	_drawDigitZero
 		rts
-; End of function GetPlayTimeDigits
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F374:					  ; CODE XREF: GetPlayTimeDigits+1Ep
-						  ; GetPlayTimeDigits+20p ...
+; One digit column at (a1)+; digit byte 0 draws the blank pair.
+_drawDigit:
 		move.b	(a0)+,d0
 		ext.w	d0
-		beq.s	loc_F37C
+		beq.s	_ddTile
 		add.w	d0,d0
 
-loc_F37C:					  ; CODE XREF: sub_F374+4j
+_ddTile:
 		addi.w	#$0080,d0
 		move.w	d0,(a1)+
-		beq.s	loc_F386
-		addq.w	#$01,d0
+		beq.s	_ddBottom		  ; never taken - the tile id
+		addq.w	#$01,d0			  ; can't be zero
 
-loc_F386:					  ; CODE XREF: sub_F374+Ej
+_ddBottom:
 		move.w	d0,$0000004E(a1)
 		rts
-; End of function sub_F374
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F38C:					  ; CODE XREF: GetPlayTimeDigits+24p
-						  ; GetPlayTimeDigits+28p ...
+; One digit column, with 0 forced to display as '0' (digit value 1).
+_drawDigitZero:
 		move.b	(a0)+,d0
 		ext.w	d0
-		bne.s	loc_F394
+		bne.s	_dzTile
 		addq.b	#$01,d0
 
-loc_F394:					  ; CODE XREF: sub_F38C+4j
+_dzTile:
 		add.b	d0,d0
 		ext.w	d0
 		addi.w	#$0080,d0
@@ -60,121 +60,105 @@ loc_F394:					  ; CODE XREF: sub_F38C+4j
 		addq.w	#$01,d0
 		move.w	d0,$0000004E(a1)
 		rts
-; End of function sub_F38C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F3A6:					  ; CODE XREF: sub_F78E+48p
+; Gold as four digit columns at a1.
+DrawSaveGold:
 		move.w	(g_Gold).l,d7
 	if FIX_GOLD_CAP
 		cmpi.w	#$2710,d7
-		bcs.s	loc_F3B6
+		bcs.s	_dgConvert
 		move.w	#$270F,d7
 	endif
 
-loc_F3B6:					  ; CODE XREF: sub_F3A6+Aj
+_dgConvert:
 		jsr	(j_ConvertToBase10).l
 		lea	(g_Base10Digit6).l,a0
-		bsr.s	sub_F374
-		bsr.s	sub_F374
-		bsr.s	sub_F374
-		bsr.s	sub_F38C
+		bsr.s	_drawDigit
+		bsr.s	_drawDigit
+		bsr.s	_drawDigit
+		bsr.s	_drawDigitZero
 		rts
-; End of function sub_F3A6
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F3CC:					  ; CODE XREF: sub_F78E+2Ep
+; The slot number (d0 = slot + 1) as one digit column at a1.
+DrawSaveSlotNumber:
 		clr.w	d7
 		move.b	d0,d7
 		jsr	(j_ConvertToBase10).l
 		lea	(g_Base10Digit9).l,a0
-		bsr.s	sub_F38C
+		bsr.s	_drawDigitZero
 		rts
-; End of function sub_F3CC
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F3E0:					  ; CODE XREF: sub_F78E+58p
-		bsr.s	sub_F416
+; Current and maximum hearts as two 2-digit numbers at a1 with a
+; gap column between them. The JP and beta ROMs assembled two of
+; the bsr's short, hence the region conditionals.
+DrawSaveHealthNumbers:
+		bsr.s	GetHeartCounts
 		move.l	d3,-(sp)
 		move.b	d2,d7
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
 		lea	(g_Base10Digit8).l,a0
 	if	((REGION=JP)!(REGION=US_BETA))
-		bsr.s	sub_F374
+		bsr.s	_drawDigit
 	else
-		bsr.w	sub_F374
+		bsr.w	_drawDigit
 	endif
-		bsr.s	sub_F38C
+		bsr.s	_drawDigitZero
 		addq.l	#$02,a1
 		move.l	(sp)+,d7
 		ext.w	d7
 		jsr	(j_ConvertToBase10).l
 		lea	(g_Base10Digit8).l,a0
-		bsr.w	sub_F374
+		bsr.w	_drawDigit
 	if	((REGION=JP)!(REGION=US_BETA))
-		bsr.s	sub_F38C
+		bsr.s	_drawDigitZero
 	else
-		bsr.w	sub_F38C
+		bsr.w	_drawDigitZero
 	endif
 		rts
-; End of function sub_F3E0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F416:					  ; CODE XREF: sub_F3E0p
-						  ; sub_F78E+5Cp
+; d2/d3 = current/max health in whole hearts: the health high byte
+; plus one (zero stays zero), capped at 99.
+GetHeartCounts:
 		clr.l	d2
 		move.w	(Player_CurrentHealth).l,d2
-		beq.s	loc_F424
+		beq.s	_ghcMax
 		addi.w	#$0100,d2
 
-loc_F424:					  ; CODE XREF: sub_F416+8j
+_ghcMax:
 		lsr.w	#$08,d2
 		clr.l	d3
 		move.w	(Player_MaxHealth).l,d3
-		beq.s	loc_F434
+		beq.s	_ghcCapCur
 		addi.w	#$0100,d3
 
-loc_F434:					  ; CODE XREF: sub_F416+18j
+_ghcCapCur:
 		lsr.w	#$08,d3
 		cmpi.w	#$0064,d2
-		bcs.s	loc_F43E
+		bcs.s	_ghcCapMax
 		moveq	#$00000063,d2
 
-loc_F43E:					  ; CODE XREF: sub_F416+24j
+_ghcCapMax:
 		cmpi.w	#$0064,d3
-		bcs.s	locret_F446
+		bcs.s	_ghcDone
 		moveq	#$00000063,d3
 
-locret_F446:					  ; CODE XREF: sub_F416+2Cj
+_ghcDone:
 		rts
-; End of function sub_F416
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F448:					  ; CODE XREF: sub_F78E+64p
+; The 50+ marker at a1 (2x2 tiles, right half H-flipped): filled
+; ($98) once the current hearts pass 50, hollow ($96) while only
+; the maximum does, nothing below that.
+DrawHeartOverflowIcon:
 		move.w	#$0098,d0
 		move.b	#$33,d1
 		cmp.b	d1,d2
-		bcc.s	loc_F45C
+		bcc.s	_dhoDraw
 		move.w	#$0096,d0
 		cmp.b	d1,d3
-		bcs.s	locret_F476
+		bcs.s	_dhoDone
 
-loc_F45C:					  ; CODE XREF: sub_F448+Aj
+_dhoDraw:
 		move.w	d0,d1
 		move.w	d0,(a1)
 		ori.w	#$0800,d0
@@ -184,166 +168,155 @@ loc_F45C:					  ; CODE XREF: sub_F448+Aj
 		ori.w	#$0800,d1
 		move.w	d1,$00000052(a1)
 
-locret_F476:					  ; CODE XREF: sub_F448+12j
+_dhoDone:
 		rts
-; End of function sub_F448
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F478:					  ; CODE XREF: sub_F78E+6Cp
+; The heart-decade gauge, drawn right-to-left from a1: one 2-tile
+; segment per decade of max hearts, choosing among tiles $9A-$A6 by
+; where the current (d2, reduced by 50 once past it) and maximum
+; (d3) counts fall relative to each decade boundary (11/21/31/41).
+DrawHeartMeter:
 		cmpi.b	#$33,d2
-		bcs.s	loc_F482
+		bcs.s	_dhmChk
 		subi.b	#$32,d2
 
-loc_F482:					  ; CODE XREF: sub_F478+4j
+_dhmChk:
 		cmpi.b	#$0B,d2
-		bcc.w	loc_F4D4
+		bcc.w	_dhmCur10
 		cmpi.b	#$0B,d3
-		bcs.w	locret_F53A
+		bcs.w	_msDone
 		move.w	#$00A4,d0
-		bsr.w	sub_F532
+		bsr.w	_drawMeterSegment
 		move.w	#$009A,d0
 		cmpi.b	#$15,d3
-		bcs.s	loc_F4D0
+		bcs.s	_dhmLast
 		move.w	#$009E,d0
 
-loc_F4A8:					  ; CODE XREF: sub_F478+76j
-		bsr.w	sub_F532
+_dhmSeg2:
+		bsr.w	_drawMeterSegment
 		move.w	#$009A,d0
 		cmpi.b	#$1F,d3
-		bcs.s	loc_F4D0
+		bcs.s	_dhmLast
 		move.w	#$009E,d0
 
-loc_F4BA:					  ; CODE XREF: sub_F478+92j
-		bsr.s	sub_F532
+_dhmSeg3:
+		bsr.s	_drawMeterSegment
 		move.w	#$009A,d0
 		cmpi.b	#$29,d3
-		bcs.s	loc_F4D0
+		bcs.s	_dhmLast
 		move.w	#$009E,d0
 
-loc_F4CA:					  ; CODE XREF: sub_F478+AEj
-		bsr.s	sub_F532
+_dhmSeg4:
+		bsr.s	_drawMeterSegment
 		move.w	#$009A,d0
 
-loc_F4D0:					  ; CODE XREF: sub_F478+2Aj
-						  ; sub_F478+3Cj ...
-		bsr.s	sub_F532
+_dhmLast:
+		bsr.s	_drawMeterSegment
 		rts
-; ---------------------------------------------------------------------------
 
-loc_F4D4:					  ; CODE XREF: sub_F478+Ej
+_dhmCur10:
 		move.w	#$00A6,d0
-		bsr.s	sub_F532
+		bsr.s	_drawMeterSegment
 		cmpi.b	#$15,d2
-		bcc.s	loc_F4F0
+		bcc.s	_dhmCur20
 		move.w	#$009C,d0
 		cmpi.b	#$15,d3
-		bcs.s	sub_F532
+		bcs.s	_drawMeterSegment
 		move.w	#$00A2,d0
-		bra.s	loc_F4A8
-; ---------------------------------------------------------------------------
+		bra.s	_dhmSeg2
 
-loc_F4F0:					  ; CODE XREF: sub_F478+66j
+_dhmCur20:
 		move.w	#$00A0,d0
-		bsr.s	sub_F532
+		bsr.s	_drawMeterSegment
 		cmpi.b	#$1F,d2
-		bcc.s	loc_F50C
+		bcc.s	_dhmCur30
 		move.w	#$009C,d0
 		cmpi.b	#$1F,d3
-		bcs.s	sub_F532
+		bcs.s	_drawMeterSegment
 		move.w	#$00A2,d0
-		bra.s	loc_F4BA
-; ---------------------------------------------------------------------------
+		bra.s	_dhmSeg3
 
-loc_F50C:					  ; CODE XREF: sub_F478+82j
+_dhmCur30:
 		move.w	#$00A0,d0
-		bsr.s	sub_F532
+		bsr.s	_drawMeterSegment
 		cmpi.b	#$29,d2
-		bcc.s	loc_F528
+		bcc.s	_dhmCur40
 		move.w	#$009C,d0
 		cmpi.b	#$29,d3
-		bcs.s	sub_F532
+		bcs.s	_drawMeterSegment
 		move.w	#$00A2,d0
-		bra.s	loc_F4CA
-; ---------------------------------------------------------------------------
+		bra.s	_dhmSeg4
 
-loc_F528:					  ; CODE XREF: sub_F478+9Ej
+_dhmCur40:
 		move.w	#$00A0,d0
-		bsr.s	sub_F532
+		bsr.s	_drawMeterSegment
 		move.w	#$009C,d0
-; End of function sub_F478
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F532:					  ; CODE XREF: sub_F478+1Ep
-						  ; sub_F478:loc_F4A8p	...
+						  ; falls through for the last
+						  ; segment
+; One gauge segment, right-to-left: top tile d0 at -(a1), bottom on
+; the next row.
+_drawMeterSegment:
 		move.w	d0,-(a1)
 		addq.w	#$01,d0
 		move.w	d0,$00000050(a1)
 
-locret_F53A:					  ; CODE XREF: sub_F478+16j
+_msDone:
 		rts
-; End of function sub_F532
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F53C:					  ; CODE XREF: sub_F78E+74p
+; The last decade as up to ten small hearts in two rows of five at
+; a1: one cell per max heart (d3 counts down), the first
+; current-mod-10 (zero drawing as ten) filled - $A8 empty, $A9
+; filled.
+DrawHeartUnits:
 		addi.w	#$000A,d2
 		divu.w	#$000A,d2
 		swap	d2
 		tst.w	d2
-		bne.s	loc_F54C
+		bne.s	_dhuTiles
 		moveq	#$0000000A,d2
 
-loc_F54C:					  ; CODE XREF: sub_F53C+Cj
+_dhuTiles:
 		move.w	#$00A8,d0
 		move.w	#$00A9,d1
 		moveq	#$00000001,d6
 
-loc_F556:					  ; CODE XREF: sub_F53C+36j
+_dhuRow:
 		moveq	#$00000004,d7
 
-loc_F558:					  ; CODE XREF: sub_F53C+2Ej
+_dhuCell:
 		tst.b	d3
-		beq.s	locret_F576
+		beq.s	_dhuDone
 		subq.b	#$01,d3
 		move.w	d0,(a1)
 		tst.b	d2
-		beq.s	loc_F568
+		beq.s	_dhuNext
 		subq.b	#$01,d2
 		move.w	d1,(a1)
 
-loc_F568:					  ; CODE XREF: sub_F53C+26j
+_dhuNext:
 		addq.l	#$02,a1
-		dbf	d7,loc_F558
+		dbf	d7,_dhuCell
 		lea	$00000046(a1),a1
-		dbf	d6,loc_F556
+		dbf	d6,_dhuRow
 
-locret_F576:					  ; CODE XREF: sub_F53C+1Ej
+_dhuDone:
 		rts
-; End of function sub_F53C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F578:					  ; CODE XREF: sub_F78E+1Ep
+; The save's location name: number the window's 14-column text
+; strip with sequential tiles from d0, render the location string
+; as glyphs in g_ScreenBuffer, then DMA the rendered glyph graphics
+; into those tiles.
+DrawSaveLocationName:
 		move.w	#$000D,d7
-		bsr.w	sub_F5CA
+		bsr.w	WriteTileStrip
 		bsr.w	ClearTextBuffer
 		move.w	#$0070,(g_TextCursorX).l
 		move.l	d0,-(sp)
 		jsr	(j_GetSaveLocationString).l
-		bsr.w	sub_F61E
+		bsr.w	_drawGlyphs
 		move.l	(sp)+,d0
 		andi.w	#$03FF,d0
-		lsl.w	#$05,d0
+		lsl.w	#$05,d0			  ; VRAM address of tile d0
 		movea.w	d0,a1
 		move.w	(g_TextCursorX).l,d1
 		subi.w	#$0070,d1
@@ -356,86 +329,64 @@ sub_F578:					  ; CODE XREF: sub_F78E+1Ep
 		moveq	#$00000002,d1
 		jsr	(j_DoDMACopy).l
 		rts
-; End of function sub_F578
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F5CA:					  ; CODE XREF: sub_F578+4p
-						  ; InitGameStartScreen+3Ap
+; Writes d7+1 columns of sequentially numbered tiles at a1,
+; starting from d0 (top d0, bottom d0+1, next column d0+2...).
+WriteTileStrip:
 		move.w	d0,d1
 
-loc_F5CC:					  ; CODE XREF: sub_F5CA+Cj
+_wtsCol:
 		move.w	d1,(a1)+
 		addq.w	#$01,d1
 		move.w	d1,$0000004E(a1)
 		addq.w	#$01,d1
-		dbf	d7,loc_F5CC
+		dbf	d7,_wtsCol
 		rts
-; End of function sub_F5CA
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DMACopyTextBuffer:				  ; CODE XREF: ROM:0000EF6Ap
-						  ; sub_F958+34p ...
+; DMAs the rendered text glyphs (g_ScreenBuffer, $480 words) to the
+; text tile area at VRAM $50C0.
+DMACopyTextBuffer:
 		lea	(g_ScreenBuffer).l,a0
 		lea	($000050C0).w,a1
 		move.w	#$0480,d0
 		moveq	#$00000002,d1
 		jsr	(j_DoDMACopy).l
 		rts
-; End of function DMACopyTextBuffer
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearTextBuffer:				  ; CODE XREF: ROM:0000EF58p
-						  ; ROM:0000EF88p ...
+; Resets the text cursor and fills g_ScreenBuffer with $AA pixels
+; (the text background colour).
+ClearTextBuffer:
 		clr.w	(g_TextCursorX).l
 		clr.b	(g_TextCursorY).l
 		lea	(g_ScreenBuffer).l,a1
 		move.l	#$AAAAAAAA,d1
 		move.w	#$027F,d7
 
-loc_F610:					  ; CODE XREF: ClearTextBuffer+1Ej
+_ctbFill:
 		move.l	d1,(a1)+
-		dbf	d7,loc_F610
+		dbf	d7,_ctbFill
 		rts
-; End of function ClearTextBuffer
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-j_j_LoadUncompressedString:			  ; CODE XREF: ROM:0000EF60p
-						  ; ROM:0000EF90p ...
+; Loads uncompressed string d1 (leaving a2 = text, d7 = length-1)
+; and falls through to render it at the text cursor. IDA called it
+; j_j_LoadUncompressedString.
+DrawUncompressedString:
 		jsr	(j_LoadUncompressedString).l
-; End of function j_j_LoadUncompressedString
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_F61E:					  ; CODE XREF: sub_F578+1Cp
-						  ; sub_F61E+12j
+; Renders d7+1 glyphs from (a2) into g_ScreenBuffer.
+_drawGlyphs:
 		clr.w	d0
 		move.b	(a2)+,d0
 		movem.l	d7/a2,-(sp)
 		jsr	(j_DrawTextGlyph).l
 		movem.l	(sp)+,d7/a2
-		dbf	d7,sub_F61E
+		dbf	d7,_drawGlyphs
 		rts
-; End of function sub_F61E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadGameSelectMenu:				  ; CODE XREF: ROM:0000EEC0p
+; Loads the select screen: the font and window art into VRAM, the
+; screen tilemap into g_Buffer, and a pristine copy of the first
+; window's 18x10 cells into g_SaveWindowTemplate for later redraws.
+LoadGameSelectMenu:
 		move.w	#$0000,d0
 		move.w	#$0000,d1
 		clr.w	d2
@@ -456,19 +407,17 @@ LoadGameSelectMenu:				  ; CODE XREF: ROM:0000EEC0p
 		lea	(g_Buffer).l,a1
 		jsr	(j_DecompTilemap).l
 		lea	((g_Buffer+$56)).l,a0
-		lea	(unk_FF3562).l,a1
+		lea	(g_SaveWindowTemplate).l,a1
 		moveq	#$00000011,d6
 		moveq	#$00000009,d7
-		bsr.w	sub_F81A
+		bsr.w	CopyTileRect
 		rts
-; End of function LoadGameSelectMenu
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadGameStartPalette:				  ; CODE XREF: ROM:0000EECCp
-						  ; ROM:0000EF0Cp ...
+; Fills palette lines 0, 1 and 3 from GameStartPalette (line 2 is
+; the player palette, loaded separately): line 0 from the asset,
+; line 1 copied from line 0, and - via the fall-through with a0
+; left pointing at line 1 - line 3 copied from line 1.
+LoadGameStartPalette:
 		lea	GameStartPalette(pc),a0
 		lea	(g_Pal0Base).l,a1
 		bsr.s	CopyPalette_0
@@ -476,20 +425,14 @@ LoadGameStartPalette:				  ; CODE XREF: ROM:0000EECCp
 		lea	$00000020(a0),a1
 		bsr.w	CopyPalette_0
 		lea	$00000040(a0),a1
-; End of function LoadGameStartPalette
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-CopyPalette_0:					  ; CODE XREF: LoadGameStartPalette+Ap
-						  ; LoadGameStartPalette+16p
+; Copies 16 colours (a0)+ to (a1)+.
+CopyPalette_0:
 		moveq	#$0000000F,d7
 
-loc_F6B4:					  ; CODE XREF: CopyPalette_0+4j
+_cpColour:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_F6B4
+		dbf	d7,_cpColour
 		rts
-; End of function CopyPalette_0
 
-; ---------------------------------------------------------------------------
+		modend

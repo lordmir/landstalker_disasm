@@ -1,4 +1,4 @@
-		ScriptID	$549,$0	; ID 0x000 : Run text script at	offset 0x0281B0
+		ScriptID    $549,$0	; ID 0x000 : Run text script at	offset 0x0281B0
 					; 0x1BE9: LOAD SPECIAL CHARACTER Friday	(0x01)
 					; 0xE4D6: PRINT	MSG 0x0523, MSGBOX CLEARED, END: "{5B}:	Now, let's start{57}our adventure!!{5E}"
 		ScriptID    $54B,$1	; ID 0x001 : Run text script at	offset 0x0281B4

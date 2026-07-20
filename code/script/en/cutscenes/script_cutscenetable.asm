@@ -1,5 +1,4 @@
-		ScriptID	$554,$0		  ; DATA XREF: PlayCutsceneScript+4t
-						  ; ID 0x000 : Run text	script at offset 0x02829E
+		ScriptID    $554,$0		  ; ID 0x000 : Run text	script at offset 0x02829E
 						  ; 0x1BE9: LOAD SPECIAL CHARACTER Friday (0x01)
 						  ; 0xE4E0: PRINT MSG 0x052D, MSGBOX CLEARED, END: "{5B}Now, let's start{57}our adventure!!{5E}"
 		ScriptID    $556,$1		  ; ID 0x001 : Run text	script at offset 0x0282A2

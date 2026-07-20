@@ -1,9 +1,15 @@
+GameSelectScreen4	module
+; The game-start sequence after picking a save on the select screen
+; (called from InitGameSelectScreen, whose a6 frame this shares).
+; Everything but the picked window is retinted to the fadeable
+; palette lines, then for 120 frames the screen slides toward the
+; picked window's corner while Nigel swings his sword and the
+; palettes darken; any button press skips ahead.
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: bp-based frame
-
-HandleGameStartInput:				  ; CODE XREF: ROM:0000EF32p
+; Own a4 frame: -$02 frame counter, -$06 scroll step count, -$09
+; sword swing state (0 pending / 1 playing / $FF done), -$0B
+; scroll-done flag.
+HandleGameStartInput:
 
 var_2		= -2
 
@@ -11,153 +17,127 @@ var_2		= -2
 		movea.l	a4,a0
 		moveq	#$0000000B,d7
 
-loc_FF1A:					  ; CODE XREF: HandleGameStartInput+Aj
+_hgsClear:
 		clr.b	-(a0)
-		dbf	d7,loc_FF1A
+		dbf	d7,_hgsClear
 		clr.b	-$00000019(a6)
-		bsr.w	sub_FF78
-		move.w	#$0060,-$0000000E(a6)
-		move.w	#$0078,d7
+		bsr.w	_dimAllButPicked
+		move.w	#$0060,-$0000000E(a6)	  ; palette fade budget
+		move.w	#$0078,d7		  ; 120 frames
 
-loc_FF32:					  ; CODE XREF: HandleGameStartInput+5Ej
+_hgsLoop:
 		bsr.w	SuppressHeldInputs
 		move.b	(g_Controller1State).l,d0
 		cmpi.b	#CTRLBF_B,d0
-		bcc.s	loc_FF74
+		bcc.s	_hgsDone		  ; any button: skip
 		movem.w	d7,-(sp)
 		move.w	#$0000,d0
-		bsr.w	sub_10014
+		bsr.w	_scrollAway
 		move.w	#$0046,d0
-		bsr.w	sub_FFE2
+		bsr.w	_nigelSwing
 		bsr.w	DrawSaveNigel
 		move.w	#$0004,d0
-		bsr.w	sub_1007E
+		bsr.w	_fadeStep
 		jsr	(WaitUntilVBlank).l
 		addq.w	#$01,var_2(a4)
 		movem.w	(sp)+,d7
-		dbf	d7,loc_FF32
+		dbf	d7,_hgsLoop
 
-loc_FF74:					  ; CODE XREF: HandleGameStartInput+2Ej
+_hgsDone:
 		unlk	a4
 		rts
-; End of function HandleGameStartInput
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_FF78:					  ; CODE XREF: HandleGameStartInput+12p
+; Retints the screen so only the picked window stays bright: cells
+; still on palette line 0 go to line 3 (the top 22 rows) or line 1
+; (the rest), the result is copied to plane B, then the buffer is
+; flooded with its first (blank) cell and just the picked window
+; redrawn - plane A keeps the bright window over the dimmed copy.
+_dimAllButPicked:
 		lea	((g_Buffer+2)).l,a0
 		move.w	#$6000,d0
 		move.w	(a0),d1
 		move.w	#$036F,d7
 
-loc_FF88:					  ; CODE XREF: sub_FF78+1Aj
+_dabMain:
 		move.w	(a0),d2
 		and.w	d0,d2
-		bne.s	loc_FF90
+		bne.s	_dabMainNext
 		move.w	d0,(a0)
 
-loc_FF90:					  ; CODE XREF: sub_FF78+14j
+_dabMainNext:
 		addq.l	#$02,a0
-		dbf	d7,loc_FF88
+		dbf	d7,_dabMain
 		lea	((g_Buffer+$52)).l,a0
 		move.w	#$6000,d0
 		move.w	(a0),d1
 		move.w	#$0437,d7
 
-loc_FFA6:					  ; CODE XREF: sub_FF78+3Aj
+_dabRest:
 		move.w	(a0),d2
 		and.w	d0,d2
-		bne.s	loc_FFB0
+		bne.s	_dabRestNext
 		ori.w	#$2000,(a0)
 
-loc_FFB0:					  ; CODE XREF: sub_FF78+32j
+_dabRestNext:
 		addq.l	#$02,a0
-		dbf	d7,loc_FFA6
+		dbf	d7,_dabRest
 		jsr	(WaitUntilVBlank).l
 		bsr.w	CopySaveScreenToPlaneB
 		lea	((g_Buffer+2)).l,a0
 		move.w	#$045E,d7
 		move.w	(a0)+,d0
 
-loc_FFCC:					  ; CODE XREF: sub_FF78+56j
+_dabFlood:
 		move.w	d0,(a0)+
-		dbf	d7,loc_FFCC
+		dbf	d7,_dabFlood
 		jsr	(WaitUntilVBlank).l
 		move.w	-$00000002(a6),d0
-		bsr.w	sub_F72E
+		bsr.w	RedrawSaveWindow
 		rts
-; End of function sub_FF78
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_FFE2:					  ; CODE XREF: HandleGameStartInput+40p
-
-; FUNCTION CHUNK AT 0000FFF2 SIZE 0000000A BYTES
-; FUNCTION CHUNK AT 00010002 SIZE 00000012 BYTES
-
+; From frame d0 on: play the sword-swing sound and Nigel's react
+; animation once, and park him still when it finishes.
+_nigelSwing:
 		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_FFEA
+		bcs.s	_nsCheck
 		rts
-; ---------------------------------------------------------------------------
 
-loc_FFEA:					  ; CODE XREF: sub_FFE2+4j
+_nsCheck:
 		tst.b	-$00000009(a4)
-		bpl.s	loc_FFF2
-; End of function sub_FFE2
+		bpl.s	_nsStart
+		rts				  ; already done
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-nullsub_3:
-		rts
-; End of function nullsub_3
-
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_FFE2
-
-loc_FFF2:					  ; CODE XREF: sub_FFE2+Cj
-		bne.s	loc_10002
+_nsStart:
+		bne.s	_nsFinish
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordSwing
-; ---------------------------------------------------------------------------
 		bsr.w	StartSaveNigelAnim
-; END OF FUNCTION CHUNK	FOR sub_FFE2
 		move.b	#$01,-$00000009(a4)
-; START	OF FUNCTION CHUNK FOR sub_FFE2
 
-loc_10002:					  ; CODE XREF: sub_FFE2:loc_FFF2j
-		tst.b	-$00000019(a6)
-		beq.s	locret_10012
+_nsFinish:
+		tst.b	-$00000019(a6)		  ; animation completed?
+		beq.s	_nsRts
 		bsr.w	SetSaveNigelStill
 		move.b	#$FF,-$00000009(a4)
 
-locret_10012:					  ; CODE XREF: sub_FFE2+24j
+_nsRts:
 		rts
-; END OF FUNCTION CHUNK	FOR sub_FFE2
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_10014:					  ; CODE XREF: HandleGameStartInput+38p
+; Slides the screen (and Nigel, via the shared -$10/-$12(a6)
+; offsets) one step toward the picked window's corner each frame,
+; for $24 steps.
+_scrollAway:
 		tst.b	-$0000000B(a4)
-		beq.s	loc_1001C
+		beq.s	_saCheck
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1001C:					  ; CODE XREF: sub_10014+4j
+_saCheck:
 		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_10024
+		bcs.s	_saStep
 		rts
-; ---------------------------------------------------------------------------
 
-loc_10024:					  ; CODE XREF: sub_10014+Cj
-		lea	word_1006E(pc),a0
+_saStep:
+		lea	_scrollDirs(pc),a0
 		move.w	-$00000004(a6),d0
 		lsl.w	#$02,d0
 		move.w	(a0,d0.w),d1
@@ -173,31 +153,27 @@ loc_10024:					  ; CODE XREF: sub_10014+Cj
 		addq.w	#$01,-$00000006(a4)
 		move.w	-$00000006(a4),d0
 		cmpi.w	#$0024,d0
-		bcs.s	locret_1006C
+		bcs.s	_saDone
 		addq.b	#$01,-$0000000B(a4)
 
-locret_1006C:					  ; CODE XREF: sub_10014+52j
+_saDone:
 		rts
-; End of function sub_10014
 
-; ---------------------------------------------------------------------------
-word_1006E:	dc.w $0002,$0001		  ; DATA XREF: sub_10014:loc_10024t
+; Per-slot screen step {dx, dy}, away from the picked corner.
+_scrollDirs:	dc.w $0002,$0001
 		dc.w $FFFE,$0001
 		dc.w $0002,$FFFF
 		dc.w $FFFE,$FFFF
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1007E:					  ; CODE XREF: HandleGameStartInput+4Cp
+; From frame d0 on, tick the palette fade (lines 1 and 3) each
+; frame.
+_fadeStep:
 		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_10086
+		bcs.s	_fsRun
 		rts
-; ---------------------------------------------------------------------------
 
-loc_10086:					  ; CODE XREF: sub_1007E+4j
-		bsr.w	sub_F89C
+_fsRun:
+		bsr.w	DarkenMenuPalettes
 		rts
-; End of function sub_1007E
 
-; ---------------------------------------------------------------------------
+		modend

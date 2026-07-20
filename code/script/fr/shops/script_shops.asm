@@ -143,7 +143,7 @@ ShopPrice_06:
 ; ---------------------------------------------------------------------------
 		ScriptID    $3D,$0	; Vowel:  Run text script at offset 0x027994
 					; 0xE03D: PRINT	MSG 0x008B, MSGBOX CLEARED, END: "{6A}Notre meilleur {6E}.{66}Qualit� sup�rieure!{6D}"
-word_25F66:	ScriptID    $3D,$1	; Fem:	  Run text script at offset 0x027994
+		ScriptID    $3D,$1	; Fem:	  Run text script at offset 0x027994
 					; 0xE03D: PRINT	MSG 0x008B, MSGBOX CLEARED, END: "{6A}Notre meilleur {6E}.{66}Qualit� sup�rieure!{6D}"
 		ScriptID    $3D,$2	; Masc:	  Run text script at offset 0x027994
 					; 0xE03D: PRINT	MSG 0x008B, MSGBOX CLEARED, END: "{6A}Notre meilleur {6E}.{66}Qualit� sup�rieure!{6D}"

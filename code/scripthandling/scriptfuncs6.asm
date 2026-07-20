@@ -12,7 +12,7 @@ ScriptFuncs6	module
 ; g_TextItemSlot1-3) that the string engine pops in order for names;
 ; action 4 sets the numeric variable; 5 sets a game flag (argument
 ; < 1000) or runs an ActionPointerList entry (1000+); 6 switches the
-; speaker; 7 stores a character id in g_Character.
+; speaker; 7 queues a cutscene action to run after the dialogue.
 
 ProcessScriptWord:
 		movem.l	d0-d1/a0-a1,-(sp)
@@ -52,7 +52,7 @@ ActionTable:	dc.w LoadItemIntoSlot0-ActionTable
 		dc.w GetNumericValue-ActionTable
 		dc.w DoSpecialAction-ActionTable
 		dc.w SwitchCharacter-ActionTable
-		dc.w LoadNextCharacter-ActionTable
+		dc.w QueueCutsceneAction-ActionTable
 
 DisplayTextFromScriptWord:
 		move.l	d0,-(sp)
@@ -273,9 +273,11 @@ _swcOpen:
 		rts
 ; ---------------------------------------------------------------------------
 
-; Action 7: store a character id in g_Character (reset to $FFFF by
-; PlayerTalk).
-LoadNextCharacter:
+; Action 7: queue cutscene action d0 to run when the dialogue ends
+; (g_PendingCutsceneAction; reset to $FFFF by PlayerTalk and
+; dispatched by gamelogic4 afterwards). IDA called it
+; LoadNextCharacter.
+QueueCutsceneAction:
 		movem.l	d0-d1/a1,-(sp)
 		andi.w	#$03FF,d0		  ; 0x03FF - special value means next operand is an address
 		cmpi.w	#$03FF,d0
@@ -284,7 +286,7 @@ LoadNextCharacter:
 		move.w	(a1),d0
 
 _ldcSet:
-		move.w	d0,(g_Character).l
+		move.w	d0,(g_PendingCutsceneAction).l
 		movem.l	(sp)+,d0-d1/a1
 		rts
 

@@ -1,4 +1,4 @@
-		dc.b ITM_HOTELREGISTER	  ; DATA XREF: sub_24B48+8t
+		dc.b ITM_HOTELREGISTER
 		dc.b $14
 		dc.w $0260			  ; Gumi Inn - register
 		ScriptID    $42,$2		  ; Run	text script at offset 0x02787A

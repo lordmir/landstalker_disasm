@@ -1,33 +1,41 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: bp-based frame
-
-DisplayIslandMap:				  ; DATA XREF: j_DisplayIslandMapt
-
-var_98		= -$98
-var_96		= -$96
-var_8C		= -$8C
-var_8A		= -$8A
-var_88		= -$88
-var_82		= -$82
-var_80		= -$80
-
+IslandMapRoutines	module
+; The island map screen (via j_DisplayIslandMap, d0 = mode):
+;   0  animate the boat route dots (departure, CSA_00D2)
+;   1  pre-plant the route and show it complete (arrival, CSA_00D3)
+;   2  static view until a button press (no caller uses it)
+;   3  Friday flies a shrinking orbit over the current town while
+;      its name blinks beside her (the shops' "I'll show you the
+;      map"); a button press spirals her back out
+; The screen: foreground/background map images on planes A/B, the
+; current location's name rendered as outlined glyphs (tiles $D+),
+; and sprites for the route dots / Friday. The caller's palette is
+; saved in the frame and restored on exit.
+;
+; Stack frame:
+;   -$80..-$02 saved palette      -$82 mode
+;   -$84 location index           -$85 held-buttons byte
+;   -$88 route waypoint index     -$8A dot frame index
+;   -$8C dot delay / orbit angle (bit 2 of its low byte -$8B flaps
+;        Friday's wings)          -$8E orbit radius
+;   -$8F flight phase flags (bit 0/1 fade-in running/done, 2/3 the
+;        same for fade-out)       -$92 fade step counter
+;   -$96 done flag                -$98 frame tick
+DisplayIslandMap:
 		link	a6,#-$0098
 		andi.w	#$0003,d0
-		move.w	d0,var_82(a6)
-		clr.w	var_88(a6)
-		clr.w	var_8A(a6)
-		clr.w	var_8C(a6)
-		clr.w	var_98(a6)
-		clr.w	var_96(a6)
-		lea	(g_Pal0Base).l,a0
-		lea	var_80(a6),a1
+		move.w	d0,-$00000082(a6)
+		clr.w	-$00000088(a6)
+		clr.w	-$0000008A(a6)
+		clr.w	-$0000008C(a6)
+		clr.w	-$00000098(a6)
+		clr.w	-$00000096(a6)
+		lea	(g_Pal0Base).l,a0	  ; save the caller's palette
+		lea	-$00000080(a6),a1
 		move.w	#$003F,d7
 
-loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
+_savePal:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_3E682
+		dbf	d7,_savePal
 		jsr	(j_FadeOutToDarkness).l
 		jsr	(j_EnableVDPSpriteUpdate).l
 		lea	MapDots(pc),a0
@@ -40,14 +48,14 @@ loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		lea	($000000A0).w,a2
 		jsr	(j_DecompressAndQueueGfxCopy).l
 		jsr	(j_EnableDMAQueueProcessing).l
-		bsr.w	sub_3EB0E
-		bsr.w	sub_3EB5E
+		bsr.w	_drawLocationName
+		bsr.w	_outlineName
 		jsr	(j_WaitUntilVBlank).l
-		lea	(g_Buffer).l,a0
-		lea	($000001A0).w,a1
-		move.w	($00000140).w,d0	  ; "		     "
-		moveq	#$00000002,d1
-		jsr	(j_QueueDMAOp).l
+		lea	(g_Buffer).l,a0		  ; outlined name glyphs to the
+		lea	($000001A0).w,a1	  ; VRAM $1A0 (tiles $D+)
+		move.w	($00000140).w,d0	  ; DMA length: word read from
+		moveq	#$00000002,d1		  ; $140 (header name padding,
+		jsr	(j_QueueDMAOp).l	  ; $2020) - meant #$0140?
 		jsr	(j_FlushDMACopyQueue).l
 		lea	IslandMapFg(pc),a0
 		lea	(g_Blockset).l,a1
@@ -65,9 +73,9 @@ loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		lea	(g_InventoryTilemap).l,a1
 		move.w	#$0000,d4
 		move.w	#$0080,d5
-		bsr.w	sub_3ED64
+		bsr.w	_reindexTilemap
 		lea	(g_InventoryTilemap).l,a0
-		lea	($0000C180).l,a1
+		lea	($0000C180).l,a1	  ; foreground image on plane A
 		move.w	#$0640,d0
 		move.w	#$0002,d1
 		jsr	(j_QueueDMAOp).l
@@ -76,11 +84,11 @@ loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		lea	(g_Buffer).l,a1
 		bsr.w	DecompTilemap
 		lea	((g_ForegroundBlocks+$17E)).l,a1
-		move.w	#$2000,d4
+		move.w	#$2000,d4		  ; palette line 1
 		move.w	#$0300,d5
-		bsr.w	sub_3ED64
+		bsr.w	_reindexTilemap
 		lea	((g_ForegroundBlocks+$17E)).l,a0
-		lea	($0000E180).l,a1
+		lea	($0000E180).l,a1	  ; background image on plane B
 		move.w	#$0640,d0
 		move.w	#$0002,d1
 		jsr	(j_QueueDMAOp).l
@@ -92,27 +100,27 @@ loc_3E682:					  ; CODE XREF: DisplayIslandMap+30j
 		jsr	(j_FillHScrollDataOffset1).l
 		jsr	(j_FillVSRAMOffset1).l
 		jsr	(j_ClearVDPSpriteTable).l
-		bsr.w	sub_3EC76
+		bsr.w	_preplantRoute
 		lea	IslandMapFgPal(pc),a0
 		lea	(g_Pal0Base).l,a1
 		moveq	#$0000000F,d7
 
-loc_3E7DC:					  ; CODE XREF: DisplayIslandMap+18Aj
+_loadPal:
 		move.l	(a0)+,(a1)+
-		dbf	d7,loc_3E7DC
+		dbf	d7,_loadPal
 		jsr	(j_LoadInitialPlayerPalette).l
 		jsr	(j_CopyBasePaletteToActivePalette).l
-		lea	(g_Pal0Active).l,a0
+		lea	(g_Pal0Active).l,a0	  ; start from black
 		moveq	#$0000000F,d7
 
-loc_3E7F6:					  ; CODE XREF: DisplayIslandMap+1A4j
+_blackPal:
 		clr.l	(a0)+
-		dbf	d7,loc_3E7F6
+		dbf	d7,_blackPal
 		clr.w	d0
 		move.b	#$EF,d1
-		jsr	(j_MaskVDPReg).l
-		move.w	var_82(a6),d0
-		lea	off_3E86C(pc),a0
+		jsr	(j_MaskVDPReg).l	  ; HInt off
+		move.w	-$00000082(a6),d0
+		lea	_modeHandlers(pc),a0
 		lsl.w	#$02,d0
 		movea.l	(a0,d0.w),a0
 		jsr	(a0)
@@ -120,60 +128,51 @@ loc_3E7F6:					  ; CODE XREF: DisplayIslandMap+1A4j
 		lea	(g_Pal0Base).l,a0
 		moveq	#$00000039,d7
 
-loc_3E826:					  ; CODE XREF: DisplayIslandMap+1D4j
+_clearPal:
 		clr.w	(a0)+
-		dbf	d7,loc_3E826
+		dbf	d7,_clearPal
 		jsr	(j_CopyBasePaletteToActivePalette).l
 		jsr	(j_FlushDMACopyQueue).l
-		lea	var_80(a6),a0
+		lea	-$00000080(a6),a0	  ; restore the caller's palette
 		lea	(g_Pal0Base).l,a1
 		move.w	#$003F,d7
 
-loc_3E846:					  ; CODE XREF: DisplayIslandMap+1F4j
+_restorePal:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_3E846
-		bsr.w	sub_3E860
+		dbf	d7,_restorePal
+		bsr.w	_busyWait
 		clr.l	d0
 		move.b	#$10,d1
-		jsr	(j_OrVDPReg).l
+		jsr	(j_OrVDPReg).l		  ; HInt back on
 		unlk	a6
 		rts
-; End of function DisplayIslandMap
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E860:					  ; CODE XREF: DisplayIslandMap+1F8p
+_busyWait:
 		move.w	#$1000,d0
 
-loc_3E864:					  ; CODE XREF: sub_3E860+6j
+_bwLoop:
 		nop
-		dbf	d0,loc_3E864
+		dbf	d0,_bwLoop
 		rts
-; End of function sub_3E860
 
-; ---------------------------------------------------------------------------
-off_3E86C:	dc.l sub_3EC44			  ; DATA XREF: DisplayIslandMap+1B8t
-		dc.l sub_3EC44
-		dc.l sub_3E87C
-		dc.l sub_3E890
+_modeHandlers:	dc.l _modeBoatRoute
+		dc.l _modeBoatRoute
+		dc.l _modeStill
+		dc.l _modeFridayFlight
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E87C:					  ; DATA XREF: ROM:0003E874o
+; Mode 2: just fade in and hold until a button press.
+_modeStill:
 		jsr	(j_FadeInFromDarkness).l
 		jsr	(j_WaitForNextButtonPress).l
 		jsr	(j_FadeOutToDarkness).l
 		rts
-; End of function sub_3E87C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E890:					  ; DATA XREF: ROM:0003E878o
+; Mode 3: Friday orbits the current town. The orbit radius shrinks
+; from $C8 towards 8 while the screen fades in; a fresh button
+; press (once faded in) starts the fade back out and the radius
+; grows again. Ends when all four fade phases are done and the
+; radius is back at full.
+_modeFridayFlight:
 		jsr	(j_InitFadeFromBlackParams).l
 		move.b	#$01,-$0000008F(a6)
 		move.w	#$001C,-$00000092(a6)
@@ -183,217 +182,175 @@ sub_3E890:					  ; DATA XREF: ROM:0003E878o
 		clr.w	-$00000096(a6)
 		move.w	#$0100,d6
 		jsr	(j_GenerateRandomNumber).l
-		move.w	d7,-$0000008C(a6)
+		move.w	d7,-$0000008C(a6)	  ; random start angle
 
-loc_3E8C8:					  ; CODE XREF: sub_3E890+70j
-						  ; sub_3E890+76j
-		jsr	sub_3E90A(pc)
+_ffLoop:
+		jsr	_suppressHeldInputs(pc)
 		nop
 		tst.b	(g_Controller1State).l
-		beq.s	loc_3E8DA
-		bsr.w	sub_3E92C
+		beq.s	_ffAnimate
+		bsr.w	_ffStartExit
 
-loc_3E8DA:					  ; CODE XREF: sub_3E890+44j
-		bsr.w	sub_3E950
-		bsr.w	sub_3E9F8
-		bsr.w	sub_3E9B8
-		bsr.w	sub_3E9D8
+_ffAnimate:
+		bsr.w	_ffRadius
+		bsr.w	_ffDrawSprites
+		bsr.w	_ffFadeIn
+		bsr.w	_ffFadeOut
 		addq.w	#$01,-$00000098(a6)
 		jsr	(j_WaitUntilVBlank).l
 		move.b	-$0000008F(a6),d0
 		andi.b	#$0F,d0
 		cmpi.b	#$0F,d0
-		bne.s	loc_3E8C8
+		bne.s	_ffLoop
 		tst.w	-$00000096(a6)
-		beq.s	loc_3E8C8
+		beq.s	_ffLoop
 		rts
-; End of function sub_3E890
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E90A:					  ; DATA XREF: sub_3E890:loc_3E8C8t
+; Zeroes the pad state while anything is still held from the
+; previous frame, so only fresh presses reach the flight loop.
+_suppressHeldInputs:
 		jsr	(j_UpdateControllerInputs).l
 		lea	(g_Controller1State).l,a0
 		lea	-$00000085(a6),a1
 		tst.b	(a0)
-		bne.s	loc_3E922
+		bne.s	_shiHeld
 		clr.b	(a1)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E922:					  ; CODE XREF: sub_3E90A+12j
+_shiHeld:
 		tst.b	(a1)
-		bne.s	loc_3E928
+		bne.s	_shiClear
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E928:					  ; CODE XREF: sub_3E90A+1Aj
+_shiClear:
 		clr.b	(a0)
 		rts
-; End of function sub_3E90A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E92C:					  ; CODE XREF: sub_3E890+46p
+; A press only registers once the fade-in has finished (phase bits
+; = %0011): start the fade-out.
+_ffStartExit:
 		move.b	-$0000008F(a6),d0
 		andi.b	#$0F,d0
 		cmpi.b	#$03,d0
-		beq.s	loc_3E93C
+		beq.s	_fseStart
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E93C:					  ; CODE XREF: sub_3E92C+Cj
+_fseStart:
 		bset	#$02,-$0000008F(a6)
 		move.w	#$001C,-$00000092(a6)
 		jsr	(j_InitFadeToBlackParams).l
 		rts
-; End of function sub_3E92C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E950:					  ; CODE XREF: sub_3E890:loc_3E8DAp
+; Orbit radius: growing +4 back to $C8 during the fade-out (done
+; flag once it arrives), otherwise shrinking towards 8 - fast (-4)
+; above $14, slow (-2) above 8.
+_ffRadius:
 		move.w	-$0000008E(a6),d0
 		btst	#$02,-$0000008F(a6)
-		beq.w	loc_3E972
+		beq.w	_frShrink
 		addq.w	#$04,d0
 		cmpi.w	#$00C8,d0
-		bcs.s	loc_3E96C
+		bcs.s	_frGrow
 		move.w	#$FFFF,-$00000096(a6)
 
-loc_3E96C:					  ; CODE XREF: sub_3E950+14j
+_frGrow:
 		move.w	d0,-$0000008E(a6)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E972:					  ; CODE XREF: sub_3E950+Aj
+_frShrink:
 		cmpi.w	#$0009,d0
-		bcc.s	loc_3E97E
+		bcc.s	_frMid
 		moveq	#$00000008,d0
-		bra.s	loc_3E98A
-; ---------------------------------------------------------------------------
+		bra.s	_frSet
+
+; Unreachable leftover.
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E97E:					  ; CODE XREF: sub_3E950+26j
+_frMid:
 		cmpi.w	#$0014,d0
-		bcc.s	loc_3E988
+		bcc.s	_frFast
 		subq.w	#$02,d0
-		bra.s	loc_3E98A
-; ---------------------------------------------------------------------------
+		bra.s	_frSet
 
-loc_3E988:					  ; CODE XREF: sub_3E950+32j
+_frFast:
 		subq.w	#$04,d0
 
-loc_3E98A:					  ; CODE XREF: sub_3E950+2Aj
-						  ; sub_3E950+36j
+_frSet:
 		move.w	d0,-$0000008E(a6)
 		rts
-; End of function sub_3E950
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E990:					  ; CODE XREF: sub_3E9B8:loc_3E9C8p
-						  ; sub_3E9D8:loc_3E9E8p
+; Advances the palette fade one step on every fourth call.
+_fadeTick:
 		subq.w	#$01,-$00000092(a6)
 		move.w	-$00000092(a6),d0
 		andi.b	#$03,d0
-		beq.s	loc_3E9A0
+		beq.s	_ftStep
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E9A0:					  ; CODE XREF: sub_3E990+Cj
+_ftStep:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		move.w	#$001F,d5
 		jsr	(j_DarkenPalette).l
 		rts
-; End of function sub_3E990
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E9B8:					  ; CODE XREF: sub_3E890+52p
+; While the fade-in phase runs (bits %01), tick it; mark it done
+; (bit 1) when the counter expires.
+_ffFadeIn:
 		move.b	-$0000008F(a6),d0
 		andi.b	#$03,d0
 		cmpi.b	#$01,d0
-		beq.s	loc_3E9C8
+		beq.s	_ffiTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E9C8:					  ; CODE XREF: sub_3E9B8+Cj
-		bsr.s	sub_3E990
+_ffiTick:
+		bsr.s	_fadeTick
 		tst.w	-$00000092(a6)
-		bne.s	locret_3E9D6
+		bne.s	_ffiDone
 		bset	#$01,-$0000008F(a6)
 
-locret_3E9D6:					  ; CODE XREF: sub_3E9B8+16j
+_ffiDone:
 		rts
-; End of function sub_3E9B8
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E9D8:					  ; CODE XREF: sub_3E890+56p
+; The same for the fade-out phase (bits 2/3).
+_ffFadeOut:
 		move.b	-$0000008F(a6),d0
 		andi.b	#$0C,d0
 		cmpi.b	#$04,d0
-		beq.s	loc_3E9E8
+		beq.s	_ffoTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3E9E8:					  ; CODE XREF: sub_3E9D8+Cj
-		bsr.s	sub_3E990
+_ffoTick:
+		bsr.s	_fadeTick
 		tst.w	-$00000092(a6)
-		bne.s	locret_3E9F6
+		bne.s	_ffoDone
 		bset	#$03,-$0000008F(a6)
 
-locret_3E9F6:					  ; CODE XREF: sub_3E9D8+16j
+_ffoDone:
 		rts
-; End of function sub_3E9D8
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3E9F8:					  ; CODE XREF: sub_3E890+4Ep
-
-; FUNCTION CHUNK AT 0003EA62 SIZE 0000007C BYTES
-
+; Friday (VDP sprite 16, wings flapping with angle bit 2) on her
+; orbit, plus the blinking town name sprites beside her.
+_ffDrawSprites:
 		lea	(g_VDPSpr16_Y).l,a1
 		move.w	#$4005,d0
 		btst	#$02,-$0000008B(a6)
-		beq.s	loc_3EA0C
+		beq.s	_fdsTile
 		addq.w	#$04,d0
 
-loc_3EA0C:					  ; CODE XREF: sub_3E9F8+10j
+_fdsTile:
 		move.w	d0,$00000004(a1)
 		move.b	#$05,$00000002(a1)
 		move.w	-$00000084(a6),d7
 		lsl.w	#$02,d7
-		lea	MapFridayCoords(pc),a0	  ; GUMI
-						  ; RYUMA
-						  ; MERCATOR
-						  ; VERLA
-						  ; DESTEL
-		bsr.w	sub_3EA28
-		bra.w	loc_3EA62
-; End of function sub_3E9F8
+		lea	MapFridayCoords(pc),a0
+		bsr.w	_ffOrbitPos
+		bra.w	_ffNameSprites
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EA28:					  ; CODE XREF: sub_3E9F8+28p
+; Places Friday at the orbit position: x = cos(angle*4) * radius +
+; centre x, y = sin(angle*4) * radius/2 + centre y (a squashed
+; ellipse).
+_ffOrbitPos:
 		move.w	-$0000008C(a6),d0
 		lsl.w	#$02,d0
 		jsr	(j_Cosine).l
@@ -412,29 +369,24 @@ sub_3EA28:					  ; CODE XREF: sub_3E9F8+28p
 		add.w	$00000002(a0,d7.w),d1
 		move.w	d1,(a1)
 		rts
-; End of function sub_3EA28
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_3E9F8
-
-loc_3EA62:					  ; CODE XREF: sub_3E9F8+2Cj
+; The town name as 4-cell-wide text sprites (tiles $D/$15 - the
+; outlined glyphs; the German build adds a third sprite at $1D for
+; its longer names), blinking: hidden while angle mod 64 is in the
+; top quarter. Also advances the orbit angle.
+_ffNameSprites:
 		move.w	-$0000008C(a6),d2
 		andi.w	#$003F,d2
 		cmpi.w	#$0030,d2
-		bcc.s	loc_3EA74
+		bcc.s	_fnBlink
 		clr.l	d2
-		bra.s	loc_3EA76
-; ---------------------------------------------------------------------------
+		bra.s	_fnDraw
 
-loc_3EA74:					  ; CODE XREF: sub_3E9F8+76j
+_fnBlink:
 		moveq	#$FFFFFFFF,d2
 
-loc_3EA76:					  ; CODE XREF: sub_3E9F8+7Aj
-		lea	MapTextCoords(pc),a0	  ; GUMI
-						  ; RYUMA
-						  ; MERCATOR
-						  ; VERLA
-						  ; DESTEL
+_fnDraw:
+		lea	MapTextCoords(pc),a0
 		move.w	-$00000084(a6),d0
 		lsl.w	#$02,d0
 		lea	$00000008(a1),a1
@@ -445,15 +397,14 @@ loc_3EA76:					  ; CODE XREF: sub_3E9F8+7Aj
 		move.w	d1,$00000006(a1)
 		move.w	$00000002(a0,d0.w),d1
 		tst.w	d2
-		bne.s	loc_3EAA6
+		bne.s	_fnHide1
 		move.w	d1,(a1)
-		bra.s	loc_3EAAA
-; ---------------------------------------------------------------------------
+		bra.s	_fnNext1
 
-loc_3EAA6:					  ; CODE XREF: sub_3E9F8+A8j
+_fnHide1:
 		move.w	#$FFFF,(a1)
 
-loc_3EAAA:					  ; CODE XREF: sub_3E9F8+ACj
+_fnNext1:
 		lea	8(a1),a1
 		move.w	#$15,d1
 		move.w	d1,$4(a1)
@@ -464,14 +415,14 @@ loc_3EAAA:					  ; CODE XREF: sub_3E9F8+ACj
 		move.w	$00000002(a0,d0.w),d1
 		tst.w	d2
 	if REGION=DE
-		bne.s	loc_3EB36
+		bne.s	_fnHide2
 		move.w	d1,(a1)
-		bra.s	loc_3EB3A
-; ---------------------------------------------------------------------------
-loc_3EB36:					  ; CODE XREF: sub_3E9F8+A8j
+		bra.s	_fnNext2
+
+_fnHide2:
 		move.w	#$FFFF,(a1)
 
-loc_3EB3A:					  ; CODE XREF: sub_3E9F8+ACj
+_fnNext2:
 		lea	$10(a1),a1
 		move.w	#$1D,d1
 		move.w	d1,4(a1)
@@ -482,34 +433,36 @@ loc_3EB3A:					  ; CODE XREF: sub_3E9F8+ACj
 		move.w	$00000002(a0,d0.w),d1
 		tst.w	d2
 	endif
-		bne.s	loc_3EAD4
+		bne.s	_fnHideLast
 		move.w	d1,(a1)
-		bra.s	loc_3EAD8
-loc_3EAD4:					  ; CODE XREF: sub_3E9F8+D6j
+		bra.s	_fnDone
+
+_fnHideLast:
 		move.w	#$FFFF,(a1)
 
-loc_3EAD8:					  ; CODE XREF: sub_3E9F8+DAj
+_fnDone:
 		addq.w	#$01,-$0000008C(a6)
 		rts
-; END OF FUNCTION CHUNK	FOR sub_3E9F8
-; ---------------------------------------------------------------------------
-MapFridayCoords:dc.w $0178,$00C8		  ; DATA XREF: sub_3E9F8+24t
+
+; Per-location {x, y} pairs: Friday's orbit centre and the name
+; sprites' position.
+MapFridayCoords:dc.w $0178,$00C8		  ; MASSAN
 		dc.w $0198,$00F0		  ; GUMI
 		dc.w $0168,$0110		  ; RYUMA
 		dc.w $0128,$00E8		  ; MERCATOR
 		dc.w $00C8,$0100		  ; VERLA
 		dc.w $00C0,$00C0		  ; DESTEL
-MapTextCoords:	dc.w $0188,$00D8		  ; DATA XREF: sub_3E9F8:loc_3EA76t
+MapTextCoords:	dc.w $0188,$00D8		  ; MASSAN
 		dc.w $0180,$00FC		  ; GUMI
 		dc.w $0170,$0130		  ; RYUMA
 		dc.w $0110,$00D8		  ; MERCATOR
 		dc.w $00C0,$00F4		  ; VERLA
 		dc.w $00B0,$00DA		  ; DESTEL
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EB0E:					  ; CODE XREF: DisplayIslandMap+74p
+; Renders the current location's name (GetIslandMapLocation: a2 =
+; string, d7 = length, d6 = location index -> -$84; negative =
+; nothing to draw) as glyphs in g_ScreenBuffer.
+_drawLocationName:
 		move.w	#$0001,(g_TextCursorX).l
 		clr.b	(g_TextCursorY).l
 		move.b	#$01,(g_TextColour).l
@@ -517,32 +470,31 @@ sub_3EB0E:					  ; CODE XREF: DisplayIslandMap+74p
 		moveq	#$00000000,d1
 		move.w	#$027F,d7
 
-loc_3EB30:					  ; CODE XREF: sub_3EB0E+24j
+_dlnClear:
 		move.l	d1,(a1)+
-		dbf	d7,loc_3EB30
+		dbf	d7,_dlnClear
 		jsr	(j_GetIslandMapLocation).l
 		ext.w	d6
 		move.w	d6,-$00000084(a6)
-		bpl.s	loc_3EB46
+		bpl.s	_dlnGlyph
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3EB46:					  ; CODE XREF: sub_3EB0E+34j
-						  ; sub_3EB0E+4Aj
+_dlnGlyph:
 		clr.w	d0
 		move.b	(a2)+,d0
 		movem.l	d7/a2,-(sp)
 		jsr	(j_DrawTextGlyph).l
 		movem.l	(sp)+,d7/a2
-		dbf	d7,loc_3EB46
+		dbf	d7,_dlnGlyph
 		rts
-; End of function sub_3EB0E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EB5E:					  ; CODE XREF: DisplayIslandMap+78p
+; Builds the outlined copy of the rendered name in g_Buffer: every
+; glyph pixel ORs the outline colour ($F) into the neighbouring
+; nibbles via the _spread helpers (left/right within the byte pair,
+; +-$3D crossing a tile column, and the rows above/below at +-4),
+; then the original pixels are merged on top of the outline. The
+; German build works on a larger canvas for its longer names.
+_outlineName:
 		lea	(g_Buffer).l,a5
 		movea.l	a5,a1
 		clr.l	d0
@@ -552,64 +504,64 @@ sub_3EB5E:					  ; CODE XREF: DisplayIslandMap+78p
 		move.w	#$0080,d7
 	endif
 
-loc_3EB6C:					  ; CODE XREF: sub_3EB5E+10j
+_onClear:
 		move.l	d0,(a1)+
-		dbf	d7,loc_3EB6C
-		moveq	#$0000000F,d0
+		dbf	d7,_onClear
+		moveq	#$0000000F,d0		  ; outline colour, low nibble
 		move.b	d0,d1
-		lsl.b	#$04,d1
+		lsl.b	#$04,d1			  ; and high nibble
 		lea	(g_ScreenBuffer).l,a0
 		movea.l	a5,a1
 		move.w	#$0080,d7
 
-loc_3EB84:					  ; CODE XREF: sub_3EB5E+7Ej
-		bsr.w	sub_3EC0C
-		beq.s	loc_3EB8E
-		bsr.w	sub_3EC2C
+_onScan:
+		bsr.w	_peekHi
+		beq.s	_onB1Lo
+		bsr.w	_spreadHiEdge
 
-loc_3EB8E:					  ; CODE XREF: sub_3EB5E+2Aj
-		bsr.w	sub_3EC14
-		beq.s	loc_3EB98
-		bsr.w	sub_3EC24
+_onB1Lo:
+		bsr.w	_peekLo
+		beq.s	_onB2
+		bsr.w	_spreadLo
 
-loc_3EB98:					  ; CODE XREF: sub_3EB5E+34j
+_onB2:
 		addq.l	#$01,a1
-		bsr.w	sub_3EC0C
-		beq.s	loc_3EBA4
-		bsr.w	sub_3EC1C
+		bsr.w	_peekHi
+		beq.s	_onB2Lo
+		bsr.w	_spreadHi
 
-loc_3EBA4:					  ; CODE XREF: sub_3EB5E+40j
-		bsr.w	sub_3EC14
-		beq.s	loc_3EBAE
-		bsr.w	sub_3EC24
+_onB2Lo:
+		bsr.w	_peekLo
+		beq.s	_onB3
+		bsr.w	_spreadLo
 
-loc_3EBAE:					  ; CODE XREF: sub_3EB5E+4Aj
+_onB3:
 		addq.l	#$01,a1
-		bsr.w	sub_3EC0C
-		beq.s	loc_3EBBA
-		bsr.w	sub_3EC1C
+		bsr.w	_peekHi
+		beq.s	_onB3Lo
+		bsr.w	_spreadHi
 
-loc_3EBBA:					  ; CODE XREF: sub_3EB5E+56j
-		bsr.w	sub_3EC14
-		beq.s	loc_3EBC4
-		bsr.w	sub_3EC24
+_onB3Lo:
+		bsr.w	_peekLo
+		beq.s	_onB4
+		bsr.w	_spreadLo
 
-loc_3EBC4:					  ; CODE XREF: sub_3EB5E+60j
+_onB4:
 		addq.l	#$01,a1
-		bsr.w	sub_3EC0C
-		beq.s	loc_3EBD0
-		bsr.w	sub_3EC1C
+		bsr.w	_peekHi
+		beq.s	_onB4Lo
+		bsr.w	_spreadHi
 
-loc_3EBD0:					  ; CODE XREF: sub_3EB5E+6Cj
-		bsr.w	sub_3EC14
-		beq.s	loc_3EBDA
-		bsr.w	sub_3EC34
+_onB4Lo:
+		bsr.w	_peekLo
+		beq.s	_onNext
+		bsr.w	_spreadLoEdge
 
-loc_3EBDA:					  ; CODE XREF: sub_3EB5E+76j
+_onNext:
 		addq.l	#$01,a1
-		dbf	d7,loc_3EB84
-		lea	(g_ScreenBuffer).l,a0
-		movea.l	a5,a1
+		dbf	d7,_onScan
+		lea	(g_ScreenBuffer).l,a0	  ; merge the glyph pixels over
+		movea.l	a5,a1			  ; the outline
 	if REGION=DE
 		move.w	#$02FF,d7
 	else
@@ -618,175 +570,128 @@ loc_3EBDA:					  ; CODE XREF: sub_3EB5E+76j
 		moveq	#$0000000F,d1
 		moveq	#$FFFFFFF0,d2
 
-loc_3EBF0:					  ; CODE XREF: sub_3EB5E+A8j
+_onMerge:
 		move.b	(a0),d0
 		and.b	d2,d0
-		beq.s	loc_3EBFA
+		beq.s	_onMergeLo
 		and.b	d1,(a1)
 		or.b	d0,(a1)
 
-loc_3EBFA:					  ; CODE XREF: sub_3EB5E+96j
+_onMergeLo:
 		move.b	(a0)+,d0
 		and.b	d1,d0
-		beq.s	loc_3EC04
+		beq.s	_onMergeNext
 		and.b	d2,(a1)
 		or.b	d0,(a1)
 
-loc_3EC04:					  ; CODE XREF: sub_3EB5E+A0j
+_onMergeNext:
 		addq.l	#$01,a1
-		dbf	d7,loc_3EBF0
+		dbf	d7,_onMerge
 		rts
-; End of function sub_3EB5E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC0C:					  ; CODE XREF: sub_3EB5E:loc_3EB84p
-						  ; sub_3EB5E+3Cp ...
+; d2 = the source pixel in the high / low nibble (peekLo advances).
+_peekHi:
 		move.b	(a0),d2
 		andi.b	#$F0,d2
 		rts
-; End of function sub_3EC0C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC14:					  ; CODE XREF: sub_3EB5E:loc_3EB8Ep
-						  ; sub_3EB5E:loc_3EBA4p ...
+_peekLo:
 		move.b	(a0)+,d2
 		andi.b	#$0F,d2
 		rts
-; End of function sub_3EC14
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC1C:					  ; CODE XREF: sub_3EB5E+42p
-						  ; sub_3EB5E+58p ...
+; Spread the outline colour around a set pixel: into the byte to
+; the left/right (the Edge variants cross a tile column at +-$3D),
+; always finishing with the rows above and below (+-4).
+_spreadHi:
 		or.b	d0,-$00000001(a1)
 		or.b	d0,(a1)
-		bra.s	loc_3EC3A
-; End of function sub_3EC1C
+		bra.s	_spreadVert
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC24:					  ; CODE XREF: sub_3EB5E+36p
-						  ; sub_3EB5E+4Cp ...
+_spreadLo:
 		or.b	d1,(a1)
 		or.b	d1,$00000001(a1)
-		bra.s	loc_3EC3A
-; End of function sub_3EC24
+		bra.s	_spreadVert
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC2C:					  ; CODE XREF: sub_3EB5E+2Cp
+_spreadHiEdge:
 		or.b	d0,-$0000003D(a1)
 		or.b	d0,(a1)
-		bra.s	loc_3EC3A
-; End of function sub_3EC2C
+		bra.s	_spreadVert
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC34:					  ; CODE XREF: sub_3EB5E+78p
+_spreadLoEdge:
 		or.b	d1,(a1)
 		or.b	d1,$0000003D(a1)
 
-loc_3EC3A:					  ; CODE XREF: sub_3EC1C+6j
-						  ; sub_3EC24+6j ...
+_spreadVert:
 		or.b	d1,-$00000004(a1)
 		or.b	d1,$00000004(a1)
 		rts
-; End of function sub_3EC34
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC44:					  ; DATA XREF: ROM:off_3E86Co
-						  ; ROM:0003E870o
+; Modes 0/1: fade in and run the route-dot animation until the
+; voyage's last waypoint (7) or the table's end, then fade out.
+_modeBoatRoute:
 		jsr	(j_FadeInFromDarkness).l
 
-loc_3EC4A:					  ; CODE XREF: sub_3EC44+28j
-		bsr.w	sub_3EC96
+_brLoop:
+		bsr.w	_dotCountdown
 		jsr	(j_EnableDMAQueueProcessing).l
 		addq.w	#$01,-$00000098(a6)
 		jsr	(j_WaitUntilVBlank).l
 		cmpi.w	#$0007,-$00000088(a6)
-		beq.w	loc_3EC6E
+		beq.w	_brDone
 		tst.w	-$00000096(a6)
-		beq.s	loc_3EC4A
+		beq.s	_brLoop
 
-loc_3EC6E:					  ; CODE XREF: sub_3EC44+20j
+_brDone:
 		jsr	(j_FadeOutToDarkness).l
 		rts
-; End of function sub_3EC44
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC76:					  ; CODE XREF: DisplayIslandMap+178p
+; Mode 1: run 36 dot-animation steps up front so the route is
+; already drawn when the screen fades in.
+_preplantRoute:
 		cmpi.w	#$0001,-$00000082(a6)
-		beq.s	loc_3EC80
+		beq.s	_ppRun
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3EC80:					  ; CODE XREF: sub_3EC76+6j
+_ppRun:
 		move.w	#$0023,d7
 
-loc_3EC84:					  ; CODE XREF: sub_3EC76+1Aj
+_ppStep:
 		clr.w	-$0000008C(a6)
 		move.l	d7,-(sp)
-		bsr.w	sub_3EC9E
+		bsr.w	_nextDotFrame
 		move.l	(sp)+,d7
-		dbf	d7,loc_3EC84
+		dbf	d7,_ppStep
 		rts
-; End of function sub_3EC76
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC96:					  ; CODE XREF: sub_3EC44:loc_3EC4Ap
+; Steps the current dot's delay; on expiry, its next frame.
+_dotCountdown:
 		subq.w	#$01,-$0000008C(a6)
-		bmi.s	sub_3EC9E
+		bmi.s	_nextDotFrame
 		rts
-; End of function sub_3EC96
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3EC9E:					  ; CODE XREF: sub_3EC76+14p
-						  ; sub_3EC96+4j ...
+; Advances the route animation one step: the current waypoint's dot
+; sprite takes the next {tile, duration} pair from _dotFrames; the
+; $FF terminator completes the dot and moves on to the next
+; waypoint (recursing to start it immediately).
+_nextDotFrame:
 		move.w	-$0000008A(a6),d0
 		addq.w	#$01,-$0000008A(a6)
-		lea	byte_3ED3C(pc),a0
+		lea	_dotFrames(pc),a0
 		add.w	d0,d0
 		clr.w	d1
 		move.b	(a0,d0.w),d1
-		bpl.s	loc_3ECC6
+		bpl.s	_ndfSprite
 		clr.w	-$0000008A(a6)
-		bsr.w	sub_3ED18
+		bsr.w	_advanceWaypoint
 		tst.w	-$00000096(a6)
-		beq.s	loc_3ECC4
+		beq.s	_ndfAgain
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3ECC4:					  ; CODE XREF: sub_3EC9E+22j
-		bra.s	sub_3EC9E
-; ---------------------------------------------------------------------------
+_ndfAgain:
+		bra.s	_nextDotFrame
 
-loc_3ECC6:					  ; CODE XREF: sub_3EC9E+14j
+_ndfSprite:
 		lea	(g_VDPSpr00_Y).l,a1
 		move.w	-$00000088(a6),d7
 		lsl.w	#$03,d7
@@ -796,7 +701,7 @@ loc_3ECC6:					  ; CODE XREF: sub_3EC9E+14j
 		clr.w	d1
 		move.b	$00000001(a0,d0.w),d1
 		move.w	d1,-$0000008C(a6)
-		lea	byte_3ED46(pc),a0
+		lea	_routeWaypoints(pc),a0
 		move.w	-$00000088(a6),d0
 		add.w	d0,d0
 		lea	(a0,d0.w),a0
@@ -811,38 +716,35 @@ loc_3ECC6:					  ; CODE XREF: sub_3EC9E+14j
 		clr.b	$00000002(a1)		  ; Size/Link
 		move.w	#$0001,d0
 		rts
-; End of function sub_3EC9E
 
+; Next waypoint; the {0,0} table terminator wraps back to the start
+; and raises the done flag.
+_advanceWaypoint:
+		lea	_routeWaypoints(pc),a5
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3ED18:					  ; CODE XREF: sub_3EC9E+1Ap
-		lea	byte_3ED46(pc),a5
-
-loc_3ED1C:					  ; CODE XREF: sub_3ED18+22j
+_awNext:
 		addq.w	#$01,-$00000088(a6)
 		move.w	-$00000088(a6),d7
 		add.w	d7,d7
 		tst.b	(a5,d7.w)
-		beq.s	loc_3ED2E
+		beq.s	_awWrap
 		rts
-; ---------------------------------------------------------------------------
 
-loc_3ED2E:					  ; CODE XREF: sub_3ED18+12j
+_awWrap:
 		move.w	#$FFFF,-$00000088(a6)
 		move.w	#$FFFF,-$00000096(a6)
-		bra.s	loc_3ED1C
-; End of function sub_3ED18
+		bra.s	_awNext
 
-; ---------------------------------------------------------------------------
-byte_3ED3C:	dc.b $00, $04			  ; DATA XREF: sub_3EC9E+8t
+; The dot animation: {tile offset, duration} pairs, $FF = done.
+_dotFrames:	dc.b $00, $04
 		dc.b $01, $06
 		dc.b $02, $08
 		dc.b $03, $14
 		dc.b $FF, $00
-byte_3ED46:	dc.b $AC, $7B			  ; DATA XREF: sub_3EC9E+4At
-						  ; sub_3ED18t
+; Route waypoint {x, y} pairs (sprite position less $80/$90);
+; {0,0} terminates. The mode-0/1 voyage stops at waypoint 7 - the
+; later entries are never reached.
+_routeWaypoints:dc.b $AC, $7B
 		dc.b $B4, $83
 		dc.b $BA, $8C
 		dc.b $BB, $99
@@ -858,11 +760,10 @@ byte_3ED46:	dc.b $AC, $7B			  ; DATA XREF: sub_3EC9E+4At
 		dc.b $3B, $8B
 		dc.b $00, $00
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_3ED64:					  ; CODE XREF: DisplayIslandMap+EEp
-						  ; DisplayIslandMap+12Ep
+; Copies the decompressed tilemap (byte header: width, height) to
+; a1 with a $80-byte row stride, rebasing each cell's tile id by
+; d5 - $100 and OR-ing in the d4 attribute bits.
+_reindexTilemap:
 		lea	(g_Buffer).l,a0
 		movea.l	a1,a2
 		move.b	(a0)+,d0
@@ -872,21 +773,20 @@ sub_3ED64:					  ; CODE XREF: DisplayIslandMap+EEp
 		ext.w	d1
 		subq.w	#$01,d1
 
-loc_3ED78:					  ; CODE XREF: sub_3ED64+30j
+_rtRow:
 		movea.l	a1,a2
 		move.w	d0,d2
 
-loc_3ED7C:					  ; CODE XREF: sub_3ED64+28j
+_rtCell:
 		move.w	(a0)+,d3
 		andi.w	#$03FF,d3
 		subi.w	#$0100,d3
 		add.w	d5,d3
 		or.w	d4,d3
 		move.w	d3,(a2)+
-		dbf	d2,loc_3ED7C
+		dbf	d2,_rtCell
 		lea	$00000080(a1),a1
-		dbf	d1,loc_3ED78
+		dbf	d1,_rtRow
 		rts
-; End of function sub_3ED64
 
-; ---------------------------------------------------------------------------
+		modend

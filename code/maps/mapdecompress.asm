@@ -1,466 +1,485 @@
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompressMap1:					  ; DATA XREF: GetTilemap+1Ct
+MapDecompress	module
+; Room map decompressor. a0 = compressed stream, a1 = destination
+; (g_ForegroundBlocks); called from GetTilemap (mapload). The stream
+; is MSB-first bits (idiom throughout: d5 = current byte, d6 = bits
+; left, reload via dbf d6). Output layout:
+;   - 4 header bytes {x offset, y offset, width-1, per-layer
+;     height-1}, later consumed by ExtractMap when it spreads the
+;     packed layers into the fixed 74-cell-wide buffers;
+;   - both block layers packed at the compressed width (foreground
+;     then background, contiguous);
+;   - the heightmap, written directly at its fixed position.
+;
+; The block layers are encoded as an LZ-style command skeleton over
+; the (zero-initialised) cell grid, then executed:
+;   1. gamma-coded gaps place copy commands at chosen cells - prefix
+;      codes select the back-offset: 001 = 1 cell, 010 = 2 cells,
+;      011 = 1 row, 100 = 2 rows, 101 = 1 row + 1 cell, 11nnn =
+;      offset dictionary entry n (8 x 12-bit words from the header);
+;      000 places $FFFF, which switches execution to literal mode.
+;      A command can also be propagated down the map, one row per
+;      step, zigzagging one cell right when directed;
+;   2. execution walks the cells: a positive word starts a copy run
+;      from that back-offset (running through zero cells until the
+;      next command); $FFFF enters literal mode, where each cell is
+;      either a brand-new block index (10 = counter A, 11 = counter
+;      B, both counters seeded from 10-bit header values and
+;      incremented) or a back-reference to an already-used index
+;      (00/01: A absolute / B seed-relative, read with just enough
+;      bits for the current count). Zero cells resume whichever mode
+;      is active via jmp (a1).
+DecompressMap1:
 		movem.l	d0-a5,-(sp)
 		link	a6,#-$0018
 		clr.w	d6
 		clr.w	d4
-		moveq	#$00000007,d7
+		moveq	#$00000007,d7		  ; header: x offset byte
 
-loc_CDBC:					  ; CODE XREF: DecompressMap1+1Aj
-		dbf	d6,loc_CDC4
+_hdrByte1:
+		dbf	d6,_hdrShift1
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CDC4:					  ; CODE XREF: DecompressMap1:loc_CDBCj
+_hdrShift1:
 		add.b	d5,d5
 		addx.w	d4,d4
-		dbf	d7,loc_CDBC
+		dbf	d7,_hdrByte1
 		move.b	d4,(a1)+
 		clr.w	d4
-		moveq	#$00000007,d7
+		moveq	#$00000007,d7		  ; header: y offset byte
 
-loc_CDD2:					  ; CODE XREF: DecompressMap1+30j
-		dbf	d6,loc_CDDA
+_hdrByte2:
+		dbf	d6,_hdrShift2
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CDDA:					  ; CODE XREF: DecompressMap1:loc_CDD2j
+_hdrShift2:
 		add.b	d5,d5
 		addx.w	d4,d4
-		dbf	d7,loc_CDD2
+		dbf	d7,_hdrByte2
 		move.b	d4,(a1)+
 		clr.w	d4
-		moveq	#$00000007,d7
+		moveq	#$00000007,d7		  ; header: width-1
 
-loc_CDE8:					  ; CODE XREF: DecompressMap1+46j
-		dbf	d6,loc_CDF0
+_hdrWidth:
+		dbf	d6,_hdrShift3
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CDF0:					  ; CODE XREF: DecompressMap1:loc_CDE8j
+_hdrShift3:
 		add.b	d5,d5
 		addx.w	d4,d4
-		dbf	d7,loc_CDE8
+		dbf	d7,_hdrWidth
 		move.b	d4,(a1)+
 		addq.w	#$01,d4
-		add.w	d4,d4
+		add.w	d4,d4			  ; d4 = row stride in bytes
 		clr.w	d3
-		moveq	#$00000007,d7
-
-loc_CE02:					  ; CODE XREF: DecompressMap1+60j
-		dbf	d6,loc_CE0A
+		moveq	#$00000007,d7		  ; header: height-1, counting
+						  ; both layers' rows
+_hdrHeight:
+		dbf	d6,_hdrShift4
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CE0A:					  ; CODE XREF: DecompressMap1:loc_CE02j
+_hdrShift4:
 		add.b	d5,d5
 		addx.w	d3,d3
-		dbf	d7,loc_CE02
+		dbf	d7,_hdrHeight
 		addq.w	#$01,d3
 		lsr.w	#$01,d3
 		subq.w	#$01,d3
-		move.b	d3,(a1)+
+		move.b	d3,(a1)+		  ; stored: per-layer height-1
 		addq.w	#$01,d3
 		add.w	d3,d3
-		mulu.w	d4,d3
-		lea	(a1,d3.w),a3
-		move.l	a1,-$00000004(a6)
+		mulu.w	d4,d3			  ; d3 = both layers' size
+		lea	(a1,d3.w),a3		  ; a3 = end of packed layers
+		move.l	a1,-$00000004(a6)	  ; -4(a6) = packed data start
 		lsr.w	#$01,d3
 		subq.w	#$01,d3
 		movea.l	a3,a2
 		moveq	#$00000000,d0
 
-loc_CE30:					  ; CODE XREF: DecompressMap1+84j
+_clearMap:
 		move.w	d0,-(a2)
-		dbf	d3,loc_CE30
+		dbf	d3,_clearMap
 		clr.w	d0
-		moveq	#$00000009,d7
+		moveq	#$00000009,d7		  ; 10-bit counter B seed
 
-loc_CE3A:					  ; CODE XREF: DecompressMap1+98j
-		dbf	d6,loc_CE42
+_seedBBits:
+		dbf	d6,_seedBShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CE42:					  ; CODE XREF: DecompressMap1:loc_CE3Aj
+_seedBShift:
 		add.b	d5,d5
 		addx.w	d0,d0
-		dbf	d7,loc_CE3A
+		dbf	d7,_seedBBits
 		move.w	d0,-$00000016(a6)
 		clr.w	d0
-		moveq	#$00000009,d7
+		moveq	#$00000009,d7		  ; 10-bit counter A seed
 
-loc_CE52:					  ; CODE XREF: DecompressMap1+B0j
-		dbf	d6,loc_CE5A
+_seedABits:
+		dbf	d6,_seedAShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CE5A:					  ; CODE XREF: DecompressMap1:loc_CE52j
+_seedAShift:
 		add.b	d5,d5
 		addx.w	d0,d0
-		dbf	d7,loc_CE52
+		dbf	d7,_seedABits
 		move.w	d0,-$00000018(a6)
-		moveq	#$00000007,d3
+		moveq	#$00000007,d3		  ; 8 x 12-bit offset dictionary
 		lea	-$00000014(a6),a2
 
-loc_CE6C:					  ; CODE XREF: DecompressMap1+D4j
+_dictLoop:
 		clr.w	d0
 		moveq	#$0000000B,d7
 
-loc_CE70:					  ; CODE XREF: DecompressMap1+CEj
-		dbf	d6,loc_CE78
+_dictBits:
+		dbf	d6,_dictShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CE78:					  ; CODE XREF: DecompressMap1:loc_CE70j
+_dictShift:
 		add.b	d5,d5
 		addx.w	d0,d0
-		dbf	d7,loc_CE70
+		dbf	d7,_dictBits
 		move.w	d0,(a2)+
-		dbf	d3,loc_CE6C
+		dbf	d3,_dictLoop
 		movea.l	a1,a2
 		subq.w	#$02,a2
 
-loc_CE8A:					  ; CODE XREF: DecompressMap1+1A8j
-						  ; DecompressMap1+1DCj
+; Skeleton pass. Gap to the next command cell: z zero bits and a
+; stop bit, then z more bits v give a gap of 2^z + v cells (z = 0:
+; the next cell).
+_nextCmd:
 		moveq	#$FFFFFFFF,d1
 		moveq	#$00000004,d0
 
-loc_CE8E:					  ; CODE XREF: DecompressMap1+EAj
-		dbf	d6,loc_CE96
+_gapZeros:
+		dbf	d6,_gapZeroShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CE96:					  ; CODE XREF: DecompressMap1:loc_CE8Ej
+_gapZeroShift:
 		add.b	d5,d5
-		dbcs	d1,loc_CE8E
-		negx.w	d1
-		dbf	d1,loc_CEA8
+		dbcs	d1,_gapZeros
+		negx.w	d1			  ; d1 = z
+		dbf	d1,_gapValue
 		addq.l	#$02,a2
-		bra.w	loc_CEC4
-; ---------------------------------------------------------------------------
+		bra.w	_placeCmd
 
-loc_CEA8:					  ; CODE XREF: DecompressMap1+F0j
+_gapValue:
 		lsl.w	d1,d0
-		lea	(a2,d0.w),a2
+		lea	(a2,d0.w),a2		  ; + 2^z cells
 		clr.w	d0
 
-loc_CEB0:					  ; CODE XREF: DecompressMap1+10Ej
-		dbf	d6,loc_CEB8
+_gapBits:
+		dbf	d6,_gapBitShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CEB8:					  ; CODE XREF: DecompressMap1:loc_CEB0j
+_gapBitShift:
 		add.b	d5,d5
 		addx.w	d0,d0
-		dbf	d1,loc_CEB0
+		dbf	d1,_gapBits
 		add.w	d0,d0
-		adda.w	d0,a2
+		adda.w	d0,a2			  ; + v cells
 
-loc_CEC4:					  ; CODE XREF: DecompressMap1+F6j
+_placeCmd:
 		cmpa.l	a3,a2
-		bge.w	loc_CF94
-		dbf	d6,loc_CED2
+		bge.w	_execute
+		dbf	d6,_cmdShift1
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CED2:					  ; CODE XREF: DecompressMap1+11Cj
+_cmdShift1:
 		add.b	d5,d5
-		bcs.s	loc_CF0A
-		dbf	d6,loc_CEDE
+		bcs.s	_cmd1x
+		dbf	d6,_cmdShift2
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CEDE:					  ; CODE XREF: DecompressMap1+128j
+_cmdShift2:
 		add.b	d5,d5
-		bcs.s	loc_CEF6
-		dbf	d6,loc_CEEA
+		bcs.s	_cmd01
+		dbf	d6,_cmdShift3
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CEEA:					  ; CODE XREF: DecompressMap1+134j
+_cmdShift3:
 		add.b	d5,d5
-		bcs.s	loc_CEF2
-		moveq	#$FFFFFFFF,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+		bcs.s	_cmdPrevCell
+		moveq	#$FFFFFFFF,d1		  ; 000: literal-mode marker
+		bra.s	_writeCmd
 
-loc_CEF2:					  ; CODE XREF: DecompressMap1+13Ej
-		moveq	#$00000002,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+_cmdPrevCell:
+		moveq	#$00000002,d1		  ; 001: copy from 1 cell back
+		bra.s	_writeCmd
 
-loc_CEF6:					  ; CODE XREF: DecompressMap1+132j
-		dbf	d6,loc_CEFE
+_cmd01:
+		dbf	d6,_cmd01Shift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CEFE:					  ; CODE XREF: DecompressMap1:loc_CEF6j
+_cmd01Shift:
 		add.b	d5,d5
-		bcs.s	loc_CF06
-		moveq	#$00000004,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+		bcs.s	_cmdUpCell
+		moveq	#$00000004,d1		  ; 010: 2 cells back
+		bra.s	_writeCmd
 
-loc_CF06:					  ; CODE XREF: DecompressMap1+152j
-		move.w	d4,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+_cmdUpCell:
+		move.w	d4,d1			  ; 011: 1 row back
+		bra.s	_writeCmd
 
-loc_CF0A:					  ; CODE XREF: DecompressMap1+126j
-		dbf	d6,loc_CF12
+_cmd1x:
+		dbf	d6,_cmd1xShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF12:					  ; CODE XREF: DecompressMap1:loc_CF0Aj
+_cmd1xShift:
 		add.b	d5,d5
-		bcs.s	loc_CF2E
-		dbf	d6,loc_CF1E
+		bcs.s	_cmdDict
+		dbf	d6,_cmd10Shift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF1E:					  ; CODE XREF: DecompressMap1+168j
+_cmd10Shift:
 		add.b	d5,d5
-		bcs.s	loc_CF28
-		move.w	d4,d1
+		bcs.s	_cmdUpRight
+		move.w	d4,d1			  ; 100: 2 rows back
 		add.w	d1,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+		bra.s	_writeCmd
 
-loc_CF28:					  ; CODE XREF: DecompressMap1+172j
-		move.w	d4,d1
+_cmdUpRight:
+		move.w	d4,d1			  ; 101: 1 row + 1 cell back
 		addq.w	#$02,d1
-		bra.s	loc_CF4A
-; ---------------------------------------------------------------------------
+		bra.s	_writeCmd
 
-loc_CF2E:					  ; CODE XREF: DecompressMap1+166j
-		clr.w	d1
+_cmdDict:
+		clr.w	d1			  ; 11nnn: dictionary offset
 		moveq	#$00000002,d7
 
-loc_CF32:					  ; CODE XREF: DecompressMap1+190j
-		dbf	d6,loc_CF3A
+_dictIdxBits:
+		dbf	d6,_dictIdxShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF3A:					  ; CODE XREF: DecompressMap1:loc_CF32j
+_dictIdxShift:
 		add.b	d5,d5
 		addx.w	d1,d1
-		dbf	d7,loc_CF32
+		dbf	d7,_dictIdxBits
 		add.w	d1,d1
 		move.w	-$00000014(a6,d1.w),d1
 		add.w	d1,d1
 
-loc_CF4A:					  ; CODE XREF: DecompressMap1+142j
-						  ; DecompressMap1+146j ...
+; Store the command, then optionally propagate it down the map: 1 =
+; another step (1 row down, plus 1 cell when the zigzag is active),
+; 01 = toggle the zigzag and step again, 00 = on to the next command.
+_writeCmd:
 		move.w	d1,(a2)
-		dbf	d6,loc_CF54
+		dbf	d6,_extendShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF54:					  ; CODE XREF: DecompressMap1+19Ej
+_extendShift:
 		add.b	d5,d5
-		bcc.w	loc_CE8A
+		bcc.w	_nextCmd
 		clr.w	d0
-		dbf	d6,loc_CF64
+		dbf	d6,_extDirShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF64:					  ; CODE XREF: DecompressMap1+1AEj
+_extDirShift:
 		add.b	d5,d5
 		addx.w	d0,d0
-		add.w	d0,d0
+		add.w	d0,d0			  ; d0 = zigzag offset (0 or 2)
 		movea.l	a2,a1
 
-loc_CF6C:					  ; CODE XREF: DecompressMap1+1E4j
+_extSegment:
 		move.w	d0,d3
 		add.w	d4,d3
 
-loc_CF70:					  ; CODE XREF: DecompressMap1+1D0j
+_extStep:
 		adda.w	d3,a1
 		move.w	d1,(a1)
-		dbf	d6,loc_CF7C
+		dbf	d6,_extShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF7C:					  ; CODE XREF: DecompressMap1+1C6j
+_extShift:
 		add.b	d5,d5
-		bcs.s	loc_CF70
-		dbf	d6,loc_CF88
+		bcs.s	_extStep
+		dbf	d6,_extEndShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CF88:					  ; CODE XREF: DecompressMap1+1D2j
+_extEndShift:
 		add.b	d5,d5
-		bcc.w	loc_CE8A
+		bcc.w	_nextCmd
 		bchg	#$01,d0
-		bra.s	loc_CF6C
-; ---------------------------------------------------------------------------
+		bra.s	_extSegment
 
-loc_CF94:					  ; CODE XREF: DecompressMap1+118j
+; Execution pass. a4/a5 = new-block counters A/B; a1 = resume
+; handler for zero cells; $FFFF at the end of the buffer stops the
+; final run.
+_execute:
 		movea.l	-$00000004(a6),a2
 		movea.w	-$00000018(a6),a4
 		movea.w	-$00000016(a6),a5
 		move.w	#$FFFF,(a3)
 
-loc_CFA4:					  ; CODE XREF: DecompressMap1+24Ej
-						  ; DecompressMap1+254j ...
+_execLoop:
 		move.w	(a2),d0
-		bne.s	loc_CFAA
+		bne.s	_execCmd
 		jmp	(a1)
-; ---------------------------------------------------------------------------
 
-loc_CFAA:					  ; CODE XREF: DecompressMap1+1F8j
-						  ; DecompressMap1+20Cj ...
-		bmi.s	loc_CFD2
+_execCmd:
+		bmi.s	_literalMode
 		neg.w	d0
-		move.w	d0,d2
-		lea	loc_CFB4(pc),a1
+		move.w	d0,d2			  ; d2 = negative back-offset
+		lea	_copyCell(pc),a1
 
-loc_CFB4:					  ; DATA XREF: DecompressMap1+202t
+_copyCell:
 		move.w	(a2,d2.w),(a2)+
 
-loc_CFB8:					  ; CODE XREF: DecompressMap1+222j
+_copyRun:
 		move.w	(a2),d0
-		bne.s	loc_CFAA
-		move.w	(a2,d2.w),(a2)+
-		move.w	(a2),d0
-		bne.s	loc_CFAA
+		bne.s	_execCmd
 		move.w	(a2,d2.w),(a2)+
 		move.w	(a2),d0
-		bne.s	loc_CFAA
+		bne.s	_execCmd
 		move.w	(a2,d2.w),(a2)+
-		bra.s	loc_CFB8
-; ---------------------------------------------------------------------------
+		move.w	(a2),d0
+		bne.s	_execCmd
+		move.w	(a2,d2.w),(a2)+
+		bra.s	_copyRun
 
-loc_CFD2:					  ; CODE XREF: DecompressMap1:loc_CFAAj
-		lea	loc_CFD8(pc),a1
+_literalMode:
+		lea	_litLoop(pc),a1
 		nop
 
-loc_CFD8:					  ; DATA XREF: DecompressMap1:loc_CFD2t
+_litLoop:
 		cmpa.l	a2,a3
-		bls.w	loc_D050
-		dbf	d6,loc_CFE6
+		bls.w	_heightmap
+		dbf	d6,_litShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CFE6:					  ; CODE XREF: DecompressMap1+230j
+_litShift:
 		add.b	d5,d5
-		bcc.w	loc_D004
-		dbf	d6,loc_CFF4
+		bcc.w	_litRef
+		dbf	d6,_litNewShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_CFF4:					  ; CODE XREF: DecompressMap1+23Ej
+_litNewShift:
 		add.b	d5,d5
-		bcs.s	loc_CFFE
-		move.w	a4,(a2)+
+		bcs.s	_litNewB
+		move.w	a4,(a2)+		  ; 10: new index from counter A
 		addq.w	#$01,a4
-		bra.s	loc_CFA4
-; ---------------------------------------------------------------------------
+		bra.s	_execLoop
 
-loc_CFFE:					  ; CODE XREF: DecompressMap1+248j
-		move.w	a5,(a2)+
+_litNewB:
+		move.w	a5,(a2)+		  ; 11: new index from counter B
 		addq.w	#$01,a5
-		bra.s	loc_CFA4
-; ---------------------------------------------------------------------------
+		bra.s	_execLoop
 
-loc_D004:					  ; CODE XREF: DecompressMap1+23Aj
-		dbf	d6,loc_D00C
+_litRef:
+		dbf	d6,_litRefShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_D00C:					  ; CODE XREF: DecompressMap1:loc_D004j
+_litRefShift:
 		add.b	d5,d5
-		bcs.s	loc_D02C
-		clr.w	d0
-		move.w	a4,d7
-		beq.s	loc_D026
+		bcs.s	_refB
+		clr.w	d0			  ; 00: reference below counter A,
+		move.w	a4,d7			  ; read with enough bits for its
+		beq.s	_refAWrite		  ; current value
 
-loc_D016:					  ; CODE XREF: DecompressMap1+276j
-		dbf	d6,loc_D01E
+_refABits:
+		dbf	d6,_refAShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_D01E:					  ; CODE XREF: DecompressMap1:loc_D016j
+_refAShift:
 		add.b	d5,d5
 		addx.w	d0,d0
 		lsr.w	#$01,d7
-		bne.s	loc_D016
+		bne.s	_refABits
 
-loc_D026:					  ; CODE XREF: DecompressMap1+266j
+_refAWrite:
 		move.w	d0,(a2)+
-		bra.w	loc_CFA4
-; ---------------------------------------------------------------------------
+		bra.w	_execLoop
 
-loc_D02C:					  ; CODE XREF: DecompressMap1+260j
-		clr.w	d0
-		move.w	a5,d7
+_refB:
+		clr.w	d0			  ; 01: reference between counter
+		move.w	a5,d7			  ; B's seed and its current value
 		sub.w	-$00000016(a6),d7
-		beq.s	loc_D046
+		beq.s	_refBWrite
 
-loc_D036:					  ; CODE XREF: DecompressMap1+296j
-		dbf	d6,loc_D03E
+_refBBits:
+		dbf	d6,_refBShift
 		moveq	#$00000007,d6
 		move.b	(a0)+,d5
 
-loc_D03E:					  ; CODE XREF: DecompressMap1:loc_D036j
+_refBShift:
 		add.b	d5,d5
 		addx.w	d0,d0
 		lsr.w	#$01,d7
-		bne.s	loc_D036
+		bne.s	_refBBits
 
-loc_D046:					  ; CODE XREF: DecompressMap1+286j
+_refBWrite:
 		add.w	-$00000016(a6),d0
 		move.w	d0,(a2)+
-		bra.w	loc_CFA4
-; ---------------------------------------------------------------------------
+		bra.w	_execLoop
 
-loc_D050:					  ; CODE XREF: DecompressMap1+22Cj
+; Heightmap: byte-aligned RLE at the fixed offset $5C94 from the
+; packed data start (g_HeightMap + $708: a 12-row + 12-cell margin),
+; rows at the fixed $94-byte stride. Stream: width byte, height
+; byte, then {cell word, run bytes} records - a $FF run byte chains
+; into the next byte, and runs continue across row ends.
+_heightmap:
 		movea.l	-$00000004(a6),a1
 		lea	$00005C94(a1),a1
 		movea.l	a1,a2
 		clr.w	d3
 		move.b	(a0)+,d3
 		subq.w	#$01,d3
-		move.w	d3,d4
+		move.w	d3,d4			  ; d4 = cells per row - 1
 		clr.w	d5
 		move.b	(a0)+,d5
-		subq.w	#$01,d5
+		subq.w	#$01,d5			  ; d5 = rows - 1
 
-loc_D068:					  ; CODE XREF: DecompressMap1+2E4j
+_hmRecord:
 		move.b	(a0)+,d0
 		lsl.w	#$08,d0
-		move.b	(a0)+,d0
+		move.b	(a0)+,d0		  ; d0 = heightmap cell
 		clr.w	d1
 		clr.w	d2
 
-loc_D072:					  ; CODE XREF: DecompressMap1+2CAj
+_hmCount:
 		move.b	(a0)+,d1
 		add.w	d1,d2
 		addq.b	#$01,d1
-		beq.s	loc_D072
+		beq.s	_hmCount		  ; $FF chains
 
-loc_D07A:					  ; CODE XREF: DecompressMap1:loc_D08Ej
+_hmFill:
 		move.w	d0,(a2)+
-		dbf	d4,loc_D08E
-		lea	$00000094(a1),a1
+		dbf	d4,_hmNext
+		lea	$00000094(a1),a1	  ; next row
 		movea.l	a1,a2
 		move.w	d3,d4
-		dbf	d5,loc_D08E
-		bra.s	loc_D094
-; ---------------------------------------------------------------------------
+		dbf	d5,_hmNext
+		bra.s	_done
 
-loc_D08E:					  ; CODE XREF: DecompressMap1+2CEj
-						  ; DecompressMap1+2DAj
-		dbf	d2,loc_D07A
-		bra.s	loc_D068
-; ---------------------------------------------------------------------------
+_hmNext:
+		dbf	d2,_hmFill
+		bra.s	_hmRecord
 
-loc_D094:					  ; CODE XREF: DecompressMap1+2DEj
+_done:
 		unlk	a6
 		movem.l	(sp)+,d0-a5
 		rts
-; End of function DecompressMap1
 
+		modend

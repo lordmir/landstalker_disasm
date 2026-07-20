@@ -2,8 +2,8 @@ GameSelectScreen	module
 ; The save-slot select screen (reached from the title flow via
 ; LoadGameSelectScreen): four save windows in a 2x2 grid with a
 ; Nigel figure standing in the highlighted one. The action bar,
-; window drawing and yes/no prompt helpers (sub_F92A, sub_F992,
-; sub_F72E...) live in gameloadscreen2-4, which share this
+; window drawing and yes/no prompt helpers (RunActionBar, RunYesNoPrompt,
+; RedrawSaveWindow...) live in gameloadscreen2-4, which share this
 ; screen's stack frame and call back into the Nigel and highlight
 ; routines here.
 
@@ -37,7 +37,7 @@ _igsClear:
 		jsr	(j_FillVSRAMOffset1).l
 		bsr.w	LoadGameSelectMenu
 		bsr.w	InitGameStartScreen
-		bsr.w	sub_F958
+		bsr.w	DrawActionBarText
 		bsr.w	LoadGameStartPalette
 		clr.w	d6
 		jsr	(j_FillHScrollData).l
@@ -47,11 +47,11 @@ _igsClear:
 		jsr	(EnableDisplayAndInts).l
 		jsr	(j_FadeFromBlack).l
 
-; Main loop: run the action bar (sub_F92A leaves the choice in
+; Main loop: run the action bar (RunActionBar leaves the choice in
 ; -$0C), then pick a slot; B backs out to the bar, a pick either
 ; loads the game, starts a copy, or erases.
 _igsMain:
-		bsr.w	sub_F92A
+		bsr.w	RunActionBar
 		move.w	#$FFFF,-$00000004(a6)
 		move.w	#$FFFF,-$00000006(a6)
 		move.w	#$0012,-$0000000E(a6)
@@ -76,14 +76,14 @@ _igsMain:
 
 ; Copy: retint the windows (the picked pair on line 3), ask for a
 ; destination (string $4B), refuse the same slot, confirm (string
-; $49 + sub_F992), then CopySaveGame and redraw the destination
+; $49 + RunYesNoPrompt), then CopySaveGame and redraw the destination
 ; window.
 _igsCopy:
 		bsr.w	_tintPickedSlots
-		bsr.w	sub_FAE6
+		bsr.w	HideArrowSprite
 		bsr.w	ClearTextBuffer
 		move.w	#$004B,d1
-		bsr.w	j_j_LoadUncompressedString
+		bsr.w	DrawUncompressedString
 		jsr	(WaitUntilVBlank).l
 		bsr.w	DMACopyTextBuffer
 
@@ -103,15 +103,15 @@ _igsCopyConfirm:
 		move.w	d0,-$00000006(a6)
 		bsr.w	ClearTextBuffer
 		move.w	#$0049,d1
-		bsr.w	j_j_LoadUncompressedString
-		bsr.w	sub_F992
+		bsr.w	DrawUncompressedString
+		bsr.w	RunYesNoPrompt
 		tst.w	d0
 		bne.w	_igsMain
 		move.w	-$00000004(a6),d0
 		move.w	-$00000006(a6),d1
 		jsr	(CopySaveGame).l
 		move.w	-$00000006(a6),d0
-		bsr.w	sub_F72E
+		bsr.w	RedrawSaveWindow
 		bra.w	_igsMain
 ; ---------------------------------------------------------------------------
 
@@ -120,8 +120,8 @@ _igsCopyConfirm:
 _igsErase:
 		bsr.w	ClearTextBuffer
 		move.w	#$004A,d1
-		bsr.w	j_j_LoadUncompressedString
-		bsr.w	sub_F992
+		bsr.w	DrawUncompressedString
+		bsr.w	RunYesNoPrompt
 		tst.w	d0
 		bne.w	_igsMain
 		move.w	-$00000004(a6),d0
@@ -129,7 +129,7 @@ _igsErase:
 		jsr	(EraseCurrentSaveslot).l
 		jsr	(WaitUntilVBlank).l
 		move.w	-$00000004(a6),d0
-		bsr.w	sub_F72E
+		bsr.w	RedrawSaveWindow
 		bra.w	_igsMain
 ; ---------------------------------------------------------------------------
 
@@ -138,7 +138,7 @@ _igsErase:
 ; between them. Returns d0 = the slot on A/C/Start, or -1 on B.
 _pickSlot:
 		clr.b	d0
-		bsr.w	sub_FAF0
+		bsr.w	LoadSlotPlayerPalette
 		bsr.w	UpdateSaveSlotHighlights
 		jsr	(j_WaitUntilVBlank).l
 		bsr.w	CopySaveScreenToPlaneA
@@ -206,7 +206,7 @@ _psRedraw:
 		bsr.w	UpdateSaveSlotHighlights
 
 _psDraw:
-		bsr.w	sub_F8B6
+		bsr.w	DarkenWindowPalette
 		bsr.w	DrawSaveNigel
 		jsr	(WaitUntilVBlank).l
 		bsr.w	CopySaveScreenToPlaneA
@@ -271,7 +271,7 @@ StartSaveNigelAnim:
 		clr.b	-$00000019(a6)
 
 _snaDraw:
-		bsr.w	sub_FAF0
+		bsr.w	LoadSlotPlayerPalette
 		rts
 
 ; Set the palette bits d0 ($0000 = line 0, $6000 = line 3) across

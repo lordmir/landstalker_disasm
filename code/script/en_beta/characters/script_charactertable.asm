@@ -1,4 +1,4 @@
-		ScriptJump	CS_0000,$0	; Mayor	(0x00) : Jump to address 0x025EC0
+		ScriptJump  CS_0000,$0	; Mayor	(0x00) : Jump to address 0x025EC0
 		ScriptJump  CS_0001,$1	; Fara (0x01) :	Jump to	address	0x025EDA
 		ScriptJump  CS_0002,$2	; Hahna	(0x02) : Jump to address 0x025F18
 		ScriptJump  CS_0003,$3	; Pockets (0x03) : Jump	to address 0x025F8E

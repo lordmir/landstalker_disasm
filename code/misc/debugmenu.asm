@@ -1,8 +1,15 @@
+DebugMenus	module
+; The debug menu, reached by talking to an NPC (PlayerTalk) while
+; pad 2 holds Down and DebugModeEnable is clear. Each menu is a
+; 5-entry table of word offsets driven by JmpToDebugActionTableEntry:
+;   +0 open (draw), +2 enter/activate, +4 exit, +6 increment,
+;   +8 decrement
+; with d1 = cursor and d2 = last cursor index. Controls: Left/Right
+; move the cursor (redrawing via g_DebugMenuFlags bit 0), C/A/Start
+; activate, B leaves (handlers set g_DebugMenuFlags bit 1 to close).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DebugMenu:					  ; CODE XREF: PlayerTalk+1Cp
+; Top level: "DEBUG MENU" with the four submenu names.
+DebugMenu:
 		movem.l	d0-a6,-(sp)
 		lea	DebugMenuActionTable(pc),a0
 		clr.w	d1
@@ -10,103 +17,91 @@ DebugMenu:					  ; CODE XREF: PlayerTalk+1Cp
 		bsr.w	JmpToDebugActionTableEntry
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function DebugMenu
 
-; ---------------------------------------------------------------------------
-DebugMenuActionTable:dc.w DebugMenuOpen-DebugMenuActionTable ; DATA XREF: DebugMenu+4t
-						  ; ROM:DebugMenuActionTableo ...
+DebugMenuActionTable:
+		dc.w DebugMenuOpen-DebugMenuActionTable
 		dc.w DebugMenuEnter-DebugMenuActionTable
 		dc.w DebugMenuExit-DebugMenuActionTable
 		dc.w IncrementVar-DebugMenuActionTable
 		dc.w DecrementVar-DebugMenuActionTable
-; ---------------------------------------------------------------------------
 
-DebugMenuOpen:					  ; DATA XREF: ROM:DebugMenuActionTableo
+DebugMenuOpen:
 		bsr.w	OpenTextbox
 		move.w	#$001D,d0		  ; "DEBUG MENU"
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		bsr.w	DisplayText
 		move.w	d1,d0
 		asl.w	#$02,d0
-		move.w	DebugMenuStringTable(pc,d0.w),d0 ; "MAP	MENU"
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		move.w	DebugMenuStringTable(pc,d0.w),d0
+		bsr.w	DisplayText		  ; submenu name
 		rts
-; ---------------------------------------------------------------------------
 
-DebugMenuEnter:					  ; DATA XREF: ROM:DebugMenuActionTableo
+DebugMenuEnter:
 		move.w	d1,d0
 		asl.w	#$02,d0
 		move.w	DebugMenuJmpTable(pc,d0.w),d0
-		jsr	DebugMenuStringTable(pc,d0.w) ;	"MAP MENU"
+		jsr	DebugMenuStringTable(pc,d0.w)	  ; run the submenu
 		rts
-; ---------------------------------------------------------------------------
 
-DebugMenuExit:					  ; DATA XREF: ROM:DebugMenuActionTableo
+DebugMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		rts
-; ---------------------------------------------------------------------------
-DebugMenuStringTable:dc.w $0021			  ; CODE XREF: ROM:0002A486p
-						  ; DATA XREF: ROM:0002A474r ...
-						  ; "MAP MENU"
-DebugMenuJmpTable:dc.w MapMenu-DebugMenuStringTable ; DATA XREF: ROM:0002A482r
+
+; Interleaved {string id, routine offset} pairs; both indexed with
+; cursor*4, and the offsets are relative to DebugMenuStringTable.
+DebugMenuStringTable:
+		dc.w $0021			  ; "MAP MENU"
+DebugMenuJmpTable:
+		dc.w MapMenu-DebugMenuStringTable
 		dc.w $003C			  ; "FLAG MENU"
 		dc.w FlagMenu-DebugMenuStringTable
 		dc.w $001F			  ; "SOUND MENU"
 		dc.w SoundMenu-DebugMenuStringTable
 		dc.w $001E			  ; "MUSIC MENU"
 		dc.w MusicMenu-DebugMenuStringTable
-; ---------------------------------------------------------------------------
 
-SoundMenu:					  ; DATA XREF: ROM:0002A4A4o
+; Sound test: pick an entry from SfxList, C/A/Start plays it.
+SoundMenu:
 		movem.l	d0-a6,-(sp)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_FadeOut
-; ---------------------------------------------------------------------------
 		lea	SoundMenuActionJmptable(pc),a0
 		clr.w	d1
 		move.w	#$002E,d2
 		bsr.w	JmpToDebugActionTableEntry
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
-SoundMenuActionJmptable:dc.w SoundMenuOpen-SoundMenuActionJmptable
-						  ; DATA XREF: ROM:0002A4B2t
-						  ; ROM:SoundMenuActionJmptableo ...
+
+SoundMenuActionJmptable:
+		dc.w SoundMenuOpen-SoundMenuActionJmptable
 		dc.w SoundMenuEnter-SoundMenuActionJmptable
 		dc.w SoundMenuExit-SoundMenuActionJmptable
 		dc.w IncrementVar-SoundMenuActionJmptable
 		dc.w DecrementVar-SoundMenuActionJmptable
-; ---------------------------------------------------------------------------
 
-SoundMenuOpen:					  ; DATA XREF: ROM:SoundMenuActionJmptableo
+SoundMenuOpen:
 		bsr.w	OpenTextbox
-		move.w	#$001F,d0
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		move.w	#$001F,d0		  ; "SOUND MENU"
+		bsr.w	DisplayText
 		clr.l	(g_PrintNumericDwordValue).l
 		move.b	SfxList(pc,d1.w),(g_PrintNumericByteValue).l
-		addq.w	#$01,d0
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		addq.w	#$01,d0			  ; $20: prints the numeric id
+		bsr.w	DisplayText
 		rts
-; ---------------------------------------------------------------------------
 
-SoundMenuEnter:					  ; DATA XREF: ROM:SoundMenuActionJmptableo
+SoundMenuEnter:
 		clr.w	d0
 		move.b	SfxList(pc,d1.w),d0
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_LoadFromD0
-; ---------------------------------------------------------------------------
 		rts
-; ---------------------------------------------------------------------------
 
-SoundMenuExit:					  ; DATA XREF: ROM:SoundMenuActionJmptableo
+SoundMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		rts
-; ---------------------------------------------------------------------------
-SfxList:	dc.b SND_SkeletonTalk		  ; DATA XREF: ROM:0002A4E2r
-						  ; ROM:0002A4F4r
+
+SfxList:	dc.b SND_SkeletonTalk
 		dc.b SND_CursorMove
 		dc.b SND_CursorSelect
 		dc.b SND_ErrorBuzz
@@ -154,58 +149,49 @@ SfxList:	dc.b SND_SkeletonTalk		  ; DATA XREF: ROM:0002A4E2r
 		dc.b SND_Fireball1
 		dc.b SND_Fireball2
 		dc.b $FF
-; ---------------------------------------------------------------------------
 
-MusicMenu:					  ; DATA XREF: ROM:0002A4A8o
+; Music test: pick an entry from MusicList, C/A/Start plays it.
+MusicMenu:
 		movem.l	d0-a6,-(sp)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_FadeOut
-; ---------------------------------------------------------------------------
 		lea	MusicMenuActionJmptable(pc),a0
 		clr.w	d1
 		move.w	#$0027,d2
 		bsr.w	JmpToDebugActionTableEntry
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
-MusicMenuActionJmptable:dc.w MusicMenuLoad-MusicMenuActionJmptable
-						  ; DATA XREF: ROM:0002A544t
-						  ; ROM:MusicMenuActionJmptableo ...
+
+MusicMenuActionJmptable:
+		dc.w MusicMenuLoad-MusicMenuActionJmptable
 		dc.w MusicMenuPlay-MusicMenuActionJmptable
 		dc.w MusicMenuExit-MusicMenuActionJmptable
 		dc.w IncrementVar-MusicMenuActionJmptable
 		dc.w DecrementVar-MusicMenuActionJmptable
-; ---------------------------------------------------------------------------
 
-MusicMenuLoad:					  ; DATA XREF: ROM:MusicMenuActionJmptableo
+MusicMenuLoad:
 		bsr.w	OpenTextbox
 		move.w	#$001E,d0		  ; "MUSIC MENU"
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		bsr.w	DisplayText
 		clr.l	(g_PrintNumericDwordValue).l
 		move.b	MusicList(pc,d1.w),(g_PrintNumericByteValue).l
-		move.w	#$0020,d0		  ; PRINT NUMERIC ID
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		move.w	#$0020,d0		  ; prints the numeric id
+		bsr.w	DisplayText
 		rts
-; ---------------------------------------------------------------------------
 
-MusicMenuPlay:					  ; DATA XREF: ROM:MusicMenuActionJmptableo
+MusicMenuPlay:
 		clr.w	d0
 		move.b	MusicList(pc,d1.w),d0
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
-		dc.w $FFFF
-; ---------------------------------------------------------------------------
+		dc.w $FFFF			  ; = SND_LoadFromD0
 		rts
-; ---------------------------------------------------------------------------
 
-MusicMenuExit:					  ; DATA XREF: ROM:MusicMenuActionJmptableo
+MusicMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		rts
-; ---------------------------------------------------------------------------
-MusicList:	dc.b SND_MusicTown		  ; DATA XREF: ROM:0002A574r
-						  ; ROM:0002A588r
+
+MusicList:	dc.b SND_MusicTown
 		dc.b SND_MusicDungeon
 		dc.b SND_MusicCave
 		dc.b SND_MusicFanfare1
@@ -245,9 +231,9 @@ MusicList:	dc.b SND_MusicTown		  ; DATA XREF: ROM:0002A574r
 		dc.b SND_MusicFinalCutscene
 		dc.b SND_MusicSpellbook
 		dc.b SND_MusicBoss
-; ---------------------------------------------------------------------------
 
-MapMenu:					  ; DATA XREF: ROM:DebugMenuJmpTableo
+; Map warp: pick a location, C/A/Start warps there.
+MapMenu:
 		movem.l	d0-a6,-(sp)
 		lea	MapMenuActionJmpTable(pc),a0
 		clr.w	d1
@@ -255,31 +241,30 @@ MapMenu:					  ; DATA XREF: ROM:DebugMenuJmpTableo
 		bsr.w	JmpToDebugActionTableEntry
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
-MapMenuActionJmpTable:dc.w MapMenuOpen-MapMenuActionJmpTable ; DATA XREF: ROM:0002A5CCt
-						  ; ROM:MapMenuActionJmpTableo	...
+
+MapMenuActionJmpTable:
+		dc.w MapMenuOpen-MapMenuActionJmpTable
 		dc.w MapMenuEnter-MapMenuActionJmpTable
 		dc.w MapMenuExit-MapMenuActionJmpTable
 		dc.w IncrementVar-MapMenuActionJmpTable
 		dc.w DecrementVar-MapMenuActionJmpTable
-; ---------------------------------------------------------------------------
 
-MapMenuOpen:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
+MapMenuOpen:
 		move.l	d1,-(sp)
 		bsr.w	OpenTextbox
 		move.w	#$0021,d0		  ; "MAP MENU"
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
-		add.w	d1,d0
+		bsr.w	DisplayText
+		add.w	d1,d0			  ; $22+: location names
 		addq.w	#$01,d0
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		bsr.w	DisplayText
 		move.l	(sp)+,d1
 		rts
-; ---------------------------------------------------------------------------
 
-MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
+; Warps to MapList[cursor]: {room, packed player X/Y}.
+MapMenuEnter:
 		movem.l	d0-a6,-(sp)
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		asl.w	#$02,d1
 		lea	MapList(pc,d1.w),a0
 		move.w	(a0)+,d0
@@ -293,14 +278,13 @@ MapMenuEnter:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
 		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
 
-MapMenuExit:					  ; DATA XREF: ROM:MapMenuActionJmpTableo
+MapMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		rts
-; ---------------------------------------------------------------------------
-MapList:	dc.w $0250, $2130		  ; DATA XREF: ROM:0002A616o
+
+MapList:	dc.w $0250, $2130		  ; MASSAN
 		dc.w $00B4, $261D		  ; WTRFLL-BASIN
 		dc.w $0259, $2D13		  ; GUMI
 		dc.w $01B1, $0E1B		  ; MARSHSHRINE1
@@ -326,9 +310,10 @@ MapList:	dc.w $0250, $2130		  ; DATA XREF: ROM:0002A616o
 		dc.w $0237, $293C		  ; WOODS KALA
 		dc.w $0240, $1A2E		  ; WOODS CENTER
 		dc.w $0234, $281E		  ; SUN	STONE
-; ---------------------------------------------------------------------------
 
-FlagMenu:					  ; DATA XREF: ROM:0002A4A0o
+; Story-progress warp: pick a chapter, C/A/Start resets all flags
+; and replays the progression up to that point.
+FlagMenu:
 		movem.l	d0-a6,-(sp)
 		lea	FlagMenuActionJmpTable(pc),a0
 		clr.w	d1
@@ -338,54 +323,52 @@ FlagMenu:					  ; DATA XREF: ROM:0002A4A0o
 		move.w	#$000F,d2
 	endif
 		bsr.w	JmpToDebugActionTableEntry
-
-loc_2A6D6:					  ; DATA XREF: ROM:FlagMenuActionJmpTable+2o
-						  ; ROM:FlagMenuActionJmpTable+4o ...
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
-FlagMenuActionJmpTable:dc.w FlagMenuOpen-FlagMenuActionJmpTable	; DATA XREF: ROM:0002A6C8t
-						  ; ROM:FlagMenuActionJmpTableo ...
+
+FlagMenuActionJmpTable:
+		dc.w FlagMenuOpen-FlagMenuActionJmpTable
 		dc.w FlagMenuEnter-FlagMenuActionJmpTable
 		dc.w FlagMenuExit-FlagMenuActionJmpTable
 		dc.w IncrementVar-FlagMenuActionJmpTable
 		dc.w DecrementVar-FlagMenuActionJmpTable
-; ---------------------------------------------------------------------------
 
-FlagMenuOpen:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
+FlagMenuOpen:
 		move.l	d1,-(sp)
 		bsr.w	OpenTextbox
-		move.w	#$003C,d0
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
-		add.w	d1,d0
+		move.w	#$003C,d0		  ; "FLAG MENU"
+		bsr.w	DisplayText
+		add.w	d1,d0			  ; $3D+: chapter names
 		addq.w	#$01,d0
-		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
+		bsr.w	DisplayText
 		move.l	(sp)+,d1
 		rts
-; ---------------------------------------------------------------------------
 
-FlagMenuEnter:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
+; Clears all 32 bytes of g_Flags, then sets each flag in FlagsToSet
+; up to and including the option's terminator from FlagMenuOpts
+; ($FFFF = fresh game, set nothing), and reloads the room.
+FlagMenuEnter:
 		movem.l	d0-a6,-(sp)
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		lea	(g_Flags).l,a0
 		moveq	#$00000007,d0
 
-loc_2A718:					  ; CODE XREF: ROM:0002A71Aj
+_fmClear:
 		clr.l	(a0)+
-		dbf	d0,loc_2A718
+		dbf	d0,_fmClear
 		lea	FlagsToSet(pc),a0
 		add.w	d1,d1
 		move.w	FlagMenuOpts(pc,d1.w),d1
-		blt.s	loc_2A734
+		blt.s	_fmWarp
 
-loc_2A72A:					  ; CODE XREF: ROM:0002A732j
+_fmSetFlags:
 		move.w	(a0)+,d0
 		bsr.w	SetFlagBit
 		cmp.w	d1,d0
-		bne.s	loc_2A72A
+		bne.s	_fmSetFlags
 
-loc_2A734:					  ; CODE XREF: ROM:0002A728j
+_fmWarp:
 		jsr	(j_CheckForRoomTransition).l
 		jsr	(j_FadeOutToDarkness).l
 		clr.b	d0
@@ -393,14 +376,15 @@ loc_2A734:					  ; CODE XREF: ROM:0002A728j
 		jsr	(j_InitRoomDisplayAndFadeIn).l
 		movem.l	(sp)+,d0-a6
 		rts
-; ---------------------------------------------------------------------------
 
-FlagMenuExit:					  ; DATA XREF: ROM:FlagMenuActionJmpTableo
+FlagMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(byte_FF1917).l
+		bset	#$01,(g_DebugMenuFlags).l
 		rts
-; ---------------------------------------------------------------------------
-FlagMenuOpts:	dc.w $FFFF			  ; DATA XREF: ROM:0002A724r
+
+; Per-option terminator flag (the comments give the chapter name and
+; string id).
+FlagMenuOpts:	dc.w $FFFF
 		dc.w $0014			  ; 4  GUMI
 		dc.w $0022			  ; 6  RYUMA
 	if ((REGION=FR)!(REGION=DE))
@@ -419,7 +403,7 @@ FlagMenuOpts:	dc.w $FFFF			  ; DATA XREF: ROM:0002A724r
 		dc.w $0150			  ; 29 LAKE SHRINE
 		dc.w $0155			  ; 30 MOUNTAINS
 		dc.w $0156			  ; 31 CAVE AT THE TOP
-FlagsToSet:	dc.w $0007, $0010, $0011, $0000	  ; DATA XREF: ROM:0002A71Et
+FlagsToSet:	dc.w $0007, $0010, $0011, $0000
 		dc.w $0014, $0006, $0015, $0016
 		dc.w $0022, $0017, $0020, $0021
 		dc.w $0023, $002C, $002D, $002E
@@ -431,92 +415,79 @@ FlagsToSet:	dc.w $0007, $0010, $0011, $0000	  ; DATA XREF: ROM:0002A71Et
 		dc.w $0124, $0131, $0140, $0150
 		dc.w $0018, $0155, $0156, $FFFF
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-JmpToDebugActionTableEntry:			  ; CODE XREF: DebugMenu+Ep
-						  ; ROM:0002A4BCp ...
+; Menu framework: draw via entry +0, then loop - redraw when
+; g_DebugMenuFlags bit 0 is set, run the action _pollInput returns,
+; stop once a handler sets g_DebugMenuFlags bit 1.
+JmpToDebugActionTableEntry:
 		move.w	(a0),d0
 		jsr	(a0,d0.w)
-		clr.b	(byte_FF1916).l
-		clr.b	(byte_FF1917).l
+		clr.b	(g_DebugMenuButtons).l
+		clr.b	(g_DebugMenuFlags).l
 
-loc_2A7EC:					  ; CODE XREF: JmpToDebugActionTableEntry+40j
-		btst	#$00,(byte_FF1917).l
-		beq.s	loc_2A804
+_menuLoop:
+		btst	#$00,(g_DebugMenuFlags).l
+		beq.s	_noRedraw
 		move.w	(a0),d0
 		jsr	(a0,d0.w)
-		bclr	#$00,(byte_FF1917).l
+		bclr	#$00,(g_DebugMenuFlags).l
 
-loc_2A804:					  ; CODE XREF: JmpToDebugActionTableEntry+1Aj
-		bsr.w	sub_2A840
-		beq.s	loc_2A812
+_noRedraw:
+		bsr.w	_pollInput
+		beq.s	_chkExit
 		move.w	(a0,d0.w),d0
 		jsr	(a0,d0.w)
 
-loc_2A812:					  ; CODE XREF: JmpToDebugActionTableEntry+2Ej
-		btst	#$01,(byte_FF1917).l
-		beq.s	loc_2A7EC
+_chkExit:
+		btst	#$01,(g_DebugMenuFlags).l
+		beq.s	_menuLoop
 		rts
-; End of function JmpToDebugActionTableEntry
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecrementVar:					  ; DATA XREF: ROM:DebugMenuActionTableo
-						  ; ROM:SoundMenuActionJmptableo ...
+; Cursor movement handlers: wrap within 0..d2 and request a redraw.
+DecrementVar:
 		subq.w	#$01,d1
-		bge.s	loc_2A824
+		bge.s	_decMark
 		move.w	d2,d1
 
-loc_2A824:					  ; CODE XREF: DecrementVar+2j
-		bset	#$00,(byte_FF1917).l
+_decMark:
+		bset	#$00,(g_DebugMenuFlags).l
 		rts
-; End of function DecrementVar
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-IncrementVar:					  ; DATA XREF: ROM:DebugMenuActionTableo
-						  ; ROM:SoundMenuActionJmptableo ...
+IncrementVar:
 		addq.w	#$01,d1
 		cmp.w	d2,d1
-		ble.s	loc_2A836
+		ble.s	_incMark
 		clr.w	d1
 
-loc_2A836:					  ; CODE XREF: IncrementVar+4j
-		bset	#$00,(byte_FF1917).l
+_incMark:
+		bset	#$00,(g_DebugMenuFlags).l
 		rts
-; End of function IncrementVar
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2A840:					  ; CODE XREF: JmpToDebugActionTableEntry:loc_2A804p
+; Waits a frame and edge-detects pad 1: d0 = action table offset for
+; the highest newly pressed button (0 = none) via _buttonActions.
+_pollInput:
 		movem.l	d1-a6,-(sp)
 		jsr	(j_WaitUntilVBlank).l
 		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d1
-		move.b	(byte_FF1916).l,d2
-		move.b	d1,(byte_FF1916).l
+		move.b	(g_DebugMenuButtons).l,d2
+		move.b	d1,(g_DebugMenuButtons).l
 		move.b	d1,d3
 		eor.b	d2,d1
-		and.b	d3,d1
-		beq.s	loc_2A876
+		and.b	d3,d1			  ; d1 = newly pressed buttons
+		beq.s	_pollDone
 		moveq	#$00000007,d0
 
-loc_2A86C:					  ; CODE XREF: sub_2A840+2Ej
+_findBit:
 		btst	d0,d1
-		dbne	d0,loc_2A86C
-		move.b	byte_2A87C(pc,d0.w),d0
+		dbne	d0,_findBit
+		move.b	_buttonActions(pc,d0.w),d0
 
-loc_2A876:					  ; CODE XREF: sub_2A840+28j
+_pollDone:
 		movem.l	(sp)+,d1-a6
 		rts
-; End of function sub_2A840
 
-; ---------------------------------------------------------------------------
-byte_2A87C:	dc.b $00, $00, $08, $06, $04, $02, $02,	$02; 0 ; DATA XREF: sub_2A840+32r
+; Indexed by button bit (Up, Down, Left, Right, B, C, A, Start):
+; table offset 2 = enter, 4 = exit, 6 = increment, 8 = decrement.
+_buttonActions:	dc.b $00, $00, $08, $06, $04, $02, $02,	$02
+
+		modend

@@ -1,5 +1,4 @@
-		ScriptJump	 CS_0000,$0 ; DATA XREF: ROM:00026082t
-					; ID 0x000 : Jump to address 0x026E5E
+		ScriptJump  CS_0000,$0	; ID 0x000 : Jump to address 0x026E5E
 		ScriptJump  CS_0001,$1	; ID 0x001 : Jump to address 0x026E78
 		ScriptJump  CS_0002,$2	; ID 0x002 : Jump to address 0x026EB6
 		ScriptJump  CS_0003,$3	; ID 0x003 : Jump to address 0x026F2C

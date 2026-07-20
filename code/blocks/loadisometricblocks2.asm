@@ -1,70 +1,51 @@
+LoadIsometricBlocks2	module
+; Map-row offset helpers. A map plane row is 74 block words = 148
+; bytes, so cell (x,y) lives at byte offset y*148 + x*2. The multiply
+; by 148 is a table lookup; _mult148NegTbl sits directly before
+; _mult148Tbl so a negative row index (-8..-1) indexes backwards into
+; it and still resolves correctly.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ConvertXYToBlockPtr:				  ; CODE XREF: LoadTopTiles+20p
-						  ; LoadLeftTiles+20p
+; a6 = &g_ForegroundBlocks[y*148 + x*2] for cell (d0.b = x, d1.b = y),
+; both signed. The background map cell is at the same offset + $2AC8.
+ConvertXYToBlockPtr:
 		ext.w	d0
 		ext.w	d1
 		add.w	d1,d1
-		move.w	Mult148tbl(pc,d1.w),d1
+		move.w	_mult148Tbl(pc,d1.w),d1
 		add.w	d0,d1
 		add.w	d0,d1
 		lea	(g_ForegroundBlocks).l,a6
 		adda.w	d1,a6
 		rts
-; End of function ConvertXYToBlockPtr
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-MultiplyD0By148:				  ; CODE XREF: CheckForDoorNE+DCp
+; d0.w = d0.w * 148, sign-extended to long (d1/d2/d3 variants below).
+MultiplyD0By148:
 		add.w	d0,d0
-		move.w	Mult148tbl(pc,d0.w),d0
+		move.w	_mult148Tbl(pc,d0.w),d0
 		ext.l	d0
 		rts
-; End of function MultiplyD0By148
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-MultiplyD1By148:				  ; CODE XREF: GetMapCoordOffsetp
-						  ; DATA XREF: sub_3146+26t ...
+MultiplyD1By148:
 		add.w	d1,d1
-		move.w	Mult148tbl(pc,d1.w),d1
+		move.w	_mult148Tbl(pc,d1.w),d1
 		ext.l	d1
 		rts
-; End of function MultiplyD1By148
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-MultiplyD2By148:				  ; DATA XREF: sub_30E4+2Et
-						  ; sub_31A6+32t ...
+MultiplyD2By148:
 		add.w	d2,d2
-		move.w	Mult148tbl(pc,d2.w),d2
+		move.w	_mult148Tbl(pc,d2.w),d2
 		ext.l	d2
 		rts
-; End of function MultiplyD2By148
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-MultiplyD3By148:				  ; DATA XREF: j_MultiplyD3By148t
+MultiplyD3By148:
 		add.w	d3,d3
-		move.w	Mult148tbl(pc,d3.w),d3
+		move.w	_mult148Tbl(pc,d3.w),d3
 		ext.l	d3
 		rts
-; End of function MultiplyD3By148
 
-; ---------------------------------------------------------------------------
-Mult148negTbl:
+_mult148NegTbl:
 		dc.w -01184,-01036,-00888,-00740,-00592,-00444,-00296,-00148
-Mult148tbl:
+_mult148Tbl:
 		dc.w  00000, 00148, 00296, 00444, 00592, 00740,	00888, 01036
 		dc.w  01184, 01332, 01480, 01628, 01776, 01924,	02072, 02220
 		dc.w  02368, 02516, 02664, 02812, 02960, 03108,	03256, 03404
@@ -76,3 +57,4 @@ Mult148tbl:
 		dc.w  09472, 09620, 09768, 09916, 10064, 10212,	10360, 10508
 		dc.w  10656, 10804, 10952, 11100, 11248, 11396
 
+		modend

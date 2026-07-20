@@ -1,4 +1,4 @@
-		dc.b $25		; DATA XREF: sub_25A0E+8t
+		dc.b $25
 		dc.b $14
 		dc.w $260
 		ScriptID    $42,$2	; Run text script at offset 0x028740

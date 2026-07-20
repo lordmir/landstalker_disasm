@@ -1,6 +1,4 @@
-; ---------------------------------------------------------------------------
-
-GetFlagProgress:				  ; CODE XREF: HandleProgressDependentDialogue+4p
+GetFlagProgress:
 		move.l	a0,-(sp)
 		lea	(g_GameFlagProgress1).l,a0
 		bsr.w	PickValueBasedOnFlags

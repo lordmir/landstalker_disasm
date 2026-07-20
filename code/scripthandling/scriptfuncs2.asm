@@ -19,7 +19,7 @@ ScriptFuncs2	module
 ; while DebugModeEnable is zero).
 PlayerTalk:
 		movem.l	d0-a6,-(sp)
-		move.w	#$FFFF,(g_Character).l
+		move.w	#$FFFF,(g_PendingCutsceneAction).l
 		btst	#CTRL_DOWN,(g_Controller2State).l
 		beq.s	_ptTalk
 		tst.w	(DebugModeEnable).w

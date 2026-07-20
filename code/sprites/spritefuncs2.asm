@@ -54,7 +54,7 @@ _chkStage4:
 		ori.b	#$80,(Player_AnimCtrl).l
 		btst	#$07,(g_Flags+5).l
 		beq.s	_stage4Done
-		move.b	#$32,d0
+		move.b	#$32,d0			  ; CSA_0032: reset the dojo opponent
 		bsr.w	ProcessDialogueScriptAction
 		move.b	#$8C,(g_PlayerAnimation).l
 
@@ -66,7 +66,7 @@ _chkFaintEnd:
 		bne.w	_done
 		btst	#$07,(g_Flags+5).l
 		beq.s	OnFaint
-		move.b	#$33,d0
+		move.b	#$33,d0			  ; CSA_0033: dojo defeat aftermath
 		bra.w	ProcessDialogueScriptAction
 
 OnFaint:

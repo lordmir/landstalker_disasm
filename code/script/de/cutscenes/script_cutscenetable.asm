@@ -1,5 +1,4 @@
-		ScriptID	$3D7,$0	; DATA XREF: ROM:000251C4o
-					; ID 0x000 : Run text script at	offset 0x027DA8
+		ScriptID    $3D7,$0	; ID 0x000 : Run text script at	offset 0x027DA8
 					; 0x1BE9: LOAD SPECIAL CHARACTER FLORA (0x01)
 					; 0xE362: PRINT	MSG 0x03B0, MSGBOX CLEARED, END: "{47}LASST UNS	JETZT{43}UNSER ABENTEUER BEGINNEN!!{4A}"
 		ScriptID    $3D9,$1	; ID 0x001 : Run text script at	offset 0x027DAC

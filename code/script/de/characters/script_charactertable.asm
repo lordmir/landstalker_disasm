@@ -1,4 +1,4 @@
-		ScriptJump	CS_0000,$0	; BÜRGERMEISTER	(0x00) : Jump to address 0x025D9C
+		ScriptJump  CS_0000,$0	; BÜRGERMEISTER	(0x00) : Jump to address 0x025D9C
 		ScriptJump  CS_0001,$1	; FARA (0x01) :	Jump to	address	0x025DB6
 		ScriptJump  CS_0002,$2	; HAHNA	(0x02) : Jump to address 0x025DF4
 		ScriptJump  CS_0003,$3	; GEIER	(0x03) : Jump to address 0x025E6A

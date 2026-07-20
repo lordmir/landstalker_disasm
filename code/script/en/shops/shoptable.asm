@@ -1,6 +1,4 @@
-			dc.w $0254			  ; DATA XREF: sub_24A98+2At
-						  ; sub_24D0C+At
-						  ; Massan Shop
+		dc.w $0254			  ; Massan Shop
 		dc.b $10			  ; Items/services normal price
 		dc.b $08			  ; Lifestock half price
 		ScriptID    $1,$2		  ; Run	text script at offset 0x0277F8
