@@ -589,8 +589,10 @@ EB_MakeInvisible:
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Per-tick speed profile of a thrown object, indexed by BehavParam:
-; starts at 0 for a straight drop, at $17 for a directional throw
-; (see gamelogic4's carry state machine); $FF terminator.
+; two profiles back to back - a straight drop at THROWPHASE_DROP and
+; a directional throw at THROWPHASE_THROW - ending at the $FF
+; terminator (THROWPHASE_THROW_END). See constants/throwphases.inc
+; and gamelogic4's carry state machine, which picks the entry phase.
 ThrowSpeedTable:	dc.b $08,$04,$04,$04,$04,$04,$04,$04,$02,$02
 		dc.b $02,$02,$02,$02,$02,$02,$02,$02,$01,$01
 		dc.b $01,$01,$01,$08,$08,$08,$08,$04,$04,$04
@@ -610,11 +612,11 @@ ThrowSpeedTable:	dc.b $08,$04,$04,$04,$04,$04,$04,$04,$02,$02
 EB_ThrownObject:
 		move.b	BehavParam(a5),d0
 		addq.b	#$01,BehavParam(a5)
-		cmpi.b	#$03,d0
+		cmpi.b	#THROWPHASE_RIDE,d0
 		bcs.s	_toLift
-		cmpi.b	#$17,d0
+		cmpi.b	#THROWPHASE_THROW,d0
 		bcs.s	_toMove
-		cmpi.b	#$1A,d0
+		cmpi.b	#THROWPHASE_THROW+THROWPHASE_RIDE,d0
 		bcc.s	_toMove
 
 _toLift:
@@ -691,17 +693,17 @@ _toBounce:
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 
 _toPhase:
-		cmpi.b	#$20,BehavParam(a5)
+		cmpi.b	#THROWPHASE_THROW_SETTLE,BehavParam(a5)
 		bcc.s	_toAirChk
-		cmpi.b	#$17,BehavParam(a5)
+		cmpi.b	#THROWPHASE_THROW,BehavParam(a5)
 		bcc.s	_toChkStop
-		cmpi.b	#$09,BehavParam(a5)
+		cmpi.b	#THROWPHASE_DROP_SETTLE,BehavParam(a5)
 		bcc.s	_toAirChk
 
 _toChkStop:
-		cmpi.b	#$39,BehavParam(a5)
+		cmpi.b	#THROWPHASE_THROW_END,BehavParam(a5)
 		bcc.s	_toRestore
-		cmpi.b	#$17,BehavParam(a5)
+		cmpi.b	#THROWPHASE_DROP_END,BehavParam(a5)
 		bne.s	_toRts
 
 _toRestore:

@@ -694,7 +694,7 @@ _armThrow:
 		move.b	(g_Controller1State).l,d0
 		andi.b	#$0F,d0
 		beq.s	_armDone
-		move.b	#$17,(g_ThrowBehaviour).l
+		move.b	#THROWPHASE_THROW,(g_ThrowBehaviour).l
 
 _armDone:
 		rts
@@ -761,7 +761,7 @@ _dropParam:
 		eori.b	#DIR_FLIP,d2
 		cmp.b	d0,d2
 		bne.s	_putDone
-		move.b	#$FF,BehavParam(a1,d1.w)
+		move.b	#PUTDOWNPHASE_DELAY,BehavParam(a1,d1.w)
 
 _putDone:
 		rts

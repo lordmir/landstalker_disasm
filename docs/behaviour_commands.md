@@ -59,13 +59,13 @@ skips dispatch entirely (`EB_NULL`).
 | $0D | `EB_SetDirNW` | 1 | Face NW, animation untouched. |
 | $0E | `EB_MakeVisible` | 1 | Clear the do-not-draw flag (InteractFlags bit 6). *(immediate)* |
 | $0F | `EB_MakeInvisible` | 1 | Set the do-not-draw flag — the sprite still exists and collides. *(immediate)* |
-| $10 | `EB_ThrownObject` | — | **engine state** — flight of a thrown/dropped carried object; `BehavParam` indexes `ThrowSpeedTable` ($00 straight drop, $17 directional throw). Rides a player jump in the early phases, damages a struck enemy as a player attack, shatters vases (→ $55), bounces off walls, then restores the saved behaviour. |
+| $10 | `EB_ThrownObject` | — | **engine state** — flight of a thrown/dropped carried object; `BehavParam` indexes `ThrowSpeedTable`, starting at `THROWPHASE_DROP` ($00, straight drop) or `THROWPHASE_THROW` ($17, directional throw) — see `constants/throwphases.inc`. Rides a player jump in the first `THROWPHASE_RIDE` ticks of either profile, damages a struck enemy as a player attack, shatters vases (→ $55), bounces off walls, then restores the saved behaviour once landed past the `*_SETTLE` phase (or when the profile ends). |
 | $11 | `EB_MoveRelative` | 2 | **steps** — walk forward *steps* unblocked steps (blocked ticks don't count). |
 | $12 | `EB_GoToInstruction` | 2 | **offset** — jump *offset* (signed) bytes within the script, relative to this command byte. *(immediate)* |
 | $13 | `EB_MoveUntilCollision` | 1 | Walk forward until blocked by a wall or sprite. |
 | $14 | `EB_TurnRandom` | 1 | Face a random direction, with animation refresh. |
 | $15 | `EB_SetDirRandom` | 1 | Face a random direction, animation untouched. |
-| $16 | `EB_PutDownObject` | — | **engine state** — object just put down, sliding with momentum inherited from a moving platform until it stops or hits something, then restores the saved behaviour. |
+| $16 | `EB_PutDownObject` | — | **engine state** — object just put down, sliding with momentum inherited from a moving platform until it stops or hits something, then restores the saved behaviour. Phase `PUTDOWNPHASE_DELAY` ($FF, set when the platform moves against the player's facing) skips the first slide tick. |
 | $17 | `EB_TurnRandomImmediate` | 1 | As $14. *(immediate)* |
 | $18 | `EB_TurnCWImmediate` | 1 | As $02. *(immediate)* |
 | $19 | `EB_TurnCCWImmediate` | 1 | As $03. *(immediate)* |
@@ -134,7 +134,7 @@ skips dispatch entirely (`EB_NULL`).
 | $58 | `EB_UpdateSpriteFacing` | 1 | Refresh the facing animation. *(immediate)* |
 | $59 | `EB_PrintText` | 3 | **hi, lo** — print string number `hi<<8 \| lo`. *(immediate)* |
 | $5A | `EB_ProjectileHitEnemies` | 2 | **ticks** — player-side projectile: fly forward; on impact it despawns, damaging a struck vulnerable hostile as a player attack with hitstun. |
-| $5B | `EB_SetTargetPosition` | 5 | **x, y, subX, subY** — store the movement target. *(immediate)* |
+| $5B | `EB_SetTargetPosition` | 5 | **x, y** — store the movement target: two 12.4 fixed-point pixel words (`TargetX`/`TargetY`). *(immediate)* |
 | $5C | `EB_MoveToTargetPosition` | 1 | Steer towards the stored target (compared at 4-pixel granularity) until arrival. A non-hostile sprite running this passes through the player. |
 | $5D | `EB_RepeatBegin` | 2 | **count** — start of a repeat block (loop point = the next record); *count* = iterations, 0 keeps the current count (nested restarts). *(immediate)* |
 | $5E | `EB_RepeatEnd` | 1 | Jump back to the repeat block's start until the count runs out. *(immediate on exit)* |
@@ -144,21 +144,23 @@ skips dispatch entirely (`EB_NULL`).
 | $62 | `EB_PlaySound` | 2 | **sound** — play sound id *sound*. *(immediate)* |
 | $63 | `EB_ProjectileMove` | 2 | **ticks** — enemy projectile: fly forward, dealing contact damage; a wall or a sprite of a different type despawns it, same-type sprites are flown through. |
 | $64 | `EB_StartHiCutscene` | 2 | **action** — run dialogue script action `$100 + action`. *(immediate)* |
-| $65 | `EB_ProjectileWeaveCW` | 2 | **ticks** — as $63 but each tick takes a second step rotated 90° CW: a diagonal path between two facings. |
-| $66 | `EB_ProjectileWeaveCCW` | 2 | **ticks** — mirror of $65. |
-| $67 | `EB_ProjectileFall` | — | As $63 but also sinking `Speed`/tick; despawns on landing. Terminal (never advances the script). |
+| $65 | `EB_ProjectileDiagRight` | 2 | **ticks** — as $63 but each tick takes a second step rotated 90° CW (the rotation is undone straight after): a straight diagonal to the right of the facing. |
+| $66 | `EB_ProjectileDiagLeft` | 2 | **ticks** — mirror of $65: a straight diagonal to the left of the facing. |
+| $67 | `EB_ProjectileLevel` | — | As $63 with a floor clamp: each tick it tries to sink by `Speed` but undoes the drop at the floor, so it flies holding a constant height (Gola's breath); despawns on landing. Terminal (never advances the script). |
 
 ## Notes
 
 * **Carried/thrown lifecycle.** Picking a sprite up
   (`CheckPickUpEntity`) saves `BehaviourLUTPtr`/`BehavCmd`/
   `BehavParam`/`Speed` into the `Saved*` fields. The carry state
-  machine (gamelogic4) then injects $10 (throw; param $17 for a
-  directional throw, $00 for a straight drop) or $16 (put-down),
-  using the $2F/$32 variants for shop items. When the object settles,
-  the saved behaviour is restored — unless the saved command was
-  itself one of $10/$16/$32 (stop dead, `BehavParam:BehavCmd` = 0) or
-  $2F (revert to $2E).
+  machine (gamelogic4) then injects $10 (throw; phase
+  `THROWPHASE_THROW` for a directional throw, `THROWPHASE_DROP` for a
+  straight drop) or $16 (put-down; phase `PUTDOWNPHASE_SLIDE`, or
+  `PUTDOWNPHASE_DELAY` against the platform's momentum), using the
+  $2F/$32 variants for shop items. When the object settles, the saved
+  behaviour is restored — unless the saved command was itself one of
+  $10/$16/$32 (stop dead, `BehavParam:BehavCmd` = 0) or $2F (revert
+  to $2E). The phase constants live in `constants/throwphases.inc`.
 * **Waiting commands** ($00, $36, $42, $45, $46, $47, and every
   mover) hold the script for at least one tick per attempt; chains of
   *(immediate)* commands all run within a single tick, which is how
