@@ -1,26 +1,28 @@
+ScriptFuncs5	module
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleChurchInterraction:			  ; CODE XREF: ROM:HandleIdentifyRecordBookp
-						  ; ROM:RequestGameSaveMsgp ...
+; Church script helper: two inline words after the bsr - {script for
+; a normal priest, script for the skeleton priest}. Looks up the
+; sprite of speaker slot 0 (the priest) and runs the matching entry
+; through RunTextCmd, then advances the return address past the data
+; so the stub continues. Used by the save/identify/heal prompts.
+HandleChurchInteraction:
 		movem.l	d0-a6,-(sp)
 		clr.b	d0
 		jsr	(j_GetSpeakerSpriteId).l
-		movea.l	$0000003C(sp),a0
+		movea.l	$0000003C(sp),a0	  ; Return address = inline words
 		cmpi.b	#SPR_SKELETONPRIEST,d1
-		bne.s	loc_25F7C
+		bne.s	_hciNormal
 		move.w	$00000002(a0),d0
-		bra.s	loc_25F7E
+		bra.s	_hciRun
 ; ---------------------------------------------------------------------------
 
-loc_25F7C:					  ; CODE XREF: HandleChurchInterraction+14j
+_hciNormal:
 		move.w	(a0),d0
 
-loc_25F7E:					  ; CODE XREF: HandleChurchInterraction+1Aj
+_hciRun:
 		bsr.w	RunTextCmd
-		addq.l	#$04,$0000003C(sp)
+		addq.l	#$04,$0000003C(sp)	  ; Resume past the data
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function HandleChurchInterraction
 
+	modend

@@ -1,51 +1,50 @@
+ScriptFuncs8	module
+; Item quantities and properties. g_Inventory holds one nibble per
+; item (id & $3F; even ids in the low nibble of the byte, odd ids in
+; the high), stored biased as count+1: nibble 0 = never carried,
+; 1 = owned but none left, etc.
+;
+; ItemProperties is 4 bytes per item: byte 0 = use-string index
+; (high nibble) and max quantity (low nibble), byte 1 = equip slot,
+; word 2 = buy price.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-TestPlayerStatus:				  ; CODE XREF: ROM:00024F6Cp
-						  ; ROM:000274F4p
+; Flags = player status ANDed with mask d0 (NE = any of them set).
+TestPlayerStatus:
 		movem.w	d0-d1,-(sp)
 		move.b	d0,d1
 		jsr	(j_GetPlayerStatus).l
 		and.b	d1,d0
 		movem.w	(sp)+,d0-d1
 		rts
-; End of function TestPlayerStatus
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RemoveStatus:					  ; CODE XREF: ROM:00024FBCp
-						  ; ROM:00025094p
+; Clear the status conditions in mask d0 (bits 0-3); bit 7 also
+; fully heals (AddHealth with $FFFF clamps to max).
+RemoveStatus:
 		movem.l	d0-d1/a5,-(sp)
 		move.b	d0,d1
 		moveq	#$00000003,d0
 
-loc_2916A:					  ; CODE XREF: RemoveStatus:loc_29174j
+_rsBit:
 		btst	d0,d1
-		beq.s	loc_29174
+		beq.s	_rsNext
 		jsr	(j_ClearPlayerStatus).l
 
-loc_29174:					  ; CODE XREF: RemoveStatus+Aj
-		dbf	d0,loc_2916A
+_rsNext:
+		dbf	d0,_rsBit
 		btst	#$07,d1
-		beq.s	loc_2918C
+		beq.s	_rsDone
 		moveq	#$FFFFFFFF,d0
 		lea	(Player_X).l,a5
 		jsr	(j_AddHealth).l
 
-loc_2918C:					  ; CODE XREF: RemoveStatus+1Aj
+_rsDone:
 		movem.l	(sp)+,d0-d1/a5
 		rts
-; End of function RemoveStatus
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemQtyAndMaxQty:				  ; CODE XREF: GetItem:loc_29202p
-						  ; CheckAndConsumeItem+2p ...
+; For item d0: d1 = owned count (-1 = never carried, the stored
+; nibble minus one), d2 = 1 when the item is non-stackable (max
+; quantity <= 1), 0 when it stacks.
+GetItemQtyAndMaxQty:
 		move.l	a0,-(sp)
 		bsr.w	GetItemInventoryQty
 		subq.w	#$01,d1
@@ -53,206 +52,170 @@ GetItemQtyAndMaxQty:				  ; CODE XREF: GetItem:loc_29202p
 		move.b	(a0),d2
 		andi.w	#$000F,d2
 		cmpi.w	#$0001,d2
-		ble.s	loc_291AE
+		ble.s	_gqSingle
 		clr.w	d2
-		bra.s	loc_291B2
+		bra.s	_gqDone
 ; ---------------------------------------------------------------------------
 
-loc_291AE:					  ; CODE XREF: GetItemQtyAndMaxQty+16j
+_gqSingle:
 		move.w	#$0001,d2
 
-loc_291B2:					  ; CODE XREF: GetItemQtyAndMaxQty+1Aj
+_gqDone:
 		movea.l	(sp)+,a0
 		rts
-; End of function GetItemQtyAndMaxQty
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetItemQuantity:				  ; CODE XREF: GetItem+36p
-						  ; CheckAndConsumeItem:loc_2922Cp ...
+; Store count d1 for item d0, clamped to the item's max; the nibble
+; keeps the count+1 bias.
+SetItemQuantity:
 		movem.l	d1-d2/a0,-(sp)
 		move.b	d1,d2
 		ext.w	d2
 		bsr.w	GetItemMaxQty
 		cmp.w	d1,d2
-		ble.s	loc_291C8
+		ble.s	_sqStore
 		move.w	d1,d2
 
-loc_291C8:					  ; CODE XREF: SetItemQuantity+Ej
+_sqStore:
 		addq.w	#$01,d2
 		move.w	d2,d1
 		bsr.w	UpdateItemQtyInInventory
 		movem.l	(sp)+,d1-d2/a0
 		rts
-; End of function SetItemQuantity
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItem:					  ; CODE XREF: ROM:00024B1Cp
-						  ; HandleShopInterraction+36p	...
+; Give one of item d0. Lifestock is special: +1 max health unit
+; ($100), heal the same, and mark it sold in this shop/church.
+; Otherwise the count goes up by one (from 0 if never carried), and
+; EkeEke (item 0) also refreshes its HUD counter.
+GetItem:
 		movem.l	d0-a6,-(sp)
 		cmpi.b	#ITM_LIFESTOCK,d0
-		bne.s	loc_29202
+		bne.s	_giNormal
 		move.w	#$0100,d0
 		lea	(Player_X).l,a5
 		jsr	(j_AddToMaxHealth).l
 		move.w	#$0100,d0
 		jsr	(j_AddHealth).l
 		jsr	(j_SetLifestockSoldFlag).l
-		bra.s	loc_29212
+		bra.s	_giHUD
 ; ---------------------------------------------------------------------------
 
-loc_29202:					  ; CODE XREF: GetItem+8j
+_giNormal:
 		bsr.s	GetItemQtyAndMaxQty
 		tst.w	d1
-		bge.s	loc_2920A
+		bge.s	_giAdd
 		clr.w	d1
 
-loc_2920A:					  ; CODE XREF: GetItem+30j
+_giAdd:
 		addq.w	#$01,d1
 		bsr.s	SetItemQuantity
 		tst.b	d0
-		bne.s	loc_29216
+		bne.s	_giDone
 
-loc_29212:					  ; CODE XREF: GetItem+2Aj
+_giHUD:
 		bsr.w	UpdateEkeEke
 
-loc_29216:					  ; CODE XREF: GetItem+3Aj
+_giDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function GetItem
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckAndConsumeItem:				  ; CODE XREF: ROM:000277A8p
-						  ; DATA XREF: j_CheckAndConsumeItemt
+; Take one of item d0 away (not below zero).
+CheckAndConsumeItem:
 		move.l	d1,-(sp)
 		bsr.w	GetItemQtyAndMaxQty
 		tst.w	d1
-		bge.s	loc_29228
+		bge.s	_cciCheck
 		clr.w	d1
 
-loc_29228:					  ; CODE XREF: CheckAndConsumeItem+8j
-		ble.s	loc_2922C
+_cciCheck:
+		ble.s	_cciStore
 		subq.w	#$01,d1
 
-loc_2922C:					  ; CODE XREF: CheckAndConsumeItem:loc_29228j
+_cciStore:
 		bsr.s	SetItemQuantity
 		move.l	(sp)+,d1
 		rts
-; End of function CheckAndConsumeItem
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetRemainingItemAllowedCount:			  ; CODE XREF: ROM:00024AE4p
-						  ; ROM:000276AAp
-						  ; DATA XREF: ...
+; d1 = how many more of item d0 can be held (max - owned); the flags
+; reflect the subtraction, so Z set = already full.
+GetRemainingItemAllowedCount:
 		movem.l	d2,-(sp)
 		bsr.w	GetItemQtyAndMaxQty
 		move.w	d1,d2
-		bge.s	loc_29240
+		bge.s	_graMax
 		clr.w	d2
 
-loc_29240:					  ; CODE XREF: GetRemainingItemAllowedCount+Aj
+_graMax:
 		bsr.w	GetItemMaxQty
 		sub.w	d2,d1
 		movem.l	(sp)+,d2
 		rts
-; End of function GetRemainingItemAllowedCount
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckIfItemIsOwned:				  ; CODE XREF: ROM:00026BBEp
-						  ; ROM:000272ECp ...
+; Flags: NE = at least one of item d0 is owned.
+CheckIfItemIsOwned:
 		movem.w	d1,-(sp)
 		bsr.w	GetItemQtyAndMaxQty
 		tst.w	d1
-		bge.s	loc_2925A
+		bge.s	_cioDone
 		clr.w	d1
 
-loc_2925A:					  ; CODE XREF: CheckIfItemIsOwned+Aj
+_cioDone:
 		movem.w	(sp)+,d1
 		rts
-; End of function CheckIfItemIsOwned
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemInventoryQty:				  ; CODE XREF: GetItemQtyAndMaxQty+2p
+; d1 = raw inventory nibble for item d0 (count+1 biased).
+GetItemInventoryQty:
 		movem.l	d0/a0,-(sp)
 		lea	(g_Inventory).l,a0
 		andi.w	#$003F,d0
 		asr.w	#$01,d0
-		bcc.s	loc_2927A
+		bcc.s	_giqEven
 		move.b	(a0,d0.w),d1
 		lsr.b	#$04,d1
-		bra.s	loc_2927E
+		bra.s	_giqDone
 ; ---------------------------------------------------------------------------
 
-loc_2927A:					  ; CODE XREF: GetItemInventoryQty+10j
+_giqEven:
 		move.b	(a0,d0.w),d1
 
-loc_2927E:					  ; CODE XREF: GetItemInventoryQty+18j
+_giqDone:
 		andi.w	#$000F,d1
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function GetItemInventoryQty
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdateItemQtyInInventory:			  ; CODE XREF: SetItemQuantity+16p
+; Store raw nibble d1 for item d0.
+UpdateItemQtyInInventory:
 		movem.l	d0-d1/a0,-(sp)
 		lea	(g_Inventory).l,a0
 		andi.w	#$003F,d0
 		asr.w	#$01,d0
-		bcc.s	loc_292A4
+		bcc.s	_uiqEven
 		andi.b	#$0F,(a0,d0.w)
 		lsl.b	#$04,d1
-		bra.s	loc_292AE
+		bra.s	_uiqStore
 ; ---------------------------------------------------------------------------
 
-loc_292A4:					  ; CODE XREF: UpdateItemQtyInInventory+10j
+_uiqEven:
 		andi.b	#$F0,(a0,d0.w)
 		andi.b	#$0F,d1
 
-loc_292AE:					  ; CODE XREF: UpdateItemQtyInInventory+1Aj
+_uiqStore:
 		or.b	d1,(a0,d0.w)
 		movem.l	(sp)+,d0-d1/a0
 		rts
-; End of function UpdateItemQtyInInventory
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemMaxQty:					  ; CODE XREF: SetItemQuantity+8p
-						  ; GetRemainingItemAllowedCount:loc_29240p ...
+; d1 = item d0's maximum quantity.
+GetItemMaxQty:
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
 		move.b	(a0),d1
 		andi.w	#$000F,d1
 		movea.l	(sp)+,a0
 		rts
-; End of function GetItemMaxQty
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemUseStringIdx:				  ; DATA XREF: j_GetItemUseStringIdxt
+; d1 = the string id for using item d0: the use-string index from
+; the properties, +$C into the string table - except FR/DE, where
+; GetItemUseString builds it with the right article.
+GetItemUseStringIdx:
 	if ((REGION=FR)!(REGION=DE))
 		movem.l	d0/a0,-(sp)
 		andi.w	#$FF,d0
@@ -274,46 +237,31 @@ GetItemUseStringIdx:				  ; DATA XREF: j_GetItemUseStringIdxt
 		movea.l	(sp)+,a0
 	endif
 		rts
-; End of function GetItemUseStringIdx
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemEquipSlot:				  ; DATA XREF: ROM:00022ED8t
+; d1 = item d0's equip slot (sign-extended byte).
+GetItemEquipSlot:
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
 		move.b	$00000001(a0),d1
 		ext.w	d1
 		movea.l	(sp)+,a0
 		rts
-; End of function GetItemEquipSlot
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemBuyPrice:				  ; CODE XREF: GetItemShopSellPrice+10p
-						  ; DATA XREF: ROM:00022EDCt
+; d1 = item d0's buy price.
+GetItemBuyPrice:
 		move.l	a0,-(sp)
 		bsr.s	GetItemProperties
 		move.w	$00000002(a0),d1
 		movea.l	(sp)+,a0
 		rts
-; End of function GetItemBuyPrice
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetItemProperties:				  ; CODE XREF: GetItemQtyAndMaxQty+8p
-						  ; GetItemMaxQty+2p ...
+; a0 = item d0's 4-byte ItemProperties record.
+GetItemProperties:
 		move.l	d0,-(sp)
 		andi.w	#$003F,d0
 		asl.w	#$02,d0
 		lea	ItemProperties(pc,d0.w),a0 ; EkeEke
 		move.l	(sp)+,d0
 		rts
-; End of function GetItemProperties
 
-; ---------------------------------------------------------------------------
+	modend

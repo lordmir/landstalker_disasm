@@ -1,140 +1,129 @@
+ShopScriptFuncs1	module
+; The shop system, part 1. Each shop room has a 14-byte ShopScript
+; record: {room word, item price modifier byte, lifestock price
+; modifier byte, then five script offset words - +$4 welcome,
+; +$6 farewell, +$8 item picked up, +$A item put down, +$C steal}.
+; The offsets are relative to the ShopScript table and run through
+; RunTextCmd.
+;
+; ShopSpecialItemsScript overrides the pickup/putdown/steal lines
+; for particular items: records of {item id byte, record length
+; byte, room word (negative = any room), script words at +4/+6/+8}
+; with the offsets relative to the record.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HideRightArrow:					  ; DATA XREF: j_HideRightArrowt
-		clr.b	(g_RightArrowCursorState).l
+; Reset the textbox state flags (called on room load via
+; j_ResetTextboxState).
+ResetTextboxState:
+		clr.b	(g_TextboxState).l
 		rts
-; End of function HideRightArrow
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RunShopWelcome:					  ; DATA XREF: j_RunShopWelcomet
+RunShopWelcome:
 		movem.l	d0-a6,-(sp)
 		moveq	#$00000004,d1
 		moveq	#$FFFFFFFF,d2
-		bsr.s	sub_24A98
+		bsr.s	RunShopDialogue
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function RunShopWelcome
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RunShopFarewell:					  ; DATA XREF: j_RunShopFarewellt
+RunShopFarewell:
 		movem.l	d0-a6,-(sp)
 		moveq	#$00000006,d1
 		moveq	#$FFFFFFFF,d2
-		bsr.s	sub_24A98
+		bsr.s	RunShopDialogue
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function RunShopFarewell
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RunShopItemPickUp:					  ; DATA XREF: j_RunShopItemPickUpt
+; Picking up a shop item: in a room with a ShopScript record the
+; shopkeeper reacts (script +$8); with no record the item is simply
+; granted (GainItem) - the free-pickup case.
+RunShopItemPickUp:
 		movem.l	d0-a6,-(sp)
-		bsr.w	sub_24D0C
-		bcc.s	loc_24A6C
+		bsr.w	FindShopForRoom
+		bcc.s	_rsipShop
 		bsr.w	GainItem
-		bra.s	loc_24A72
+		bra.s	_rsipDone
 ; ---------------------------------------------------------------------------
 
-loc_24A6C:					  ; CODE XREF: RunShopItemPickUp+8j
+_rsipShop:
 		moveq	#$00000008,d1
 		moveq	#$00000004,d2
-		bsr.s	sub_24A98
+		bsr.s	RunShopDialogue
 
-loc_24A72:					  ; CODE XREF: RunShopItemPickUp+Ej
+_rsipDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function RunShopItemPickUp
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RunShopItemPutDown:					  ; DATA XREF: j_RunShopItemPutDownt
+RunShopItemPutDown:
 		movem.l	d0-a6,-(sp)
 		moveq	#$0000000A,d1
 		moveq	#$00000006,d2
-		bsr.s	sub_24A98
+		bsr.s	RunShopDialogue
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function RunShopItemPutDown
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RunShopSteal:					  ; DATA XREF: j_RunShopStealt
+RunShopSteal:
 		movem.l	d0-a6,-(sp)
 		moveq	#$0000000C,d1
 		moveq	#$00000008,d2
-		bsr.s	sub_24A98
+		bsr.s	RunShopDialogue
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function RunShopSteal
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_24A98:					  ; CODE XREF: RunShopWelcome+8p
-						  ; RunShopFarewell+8p ...
+; Run shop line d1 (a ShopScript record offset) for the current
+; room. Needs a plain scriptless speaker present (GetSpriteDialogue)
+; and resolves speaker slot 0 first. When d2 is a special-items
+; column (+4 pickup / +6 putdown / +8 steal, -1 = none), a matching
+; ShopSpecialItemsScript entry runs instead of the default line.
+RunShopDialogue:
 		movem.l	d0/a0-a1,-(sp)
 		bsr.w	GetSpriteDialogue
-		bne.s	loc_24ACA
+		bne.s	_rsdDone
 		clr.b	(g_currentSpeakerScriptID).l
-		bsr.w	loc_251D0
-		bcs.s	loc_24ACA
-		bsr.w	loc_24CF6
-		bcs.s	loc_24ACA
+		bsr.w	GetSpeakerCharacter
+		bcs.s	_rsdDone
+		bsr.w	FindShopOrError
+		bcs.s	_rsdDone
 		tst.b	d2
-		blt.s	loc_24ABE
-		bsr.w	sub_24B48
-		bcc.s	loc_24ACA
+		blt.s	_rsdDefault
+		bsr.w	RunShopSpecialItemScript
+		bcc.s	_rsdDone
 
-loc_24ABE:					  ; CODE XREF: sub_24A98+1Ej
+_rsdDefault:
 		move.w	(a1,d1.w),d0
 		lea	ShopScript(pc),a0	  ; Massan Shop
 		bsr.w	RunTextCmd
 
-loc_24ACA:					  ; CODE XREF: sub_24A98+8j
-						  ; sub_24A98+14j ...
+_rsdDone:
 		movem.l	(sp)+,d0/a0-a1
 		rts
-; End of function sub_24A98
 
-; ---------------------------------------------------------------------------
-
-GainItem:					  ; CODE XREF: RunShopItemPickUp+Ap
+; Grant the picked-up shop item (g_ShopItemId) outside a shop:
+; full inventory prints the "can't carry" line and leaves the
+; sprite; with flag $13B set two alternate strings show instead;
+; otherwise the item is given with the chest jingle and "found/got"
+; strings, and the sprite is marked consumed ($FF).
+GainItem:
 		movem.l	d0-d2/a1,-(sp)
 		clr.w	d2
 		move.b	(g_ShopItemId).l,d2
 		move.w	d2,(g_CurrentTextItem).l
 		move.w	d2,d0
 		bsr.w	GetRemainingItemAllowedCount
-		bne.s	loc_24AF4
+		bne.s	_giNotFull
 	if ((REGION=FR)!(REGION=DE))
 		moveq	#1,d0
 		bsr.w	GetItemFoundString
 	else
-		move.w	#$12,d0
+		move.w	#$12,d0			  ; Can't carry any more
 	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
-		bra.s	loc_24B3E
+		bra.s	_giDone
 ; ---------------------------------------------------------------------------
 
-loc_24AF4:					  ; CODE XREF: ROM:00024AE8j
+_giNotFull:
 		move.w	#$013B,d0
 		bsr.w	TestFlagBit
-		beq.s	loc_24B16
+		beq.s	_giGrant
 	if ((REGION=FR)!(REGION=DE))
 		moveq	#6,d0
 		bsr.w	GetItemFoundString
@@ -149,14 +138,14 @@ loc_24AF4:					  ; CODE XREF: ROM:00024AE8j
 		move.w	#$0018,d0
 	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
-		bsr.w	Sleep_0
+		bsr.w	ScriptSleep
 ; ---------------------------------------------------------------------------
 		dc.w 00119
 ; ---------------------------------------------------------------------------
-		bra.s	loc_24B36
+		bra.s	_giConsume
 ; ---------------------------------------------------------------------------
 
-loc_24B16:					  ; CODE XREF: ROM:00024AFCj
+_giGrant:
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
@@ -167,65 +156,64 @@ loc_24B16:					  ; CODE XREF: ROM:00024AFCj
 		clr.w	d0
 		bsr.w	GetItemFoundString
 	else
-		move.w	#$0011,d0
+		move.w	#$0011,d0		  ; Found ITEM
 	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 	if ((REGION=FR)!(REGION=DE))
 		moveq	#2,d0
 		bsr.w	GetItemFoundString
 	else
-		move.w	#$0013,d0
+		move.w	#$0013,d0		  ; Got	ITEM
 	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		jsr	(j_RestoreBGM).l
 
-loc_24B36:					  ; CODE XREF: ROM:00024B14j
-		move.b	#$FF,(g_ShopItemId).l
+_giConsume:
+		move.b	#$FF,(g_ShopItemId).l	  ; Despawn the shop-item sprite
 
-loc_24B3E:					  ; CODE XREF: ROM:00024AF2j
+_giDone:
 		bsr.w	ClearTextbox
 		movem.l	(sp)+,d0-d2/a1
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_24B48:					  ; CODE XREF: sub_24A98+20p
+; Look for a ShopSpecialItemsScript entry matching the current shop
+; item (d0 from GetItemShopSellPrice) and room, and run its script
+; word at column d2. Carry clear = a special script ran, carry set =
+; no entry (caller runs the default line).
+RunShopSpecialItemScript:
 		movem.l	d0-d1/a0,-(sp)
 		bsr.w	GetItemShopSellPrice
 		lea	ShopSpecialItemsScript(pc),a0
 
-loc_24B54:					  ; CODE XREF: sub_24B48+2Aj
+_rssRecord:
 		move.b	(a0),d1
-		blt.s	loc_24B84
+		blt.s	_rssNone
 		cmp.b	d0,d1
-		bne.s	loc_24B6A
+		bne.s	_rssSkip
 		move.w	$00000002(a0),d1
-		blt.s	loc_24B74
+		blt.s	_rssRun			  ; Negative room = any
 		cmp.w	(g_OriginalRoom).l,d1
-		beq.s	loc_24B74
+		beq.s	_rssRun
 
-loc_24B6A:					  ; CODE XREF: sub_24B48+12j
+_rssSkip:
 		clr.w	d1
-		move.b	$00000001(a0),d1
+		move.b	$00000001(a0),d1	  ; Record length
 		adda.w	d1,a0
-		bra.s	loc_24B54
+		bra.s	_rssRecord
 ; ---------------------------------------------------------------------------
 
-loc_24B74:					  ; CODE XREF: sub_24B48+18j
-						  ; sub_24B48+20j
+_rssRun:
 		move.w	(a0,d2.w),d0
 		bsr.w	RunTextCmd
-		or.w	d0,d0
+		or.w	d0,d0			  ; Clear carry: handled
 
-loc_24B7E:					  ; CODE XREF: sub_24B48+40j
+_rssDone:
 		movem.l	(sp)+,d0-d1/a0
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_24B84:					  ; CODE XREF: sub_24B48+Ej
+_rssNone:
 		ori	#$01,ccr
-		bra.s	loc_24B7E
-; End of function sub_24B48
+		bra.s	_rssDone
 
-; ---------------------------------------------------------------------------
+	modend

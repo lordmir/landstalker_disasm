@@ -1,44 +1,51 @@
+ScriptFuncs6	module
+; The script-word interpreter and the textbox/session helpers.
+;
+; A script (reached via RunTextCmd/ScriptID) is a stream of words:
+;   bit 15 set   - print string (bits 0-12) + SCRIPT_STRINGS_BEGIN
+;   bit 15 clear - action in bits 12-10, argument in bits 0-9; the
+;                  argument $3FF means "take the value from the
+;                  address in the next longword of the stream"
+;   bit 14       - clear the textbox after this word
+;   bit 13       - last word of the script
+; Actions 0-3 fill the four text-item slots (g_CurrentTextItem and
+; g_TextItemSlot1-3) that the string engine pops in order for names;
+; action 4 sets the numeric variable; 5 sets a game flag (argument
+; < 1000) or runs an ActionPointerList entry (1000+); 6 switches the
+; speaker; 7 stores a character id in g_Character.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ProcessScriptWord:				  ; CODE XREF: RunTextCmd+10p
-						  ; DATA XREF: ROM:00022EBCt
+ProcessScriptWord:
 		movem.l	d0-d1/a0-a1,-(sp)
 
-loc_28D68:					  ; CODE XREF: ProcessScriptWord+30j
+_pswWord:
 		move.w	(a0)+,d0
 		btst	#$0F,d0			  ; Bit	15 - Display text
-		beq.s	loc_28D74		  ; Bit	15 not set? - run special action based off bits	10-12
-						  ; Argument to	be used	is derived from	bits 0-9
+		beq.s	_pswAction
 		bsr.s	DisplayTextFromScriptWord
-		bra.s	loc_28D86		  ; Bit	14 - Clear textbox
+		bra.s	_pswFlags
 ; ---------------------------------------------------------------------------
 
-loc_28D74:					  ; CODE XREF: ProcessScriptWord+Aj
-		move.w	d0,d1			  ; Bit	15 not set? - run special action based off bits	10-12
-						  ; Argument to	be used	is derived from	bits 0-9
-		andi.w	#$1C00,d1
+_pswAction:
+		move.w	d0,d1
+		andi.w	#$1C00,d1		  ; Bits 12-10 - action
 		rol.w	#$07,d1
 		lea	ActionTable(pc),a1
 		adda.w	(a1,d1.w),a1
 		jsr	(a1)
 
-loc_28D86:					  ; CODE XREF: ProcessScriptWord+Ej
+_pswFlags:
 		btst	#$0E,d0			  ; Bit	14 - Clear textbox
-		beq.s	loc_28D90		  ; Bit	13 - Don't process any more words
+		beq.s	_pswEnd
 		bsr.w	ClearTextbox
 
-loc_28D90:					  ; CODE XREF: ProcessScriptWord+26j
+_pswEnd:
 		btst	#$0D,d0			  ; Bit	13 - Don't process any more words
-		beq.s	loc_28D68
+		beq.s	_pswWord
 		movem.l	(sp)+,d0-d1/a0-a1
 		rts
-; End of function ProcessScriptWord
 
 ; ---------------------------------------------------------------------------
-ActionTable:	dc.w LoadItemIntoSlot0-ActionTable ; DATA XREF:	ProcessScriptWord+18t
-						  ; ROM:ActionTableo ...
+ActionTable:	dc.w LoadItemIntoSlot0-ActionTable
 		dc.w LoadItemIntoSlot1-ActionTable
 		dc.w LoadItemIntoSlot2-ActionTable
 		dc.w LoadItemIntoSlot3-ActionTable
@@ -47,168 +54,141 @@ ActionTable:	dc.w LoadItemIntoSlot0-ActionTable ; DATA XREF:	ProcessScriptWord+1
 		dc.w SwitchCharacter-ActionTable
 		dc.w LoadNextCharacter-ActionTable
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DisplayTextFromScriptWord:			  ; CODE XREF: ProcessScriptWord+Cp
+DisplayTextFromScriptWord:
 		move.l	d0,-(sp)
 		andi.w	#$1FFF,d0
 		addi.w	#SCRIPT_STRINGS_BEGIN,d0
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
 		move.l	(sp)+,d0
 		rts
-; End of function DisplayTextFromScriptWord
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadItemIntoSlot0:				  ; DATA XREF: ROM:ActionTableo
+; Actions 0-3: store the argument (or the word at the inline
+; address, when the argument is $3FF) into a text-item slot.
+LoadItemIntoSlot0:
 		movem.l	d0/a1,-(sp)
-		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
+		andi.l	#$000003FF,d0
 		cmpi.w	#$03FF,d0
-		bne.s	loc_28DD8
+		bne.s	_lis0Imm
 		movea.l	(a0)+,a1
 		move.w	(a1),(g_CurrentTextItem).l
-		bra.s	loc_28DDE
+		bra.s	_lis0Done
 ; ---------------------------------------------------------------------------
 
-loc_28DD8:					  ; CODE XREF: LoadItemIntoSlot0+Ej
+_lis0Imm:
 		move.w	d0,(g_CurrentTextItem).l
 
-loc_28DDE:					  ; CODE XREF: LoadItemIntoSlot0+18j
+_lis0Done:
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function LoadItemIntoSlot0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadItemIntoSlot1:				  ; DATA XREF: ROM:ActionTableo
-		movem.l	d0/a1,-(sp)
-		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
-		cmpi.w	#$03FF,d0
-		bne.s	loc_28DFE
-		movea.l	(a0)+,a1
-		move.w	(a1),(word_FF1198).l
-		bra.s	loc_28E04
-; ---------------------------------------------------------------------------
-
-loc_28DFE:					  ; CODE XREF: LoadItemIntoSlot1+Ej
-		move.w	d0,(word_FF1198).l
-
-loc_28E04:					  ; CODE XREF: LoadItemIntoSlot1+18j
-		movem.l	(sp)+,d0/a1
-		rts
-; End of function LoadItemIntoSlot1
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadItemIntoSlot2:				  ; DATA XREF: ROM:ActionTableo
-		movem.l	d0/a1,-(sp)
-		andi.l	#$000003FF,d0		  ; 0x03FF - special value means next operand is an address
-		cmpi.w	#$03FF,d0
-		bne.s	loc_28E24
-		movea.l	(a0)+,a1
-		move.w	(a1),(word_FF119A).l
-		bra.s	loc_28E2A
-; ---------------------------------------------------------------------------
-
-loc_28E24:					  ; CODE XREF: LoadItemIntoSlot2+Ej
-		move.w	d0,(word_FF119A).l
-
-loc_28E2A:					  ; CODE XREF: LoadItemIntoSlot2+18j
-		movem.l	(sp)+,d0/a1
-		rts
-; End of function LoadItemIntoSlot2
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadItemIntoSlot3:				  ; DATA XREF: ROM:ActionTableo
-		movem.l	d0/a1,-(sp)
-		andi.l	#$000003FF,d0
-		cmpi.w	#$03FF,d0		  ; 0x03FF - special value means next operand is an address
-		bne.s	loc_28E4A
-		movea.l	(a0)+,a1
-		move.w	(a1),(word_FF119C).l
-		bra.s	loc_28E50
-; ---------------------------------------------------------------------------
-
-loc_28E4A:					  ; CODE XREF: LoadItemIntoSlot3+Ej
-		move.w	d0,(word_FF119C).l
-
-loc_28E50:					  ; CODE XREF: LoadItemIntoSlot3+18j
-		movem.l	(sp)+,d0/a1
-		rts
-; End of function LoadItemIntoSlot3
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetNumericValue:				  ; DATA XREF: ROM:ActionTableo
+LoadItemIntoSlot1:
 		movem.l	d0/a1,-(sp)
 		andi.l	#$000003FF,d0
 		cmpi.w	#$03FF,d0
-		bne.s	loc_28E70
+		bne.s	_lis1Imm
+		movea.l	(a0)+,a1
+		move.w	(a1),(g_TextItemSlot1).l
+		bra.s	_lis1Done
+; ---------------------------------------------------------------------------
+
+_lis1Imm:
+		move.w	d0,(g_TextItemSlot1).l
+
+_lis1Done:
+		movem.l	(sp)+,d0/a1
+		rts
+
+LoadItemIntoSlot2:
+		movem.l	d0/a1,-(sp)
+		andi.l	#$000003FF,d0
+		cmpi.w	#$03FF,d0
+		bne.s	_lis2Imm
+		movea.l	(a0)+,a1
+		move.w	(a1),(g_TextItemSlot2).l
+		bra.s	_lis2Done
+; ---------------------------------------------------------------------------
+
+_lis2Imm:
+		move.w	d0,(g_TextItemSlot2).l
+
+_lis2Done:
+		movem.l	(sp)+,d0/a1
+		rts
+
+LoadItemIntoSlot3:
+		movem.l	d0/a1,-(sp)
+		andi.l	#$000003FF,d0
+		cmpi.w	#$03FF,d0
+		bne.s	_lis3Imm
+		movea.l	(a0)+,a1
+		move.w	(a1),(g_TextItemSlot3).l
+		bra.s	_lis3Done
+; ---------------------------------------------------------------------------
+
+_lis3Imm:
+		move.w	d0,(g_TextItemSlot3).l
+
+_lis3Done:
+		movem.l	(sp)+,d0/a1
+		rts
+
+; Action 4: set the numeric variable printed by the number control
+; char (a longword when read through an inline address).
+GetNumericValue:
+		movem.l	d0/a1,-(sp)
+		andi.l	#$000003FF,d0
+		cmpi.w	#$03FF,d0
+		bne.s	_gnvImm
 		movea.l	(a0)+,a1
 		move.l	(a1),(g_PrintNumericDwordValue).l
-		bra.s	loc_28E76
+		bra.s	_gnvDone
 ; ---------------------------------------------------------------------------
 
-loc_28E70:					  ; CODE XREF: GetNumericValue+Ej
+_gnvImm:
 		move.l	d0,(g_PrintNumericDwordValue).l
 
-loc_28E76:					  ; CODE XREF: GetNumericValue+18j
+_gnvDone:
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function GetNumericValue
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DoSpecialAction:				  ; DATA XREF: ROM:ActionTableo
+; Action 5: argument < 1000 sets that game flag; 1000+ runs the
+; matching ActionPointerList routine.
+DoSpecialAction:
 		movem.l	d0/a1,-(sp)
 		andi.w	#$03FF,d0
 		cmpi.w	#$03FF,d0		  ; 0x03FF - special command to	load address
-		bne.s	loc_28E8E
+		bne.s	_dsaResolve
 		movea.l	(a0)+,a1
 		move.w	(a1),d0
 
-loc_28E8E:					  ; CODE XREF: DoSpecialAction+Cj
+_dsaResolve:
 		cmpi.w	#01000,d0
-		bcc.s	loc_28E9A
+		bcc.s	_dsaAction
 		bsr.w	SetFlagBit
-		bra.s	loc_28EAC
+		bra.s	_dsaDone
 ; ---------------------------------------------------------------------------
 
-loc_28E9A:					  ; CODE XREF: DoSpecialAction+16j
+_dsaAction:
 		lea	ActionPointerList(pc),a1
 		subi.w	#01000,d0
 		add.w	d0,d0
 		move.w	(a1,d0.w),d0
 		jsr	(a1,d0.w)
 
-loc_28EAC:					  ; CODE XREF: DoSpecialAction+1Cj
+_dsaDone:
 		movem.l	(sp)+,d0/a1
 		rts
-; End of function DoSpecialAction
 
 ; ---------------------------------------------------------------------------
-ActionPointerList:dc.w ReceiveItem-ActionPointerList ; DATA XREF: DoSpecialAction:loc_28E9At
-						  ; ROM:ActionPointerListo ...
-		dc.w ReceiveGold-ActionPointerList
-		dc.w PlayMusicTrack36-ActionPointerList
-		dc.w PlayMusicTrack14-ActionPointerList
+ActionPointerList:dc.w ReceiveItem-ActionPointerList	; 1000
+		dc.w ReceiveGold-ActionPointerList	; 1001
+		dc.w PlayMusicTrack36-ActionPointerList	; 1002
+		dc.w PlayMusicTrack14-ActionPointerList	; 1003
 ; ---------------------------------------------------------------------------
 
-ReceiveItem:					  ; DATA XREF: ROM:ActionPointerListo
+; Special action 1000: give the item in text slot 0 with the chest
+; jingle and the "Got ITEM" message, then restore the room music.
+ReceiveItem:
 		move.l	d0,-(sp)
 		bsr.w	OpenTextbox
 		trap	#$00			  ; Trap00Handler
@@ -229,7 +209,9 @@ ReceiveItem:					  ; DATA XREF: ROM:ActionPointerListo
 		rts
 ; ---------------------------------------------------------------------------
 
-ReceiveGold:					  ; DATA XREF: ROM:00028EB4o
+; Special action 1001: add the numeric variable to the gold count
+; with the chest jingle and the "Got X golds" message.
+ReceiveGold:
 		move.l	d0,-(sp)
 		bsr.w	OpenTextbox
 		trap	#$00			  ; Trap00Handler
@@ -245,7 +227,7 @@ ReceiveGold:					  ; DATA XREF: ROM:00028EB4o
 		rts
 ; ---------------------------------------------------------------------------
 
-PlayMusicTrack36:				  ; DATA XREF: ROM:00028EB6o
+PlayMusicTrack36:
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicHappyVillage
@@ -253,7 +235,7 @@ PlayMusicTrack36:				  ; DATA XREF: ROM:00028EB6o
 		rts
 ; ---------------------------------------------------------------------------
 
-PlayMusicTrack14:				  ; DATA XREF: ROM:00028EB8o
+PlayMusicTrack14:
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicHarbour
@@ -261,183 +243,156 @@ PlayMusicTrack14:				  ; DATA XREF: ROM:00028EB8o
 		rts
 ; ---------------------------------------------------------------------------
 
-SwitchCharacter:				  ; DATA XREF: ROM:ActionTableo
+; Action 6: switch the speaker to the argument character: ids below
+; 1000 are room characters (slot lookup + voice sfx), 1000+ are the
+; special characters (SetSpecialCharacter). Reopens the textbox.
+SwitchCharacter:
 		movem.l	d0-d1/a1,-(sp)
 		andi.w	#$03FF,d0
 		cmpi.w	#$03FF,d0		  ; 0x03FF - special value means next operand is an address
-		bne.s	loc_28F26
+		bne.s	_swcSet
 		movea.l	(a0)+,a1
 		move.w	(a1),d0
 
-loc_28F26:					  ; CODE XREF: ROM:00028F20j
-		move.w	d0,(word_FF1924).l
+_swcSet:
+		move.w	d0,(g_SpeakerCharId).l
 		move.w	d0,(g_CurrentTextItem).l
 		cmpi.w	#01000,d0
-		bcc.s	loc_28F42
+		bcc.s	_swcSpecial
 		bsr.w	LoadNextCharacterFromRoomTbl
 		bsr.w	GetSpeakerSfx
-		bra.s	loc_28F46
+		bra.s	_swcOpen
 ; ---------------------------------------------------------------------------
 
-loc_28F42:					  ; CODE XREF: ROM:00028F36j
+_swcSpecial:
 		bsr.w	SetSpecialCharacter
 
-loc_28F46:					  ; CODE XREF: ROM:00028F40j
+_swcOpen:
 		bsr.w	OpenTextbox
 		movem.l	(sp)+,d0-d1/a1
 		rts
 ; ---------------------------------------------------------------------------
 
-LoadNextCharacter:				  ; DATA XREF: ROM:ActionTableo
+; Action 7: store a character id in g_Character (reset to $FFFF by
+; PlayerTalk).
+LoadNextCharacter:
 		movem.l	d0-d1/a1,-(sp)
 		andi.w	#$03FF,d0		  ; 0x03FF - special value means next operand is an address
 		cmpi.w	#$03FF,d0
-		bne.s	loc_28F62
+		bne.s	_ldcSet
 		movea.l	(a0)+,a1
 		move.w	(a1),d0
 
-loc_28F62:					  ; CODE XREF: ROM:00028F5Cj
+_ldcSet:
 		move.w	d0,(g_Character).l
 		movem.l	(sp)+,d0-d1/a1
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadTextboxGraphics:				  ; CODE XREF: DisplayText+4p
+; Bring the textbox up if it isn't already (g_TextboxState bit 0):
+; redraw it empty, DMA its tilemap and point the raster split at it.
+LoadTextboxGraphics:
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(g_RightArrowCursorState).l
-		bne.s	loc_28F98
+		btst	#$00,(g_TextboxState).l
+		bne.s	_ltgDone
 		bsr.w	j_RefreshAndClearTextbox
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	j_SetTextboxHInt
-		bset	#$00,(g_RightArrowCursorState).l
+		bset	#$00,(g_TextboxState).l
 
-loc_28F98:					  ; CODE XREF: LoadTextboxGraphics+Cj
+_ltgDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function LoadTextboxGraphics
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-OpenTextbox:					  ; CODE XREF: ROM:00028EBCp
-						  ; ROM:00028EE2p ...
+; Reset the textbox to empty and re-DMA it (it stays open).
+OpenTextbox:
 		movem.l	d0-a6,-(sp)
 		bsr.w	j_ReloadTextbox
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function OpenTextbox
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-ClearTextbox:					  ; CODE XREF: ROM:loc_24B3Ep
-						  ; ROM:000250C4p ...
+; Take the textbox down again (if bit 0 says it is up).
+ClearTextbox:
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(g_RightArrowCursorState).l
-		beq.s	loc_28FD2
+		btst	#$00,(g_TextboxState).l
+		beq.s	_ctbDone
 		bsr.w	j_SetUpTextDisplay
-		bclr	#$00,(g_RightArrowCursorState).l
+		bclr	#$00,(g_TextboxState).l
 
-loc_28FD2:					  ; CODE XREF: ClearTextbox+Cj
+_ctbDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function ClearTextbox
-
-
-; =============== S U B	R O U T	I N E =======================================
 
 ; Prints the compressed	string identified by d0
-
-DisplayText:					  ; CODE XREF: ROM:00024AEEp
-						  ; ROM:00024B02p ...
+DisplayText:
 		movem.l	d0-a6,-(sp)
 		bsr.s	LoadTextboxGraphics
 		bsr.w	j_PrintString
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function DisplayText
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetYesNoAnswer:					  ; CODE XREF: HandleShopInterraction+14p
-						  ; ROM:00024F7Cp ...
+; Run the yes/no prompt and reset the textbox afterwards, keeping
+; the answer in the carry flag (set = Yes) and latched in
+; g_YesNoPromptResult ($FF = Yes).
+GetYesNoAnswer:
 		movem.l	d0-a6,-(sp)
 		clr.b	(g_YesNoPromptResult).l
 		bsr.w	j_YesNoPrompt
 		move	sr,-(sp)
-		bcc.s	loc_29000
+		bcc.s	_gynaClose
 		st	(g_YesNoPromptResult).l
 
-loc_29000:					  ; CODE XREF: GetYesNoAnswer+10j
+_gynaClose:
 		bsr.s	OpenTextbox
 		move	(sp)+,ccr
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function GetYesNoAnswer
 
-; ---------------------------------------------------------------------------
-
-NoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+2Ap
-						  ; ROM:00024F92p ...
-		btst	#$01,(g_RightArrowCursorState).l
-		bne.s	locret_29024
+; Shop "can't afford it" effect: stop the music and start the
+; visual effect (script_visualfx), latched by g_TextboxState bit 1.
+NoMoneyEffect:
+		btst	#$01,(g_TextboxState).l
+		bne.s	_nmeDone
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Stop
 ; ---------------------------------------------------------------------------
-		bsr.w	sub_29CC4
-		bset	#$01,(g_RightArrowCursorState).l
+		bsr.w	NoMoneyDarken
+		bset	#$01,(g_TextboxState).l
 
-locret_29024:					  ; CODE XREF: ROM:00029012j
+_nmeDone:
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-RestoreFromNoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+4Ap
-						  ; ROM:00024F9Ap ...
-		btst	#$01,(g_RightArrowCursorState).l
-		beq.s	locret_29044
-		bsr.w	sub_29D16
+; Undo the no-money effect and restart the room music.
+RestoreFromNoMoneyEffect:
+		btst	#$01,(g_TextboxState).l
+		beq.s	_rnmDone
+		bsr.w	NoMoneyBrighten
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MusicChestOpen
 ; ---------------------------------------------------------------------------
-		bsr.w	RestoreBGM_1
-		bclr	#$01,(g_RightArrowCursorState).l
+		bsr.w	RestartBGM
+		bclr	#$01,(g_TextboxState).l
 
-locret_29044:					  ; CODE XREF: sub_29026+8j
+_rnmDone:
 		rts
-; End of function sub_29026
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-Sleep_0:					  ; CODE XREF: ROM:00024B0Ep
-						  ; ROM:00024FA8p ...
+; Script helper: sleep for the number of frames in the inline word
+; after the bsr (the return address is advanced past it).
+ScriptSleep:
 		movem.l	d0/a0,-(sp)
-		movea.l	$00000008(sp),a0	  ; Previous sp
+		movea.l	$00000008(sp),a0	  ; Return address = inline word
 		move.w	(a0)+,d0
 		move.l	a0,$00000008(sp)
 		jsr	(j_Sleep).l
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function Sleep_0
 
-; ---------------------------------------------------------------------------
-
-RestoreBGM_1:					  ; CODE XREF: ROM:000250EEp
-						  ; ROM:00025132p ...
+; Restart the room's music track (g_BGM) from the beginning.
+RestartBGM:
 		move.l	d0,-(sp)
 		clr.w	d0
 		move.b	(g_BGM).l,d0
@@ -448,51 +403,44 @@ RestoreBGM_1:					  ; CODE XREF: ROM:000250EEp
 		move.l	(sp)+,d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdateEkeEke:					  ; CODE XREF: ROM:00024FC0p
-						  ; ROM:00025098p ...
+; Redraw the HUD after a script changed the EkeEke count.
+UpdateEkeEke:
 		movem.l	d0-a6,-(sp)
 		jsr	(j_UpdateEkeEkeHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function UpdateEkeEke
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetSpeakerSfx:					  ; CODE XREF: ROM:000251E2p
-						  ; ROM:00028F3Cp
+; Set the voice blip for speaker slot d1: look up the speaker's
+; sprite and find it in SpriteIdToTalkSfx ({sprite, sfx} byte pairs,
+; $FF-terminated); no match leaves the blip silent. The closing tst
+; always clears carry, so callers' error branches never take.
+GetSpeakerSfx:
 		movem.l	d0-a6,-(sp)
 		clr.b	(g_TalkSoundEffect).l
 		move.b	d1,d0			  ; d0 - current talker	script num
 		jsr	(j_GetSpeakerSpriteId).l  ; d1 - current talker	sprite ID
-		bcs.s	loc_290C2
+		bcs.s	_gssDone
 		move.w	d1,(g_SpeakerSpriteId).l
 		lea	SpriteIdToTalkSfx(pc),a0
 
-loc_290AC:					  ; CODE XREF: GetSpeakerSfx+2Cj
+_gssScan:
 		move.b	(a0)+,d0
 		cmpi.b	#$FF,d0
-		beq.s	loc_290C2
+		beq.s	_gssDone
 		cmp.b	d1,d0
-		beq.s	loc_290BC
+		beq.s	_gssFound
 		addq.l	#$01,a0
-		bra.s	loc_290AC
+		bra.s	_gssScan
 ; ---------------------------------------------------------------------------
 
-loc_290BC:					  ; CODE XREF: GetSpeakerSfx+28j
+_gssFound:
 		move.b	(a0),(g_TalkSoundEffect).l
 
-loc_290C2:					  ; CODE XREF: GetSpeakerSfx+12j
-						  ; GetSpeakerSfx+24j
+_gssDone:
 		tst.w	d0
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function GetSpeakerSfx
 
-; ---------------------------------------------------------------------------
+	modend

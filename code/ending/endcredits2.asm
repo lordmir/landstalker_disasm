@@ -38,8 +38,8 @@ loc_9F662:					  ; CODE XREF: UpdateCreditScroll+20j
 
 
 sub_9F694:					  ; CODE XREF: sub_9F6D4+4p
-		move.w	#$0001,(word_FF1194).l
-		clr.b	(byte_FF1129).l
+		move.w	#$0001,(g_TextCursorX).l
+		clr.b	(g_TextCursorY).l
 		clr.b	-$0000000E(a6)
 		movem.l	d0/d7-a0,-(sp)
 		lea	(g_ScreenBuffer).l,a0
@@ -111,7 +111,7 @@ loc_9F700:					  ; CODE XREF: sub_9F6D4+22j
 		subi.b	#$3F,d0
 	endif
 		ext.w	d0
-		sub.w	d0,(word_FF1194).l
+		sub.w	d0,(g_TextCursorX).l
 		bra.s	loc_9F6DC
 ; ---------------------------------------------------------------------------
 
@@ -163,7 +163,7 @@ sub_9F76E:					  ; CODE XREF: sub_9F6D4+92p
 		lsl.w	#$05,d1
 		movea.l	d1,a1
 		lea	((g_ScreenBuffer+$40)).l,a0
-		move.w	(word_FF1194).l,d1
+		move.w	(g_TextCursorX).l,d1
 		move.w	d1,d2
 		lsr.w	#$02,d1
 		andi.b	#$07,d2
@@ -318,11 +318,11 @@ loc_9F8BA:					  ; CODE XREF: sub_9F886+8j
 loc_9F8C0:					  ; CODE XREF: sub_9F886+16j
 						  ; sub_9F886+44j
 		bsr.w	sub_9F8E0
-		addq.w	#$01,(word_FF1194).l
+		addq.w	#$01,(g_TextCursorX).l
 		dbf	d2,loc_9F8C0
 		lea	((g_Buffer+1)).l,a0
 		bsr.w	sub_9F8E0
-		addq.w	#$01,(word_FF1194).l
+		addq.w	#$01,(g_TextCursorX).l
 		rts
 ; End of function sub_9F886
 
@@ -333,7 +333,7 @@ loc_9F8C0:					  ; CODE XREF: sub_9F886+16j
 sub_9F8E0:					  ; CODE XREF: sub_9F886:loc_9F8C0p
 						  ; sub_9F886+4Ep
 		lea	((g_ScreenBuffer+$40)).l,a1
-		move.w	(word_FF1194).l,d0
+		move.w	(g_TextCursorX).l,d0
 		move.w	d0,d1
 		andi.b	#$F8,d1
 		lsl.w	#$03,d1
@@ -410,7 +410,7 @@ loc_9F962:					  ; CODE XREF: sub_9F8E0:loc_9F956j
 
 
 sub_9F96A:					  ; CODE XREF: sub_9F6D4+8Ep
-		move.w	(word_FF1194).l,d0
+		move.w	(g_TextCursorX).l,d0
 		andi.w	#$000F,d0
 		bne.s	loc_9F978
 		rts
@@ -425,10 +425,10 @@ loc_9F978:					  ; CODE XREF: sub_9F96A+Aj
 ; ---------------------------------------------------------------------------
 
 loc_9F982:					  ; CODE XREF: sub_9F96A+14j
-		move.w	(word_FF1194).l,d0
+		move.w	(g_TextCursorX).l,d0
 		andi.w	#$FFF0,d0
 		addi.w	#$0010,d0
-		move.w	d0,(word_FF1194).l
+		move.w	d0,(g_TextCursorX).l
 		lea	((g_ScreenBuffer+$803)).l,a1
 		moveq	#$0000000F,d6
 		cmpi.b	#$02,d1

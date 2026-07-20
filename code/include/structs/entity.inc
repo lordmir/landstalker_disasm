@@ -207,8 +207,8 @@ InitBehavCmd:         equ $6B
 ; optimisation. Bits 4-7 unused.
 MovedDirFlags:        equ $6D
 ; Unk6E: no writer or dedicated reader found; only touched because the
-; sprite-swap cutscene action (dialogueactions:sub_1587C) swaps the word
-; at $6E to move AnimFlags between the two entities.
+; sprite-swap cutscene action (dialogueactions:SwapSpriteAppearance)
+; swaps the word at $6E to move AnimFlags between the two entities.
 Unk6E:                equ $6E
 ; AnimFlags is not runtime state: it is a per-SpriteGraphic capability byte
 ; looked up from the SpriteAnimFlags table (spritefuncs1.asm) by

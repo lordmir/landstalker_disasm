@@ -16,7 +16,7 @@ ShopPrice_01:
 ; ---------------------------------------------------------------------------
 
 Shop_01:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -44,7 +44,7 @@ ShopPrice_02:
 ; ---------------------------------------------------------------------------
 
 Shop_02:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -72,7 +72,7 @@ ShopPrice_03:
 ; ---------------------------------------------------------------------------
 
 Shop_03:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -100,7 +100,7 @@ ShopPrice_04:
 ; ---------------------------------------------------------------------------
 
 Shop_04:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -128,7 +128,7 @@ ShopPrice_05:
 ; ---------------------------------------------------------------------------
 
 Shop_05:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -156,7 +156,7 @@ ShopPrice_06:
 ; ---------------------------------------------------------------------------
 
 Shop_06:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Sale prompt:	     Run text script at	offset 0x027656
 					; 0xA02E: PRINT	MSG 0x007C, END: "{47}DAS MACHT{43}{46}	TALER, OKAY?{44}"
@@ -179,7 +179,7 @@ ShopPrice_07:
 ; ---------------------------------------------------------------------------
 
 Shop_07:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptJump  ShopSalePrompt_07,$0 ; Sale	prompt:	      Jump to address 0x025CD4
 		ScriptJump  ShopSaleConfirm_07,$1 ; Sale confirmation: Jump to address 0x025CE0
@@ -356,7 +356,7 @@ ShopConfirmMap_07:
 ; ---------------------------------------------------------------------------
 
 HandleIdentifyRecordBook:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $17,$0	; Normal priest:   Run text script at offset 0x027628
 					; 0xE017: PRINT	MSG 0x0065, MSGBOX CLEARED, END: "{47}DIES IST EIN{43}{4B}.{4A}"
@@ -367,7 +367,7 @@ HandleIdentifyRecordBook:
 ; ---------------------------------------------------------------------------
 
 RequestGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $18,$0	; Normal priest:   Run text script at offset 0x02762A
 					; 0xA018: PRINT	MSG 0x0066, END: "{47}DU KANNST	HIER{43}DEINE TATEN AUFZEICHNEN	LASSEN.{43}SOLL	ICH SIE	FESTHALTEN?{44}"
@@ -378,7 +378,7 @@ RequestGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 InitiateGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $19,$0	; Normal priest:   Run text script at offset 0x02762C
 					; 0xA019: PRINT	MSG 0x0067, END: "{47}GUT, LASS	MICH{43}DEINE HELDENTATEN{43}IN	DIESEM BUCH FESTHALTEN.{4E}"
@@ -389,7 +389,7 @@ InitiateGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveCompleteMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $1A,$0	; Normal priest:   Run text script at offset 0x02762E
 					; 0xA01A: PRINT	MSG 0x0068, END: "{47}FERTIG! DEINE{43}MUTIGEN TATEN WERDEN WIR	IMMER{43}IN UNSEREN HERZEN BEHALTEN.{4E}"
@@ -400,7 +400,7 @@ GameSaveCompleteMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveRefusedMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $1B,$0	; Normal priest:   Run text script at offset 0x027630
 					; 0xA01B: PRINT	MSG 0x0069, END: "{47}WIRKLICH?{43}KENNST DU DAS SPRICHWORT{43}"ERST DENKEN, DANN LENKEN"?{4E}"
@@ -411,7 +411,7 @@ GameSaveRefusedMsg:
 ; ---------------------------------------------------------------------------
 
 RequestGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $1C,$0	; Normal priest:   Run text script at offset 0x027632
 					; 0xA01C: PRINT	MSG 0x006A, END: "{47}SETZT DU DEIN{43}ABENTEUER FORT?{44}"
@@ -422,7 +422,7 @@ RequestGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $1D,$0	; Normal priest:   Run text script at offset 0x027634
 					; 0xE01D: PRINT	MSG 0x006B, MSGBOX CLEARED, END: "{47}VIEL GLÜCK!{43}DIE GÖTTIN	WIRD MIT DIR SEIN.{4A}"
@@ -433,7 +433,7 @@ ConfirmGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameStopMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $1E,$0	; Normal priest:   Run text script at offset 0x027636
 					; 0xE01E: PRINT	MSG 0x006C, MSGBOX CLEARED, END: "{47}RUH' DICH ERSTMAL{43}AUS. DIE GÖTTIN SEGNE DICH{43}BEI DEINEM NÄCHSTEN ABENTEUER!{4A}"
@@ -444,7 +444,7 @@ ConfirmGameStopMsg:
 ; ---------------------------------------------------------------------------
 
 HandleRecordBookTheft:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $7,$0	; Normal priest:   Run text script at offset 0x027608
 					; 0xE007: PRINT	MSG 0x0055, MSGBOX CLEARED, END: "{47}HALT!{43}DAS GEHÖRT DER GÖTTIN.{43}ZUM TEUFEL MIT	DIR!{4A}"

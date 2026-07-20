@@ -1,77 +1,72 @@
+ScriptFuncs4	module
+; Script-stub helpers for two-way branches. Each takes three inline
+; words after the bsr - {selector, script A, script B} - runs one of
+; the two script entries through RunTextCmd (offsets relative to the
+; block, as encoded by the ScriptID/ScriptJump macros), then
+; advances the return address past the data so the stub continues.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckFlagAndDisplayMessage:			  ; CODE XREF: ROM:ShopPrice_06_1p
-						  ; ROM:ShopEnter_07p ...
+; {flag id, script if set, script if clear}.
+CheckFlagAndDisplayMessage:
 		movem.l	d0/a0,-(sp)
-		movea.l	$00000008(sp),a0
+		movea.l	$00000008(sp),a0	  ; Return address = inline words
 		move.w	(a0),d0
 		bsr.w	TestFlagBit
-		beq.s	loc_25DAC
+		beq.s	_cfdmClear
 		move.w	$00000002(a0),d0
-		bra.s	loc_25DB0
+		bra.s	_cfdmRun
 ; ---------------------------------------------------------------------------
 
-loc_25DAC:					  ; CODE XREF: CheckFlagAndDisplayMessage+Ej
+_cfdmClear:
 		move.w	$00000004(a0),d0
 
-loc_25DB0:					  ; CODE XREF: CheckFlagAndDisplayMessage+14j
+_cfdmRun:
 		bsr.w	RunTextCmd
-		addq.l	#$06,$00000008(sp)
+		addq.l	#$06,$00000008(sp)	  ; Resume past the data
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function CheckFlagAndDisplayMessage
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetFlagBitOnTalking:				  ; CODE XREF: ROM:CS_0003_2p
-						  ; ROM:CS_0003_3p ...
+; {flag id, script for the first time, script afterwards}: sets the
+; flag on the first run, so the second script plays from then on.
+SetFlagBitOnTalking:
 		movem.l	d0/a0,-(sp)
-		movea.l	$00000008(sp),a0
+		movea.l	$00000008(sp),a0	  ; Return address = inline words
 		move.w	(a0),d0
 		bsr.w	TestFlagBit
-		bne.s	loc_25DD8
+		bne.s	_sfbtAgain
 		bsr.w	SetFlagBit
 		move.w	$00000002(a0),d0
-		bra.s	loc_25DDC
+		bra.s	_sfbtRun
 ; ---------------------------------------------------------------------------
 
-loc_25DD8:					  ; CODE XREF: SetFlagBitOnTalking+Ej
+_sfbtAgain:
 		move.w	$00000004(a0),d0
 
-loc_25DDC:					  ; CODE XREF: SetFlagBitOnTalking+18j
+_sfbtRun:
 		bsr.w	RunTextCmd
-		addq.l	#$06,$00000008(sp)
+		addq.l	#$06,$00000008(sp)	  ; Resume past the data
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function SetFlagBitOnTalking
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleYesNoPrompt:				  ; CODE XREF: ROM:CS_0143p
-						  ; ROM:CS_0002_1p ...
+; {question script, script if Yes, script if No}: asks the question,
+; runs the yes/no prompt (carry set = Yes) and the matching script.
+HandleYesNoPrompt:
 		movem.l	d0/a0,-(sp)
-		movea.l	$00000008(sp),a0
+		movea.l	$00000008(sp),a0	  ; Return address = inline words
 		move.w	(a0),d0
 		bsr.w	RunTextCmd
 		bsr.w	GetYesNoAnswer
-		bcc.s	loc_25E04
+		bcc.s	_hynpNo
 		move.w	$00000002(a0),d0
-		bra.s	loc_25E08
+		bra.s	_hynpRun
 ; ---------------------------------------------------------------------------
 
-loc_25E04:					  ; CODE XREF: HandleYesNoPrompt+12j
+_hynpNo:
 		move.w	$00000004(a0),d0
 
-loc_25E08:					  ; CODE XREF: HandleYesNoPrompt+18j
+_hynpRun:
 		bsr.w	RunTextCmd
-		addq.l	#$06,$00000008(sp)
+		addq.l	#$06,$00000008(sp)	  ; Resume past the data
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function HandleYesNoPrompt
 
+	modend

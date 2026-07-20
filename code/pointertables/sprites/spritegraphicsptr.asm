@@ -1,2 +1,1 @@
-SpriteGfxPtrPtr:dc.l SpriteGfxPtr		  ; DATA XREF: InitSpriteLoad+Co
-						  ; LoadSpriteGfx+10o ...
+SpriteGfxPtrPtr:		dc.l SpriteGfxPtr

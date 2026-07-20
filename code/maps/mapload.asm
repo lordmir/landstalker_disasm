@@ -71,7 +71,7 @@ _pbcDone:
 ; starts a new game: intro flags set, defaults from ClearGameData.
 LoadGame:
 		bsr.s	InitLoadGameState
-		jsr	(j_HideRightArrow).l
+		jsr	(j_ResetTextboxState).l
 		bsr.w	LoadGameSelectScreen
 		bsr.w	ClearAndRefreshVDPSpriteTableDMA
 		tst.w	(Player_X).l

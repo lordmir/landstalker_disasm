@@ -1443,7 +1443,7 @@ _chResolve:
 		move.w	d0,(g_CurrentTextItem).l
 		movem.w	d0,-(sp)
 		bsr.w	_chestOpenAnim
-		jsr	(sub_22EE8).l
+		jsr	(j_SetUpTextbox).l
 		movem.w	(sp)+,d0
 		cmpi.b	#ITM_LIFESTOCK,d0
 		beq.s	_chGive
@@ -1551,7 +1551,7 @@ _chEmpty:
 		bsr.s	_chestAnimStep
 		move.b	#$18,Height(a4)
 		addq.w	#$08,HitBoxZEnd(a4)
-		jsr	(sub_22EE8).l
+		jsr	(j_SetUpTextbox).l
 		jsr	(j_OpenChest).l
 		move.w	#$0014,d0
 		jsr	(j_PrintString).l

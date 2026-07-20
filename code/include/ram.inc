@@ -493,8 +493,10 @@ g_CameraSubY:                     equ $FF1127
 ; Number of queued screen-block VDP copies not yet flushed (tile swaps,
 ; door blocks, block clears); mapload waits for it to drain.
 g_PendingBlockCopies:             equ $FF1128
-byte_FF1129:                      equ $FF1129
-byte_FF112A:                      equ $FF112A
+; Text cursor Y within the textbox (pixels; $10 per text line).
+g_TextCursorY:                    equ $FF1129
+; Text colour (palette index, default $0B); set by a control char.
+g_TextColour:                     equ $FF112A
 g_comprStringLen:                 equ $FF112B
 g_PriBlockset:                    equ $FF112C
 g_SecBlockset:                    equ $FF112D
@@ -522,7 +524,9 @@ g_RoomBGM:                        equ $FF1140
 g_currentSpeakerScriptID:         equ $FF1141
 g_PlayerHurtTimer:                equ $FF1142
 g_PlayerPendingHit:               equ $FF1143
-byte_FF1144:                      equ $FF1144
+; Text engine flags: bit 0 = instant print (no per-glyph flush),
+; bit 1 = always set, bit 5 = talk mode; >>1 = line-home cursor X.
+g_TextFlags:                      equ $FF1144
 g_PlayerAnimation:                equ $FF1145
 g_PlayerStatus:                   equ $FF1146
 g_StatusAnimCounter:              equ $FF1147
@@ -539,7 +543,8 @@ g_EquippedRing:                   equ $FF1151
 g_ItemBeingUsed:                  equ $FF1152
 g_LockPlayerActions:              equ $FF1153
 g_TalkSoundEffect:                equ $FF1154
-byte_FF1155:                      equ $FF1155
+; Talk-mode voice-blip counter (0 = not talking).
+g_TalkBlipCounter:                equ $FF1155
 g_BGM:                            equ $FF1156
 g_GaiaAttackQueued:               equ $FF1157
 g_StepCounter:                    equ $FF1158
@@ -550,16 +555,25 @@ g_SavedBlockCopies:               equ $FF115A
 g_VScrollParity:                  equ $FF1180
 g_PlayerSpeed:                    equ $FF1182
 g_BlockTableIndex:                equ $FF1184
-unk_FF1186:                       equ $FF1186
-word_FF1192:                      equ $FF1192
-word_FF1194:                      equ $FF1194
-; Item id referenced by dialogue/text: chest contents, shop items;
-; string rendering substitutes its name/article into strings.
+; 12-byte glyph row buffer: one byte per pixel of the current font
+; row, decoded by _renderGlyphRow (stringfuncs2).
+g_GlyphRowBuffer:                 equ $FF1186
+; Character currently being rendered; its address also serves as the
+; end sentinel when scanning g_GlyphRowBuffer backwards.
+g_PrintedChar:                    equ $FF1192
+; Text cursor X within the textbox (pixels; auto-wraps past $114).
+g_TextCursorX:                    equ $FF1194
+; The four text-item slots (this is slot 0): item/character ids set
+; by script actions 0-3 (chest contents, shop items, speakers) and
+; popped in order by the string engine's PopItem, which substitutes
+; their names/articles into strings.
 g_CurrentTextItem:                equ $FF1196
-word_FF1198:                      equ $FF1198
-word_FF119A:                      equ $FF119A
-word_FF119C:                      equ $FF119C
-unk_FF119E:                       equ $FF119E
+g_TextItemSlot1:                  equ $FF1198
+g_TextItemSlot2:                  equ $FF119A
+g_TextItemSlot3:                  equ $FF119C
+; Substring inserted into text (names/numbers) as word-sized chars,
+; $FFFF-terminated; drained by GetNextChar before the main string.
+g_InsertedString:                 equ $FF119E
 ; Sprite draw-order list: entity struct offsets ($0000-$0780), sorted
 ; back-to-front by SortSpritesByDepth, terminated by $FFFF.
 g_SpriteDrawList:                 equ $FF11DE
@@ -603,12 +617,16 @@ g_FridayPathDX:                   equ $FF12E8
 g_FridayPathDY:                   equ $FF12EA
 g_GoldenStatueTimer:              equ $FF12EC
 g_IntroStringDisplayTime:         equ $FF12EE
-word_FF12F0:                      equ $FF12F0
+; Trigger TA_74's last-seen Sprite2 X/Y word, updated on each test so
+; the trigger fires whenever sprite 2 moves.
+g_TriggerSprite2LastPos:          equ $FF12F0
 ; Per-entity VDP sprite piece buffers ($40 bytes each, 8 pieces of
 ; {Y, size, tile attr, X}), built by BuildSpritePieces at half the
 ; entity's struct offset.
 g_VdpSpritePieces:                equ $FF1400
-unk_FF1440:                       equ $FF1440
+; = g_VdpSpritePieces + $40: sprite 1's piece buffer, the base
+; SwapSpriteAppearance (dialogueactions) indexes sprites from.
+g_Sprite1VdpPieces:               equ $FF1440
 ; Shared scratch words; the meaning depends on the caller:
 ;  - enemy AIs: the AI sprite's CentreX (1800) / CentreY (1804),
 ;    stashed before calling CheckPlayerInRange
@@ -617,17 +635,24 @@ unk_FF1440:                       equ $FF1440
 ;  - text engine / dialogue actions: misc counters
 g_Scratch1800:                      equ $FF1800
 g_Scratch1804:                     equ $FF1804
-word_FF1808:                      equ $FF1808
-word_FF180C:                      equ $FF180C
+; Palette cycle for the ending treasure shower (dialogueactions):
+; per-step channel increment and the wrap-around replacement colour
+; (g_Scratch1804 holds the running phase).
+g_CoinPalStep:                    equ $FF1808
+g_CoinPalWrap:                    equ $FF180C
 ; Rolling offset (+3 mod 16 per sprite) subtracted from BehavParam
 ; when sprites with behaviour 1 spawn, so identical sprites in a
 ; room don't animate in sync.
 g_BehavPhaseStagger:              equ $FF1838
 g_chestCount:                     equ $FF183C
 g_ScreenBufferPtr:                equ $FF1840
-dword_FF1844:                     equ $FF1844
-dword_FF1848:                     equ $FF1848
-dword_FF184C:                     equ $FF184C
+; Read position in g_InsertedString (0 = none active).
+g_InsertedStringPtr:              equ $FF1844
+; Read position in the huffman-compressed string between characters.
+g_ComprCharPtr:                   equ $FF1848
+; Read position in the script-supplied text items (g_CurrentTextItem
+; onward), advanced by PopItem.
+g_TextItemPtr:                    equ $FF184C
 JmpInstr1:                        equ $FF1850
 JumpInstr2:                       equ $FF1858
 unk_FF1860:                       equ $FF1860
@@ -640,8 +665,12 @@ g_PrintNumericByteValue:          equ $FF187B
 ; Pointer to the sprite the player is talking to (CheckTalk).
 g_TalkingSprite:                  equ $FF187C
 g_FridayAnimPtr:                  equ $FF1880
-g_curDecomprChar:                 equ $FF1900
-g_RightArrowCursorState:          equ $FF1902
+; Last decoded character - the context that picks the huffman tree
+; for the next one (DecodeChar).
+g_HuffPrevChar:                   equ $FF1900
+; Bit 0 = textbox is up (LoadTextboxGraphics/ClearTextbox), bit 1 =
+; shop no-money effect active.
+g_TextboxState:                   equ $FF1902
 ; Item id handed between EB_ShopItem and the shop scripts: the shop-item
 ; sprite's contents byte on pick-up/put-down; the script writes $FF back
 ; to say the sprite should despawn (item bought, stolen or taken).
@@ -653,19 +682,27 @@ g_GameFlagProgress3:              equ $FF1908
 unk_FF190E:                       equ $FF190E
 byte_FF1916:                      equ $FF1916
 byte_FF1917:                      equ $FF1917
-word_FF1920:                      equ $FF1920
-word_FF1922:                      equ $FF1922
-word_FF1924:                      equ $FF1924
+; Partially consumed source byte / bits left in it, kept between
+; DecodeChar calls.
+g_HuffSrcByte:                    equ $FF1920
+g_HuffSrcBitCount:                equ $FF1922
+; Character id of the current speaker (GetSpeakerCharacter).
+g_SpeakerCharId:                  equ $FF1924
 g_Character:                      equ $FF1926
 g_SpeakerSpriteId:                equ $FF1928
-unk_FF192A:                       equ $FF192A
-unk_FF193E:                       equ $FF193E
-word_FF1A7E:                      equ $FF1A7E
-word_FF1A80:                      equ $FF1A80
-unk_FF1A84:                       equ $FF1A84
-word_FF1B04:                      equ $FF1B04
-word_FF1B08:                      equ $FF1B08
-unk_FF1B0C:                       equ $FF1B0C
+; Visual effect state (script_visualfx): per-scanline visibility
+; bitmask and per-line vertical offset table for the raster loop.
+g_FxLineMask:                     equ $FF192A
+g_FxLineOffsets:                  equ $FF193E
+; VDP snapshot taken by the effect engine's _saveVDPState: regs 1,
+; $B, $F, the 64-colour palette, and the base H/V scroll values.
+g_FxSavedReg1:                    equ $FF1A7E
+g_FxSavedRegB:                    equ $FF1A80
+g_FxSavedPalette:                 equ $FF1A84
+g_FxBaseHScroll:                  equ $FF1B04
+g_FxBaseVScroll:                  equ $FF1B08
+; Original palette lines stashed across the shop no-money darkening.
+g_FxPaletteStash:                 equ $FF1B0C
 g_CurrentEquippedItems:           equ $FF1BF0
 g_InvSelectedSlot:                equ $FF1BF2
 g_InvCursorPos:                   equ $FF1BF3

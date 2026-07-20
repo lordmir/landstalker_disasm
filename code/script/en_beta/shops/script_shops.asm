@@ -8,7 +8,7 @@ ShopPrice_01:
 ; ---------------------------------------------------------------------------
 
 Shop_01:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $A,$0	; Sale prompt:	     Run text script at	offset 0x027732
 					; 0xA00A: PRINT	MSG 0x0057, END: "{5B}:	{5A} golds...{57}you wanna buy?{58}"
@@ -28,7 +28,7 @@ ShopPrice_02:
 ; ---------------------------------------------------------------------------
 
 Shop_02:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $41,$0	; Sale prompt:	     Run text script at	offset 0x0277A0
 					; 0xA041: PRINT	MSG 0x008E, END: "{5B}:	That'll cost you{57}{5A} golds.  Still want it?{58}"
@@ -48,7 +48,7 @@ ShopPrice_03:
 ; ---------------------------------------------------------------------------
 
 Shop_03:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $51,$0	; Sale prompt:	     Run text script at	offset 0x0277C0
 					; 0xA051: PRINT	MSG 0x009E, END: "{5B}:	That'll be {5A} golds, OK?{58}"
@@ -68,7 +68,7 @@ ShopPrice_04:
 ; ---------------------------------------------------------------------------
 
 Shop_04:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $59,$0	; Sale prompt:	     Run text script at	offset 0x0277D0
 					; 0xA059: PRINT	MSG 0x00A6, END: "{5B}:	You want this?{57}{5A} golds, stranger.{58}"
@@ -88,7 +88,7 @@ ShopPrice_05:
 ; ---------------------------------------------------------------------------
 
 Shop_05:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $69,$0	; Sale prompt:	     Run text script at	offset 0x0277F0
 					; 0xA069: PRINT	MSG 0x00B6, END: "{5B}:	{5A} golds.{57}Shall I wrap it up for you?{58}"
@@ -107,7 +107,7 @@ ShopPrice_06:
 ; ---------------------------------------------------------------------------
 
 Shop_06:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $72,$0	; Sale prompt:	     Run text script at	offset 0x027802
 					; 0xA072: PRINT	MSG 0x00BF, END: "{5B}:	For you, just {5A} golds{57}for	one {5F}, okay?{58}"
@@ -138,7 +138,7 @@ ShopPrice_07:
 ; ---------------------------------------------------------------------------
 
 Shop_07:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptJump  ShopSalePrompt_07,$0 ; Sale	prompt:	      Jump to address 0x025DF8
 		ScriptJump  ShopSaleConfirm_07,$1 ; Sale confirmation: Jump to address 0x025E04
@@ -267,7 +267,7 @@ ShopConfirmMap_07:
 ; ---------------------------------------------------------------------------
 
 HandleIdentifyRecordBook:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $28,$0	; Normal priest:   Run text script at offset 0x02776E
 					; 0xE028: PRINT	MSG 0x0075, MSGBOX CLEARED, END: "{5B}:	That's a {5F}.{5E}"
@@ -278,7 +278,7 @@ HandleIdentifyRecordBook:
 ; ---------------------------------------------------------------------------
 
 RequestGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $29,$0	; Normal priest:   Run text script at offset 0x027770
 					; 0xA029: PRINT	MSG 0x0076, END: "{5B}:	You can	record for free.{57}Keep a record now?{58}"
@@ -289,7 +289,7 @@ RequestGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 InitiateGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2A,$0	; Normal priest:   Run text script at offset 0x027772
 					; 0xA02A: PRINT	MSG 0x0077, END: "{5B}:	All right, then	let me{57}make a record	of your{57}adventure in	this book.{62}"
@@ -300,7 +300,7 @@ InitiateGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveCompleteMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2B,$0	; Normal priest:   Run text script at offset 0x027774
 					; 0xA02B: PRINT	MSG 0x0078, END: "{5B}:	Finished!{57}Your brave	deeds shall{57}remain in our hearts forever.{62}"
@@ -311,7 +311,7 @@ GameSaveCompleteMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveRefusedMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2C,$0	; Normal priest:   Run text script at offset 0x027776
 					; 0xA02C: PRINT	MSG 0x0079, END: "{5B}:	Really?	 Do you{57}know	the saying{57}"Look before you leap"?{62}"
@@ -322,7 +322,7 @@ GameSaveRefusedMsg:
 ; ---------------------------------------------------------------------------
 
 RequestGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2D,$0	; Normal priest:   Run text script at offset 0x027778
 					; 0xA02D: PRINT	MSG 0x007A, END: "{5B}:	Are you	going to{57}continue your adventure?{58}"
@@ -333,7 +333,7 @@ RequestGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2E,$0	; Normal priest:   Run text script at offset 0x02777A
 					; 0xE02E: PRINT	MSG 0x007B, MSGBOX CLEARED, END: "{5B}:	Good Luck!{57}The goddess is{57}watching you.{5E}"
@@ -344,7 +344,7 @@ ConfirmGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameStopMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2F,$0	; Normal priest:   Run text script at offset 0x02777C
 					; 0xE02F: PRINT	MSG 0x007C, MSGBOX CLEARED, END: "{5B}:	Now, take a rest.{57}May the goddess bless you{57}in your next adventure!{5E}"
@@ -355,7 +355,7 @@ ConfirmGameStopMsg:
 ; ---------------------------------------------------------------------------
 
 HandleRecordBookTheft:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $14,$0	; Normal priest:   Run text script at offset 0x027746
 					; 0xE014: PRINT	MSG 0x0061, MSGBOX CLEARED, END: "{5B}:	Stop!{57}That belongs to the goddess.{57}Deuce take you!{5E}"

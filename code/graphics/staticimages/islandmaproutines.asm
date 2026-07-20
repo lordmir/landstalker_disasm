@@ -510,9 +510,9 @@ MapTextCoords:	dc.w $0188,$00D8		  ; DATA XREF: sub_3E9F8:loc_3EA76t
 
 
 sub_3EB0E:					  ; CODE XREF: DisplayIslandMap+74p
-		move.w	#$0001,(word_FF1194).l
-		clr.b	(byte_FF1129).l
-		move.b	#$01,(byte_FF112A).l
+		move.w	#$0001,(g_TextCursorX).l
+		clr.b	(g_TextCursorY).l
+		move.b	#$01,(g_TextColour).l
 		lea	(g_ScreenBuffer).l,a1
 		moveq	#$00000000,d1
 		move.w	#$027F,d7
@@ -520,7 +520,7 @@ sub_3EB0E:					  ; CODE XREF: DisplayIslandMap+74p
 loc_3EB30:					  ; CODE XREF: sub_3EB0E+24j
 		move.l	d1,(a1)+
 		dbf	d7,loc_3EB30
-		jsr	(sub_22F10).l
+		jsr	(j_GetIslandMapLocation).l
 		ext.w	d6
 		move.w	d6,-$00000084(a6)
 		bpl.s	loc_3EB46
@@ -532,7 +532,7 @@ loc_3EB46:					  ; CODE XREF: sub_3EB0E+34j
 		clr.w	d0
 		move.b	(a2)+,d0
 		movem.l	d7/a2,-(sp)
-		jsr	(sub_22EFC).l
+		jsr	(j_DrawTextGlyph).l
 		movem.l	(sp)+,d7/a2
 		dbf	d7,loc_3EB46
 		rts

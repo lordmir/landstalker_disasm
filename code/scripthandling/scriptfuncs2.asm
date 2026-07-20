@@ -1,246 +1,270 @@
+ScriptFuncs2	module
+; Speaker resolution: which character the player is talking to and
+; which script runs for them. RoomDialogueTable holds, per room, a
+; header word {bits 14-11: entry count, bits 10-0: room number}
+; followed by that many entry words {bits 14-11: run length,
+; bits 10-0: first character id} - each declaring a run of
+; consecutive character ids occupying the room's next dialogue
+; slots. A speaker's slot index (g_currentSpeakerScriptID) resolves
+; to a character id by walking the runs.
+;
+; The "? ERROR 7" paths: when DebugModeEnable is zero (the retail
+; state), a missing table entry shows the error script via trap #1;
+; otherwise it is silently skipped. Either way the lookup returns
+; carry set.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-PlayerTalk:					  ; DATA XREF: j_PlayerTalkt
+; Talk to the current speaker: resolve their character id and run
+; their script from CharacterScriptTable. Holding Down on pad 2
+; while talking opens the debug menu instead (retail cheat; only
+; while DebugModeEnable is zero).
+PlayerTalk:
 		movem.l	d0-a6,-(sp)
 		move.w	#$FFFF,(g_Character).l
 		btst	#CTRL_DOWN,(g_Controller2State).l
-		beq.s	loc_251B8
+		beq.s	_ptTalk
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_251B8
+		bne.s	_ptTalk
 		bsr.w	DebugMenu
-		bra.s	loc_251CA
+		bra.s	_ptDone
 ; ---------------------------------------------------------------------------
 
-loc_251B8:					  ; CODE XREF: PlayerTalk+14j
-						  ; PlayerTalk+1Aj
-		bsr.s	loc_251D0
-		bcs.s	loc_251CA
+_ptTalk:
+		bsr.s	GetSpeakerCharacter
+		bcs.s	_ptDone
 		lea	CharacterScriptTable(pc),a0
 		add.w	d0,d0
 		move.w	(a0,d0.w),d0
 		bsr.w	RunTextCmd
 
-loc_251CA:					  ; CODE XREF: PlayerTalk+20j
-						  ; PlayerTalk+24j
+_ptDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function PlayerTalk
 
-; ---------------------------------------------------------------------------
-
-loc_251D0:					  ; CODE XREF: sub_24A98+10p
-						  ; PlayerTalk:loc_251B8p
+; Resolve dialogue slot g_currentSpeakerScriptID in the current
+; room to a character id: d0 = character, also stored in
+; g_SpeakerCharId and g_CurrentTextItem (so text can print the
+; speaker's name). Sets the voice blip on the way (GetSpeakerSfx,
+; whose closing tst means its error branch never takes). Carry set =
+; not found. Also used by the shop flow (shopscriptfuncs1).
+GetSpeakerCharacter:
 		movem.l	d1-d2/d4/a0,-(sp)
 		bsr.w	GetDialogueForRoom
-		bcs.s	loc_25212
+		bcs.s	_gscDone
 		clr.w	d1
 		move.b	(g_currentSpeakerScriptID).l,d1
 		bsr.w	GetSpeakerSfx
-		bcs.s	loc_25212
+		bcs.s	_gscDone
 		subq.w	#$01,d2
 
-loc_251EA:					  ; CODE XREF: ROM:000251FEj
+_gscEntry:
 		move.w	(a0)+,d0
 		move.w	d0,d4
 		andi.w	#$7800,d4
-		rol.w	#$05,d4
-		andi.w	#$07FF,d0
+		rol.w	#$05,d4			  ; Run length
+		andi.w	#$07FF,d0		  ; First character id
 		cmp.w	d4,d1
-		blt.s	loc_25204
+		blt.s	_gscFound
 		sub.w	d4,d1
-		dbf	d2,loc_251EA
-		bra.s	loc_25218
+		dbf	d2,_gscEntry
+		bra.s	_gscError
 ; ---------------------------------------------------------------------------
 
-loc_25204:					  ; CODE XREF: ROM:000251FAj
-		add.w	d1,d0
-		move.w	d0,(word_FF1924).l
+_gscFound:
+		add.w	d1,d0			  ; Character = run base + remainder
+		move.w	d0,(g_SpeakerCharId).l
 		move.w	d0,(g_CurrentTextItem).l
 
-loc_25212:					  ; CODE XREF: ROM:000251D8j
-						  ; ROM:000251E6j ...
+_gscDone:
 		movem.l	(sp)+,d1-d2/d4/a0
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_25218:					  ; CODE XREF: ROM:00025202j
+_gscError:
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_25222
+		bne.s	_gscFail
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $3,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
-						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+					; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
 	endif
 ; ---------------------------------------------------------------------------
 
-loc_25222:					  ; CODE XREF: ROM:0002521Cj
+_gscFail:
 		ori	#$01,ccr
-		bra.s	loc_25212
+		bra.s	_gscDone
 ; ---------------------------------------------------------------------------
 
-LoadNextCharacterFromRoomTbl:			  ; CODE XREF: ROM:00028F38p
+; The reverse mapping: find character d0 among the current room's
+; runs and store its dialogue slot index in
+; g_currentSpeakerScriptID. Used when a script switches speaker.
+LoadNextCharacterFromRoomTbl:
 		movem.l	d2-d4/a0,-(sp)
 		bsr.s	GetDialogueForRoom
-		bcs.s	loc_2525C
+		bcs.s	_lncDone
 		clr.w	d1
 		subq.w	#$01,d2
 
-loc_25234:					  ; CODE XREF: ROM:00025250j
+_lncEntry:
 		move.w	(a0)+,d3
 		move.w	d3,d4
 		andi.w	#$7800,d4		  ; dialogue idx
-		rol.w	#$05,d4
+		rol.w	#$05,d4			  ; Run length
 		andi.w	#$07FF,d3		  ; character
 		subq.w	#$01,d4
 
-loc_25244:					  ; CODE XREF: ROM:0002524Cj
+_lncSlot:
 		cmp.w	d3,d0
-		beq.s	loc_25256
+		beq.s	_lncFound
 		addq.w	#$01,d1
 		addq.w	#$01,d3
-		dbf	d4,loc_25244
-		dbf	d2,loc_25234
-		bra.s	loc_25262
+		dbf	d4,_lncSlot
+		dbf	d2,_lncEntry
+		bra.s	_lncError
 ; ---------------------------------------------------------------------------
 
-loc_25256:					  ; CODE XREF: ROM:00025246j
+_lncFound:
 		move.b	d1,(g_currentSpeakerScriptID).l
 
-loc_2525C:					  ; CODE XREF: ROM:0002522Ej
-						  ; ROM:00025270j
+_lncDone:
 		movem.l	(sp)+,d2-d4/a0
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_25262:					  ; CODE XREF: ROM:00025254j
+_lncError:
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_2526C
+		bne.s	_lncFail
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $4,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
-						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+					; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
 	endif
 ; ---------------------------------------------------------------------------
 
-loc_2526C:					  ; CODE XREF: ROM:00025266j
+_lncFail:
 		ori	#$01,ccr
-		bra.s	loc_2525C
+		bra.s	_lncDone
 ; ---------------------------------------------------------------------------
 
-GetDialogueForRoom:				  ; CODE XREF: ROM:000251D4p
-						  ; ROM:0002522Cp
+; Find the current room (g_OriginalRoom) in RoomDialogueTable:
+; a0 = its first entry word, d2 = entry count, carry clear. A
+; negative header word terminates the table (carry set = no entry).
+GetDialogueForRoom:
 		movem.w	d0-d1,-(sp)
 		move.w	(g_OriginalRoom).l,d0
 		lea	RoomDialogueTable(pc),a0
 
-loc_25280:					  ; CODE XREF: ROM:00025298j
+_gdrScan:
 		move.w	(a0)+,d1
-		blt.s	loc_252A0
+		blt.s	_gdrError
 		move.w	d1,d2
 		andi.w	#$7800,d2
-		rol.w	#$05,d2
-		andi.w	#$07FF,d1
+		rol.w	#$05,d2			  ; Entry count
+		andi.w	#$07FF,d1		  ; Room number
 		cmp.w	d0,d1
-		beq.s	loc_2529A
+		beq.s	_gdrDone
+		adda.w	d2,a0			  ; Skip this room's entries
 		adda.w	d2,a0
-		adda.w	d2,a0
-		bra.s	loc_25280
+		bra.s	_gdrScan
 ; ---------------------------------------------------------------------------
 
-loc_2529A:					  ; CODE XREF: ROM:00025292j
-						  ; ROM:000252AEj
+_gdrDone:
 		movem.w	(sp)+,d0-d1
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_252A0:					  ; CODE XREF: ROM:00025282j
+_gdrError:
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_252AA
+		bne.s	_gdrFail
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $2,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
-						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+					; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
 	endif
 ; ---------------------------------------------------------------------------
 
-loc_252AA:					  ; CODE XREF: ROM:000252A4j
+_gdrFail:
 		ori	#$01,ccr
-		bra.s	loc_2529A
+		bra.s	_gdrDone
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandleProgressDependentDialogue:		  ; CODE XREF: ROM:CS_0000p
-						  ; ROM:CS_0001p ...
+; Run a character's progress-dependent dialogue. First refresh the
+; eight story-progress bytes (GetFlagProgress recomputes
+; g_GameFlagProgress1..+7 from the game flags), raising each to at
+; least the value in the block at unk_FF190E (nothing appears to
+; write that block - the merge looks like a vestigial floor).
+;
+; Inline data after the bsr: 4-byte records {progress byte index,
+; threshold, script id word}, ascending, ended by a record whose
+; first byte is negative. Scanning backwards, the last record whose
+; threshold <= the current progress runs; the rts then returns from
+; the calling stub (its return address is discarded).
+HandleProgressDependentDialogue:
 		movem.l	d0/a0-a2,-(sp)
 		bsr.w	GetFlagProgress
 		lea	(g_GameFlagProgress1).l,a0
 		lea	(unk_FF190E).l,a1
 		moveq	#$00000007,d0
 
-loc_252C6:					  ; CODE XREF: HandleProgressDependentDialogue:loc_252D0j
+_hpdMerge:
 		cmpm.b	(a1)+,(a0)+
-		bcc.s	loc_252D0
+		bcc.s	_hpdNext
 		move.b	-$00000001(a1),-$00000001(a0)
 
-loc_252D0:					  ; CODE XREF: HandleProgressDependentDialogue+18j
-		dbf	d0,loc_252C6
-		movea.l	$00000010(sp),a0	  ; Previous PC
+_hpdNext:
+		dbf	d0,_hpdMerge
+		movea.l	$00000010(sp),a0	  ; Return address = inline records
 		movea.l	a0,a1
 
-loc_252DA:					  ; CODE XREF: HandleProgressDependentDialogue+30j
+_hpdFindEnd:
 		tst.b	(a1)
-		blt.s	loc_252E2		  ; Reached end	of list	of cmds?
+		blt.s	_hpdScan		  ; Reached end	of list	of cmds?
 		addq.l	#$04,a1
-		bra.s	loc_252DA
+		bra.s	_hpdFindEnd
 ; ---------------------------------------------------------------------------
 
-loc_252E2:					  ; CODE XREF: HandleProgressDependentDialogue+2Cj
+_hpdScan:
 		clr.w	d0
 		lea	(g_GameFlagProgress1).l,a2
 
-loc_252EA:					  ; CODE XREF: HandleProgressDependentDialogue+4Aj
+_hpdRecord:
 		subq.l	#$04,a1
 		cmpa.l	a0,a1			  ; No match found
-		bcs.s	loc_2530C
-		move.b	(a1),d0
+		bcs.s	_hpdError
+		move.b	(a1),d0			  ; Progress byte index
 		move.b	(a2,d0.w),d0
-		cmp.b	$00000001(a1),d0
-		blt.s	loc_252EA
+		cmp.b	$00000001(a1),d0	  ; Below this record's threshold?
+		blt.s	_hpdRecord
 		move.w	$00000002(a1),d0
 		bsr.w	RunTextCmd
 
-loc_25304:					  ; CODE XREF: HandleProgressDependentDialogue:loc_25316j
+_hpdDone:
 		movem.l	(sp)+,d0/a0-a2
-		addq.l	#$04,sp
+		addq.l	#$04,sp			  ; Skip the inline data
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_2530C:					  ; CODE XREF: HandleProgressDependentDialogue+3Ej
+_hpdError:
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_25316
+		bne.s	_hpdFail
 		trap	#$01			  ; Trap01Handler
 ; ---------------------------------------------------------------------------
 	if	((REGION=JP)!(REGION=US_BETA))
 		ScriptID     $5,$0
 	else
 		ScriptID    $0,$0		  ; Run	text script at offset 0x0277F6
-						  ; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
+					; 0xE000: PRINT MSG 0x004D, MSGBOX CLEARED, END: "? ERROR 7{5E}"
 	endif
 ; ---------------------------------------------------------------------------
 
-loc_25316:					  ; CODE XREF: HandleProgressDependentDialogue+60j
-		bra.s	loc_25304
-; End of function HandleProgressDependentDialogue
+_hpdFail:
+		bra.s	_hpdDone
 
+	modend

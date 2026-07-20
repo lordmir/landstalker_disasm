@@ -1,97 +1,107 @@
+StringFuncs3	module
+; The huffman string decoder, the dialogue yes/no prompt and the
+; item menu's Use/Equip prompt.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitHuffmanDecomp:				  ; CODE XREF: PrintString+1Ap
-		move.b	#CHR_STR_BEGIN,(g_curDecomprChar).l ; 1st char is always 55
-		clr.w	(word_FF1922).l
-		clr.w	(word_FF1920).l
+; Reset the decoder for a new string: the tree context starts as
+; CHR_STR_BEGIN (every string follows one) with no bits buffered.
+InitHuffmanDecomp:
+		move.b	#CHR_STR_BEGIN,(g_HuffPrevChar).l
+		clr.w	(g_HuffSrcBitCount).l
+		clr.w	(g_HuffSrcByte).l
 		rts
-; End of function InitHuffmanDecomp
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecodeChar:					  ; CODE XREF: GetNextChar+10p
+; Decode one character from the compressed stream at a0 (left
+; pointing past the last byte consumed). The encoding is contextual:
+; the previous character (g_HuffPrevChar) selects a tree through
+; HuffTableOffsets/HuffTables. A tree is a bit stream - 0 = internal
+; node, 1 = leaf - with its leaf characters stored in reverse order
+; in the bytes just before the tree.
+;
+; Walk: at each internal node read one source bit; 0 descends into
+; the next subtree, 1 skips it whole (d4 tracks depth, d5 counts the
+; leaves passed). Landing on a leaf bit ends the walk: the character
+; is the |d5|'th byte before the tree start. The partial source byte
+; and its bit count persist across calls (g_HuffSrcByte /
+; g_HuffSrcBitCount, accessed via a3; -$22(a3) = g_HuffPrevChar).
+DecodeChar:
 		movem.l	d1-d7/a1-a3,-(sp)
-		lea	(word_FF1922).l,a3
+		lea	(g_HuffSrcBitCount).l,a3
 		move.w	(a3),d6
-		move.w	-$00000002(a3),d7
+		move.w	-$00000002(a3),d7	  ; g_HuffSrcByte
 		clr.w	d1
-		move.b	-$00000022(a3),d1
+		move.b	-$00000022(a3),d1	  ; g_HuffPrevChar picks the tree
 		add.w	d1,d1
 		lea	HuffTableOffsets(pc),a1
 		move.w	(a1,d1.w),d1
 		lea	HuffTables(pc),a1
 		adda.w	d1,a1
-		movea.l	a1,a2
+		movea.l	a1,a2			  ; a2 - tree start (chars before it)
 		clr.w	d3
-		clr.w	d5
+		clr.w	d5			  ; d5 - leaf index (negative)
 
-loc_246DE:					  ; CODE XREF: DecodeChar+42j
-						  ; DecodeChar+5Cj
+_dcNextNode:
 		dbf	d3,_SkipReadingHuffByte
-		moveq	#$00000007,d3		  ; D3 - Tree Bit Counter
+		moveq	#$00000007,d3		  ; d3 - Tree bit counter
 		move.b	(a1)+,d2		  ; d2 - Tree byte
 
-_SkipReadingHuffByte:				  ; CODE XREF: DecodeChar:loc_246DEj
+_SkipReadingHuffByte:
 		add.b	d2,d2
-		bcs.s	loc_24710		  ; Next tree bit set? END
+		bcs.s	_dcLeaf			  ; Tree bit set: landed on our leaf
 		dbf	d6,_SkipReadingStringByte
 		moveq	#$00000007,d6		  ; d6 - Src String Bit	Counter
 		move.b	(a0)+,d7		  ; d7 - Src String Byte
 
-_SkipReadingStringByte:				  ; CODE XREF: DecodeChar+38j
+_SkipReadingStringByte:
 		add.b	d7,d7
-		bcc.s	loc_246DE		  ; Next string	bit clear?
-		clr.w	d4			  ; d4 - tree depth
+		bcc.s	_dcNextNode		  ; Source bit clear: descend
+		clr.w	d4			  ; d4 - skipped subtree depth
 
-loc_246F8:					  ; CODE XREF: DecodeChar+54j
-						  ; DecodeChar+58j
-		dbf	d3,_SkipReadingHuffByte1  ; Get	next bit
+_dcSkipTree:
+		dbf	d3,_SkipReadingHuffByte1  ; Get	next tree bit
 		moveq	#$00000007,d3
 		move.b	(a1)+,d2
 
-_SkipReadingHuffByte1:				  ; CODE XREF: DecodeChar:loc_246F8j
-		add.b	d2,d2			  ; Get	next bit
-		bcs.s	loc_24708		  ; MSB	set?
-		addq.w	#$01,d4			  ; Increment d4 and loop
-		bra.s	loc_246F8
+_SkipReadingHuffByte1:
+		add.b	d2,d2
+		bcs.s	_dcSkipLeaf
+		addq.w	#$01,d4			  ; Internal node: one level deeper
+		bra.s	_dcSkipTree
 ; ---------------------------------------------------------------------------
 
-loc_24708:					  ; CODE XREF: DecodeChar+50j
-		subq.w	#$01,d5			  ; Decrement d5 - Leaf	index
-		dbf	d4,loc_246F8		  ; Decrement d4, loop back if non-zero
-		bra.s	loc_246DE
+_dcSkipLeaf:
+		subq.w	#$01,d5			  ; Pass this subtree's leaf
+		dbf	d4,_dcSkipTree		  ; Pop; subtree done when depth runs out
+		bra.s	_dcNextNode
 ; ---------------------------------------------------------------------------
 
-loc_24710:					  ; CODE XREF: DecodeChar+36j
-		move.b	-$00000001(a2,d5.w),d0
+_dcLeaf:
+		move.b	-$00000001(a2,d5.w),d0	  ; Leaf chars stored backwards before the tree
 		move.w	d6,(a3)
 		move.w	d7,-$00000002(a3)
-		move.b	d0,-$00000022(a3)
+		move.b	d0,-$00000022(a3)	  ; New context char
 		movem.l	(sp)+,d1-d7/a1-a3
 		rts
-; End of function DecodeChar
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
-		bsr.w	sub_24998
-		move.w	#$0050,(word_FF1194).l
+; The dialogue yes/no choice: print strings 0/1 ("Yes" at buffer X
+; $50, "No" at $A0 - $A8 on DE) on the current textbox line and run
+; a blinking right-arrow cursor (sprite 2, palette 3) beside them.
+; Left/right move between screen X $D0 and $120 ($128 DE); only
+; buttons released since the last press register (mask d2). A/C
+; confirm, B cancels straight to "No".
+; Returns carry set = Yes (see GetYesNoAnswer).
+YesNoPrompt:
+		bsr.w	_loadRightArrowGfx
+		move.w	#$0050,(g_TextCursorX).l
 		move.w	#$0000,d0		  ; Yes
-		jsr	(j_PrintString_0).l
+		jsr	(j_PrintStringInstantly).l
 	if REGION=DE
-		move.w	#$00A8,(word_FF1194).l
+		move.w	#$00A8,(g_TextCursorX).l
 	else
-		move.w	#$00A0,(word_FF1194).l
+		move.w	#$00A0,(g_TextCursorX).l
 	endif
 		move.w	#$0001,d0		  ; No
-		jsr	(j_PrintString_0).l
-		move.b	(byte_FF1129).l,d1
+		jsr	(j_PrintStringInstantly).l
+		move.b	(g_TextCursorY).l,d1
 		ext.w	d1
 	if	REGION=JP
 		addi.w	#$0128,d1
@@ -101,43 +111,43 @@ YesNoPrompt:					  ; DATA XREF: j_YesNoPromptt
 		move.b	#$05,(g_VDPSpr02_Size).l
 		move.w	#$E524,(g_VDPSpr02_TileSource).l
 		move.w	#$00D0,(g_VDPSpr02_X).l
-		clr.b	(g_Scratch1800).l
+		clr.b	(g_Scratch1800).l	  ; Blink timer
 		clr.b	d2
 
-loc_24778:					  ; CODE XREF: YesNoPrompt+AEj
-						  ; YesNoPrompt+DCj ...
+_ynTick:
 		move.w	d1,(g_VDPSpr02_Y).l
 		tst.b	(g_Scratch1800).l
-		bpl.s	loc_2478C
-		clr.w	(g_VDPSpr02_Y).l
+		bpl.s	_ynWait
+		clr.w	(g_VDPSpr02_Y).l	  ; Blink off phase
 
-loc_2478C:					  ; CODE XREF: YesNoPrompt+60j
+_ynWait:
 		jsr	(j_WaitUntilVBlank).l
 		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
-		and.b	d2,d0
+		and.b	d2,d0			  ; Fresh presses only
 		andi.b	#$70,d0
-		beq.s	loc_247AE
-		btst	#$04,d0
-		bne.s	loc_24822
-		bra.s	loc_247D4
+		beq.s	_ynIdle
+		btst	#$04,d0			  ; B
+		bne.s	_ynCancel
+		bra.s	_ynConfirm
 ; ---------------------------------------------------------------------------
 
-loc_247AE:					  ; CODE XREF: YesNoPrompt+80j
+_ynIdle:
 		move.b	(g_Controller1State).l,d2
-		eori.b	#$70,d2
+		eori.b	#$70,d2			  ; Released buttons may register next
 		btst	#CTRL_RIGHT,(g_Controller1State).l
-		bne.s	loc_247E8
+		bne.s	_ynRight
 		btst	#CTRL_LEFT,(g_Controller1State).l
-		bne.s	loc_24804
+		bne.s	_ynLeft
 
-loc_247CC:					  ; CODE XREF: YesNoPrompt+CCj
-						  ; YesNoPrompt+E8j
-		addq.b	#$08,(g_Scratch1800).l
-		bra.s	loc_24778
+_ynBlink:
+		addq.b	#$08,(g_Scratch1800).l	  ; 16 frames on, 16 off
+		bra.s	_ynTick
 ; ---------------------------------------------------------------------------
 
-loc_247D4:					  ; CODE XREF: YesNoPrompt+88j
+; A/C: the answer is where the arrow is - carry set (X = $D0, on
+; "Yes") or clear (on "No").
+_ynConfirm:
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MenuOpen
@@ -147,54 +157,55 @@ loc_247D4:					  ; CODE XREF: YesNoPrompt+88j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_247E8:					  ; CODE XREF: YesNoPrompt+9Cj
+_ynRight:
 	if REGION=DE
 		cmpi.w	#$0128,(g_VDPSpr02_X).l
 	else
 		cmpi.w	#$0120,(g_VDPSpr02_X).l
 	endif
-		beq.s	loc_247CC
+		beq.s	_ynBlink
 	if REGION=DE
 		move.w	#$0128,(g_VDPSpr02_X).l
 	else
 		move.w	#$0120,(g_VDPSpr02_X).l
 	endif
 		clr.b	(g_Scratch1800).l
-		bra.w	loc_24778
+		bra.w	_ynTick
 ; ---------------------------------------------------------------------------
 
-loc_24804:					  ; CODE XREF: YesNoPrompt+A6j
+_ynLeft:
 		cmpi.w	#$00D0,(g_VDPSpr02_X).l
-		beq.w	loc_247CC
+		beq.w	_ynBlink
 		move.w	#$00D0,(g_VDPSpr02_X).l
 		clr.b	(g_Scratch1800).l
-		bra.w	loc_24778
+		bra.w	_ynTick
 ; ---------------------------------------------------------------------------
 
-loc_24822:					  ; CODE XREF: YesNoPrompt+86j
+; B: answer No (tst clears carry).
+_ynCancel:
 		clr.w	(g_VDPSpr02_Y).l
 		tst.b	d0
 		rts
-; End of function YesNoPrompt
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
-		bsr.w	sub_24998
+; Draw the item menu's action bar: strings 2/3 ("Use" / "Equip") on
+; a fresh textbox, with the right-arrow cursor (sprite 79, palette
+; 0) parked on the first option. The arrow Y is stashed in
+; g_Scratch1800 for RunUseEquipPrompt, whose low byte then becomes
+; the blink timer. Called when the menu opens (CheckForMenuOpen).
+LoadUseEquipPrompt:
+		bsr.w	_loadRightArrowGfx
 		bsr.w	ReloadTextbox
-		move.w	#$0050,(word_FF1194).l
+		move.w	#$0050,(g_TextCursorX).l
 		move.w	#$0002,d0
-		jsr	(j_PrintString_0).l
+		jsr	(j_PrintStringInstantly).l
 	if REGION=DE
-		move.w	#$00A8,(word_FF1194).l
+		move.w	#$00A8,(g_TextCursorX).l
 	else
-		move.w	#$00A0,(word_FF1194).l
+		move.w	#$00A0,(g_TextCursorX).l
 	endif
 		move.w	#$0003,d0
-		jsr	(j_PrintString_0).l
-		move.b	(byte_FF1129).l,d1
+		jsr	(j_PrintStringInstantly).l
+		move.b	(g_TextCursorY).l,d1
 		ext.w	d1
 	if	REGION=JP
 		addi.w	#$0138,d1
@@ -207,51 +218,52 @@ LoadYesNoPrompt:				  ; DATA XREF: j_LoadYesNoPromptt
 		move.w	d1,(g_VDPSpr79_Y).l
 		move.w	d1,(g_Scratch1800).l
 		rts
-; End of function LoadYesNoPrompt
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_2488A:					  ; DATA XREF: sub_22E8Ct
-		move.w	(g_Scratch1800).l,d1
-		clr.b	(g_Scratch1800).l
+; Run the Use/Equip choice (same cursor scheme as YesNoPrompt, on
+; sprite 79). Hovering the second option draws the equip inventory
+; in the menu window as a preview; moving back clears it again (the
+; sprite is re-initialised after each redraw). Returns carry set
+; with d0 = 0 (Use) / 1 (Equip), or carry clear on B (close the
+; menu). Called from CheckForMenuOpen via j_RunUseEquipPrompt.
+RunUseEquipPrompt:
+		move.w	(g_Scratch1800).l,d1	  ; Arrow Y from LoadUseEquipPrompt
+		clr.b	(g_Scratch1800).l	  ; Now the blink timer
 		clr.b	d2
 
-loc_24898:					  ; CODE XREF: sub_2488A+6Aj
-						  ; sub_2488A+C4j ...
+_uepTick:
 		move.w	d1,(g_VDPSpr79_Y).l
 		tst.b	(g_Scratch1800).l
-		bpl.s	loc_248AC
-		clr.w	(g_VDPSpr79_Y).l
+		bpl.s	_uepWait
+		clr.w	(g_VDPSpr79_Y).l	  ; Blink off phase
 
-loc_248AC:					  ; CODE XREF: sub_2488A+1Aj
+_uepWait:
 		jsr	(j_WaitUntilVBlank).l
 		jsr	(j_UpdateControllerInputs).l
 		move.b	(g_Controller1State).l,d0
-		and.b	d2,d0
+		and.b	d2,d0			  ; Fresh presses only
 		andi.b	#$70,d0
-		beq.s	loc_248D0
-		btst	#$04,d0
-		bne.w	loc_2498E
-		bra.s	loc_248F6
+		beq.s	_uepIdle
+		btst	#$04,d0			  ; B
+		bne.w	_uepCancel
+		bra.s	_uepConfirm
 ; ---------------------------------------------------------------------------
 
-loc_248D0:					  ; CODE XREF: sub_2488A+3Aj
+_uepIdle:
 		move.b	(g_Controller1State).l,d2
-		eori.b	#$70,d2
+		eori.b	#$70,d2			  ; Released buttons may register next
 		btst	#CTRL_RIGHT,(g_Controller1State).l
-		bne.s	loc_24916
+		bne.s	_uepRight
 		btst	#CTRL_LEFT,(g_Controller1State).l
-		bne.s	loc_24952
+		bne.s	_uepLeft
 
-loc_248EE:					  ; CODE XREF: sub_2488A+94j
-						  ; sub_2488A+D0j
+_uepBlink:
 		addq.b	#$08,(g_Scratch1800).l
-		bra.s	loc_24898
+		bra.s	_uepTick
 ; ---------------------------------------------------------------------------
 
-loc_248F6:					  ; CODE XREF: sub_2488A+44j
+; A/C: d0 = 0 on the first option (X = $D0, Use) else 1 (Equip),
+; carry set = a choice was made.
+_uepConfirm:
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_MenuOpen
@@ -259,21 +271,21 @@ loc_248F6:					  ; CODE XREF: sub_2488A+44j
 		move.w	d1,(g_VDPSpr79_Y).l
 		clr.b	d0
 		cmpi.w	#$00D0,(g_VDPSpr79_X).l
-		beq.s	loc_24910
+		beq.s	_uepAnswer
 		move.b	#$01,d0
 
-loc_24910:					  ; CODE XREF: sub_2488A+80j
+_uepAnswer:
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_24916:					  ; CODE XREF: sub_2488A+58j
+_uepRight:
 	if REGION=DE
 		cmpi.w	#$0128,(g_VDPSpr79_X).l
 	else
 		cmpi.w	#$0120,(g_VDPSpr79_X).l
 	endif
-		beq.w	loc_248EE
+		beq.w	_uepBlink
 	if REGION=DE
 		move.w	#$0128,(g_VDPSpr79_X).l
 	else
@@ -283,42 +295,38 @@ loc_24916:					  ; CODE XREF: sub_2488A+58j
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		clr.b	(g_Scratch1800).l
 		movem.w	d1-d2,-(sp)
-		jsr	(j_DrawEquipInventory).l
+		jsr	(j_DrawEquipInventory).l  ; Preview the equip screen
 		movem.w	(sp)+,d1-d2
-		bra.w	loc_24898
+		bra.w	_uepTick
 ; ---------------------------------------------------------------------------
 
-loc_24952:					  ; CODE XREF: sub_2488A+62j
+_uepLeft:
 		cmpi.w	#$00D0,(g_VDPSpr79_X).l
-		beq.w	loc_248EE
+		beq.w	_uepBlink
 		move.w	#$00D0,(g_VDPSpr79_X).l
 		move.b	#$05,(g_VDPSpr79_Size).l
 		move.w	#$8524,(g_VDPSpr79_TileSource).l
 		clr.b	(g_Scratch1800).l
 		movem.w	d1-d2,-(sp)
-		jsr	(j_ClearInventoryWindow).l
+		jsr	(j_ClearInventoryWindow).l ; Clear the preview
 		movem.w	(sp)+,d1-d2
-		bra.w	loc_24898
+		bra.w	_uepTick
 ; ---------------------------------------------------------------------------
 
-loc_2498E:					  ; CODE XREF: sub_2488A+40j
+; B: close the menu (tst clears carry).
+_uepCancel:
 		clr.w	(g_VDPSpr79_Y).l
 		tst.b	d0
 		rts
-; End of function sub_2488A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_24998:					  ; CODE XREF: YesNoPromptp
-						  ; LoadYesNoPromptp
+; Queue the right-arrow cursor graphics (2 tiles) into VRAM $A480
+; (the same slot the dialogue continue arrow uses).
+_loadRightArrowGfx:
 		lea	RightArrowGfx(pc),a0
 		lea	($0000A480).l,a1
 		move.w	#$0040,d0
 		jsr	(j_QueueDMAOp).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function sub_24998
 
-; ---------------------------------------------------------------------------
+	modend

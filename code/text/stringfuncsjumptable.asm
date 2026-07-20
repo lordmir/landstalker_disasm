@@ -1,332 +1,118 @@
+StringFuncsJumpTable	module
+; Long-callable thunks into the text, prompt, shop and script code:
+; jsr (j_X).l from anywhere lands here and takes a pc-relative jmp
+; to the target, so callers don't depend on where the targets sit.
 
-; =============== S U B	R O U T	I N E =======================================
+j_LoadUseEquipPrompt:
+		jmp	LoadUseEquipPrompt(pc)
 
-; Attributes: thunk
+j_RunUseEquipPrompt:
+		jmp	RunUseEquipPrompt(pc)
 
-j_LoadYesNoPrompt:				  ; DATA XREF: CheckForMenuOpen+8Ct
-		jmp	LoadYesNoPrompt(pc)
-; End of function j_LoadYesNoPrompt
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_22E8C:					  ; DATA XREF: CheckForMenuOpen+96t
-		jmp	sub_2488A(pc)
-; End of function sub_22E8C
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_PrintString:					  ; CODE XREF: DisplayText+6p
-						  ; DATA XREF: CheckOpenChest+B8t ...
+j_PrintString:
 		jmp	PrintString(pc)
-; End of function j_PrintString
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RefreshAndClearTextbox:			  ; CODE XREF: LoadTextboxGraphics+Ep
-						  ; DATA XREF: CheckForMenuOpen+44t ...
+j_RefreshAndClearTextbox:
 		jmp	RefreshAndClearTextbox(pc)
-; End of function j_RefreshAndClearTextbox
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_ReloadTextbox:				  ; CODE XREF: OpenTextbox+4p
-						  ; DATA XREF: OnTick:EB_PrintTextt
+j_ReloadTextbox:
 		jmp	ReloadTextbox(pc)
-; End of function j_ReloadTextbox
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_SetTextboxHInt:				  ; CODE XREF: LoadTextboxGraphics+1Ep
+j_SetTextboxHInt:
 		jmp	SetTextboxHInt(pc)
-; End of function j_SetTextboxHInt
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_SetUpTextDisplay:				  ; CODE XREF: ClearTextbox+Ep
-						  ; DATA XREF: LoadGameSelectScreen+Et	...
+j_SetUpTextDisplay:
 		jmp	SetUpTextDisplay(pc)
-; End of function j_SetUpTextDisplay
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunShopWelcome:					  ; DATA XREF: CheckShopEnter+24t
-						  ; ROM:CSA_00F0t
+j_RunShopWelcome:
 		jmp	RunShopWelcome(pc)
-; End of function j_RunShopWelcome
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunShopFarewell:					  ; DATA XREF: DoorWarp+4Ct
-						  ; CheckShopExit:loc_9C3At	...
+j_RunShopFarewell:
 		jmp	RunShopFarewell(pc)
-; End of function j_RunShopFarewell
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunShopItemPickUp:					  ; DATA XREF: OnTick+FEEt
+j_RunShopItemPickUp:
 		jmp	RunShopItemPickUp(pc)
-; End of function j_RunShopItemPickUp
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunShopItemPutDown:					  ; DATA XREF: OnTick+105At
+j_RunShopItemPutDown:
 		jmp	RunShopItemPutDown(pc)
-; End of function j_RunShopItemPutDown
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunShopSteal:					  ; DATA XREF: CheckShopExit+34t
-						  ; ROM:000145BCt
+j_RunShopSteal:
 		jmp	RunShopSteal(pc)
-; End of function j_RunShopSteal
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_PlayerTalk:					  ; DATA XREF: CheckTalk+120t
-						  ; CheckTalk+1CCt ...
+j_PlayerTalk:
 		jmp	PlayerTalk(pc)
-; End of function j_PlayerTalk
 
-; ---------------------------------------------------------------------------
-		jmp	ProcessScriptWord(pc)
+		jmp	ProcessScriptWord(pc)	; Unused thunk
 
-; =============== S U B	R O U T	I N E =======================================
+j_ResetTextboxState:
+		jmp	ResetTextboxState(pc)
 
-; Attributes: thunk
-
-j_HideRightArrow:				  ; DATA XREF: LoadGame+2t
-		jmp	HideRightArrow(pc)
-; End of function j_HideRightArrow
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_LoadUncompressedString:			  ; DATA XREF: sub_D5E4+6t
-						  ; j_j_LoadUncompressedStringt
+j_LoadUncompressedString:
 		jmp	LoadUncompressedString(pc)
-; End of function j_LoadUncompressedString
 
+j_PrintStringInstantly:
+		jmp	PrintStringInstantly(pc)
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_PrintString_0:				  ; DATA XREF: OnTick+156Ct
-						  ; YesNoPrompt+10t ...
-		jmp	PrintString_0(pc)
-; End of function j_PrintString_0
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_YesNoPrompt:					  ; CODE XREF: GetYesNoAnswer+Ap
+j_YesNoPrompt:
 		jmp	YesNoPrompt(pc)
-; End of function j_YesNoPrompt
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_GetItemQtyAndMaxQty:				  ; DATA XREF: DoorWarp+492t
-						  ; CheckOpenChest:loc_711Et ...
+j_GetItemQtyAndMaxQty:
 		jmp	GetItemQtyAndMaxQty(pc)
-; End of function j_GetItemQtyAndMaxQty
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_SetItemQuantity:				  ; DATA XREF: ROM:000089D2t
-						  ; ROM:00008D1At ...
+j_SetItemQuantity:
 		jmp	SetItemQuantity(pc)
-; End of function j_SetItemQuantity
 
-; ---------------------------------------------------------------------------
-		jmp	GetItemEquipSlot(pc)
-; ---------------------------------------------------------------------------
-		jmp	GetItemBuyPrice(pc)
+		jmp	GetItemEquipSlot(pc)	; Unused thunk
 
-; =============== S U B	R O U T	I N E =======================================
+		jmp	GetItemBuyPrice(pc)	; Unused thunk
 
-; Attributes: thunk
-
-j_GetItemUseStringIdx:				  ; DATA XREF: ROM:0000DB74t
+j_GetItemUseStringIdx:
 		jmp	GetItemUseStringIdx(pc)
-; End of function j_GetItemUseStringIdx
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_RunTextCmd:					  ; DATA XREF: Trap01Handler+Et
-						  ; Trap02Handler+12t
+j_RunTextCmd:
 		jmp	RunTextCmd(pc)
-; End of function j_RunTextCmd
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_22EE8:					  ; DATA XREF: CheckOpenChest+7At
-						  ; CheckOpenChest+1AEt ...
+j_SetUpTextbox:
 		jmp	SetUpTextbox(pc)
-; End of function sub_22EE8
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_Cosine:					  ; DATA XREF: sub_E8F8+7Et
-						  ; sub_3EA28+6t
+j_Cosine:
 		jmp	Cosine(pc)
-; End of function j_Cosine
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_Sine:					  ; DATA XREF: sub_E446+16t
-						  ; sub_E8F8+68t ...
+j_Sine:
 		jmp	Sine(pc)
-; End of function j_Sine
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_GetRemainingItemAllowedCount:			  ; DATA XREF: ROM:000162BCt
-						  ; InitialiseSprites:loc_1967Et
+j_GetRemainingItemAllowedCount:
 		jmp	GetRemainingItemAllowedCount(pc)
-; End of function j_GetRemainingItemAllowedCount
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_PlayCutsceneScript:				  ; DATA XREF: ROM:00008C3Ct
-						  ; ROM:00008D0Ct ...
+j_PlayCutsceneScript:
 		jmp	PlayCutsceneScript(pc)
-; End of function j_PlayCutsceneScript
 
+j_DrawTextGlyph:
+		jmp	DrawTextGlyph(pc)
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_22EFC:					  ; DATA XREF: sub_F61E+8t
-						  ; sub_3EB0E+40t
-		jmp	sub_235FE(pc)
-; End of function sub_22EFC
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_DebugGetAllItems:				  ; DATA XREF: sub_2F00+2t
+j_DebugGetAllItems:
 		jmp	DebugGetAllItems(pc)
-; End of function j_DebugGetAllItems
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_GetSaveLocationString:			  ; DATA XREF: sub_F578+16t
+j_GetSaveLocationString:
 		jmp	GetSaveLocationString(pc)
-; End of function j_GetSaveLocationString
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_GetItem:					  ; DATA XREF: CheckOpenChest+106t
-						  ; OnTick:loc_18816t
+j_GetItem:
 		jmp	GetItem(pc)
-; End of function j_GetItem
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_CheckAndConsumeItem:				  ; DATA XREF: ConsumeItem+Et
-						  ; LoadPlayerSpecialAnimation+136t ...
+j_CheckAndConsumeItem:
 		jmp	CheckAndConsumeItem(pc)
-; End of function j_CheckAndConsumeItem
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_22F10:					  ; DATA XREF: sub_3EB0E+28t
+j_GetIslandMapLocation:
 		jmp	GetIslandMapLocation(pc)
-; End of function sub_22F10
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-j_ClearTextbox:					  ; DATA XREF: ROM:00014B74t
-						  ; ROM:00014BB6t ...
+j_ClearTextbox:
 		jmp	ClearTextbox(pc)
-; End of function j_ClearTextbox
 
-; ---------------------------------------------------------------------------
-		jmp	SpellBook(pc)
+		jmp	SpellBook(pc)		; Unused thunk
 
 	if REGION=DE
 j_GetItemFoundString:
 		jmp GetItemFoundString(pc)
 	endif
+
+	modend

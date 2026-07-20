@@ -1,3 +1,6 @@
+ScriptFuncsFlags	module
+; Game flag helpers: a flag id is a bit index into the g_Flags
+; array - byte id>>3, bit id&7.
 
 SetFlagBit:
 		movem.l	d0/a0,-(sp)
@@ -5,9 +8,6 @@ SetFlagBit:
 		bset	d0,(a0)
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function SetFlagBit
-
-; ---------------------------------------------------------------------------
 
 ClearFlagBit:
 		movem.l	d0/a0,-(sp)
@@ -15,7 +15,6 @@ ClearFlagBit:
 		bclr	d0,(a0)
 		movem.l	(sp)+,d0/a0
 		rts
-; ---------------------------------------------------------------------------
 
 ToggleFlagBit:
 		movem.l	d0/a0,-(sp)
@@ -24,24 +23,16 @@ ToggleFlagBit:
 		movem.l	(sp)+,d0/a0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-TestFlagBit:					  ; CODE XREF: ROM:00024AF8p
-						  ; ROM:0002514Cp ...
+; Flags: NE = flag d0 is set.
+TestFlagBit:
 		movem.l	d0/a0,-(sp)
 		bsr.s	ConvertFlagNumberToBit
 		btst	d0,(a0)
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function TestFlagBit
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-ConvertFlagNumberToBit:				  ; CODE XREF: SetFlagBit+4p
-						  ; ROM:00029434p ...
+; Split flag id d0 into a0 = its byte in g_Flags and d0 = the bit.
+ConvertFlagNumberToBit:
 		move.l	d1,-(sp)
 		lea	(g_Flags).l,a0
 		move.w	d0,d1
@@ -50,4 +41,5 @@ ConvertFlagNumberToBit:				  ; CODE XREF: SetFlagBit+4p
 		andi.w	#$0007,d0
 		move.l	(sp)+,d1
 		rts
-; End of function ConvertFlagNumberToBit
+
+	modend

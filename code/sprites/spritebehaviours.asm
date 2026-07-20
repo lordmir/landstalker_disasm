@@ -1383,7 +1383,7 @@ _lootItem:
 
 _lootMsg:
 		jsr	(j_FlushDMACopyQueue).l
-		jsr	(sub_22EE8).l
+		jsr	(j_SetUpTextbox).l
 	if REGION=DE
 		move.w	#2,d0
 		jsr		(j_GetItemFoundString).l
@@ -2048,7 +2048,7 @@ EB_PrintText:
 		lsl.w	#$08,d0
 		movea.l	BehaviourLUTPtr(a5),a6
 		move.b	2(a6),d0
-		jsr	(j_PrintString_0).l
+		jsr	(j_PrintStringInstantly).l
 		moveq	#$3,d0
 		bsr.w	LoadNextCmd
 		bra.w	ProcessNextCmd

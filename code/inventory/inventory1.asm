@@ -8,7 +8,8 @@ Inventory1	module
 ; in progress, or an object is mid-lift (carrying is fine once the
 ; lift has settled at phase $17). Fades out, switches the VDP to
 ; the menu layout (H-int off, scroll and sprites cleared, the map
-; plane blanked) and hands over to the menu loop (sub_22E8C).
+; plane blanked) and hands over to the Use/Equip action bar
+; (j_LoadUseEquipPrompt / j_RunUseEquipPrompt, stringfuncs3).
 ; On return: carry clear = plain close; d0 = 0 = use the selected
 ; item (_useItem); anything else = the Equip option - run the
 ; equip screen (RunEquipMenu), apply the new equipment and
@@ -55,9 +56,9 @@ _blankPlane:
 		dbf	d7,_blankPlane
 		bsr.w	QueueInventoryScrBTilemapDMA
 		bsr.w	ClearInventoryWindow
-		jsr	(j_LoadYesNoPrompt).l
+		jsr	(j_LoadUseEquipPrompt).l
 		bsr.w	FadeInFromDarkness
-		jsr	(sub_22E8C).l
+		jsr	(j_RunUseEquipPrompt).l
 		bcc.w	_closeMenu
 		tst.b	d0
 		beq.w	_useItem
