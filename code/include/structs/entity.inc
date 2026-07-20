@@ -175,10 +175,8 @@ DrawOrder:            equ $56
 ; room load (mapload) or by the follow-up cutscene action. Only the
 ; Player_TempHealth mirror is referenced.
 TempHealth:           equ $58
-TargetX:              equ $5A
-TargetY:              equ $5B
-TargetSubX:           equ $5C
-TargetSubY:           equ $5D
+TargetX:              equ $5A ; word: target X (12.4 pixels), set by behaviour cmd $5B
+TargetY:              equ $5C ; word: target Y (12.4 pixels)
 ; SavedBehaviourLUTPtr (long, $5E-$61) / SavedBehavParam / SavedBehavCmd:
 ; together with SavedSpeed ($49), the behaviour state saved by
 ; CheckPickUpEntity when the player picks the sprite up. Restored by the

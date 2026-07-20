@@ -21,7 +21,7 @@ Tileset04Anim02Ptr:		dc.l	Tileset04Anim02
 Tileset18Anim01Ptr:		dc.l	Tileset18Anim01
 Tileset09Anim01Ptr:		dc.l	Tileset09Anim01
 Tileset17Anim01Ptr:		dc.l	Tileset17Anim01
-IntroFontPtr:			dc.l IntroFont
+IntroFontPtr:			dc.l 	IntroFont
 
 Tilesets:	dc.l Tileset01
 			dc.l Tileset02

@@ -1,25 +1,37 @@
-; ---------------------------------------------------------------------------
+Nole	module
+; AI for SPR_NOLE, the duel with King Nole. An axe fighter with the
+; spectres' vanishing trick: his opener (and his B routine) is the
+; vanish - sinking through ACT_ATTACK5/6, then hidden (InteractFlags
+; bit 6), invincible and floating (Z $100, no gravity) while he
+; chases invisibly; after at least $1E ticks hidden he teleports in
+; beside the player (TeleportBesidePlayer, included below, with his
+; taller $1F hitbox) and fades back in. Visible, he swings his axe to
+; loose the axe projectile (SPR_NOLEAXEPROJECTILE, AttackStrength
+; $1E00 - the hardest-hitting attack in the game - at speed 8; he
+; never lets go of the axe itself) from up to $A0 away, and swings
+; it in melee (deep $21 box), leaping in or standing.
 
-EnemyAI_Nole_B:					  ; CODE XREF: ROM:001A86A2j
+; B routine (behaviour command $2B): chase, opening with the vanish.
+EnemyAI_Nole_B:
 		bra.s	EnemyAI_Nole
-; ---------------------------------------------------------------------------
 
-EnemyAI_Nole_A:					  ; CODE XREF: ROM:001A869Ej
+; A routine, run every tick.
+EnemyAI_Nole_A:
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AE896
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AE89C
+		beq.s	_idle
 		cmpi.b	#$10,d0
-		beq.s	loc_1AE8CE
-		bra.w	loc_1AEAE4
-; ---------------------------------------------------------------------------
+		beq.s	_chase
+		bra.w	_attackStates
 
-loc_1AE896:					  ; CODE XREF: ROM:001AE884j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AE89C:					  ; CODE XREF: ROM:001AE88Aj
+; State 0: run the placed behaviour until the player enters the
+; detection box ($60 ahead, $20 behind, $30 lateral), then aggro.
+_idle:
 		bsr.w	j_j_OnTick
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
@@ -27,60 +39,52 @@ loc_1AE89C:					  ; CODE XREF: ROM:001AE88Aj
 		move.w	#$0020,d6
 		move.w	#$0030,d7
 		bsr.w	CheckPlayerInRange
-		bcs.s	sub_1AE8CA
+		bcs.s	_startChase
 		rts
-; ---------------------------------------------------------------------------
 
-EnemyAI_Nole:					  ; CODE XREF: ROM:EnemyAI_Nole_Bj
-		bsr.s	sub_1AE8CA
-		bra.w	loc_1AE9FE
+; Aggro / hitstun recovery: chase, and vanish straight away.
+EnemyAI_Nole:
+		bsr.s	_startChase
+		bra.w	_startVanish
 
-; =============== S U B	R O U T	I N E =======================================
-
-; Attributes: thunk
-
-sub_1AE8CA:					  ; CODE XREF: ROM:001AE8C0j
-						  ; ROM:EnemyAI_Nolep ...
+_startChase:
 		bra.w	StartEnemyChase
-; End of function sub_1AE8CA
 
-; ---------------------------------------------------------------------------
-
-loc_1AE8CE:					  ; CODE XREF: ROM:001AE890j
+; State $10: chasing (invisibly, while vanished - the reappear try
+; is gated on AICounter reaching $1E first). Try each move in turn.
+_chase:
 		btst	#$06,InteractFlags(a5)
-		beq.s	loc_1AE8E6
+		beq.s	_chaseMoves
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$1E,AICounter(a5)
-		bcs.s	loc_1AE912
+		bcs.s	_chaseTick
 		subq.b	#$01,AICounter(a5)
 
-loc_1AE8E6:					  ; CODE XREF: ROM:001AE8D4j
+_chaseMoves:
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
-		bsr.w	sub_1AE91C
-		bcs.s	loc_1AE912
-		bsr.w	sub_1AE9EE
-		bcs.s	loc_1AE912
-		bsr.w	sub_1AEA1C
-		bcs.s	loc_1AE912
-		bsr.w	sub_1AEA64
-		bcs.s	loc_1AE912
-		bsr.w	sub_1AEAAC
+		bsr.w	_tryReappear
+		bcs.s	_chaseTick
+		bsr.w	_tryVanish
+		bcs.s	_chaseTick
+		bsr.w	_tryProjectile
+		bcs.s	_chaseTick
+		bsr.w	_tryLeapSwing
+		bcs.s	_chaseTick
+		bsr.w	_trySwing
 
-loc_1AE912:					  ; CODE XREF: ROM:001AE8E0j
-						  ; ROM:001AE8FAj ...
+_chaseTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
+
+; Unreachable leftover: the player-in-hitstun chase reload the other
+; enemies have - Nole's chase never branches here.
 		bra.w	RunChaseBehaviour
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE91C:					  ; CODE XREF: ROM:001AE8F6p
-
-; FUNCTION CHUNK AT 001AE9D4 SIZE 0000001A BYTES
-
+; Hidden only: 31-in-100 chance to teleport in beside the player (at
+; his height, hitbox top $1F above); success starts the fade-in
+; (state $25).
+_tryReappear:
 		btst	#$06,InteractFlags(a5)
 		beq.w	TeleportFail
 		move.w	#00100,d6
@@ -89,260 +93,240 @@ sub_1AE91C:					  ; CODE XREF: ROM:001AE8F6p
 		bhi.w	TeleportFail
 		move.w	#$001F,d1
 		bsr.s	TeleportBesidePlayer
-		bcs.w	loc_1AE9D4
+		bcs.w	_startReappear
 		rts
-; End of function sub_1AE91C
 
         include         "code/gamelogic/ai/enemyteleport.asm"
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1AE91C
-
-loc_1AE9D4:					  ; CODE XREF: sub_1AE91C+22j
+_startReappear:
 		move.b	#$25,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1AE91C
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AE9EE:					  ; CODE XREF: ROM:001AE8FCp
+; 2-in-100 chance to vanish (state $20). Also Nole's opener.
+_tryVanish:
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00001,d7
-		bhi.s	loc_1AEA18
+		bhi.s	_vanishMiss
 
-loc_1AE9FE:					  ; CODE XREF: ROM:001AE8C6j
+_startVanish:
 		move.b	#$20,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEA18:					  ; CODE XREF: sub_1AE9EE+Ej
+_vanishMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AE9EE
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEA1C:					  ; CODE XREF: ROM:001AE902p
+; Visible, player in the $28-$A0 band ahead, $10 lateral: 301-in-1000
+; chance to summon the axe projectile (state $21).
+_tryProjectile:
 		btst	#$06,InteractFlags(a5)
-		bne.s	loc_1AEA60
+		bne.s	_projectileMiss
 		move.w	#$00A0,d5
 		move.w	#$FFD8,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AEA60
+		bcc.s	_projectileMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00300,d7
-		bhi.s	loc_1AEA60
+		bhi.s	_projectileMiss
 		move.b	#$21,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEA60:					  ; CODE XREF: sub_1AEA1C+6j
-						  ; sub_1AEA1C+18j ...
+_projectileMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AEA1C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEA64:					  ; CODE XREF: ROM:001AE908p
+; Visible, player within $48 ahead, $30 behind, $10 lateral:
+; 26-in-1000 chance to leap in swinging (state $22,
+; BHVS_LEAP_ADVANCE).
+_tryLeapSwing:
 		btst	#$06,InteractFlags(a5)
-		bne.s	loc_1AEAA8
+		bne.s	_leapSwingMiss
 		move.w	#$0048,d5
 		move.w	#$0030,d6
 		move.w	#$0010,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AEAA8
+		bcc.s	_leapSwingMiss
 		move.w	#01000,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00025,d7
-		bhi.s	loc_1AEAA8
+		bhi.s	_leapSwingMiss
 		move.b	#$22,AIState(a5)
 		move.w	#BHVS_LEAP_ADVANCE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEAA8:					  ; CODE XREF: sub_1AEA64+6j
-						  ; sub_1AEA64+18j ...
+_leapSwingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AEA64
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEAAC:					  ; CODE XREF: ROM:001AE90Ep
+; Visible, player within $20 ahead, $8 lateral: swing, always (state
+; $23).
+_trySwing:
 		btst	#$06,InteractFlags(a5)
-		bne.s	loc_1AEAE0
+		bne.s	_swingMiss
 		move.w	#$0020,d5
 		move.w	#$0000,d6
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
-		bcc.s	loc_1AEAE0
+		bcc.s	_swingMiss
 		move.b	#$23,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AnimPhase(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEAE0:					  ; CODE XREF: sub_1AEAAC+6j
-						  ; sub_1AEAAC+18j
+_swingMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AEAAC
 
-; ---------------------------------------------------------------------------
-
-loc_1AEAE4:					  ; CODE XREF: ROM:001AE892j
+; States $20+: 0 = vanish, 1 = the axe projectile, 2/3/4 = axe swing,
+; 5+ = reappear.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	loc_1AEB0C
+		beq.s	_vanish
 		cmpi.b	#$01,d0
-		beq.w	loc_1AEB8C
+		beq.w	_projectile
 		cmpi.b	#$02,d0
-		beq.w	loc_1AEBFC
+		beq.w	_swing
 		cmpi.b	#$03,d0
-		beq.w	loc_1AEBFC
+		beq.w	_swing
 		cmpi.b	#$04,d0
-		beq.w	loc_1AEBFC
-		bra.s	loc_1AEB54
-; ---------------------------------------------------------------------------
+		beq.w	_swing
+		bra.s	_reappear
 
-loc_1AEB0C:					  ; CODE XREF: ROM:001AEAE8j
+; Vanish: invincible from the first tick, sinking through
+; ACT_ATTACK5 (4 ticks) and ACT_ATTACK6 (to 8), then hidden
+; (InteractFlags bit 6) at the floating height with gravity off -
+; and back to the chase state, invisible.
+_vanish:
 		bset	#$00,CombatFlags(a5)
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$04,AICounter(a5)
-		bcs.s	locret_1AEB52
+		bcs.s	_vanishRts
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		cmpi.b	#$08,AICounter(a5)
-		bcs.s	locret_1AEB52
+		bcs.s	_vanishRts
 		bset	#$06,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		bset	#$07,FallRate(a5)
 		clr.b	AICounter(a5)
-		bra.w	sub_1AE8CA
-; ---------------------------------------------------------------------------
+		bra.w	_startChase
 
-locret_1AEB52:					  ; CODE XREF: ROM:001AEB22j
-						  ; ROM:001AEB30j
+_vanishRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEB54:					  ; CODE XREF: ROM:001AEB0Aj
+; Reappear: visible again, playing the sink poses in reverse
+; (ACT_ATTACK6 then 5, 4 ticks each), then drop the invincibility
+; and gravity-off and resume the chase.
+_reappear:
 		bclr	#$06,InteractFlags(a5)
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$04,AICounter(a5)
-		bcs.s	locret_1AEB8A
+		bcs.s	_reappearRts
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		cmpi.b	#$08,AICounter(a5)
-		bcs.s	locret_1AEB8A
+		bcs.s	_reappearRts
 		bclr	#$00,CombatFlags(a5)
 		bclr	#$07,FallRate(a5)
-		bra.w	sub_1AE8CA
-; ---------------------------------------------------------------------------
+		bra.w	_startChase
 
-locret_1AEB8A:					  ; CODE XREF: ROM:001AEB6Aj
-						  ; ROM:001AEB78j
+_reappearRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEB8C:					  ; CODE XREF: ROM:001AEAEEj
+; The axe projectile: a swing of the axe - wind up through
+; ACT_ATTACK1 (8 ticks) and ACT_ATTACK2 (to $10), then ACT_ATTACK3
+; and, at tick $18 (SND_GhostAbsorbHP as the cast sound), the
+; summon: projectile type 2
+; (SPR_NOLEAXEPROJECTILE) with AttackStrength $1E00, its tiles
+; repointed to $24C0 and sped up to 8. Recover in ACT_ATTACK4 until
+; tick $20.
+_projectile:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$08,AICounter(a5)
-		bcs.s	locret_1AEBF2
+		bcs.s	_projRts
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$10,AICounter(a5)
-		bcs.s	locret_1AEBF2
+		bcs.s	_projRts
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		cmpi.b	#$18,AICounter(a5)
-		bhi.w	loc_1AEBE2
-		bcs.w	locret_1AEBF2
+		bhi.w	_projRecover
+		bcs.w	_projRts
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_GhostAbsorbHP
-; ---------------------------------------------------------------------------
 		move.b	#$02,d0
 		move.w	#$1E00,d1
 		bsr.w	SpawnSmallProjectile
-		bcs.w	loc_1AEBF4
+		bcs.w	_projDone
 		move.w	#$24C0,TileSource(a1)
 		move.b	#$08,Speed(a1)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEBE2:					  ; CODE XREF: ROM:001AEBB8j
+_projRecover:
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$20,AICounter(a5)
-		beq.w	loc_1AEBF4
+		beq.w	_projDone
 
-locret_1AEBF2:					  ; CODE XREF: ROM:001AEB9Cj
-						  ; ROM:001AEBAAj ...
+_projRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AEBF4:					  ; CODE XREF: ROM:001AEBD0j
-						  ; ROM:001AEBEEj
+_projDone:
 		clr.b	AICounter(a5)
-		bra.w	sub_1AE8CA
-; ---------------------------------------------------------------------------
+		bra.w	_startChase
 
-loc_1AEBFC:					  ; CODE XREF: ROM:001AEAF6j
-						  ; ROM:001AEAFEj ...
+; The axe swing: ACT_ATTACK1 (8 ticks), ACT_ATTACK2 (to $10, with
+; the swing sound on the last of them), then the deep hit box ($21
+; ahead, 9 behind, 9 lateral) is live with ACT_ATTACK3 to $18 and
+; ACT_ATTACK4 to $20, then back to chasing. Runs the behaviour, so
+; the leaping variant keeps moving.
+_swing:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$08,AnimPhase(a5)
-		bcs.s	loc_1AEC52
+		bcs.s	_swingTick
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$10,AnimPhase(a5)
-		bcs.s	loc_1AEC52
-		bhi.s	loc_1AEC22
+		bcs.s	_swingTick
+		bhi.s	_swingHit
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_SwordSwing
-; ---------------------------------------------------------------------------
 
-loc_1AEC22:					  ; CODE XREF: ROM:001AEC1Cj
+_swingHit:
 		move.w	#$0021,d1
 		move.w	#$0009,d2
 		move.w	#$0009,d3
 		bsr.w	TryHitPlayer
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		cmpi.b	#$18,AnimPhase(a5)
-		bcs.s	loc_1AEC52
+		bcs.s	_swingTick
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$20,AnimPhase(a5)
-		bcs.s	loc_1AEC52
-		beq.w	sub_1AE8CA
+		bcs.s	_swingTick
+		beq.w	_startChase
 
-loc_1AEC52:					  ; CODE XREF: ROM:001AEC0Cj
-						  ; ROM:001AEC1Aj ...
+_swingTick:
 		bsr.w	j_j_OnTick
 		rts
+
+		modend

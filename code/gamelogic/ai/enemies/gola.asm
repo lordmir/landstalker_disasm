@@ -1,37 +1,48 @@
-; ---------------------------------------------------------------------------
+Gola	module
+; AI for SPR_GOLA, the final boss - the fire-breathing dragon god.
+; The sprite is only her head; the body and tail are part of the
+; stage background, and her Z height drives the move set: very high
+; (>= $F0) she swoops down to the north or west edge of the arena,
+; aligned with the player (BHVS_DESCEND_6); high (>= $94) she can
+; lash her tail - an earthquake animated by background tile swaps
+; (j_DoTileSwap 8, then $10) around a ScreenShake that stuns the
+; player if he is on the ground, and if the stun lands she dives to
+; $38 beside him and breathes fire in his face; low (< $64) she
+; spits large fireballs (SPR_GOLAFIREBALL, AttackStrength $1400) -
+; one while advancing along her edge steering toward the player
+; (BHVS_FORWARD_12), or the spread of three (straight,
+; diagonally right, diagonally left) - and rises away (BHVS_ASCEND_15)
+; with a chance that grows as the player closes in on her corner.
+; The flame breath (state $22) spits a level-flying fireball
+; (BHVS_PROJECTILE_LEVEL) every 3 ticks while the room's backdrop
+; pulses deep red (CRAM colours 0 and 15).
 
-EnemyAI_Gola_B:					  ; CODE XREF: ROM:001A869Aj
+; B routine (behaviour command $2B): reset and rise away.
+EnemyAI_Gola_B:
 		bra.s	EnemyAI_Gola
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
 
-EnemyAI_Gola_A:					  ; CODE XREF: ROM:001A8696j
-						  ; DATA XREF: j_InitSpritePalettes+8t
+; A routine, run every tick. Speed is pinned to 2.
+EnemyAI_Gola_A:
 		move.b	#$02,Speed(a5)
 		btst	#$01,InteractFlags(a5)
-		bne.s	loc_1AEEF8
+		bne.s	_hurtTick
 		move.b	AIState(a5),d0
-		beq.s	loc_1AEF4C
+		beq.s	_think
 		cmpi.b	#$10,d0
-		beq.s	loc_1AEF4C
-		bra.w	loc_1AF1FC
-; ---------------------------------------------------------------------------
+		beq.s	_think
+		bra.w	_attackStates
 
-loc_1AEEF8:					  ; CODE XREF: j_InitSpritePalettes+AAD2j
+_hurtTick:
 		bsr.w	j_j_OnTick
 		rts
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
-; ---------------------------------------------------------------------------
 
-EnemyAI_Gola:					  ; CODE XREF: ROM:EnemyAI_Gola_Bj
-		bsr.s	sub_1AEF04
-		bra.w	loc_1AF1BA
+EnemyAI_Gola:
+		bsr.s	_reset
+		bra.w	_startRise
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEF04:					  ; CODE XREF: ROM:EnemyAI_Golap
-						  ; j_InitSpritePalettes+ACCAj	...
+; Reset: drop the flags, idle behaviour, ready state ($10), and
+; black out CRAM colours 0 and 15 (the fire glow).
+_reset:
 		bclr	#$06,CombatFlags(a5)
 		bclr	#$00,CombatFlags(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
@@ -43,196 +54,162 @@ sub_1AEF04:					  ; CODE XREF: ROM:EnemyAI_Golap
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		rts
-; End of function sub_1AEF04
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
+; States 0 and $10: pick the next move (all gated on her height).
+; Note the advance try skips even the behaviour tick on success.
+_think:
+		bsr.w	_tryTriple
+		bcs.s	_thinkTick
+		bsr.w	_tryQuake
+		bcs.s	_thinkTick
+		bsr.s	_trySwoop
+		bcs.s	_thinkTick
+		bsr.w	_tryBreath
+		bcs.s	_thinkTick
+		bsr.w	_tryAdvance
+		bcs.s	_thinkRts
+		bsr.w	_tryRise
 
-loc_1AEF4C:					  ; CODE XREF: j_InitSpritePalettes+AAD8j
-						  ; j_InitSpritePalettes+AADEj
-		bsr.w	sub_1AEF72
-		bcs.s	loc_1AEF6C
-		bsr.w	sub_1AF01A
-		bcs.s	loc_1AEF6C
-		bsr.s	sub_1AEFAC
-		bcs.s	loc_1AEF6C
-		bsr.w	sub_1AF052
-		bcs.s	loc_1AEF6C
-		bsr.w	sub_1AF084
-		bcs.s	locret_1AEF70
-		bsr.w	sub_1AF18A
-
-loc_1AEF6C:					  ; CODE XREF: j_InitSpritePalettes+AB3Cj
-						  ; j_InitSpritePalettes+AB42j	...
+_thinkTick:
 		bsr.w	j_j_OnTick
 
-locret_1AEF70:					  ; CODE XREF: j_InitSpritePalettes+AB52j
+_thinkRts:
 		rts
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEF72:					  ; CODE XREF: j_InitSpritePalettes:loc_1AEF4Cp
+; Head low (Z < $64): 50% chance to spit the spread of three (state
+; $27).
+_tryTriple:
 		cmpi.w	#$0064,Z(a5)
-		bcc.w	loc_1AF0BA
+		bcc.w	_lowMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00050,d7
-		bcc.w	loc_1AF0BA
+		bcc.w	_lowMiss
 		move.b	#$27,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
-; ---------------------------------------------------------------------------
 		ori	#$01,ccr
 		rts
-; End of function sub_1AEF72
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AEFAC:					  ; CODE XREF: j_InitSpritePalettes+AB44p
-
-; FUNCTION CHUNK AT 001AF0BE SIZE 0000001A BYTES
-
+; Head very high (Z >= $F0): swoop - reposition to the north edge
+; (player's X, Y = $16, facing SW) or the west edge (X = $19,
+; player's Y, facing SE), a coin flip, with TileSource bit 3 picking
+; the matching head tiles - then descend (state $24, BHVS_DESCEND_6).
+_trySwoop:
 		cmpi.w	#$00F0,Z(a5)
-		bcs.s	loc_1AF016
+		bcs.s	_swoopMiss
 		move.w	#$0002,d6
 		jsr	(j_GenerateRandomNumber).l
 		tst.b	d7
-		beq.s	loc_1AEFE2
+		beq.s	_swoopWest
 		move.b	(Player_X).l,(a5)
 		move.b	#$16,Y(a5)
 		andi.b	#$3F,RotationAndSize(a5)
 		ori.b	#DIR_SW,RotationAndSize(a5)
 		bclr	#$03,TileSource(a5)
-		bra.s	loc_1AF000
-; ---------------------------------------------------------------------------
+		bra.s	_swoopPlace
 
-loc_1AEFE2:					  ; CODE XREF: sub_1AEFAC+14j
+_swoopWest:
 		move.b	#$19,X(a5)
 		move.b	(Player_Y).l,Y(a5)
 		andi.b	#$3F,RotationAndSize(a5)
 		ori.b	#DIR_SE,RotationAndSize(a5)
 		bset	#$03,TileSource(a5)
 
-loc_1AF000:					  ; CODE XREF: sub_1AEFAC+34j
+_swoopPlace:
 		bset	#$07,RenderFlags(a5)
 		clr.w	SubX(a5)
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
-		bra.w	loc_1AF0BE
-; ---------------------------------------------------------------------------
+		bra.w	_startDescend
 
-loc_1AF016:					  ; CODE XREF: sub_1AEFAC+6j
+_swoopMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AEFAC
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF01A:					  ; CODE XREF: j_InitSpritePalettes+AB3Ep
+; Head high (Z >= $94): 31% chance to lash the tail (state $21).
+_tryQuake:
 		cmpi.w	#$0094,Z(a5)
-		bcs.s	loc_1AF04E
+		bcs.s	_quakeMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00030,d7
-		bhi.w	loc_1AF04E
+		bhi.w	_quakeMiss
 		move.b	#$21,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF04E:					  ; CODE XREF: sub_1AF01A+6j
-						  ; sub_1AF01A+16j
+_quakeMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AF01A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF052:					  ; CODE XREF: j_InitSpritePalettes+AB48p
+; 11% chance (at any height) to breathe fire for 60 ticks (state
+; $22, BHVS_PAUSE_60_AI_IDLE - the "AI once" at its end makes the B
+; routine rise away).
+_tryBreath:
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00010,d7
-		bhi.s	loc_1AF080
+		bhi.s	_breathMiss
 		move.w	#BHVS_PAUSE_60_AI_IDLE,BehaviourLUTIndex(a5)
 
-loc_1AF068:					  ; CODE XREF: j_InitSpritePalettes+AF5Aj
+_startBreath:
 		move.b	#$22,AIState(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Fireball1
-; ---------------------------------------------------------------------------
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF080:					  ; CODE XREF: sub_1AF052+Ej
+_breathMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AF052
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF084:					  ; CODE XREF: j_InitSpritePalettes+AB4Ep
+; Head low (Z < $64): 85% chance to advance along her edge spitting
+; a fireball (state $23, BHVS_FORWARD_12).
+_tryAdvance:
 		cmpi.w	#$0064,Z(a5)
-		bcc.s	loc_1AF0BA
+		bcc.s	_lowMiss
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00085,d7
-		bcc.s	loc_1AF0BA
+		bcc.s	_lowMiss
 		move.b	#$23,AIState(a5)
 		move.w	#BHVS_FORWARD_12,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
-; ---------------------------------------------------------------------------
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF0BA:					  ; CODE XREF: sub_1AEF72+6j
-						  ; sub_1AEF72+18j ...
+_lowMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AF084
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_1AEFAC
-
-loc_1AF0BE:					  ; CODE XREF: sub_1AEFAC+66j
+_startDescend:
 		move.b	#$24,AIState(a5)
 		move.w	#BHVS_DESCEND_6,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; END OF FUNCTION CHUNK	FOR sub_1AEFAC
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
 
-loc_1AF0D8:					  ; CODE XREF: j_InitSpritePalettes+AE84j
+; After the earthquake: if the stun did not take (no input playback
+; running), just reset; otherwise dive on the stunned player -
+; reposition $38 from him along a random axis, facing him, and
+; descend onto him (state $26) with an immediate $20 drop. A failed
+; placement restores the old position.
+_quakeDive:
 		tst.w	(g_ControllerPlayback).l
-		beq.w	sub_1AEF04
+		beq.w	_reset
 		move.l	(a5),d0
 		movem.l	d0,-(sp)
 		move.w	(Player_CentreX).l,d0
@@ -240,17 +217,16 @@ loc_1AF0D8:					  ; CODE XREF: j_InitSpritePalettes+AE84j
 		move.w	#$0002,d6
 		jsr	(j_GenerateRandomNumber).l
 		tst.b	d7
-		beq.s	loc_1AF10C
+		beq.s	_diveAlongY
 		subi.w	#$0038,d0
 		move.b	#$40,d2
-		bra.s	loc_1AF114
-; ---------------------------------------------------------------------------
+		bra.s	_divePlace
 
-loc_1AF10C:					  ; CODE XREF: j_InitSpritePalettes+ACECj
+_diveAlongY:
 		subi.w	#$0038,d1
 		move.b	#$80,d2
 
-loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
+_divePlace:
 		move.w	d0,d3
 		andi.b	#$F0,d0
 		lsr.w	#$04,d0
@@ -270,7 +246,7 @@ loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		movem.l	(sp)+,d0
-		bcs.s	loc_1AF184
+		bcs.s	_diveFail
 		move.b	#$26,AIState(a5)
 		move.w	#BHVS_DESCEND_6,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
@@ -279,20 +255,18 @@ loc_1AF114:					  ; CODE XREF: j_InitSpritePalettes+ACF6j
 		subi.w	#$0020,HitBoxZEnd(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF184:					  ; CODE XREF: j_InitSpritePalettes+AD48j
+_diveFail:
 		move.l	d0,(a5)
 		tst.b	d0
 		rts
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF18A:					  ; CODE XREF: j_InitSpritePalettes+AB54p
+; Head low (Z < $64): rise away (state $25). The roll is weighted by
+; the player's distance from her corner ($18,$15) - the closer he
+; gets, the likelier she is to retreat upward.
+_tryRise:
 		cmpi.w	#$0064,Z(a5)
-		bcc.s	loc_1AF1E6
+		bcc.s	_riseMiss
 		move.w	#00025,d6
 		jsr	(j_GenerateRandomNumber).l
 		move.b	(Player_X).l,d6
@@ -302,9 +276,9 @@ sub_1AF18A:					  ; CODE XREF: j_InitSpritePalettes+AB54p
 		move.b	#$18,d5
 		sub.b	d6,d5
 		cmp.b	d5,d7
-		bcc.s	loc_1AF1E6
+		bcc.s	_riseMiss
 
-loc_1AF1BA:					  ; CODE XREF: ROM:001AEF00j
+_startRise:
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.b	#$25,AIState(a5)
@@ -313,101 +287,98 @@ loc_1AF1BA:					  ; CODE XREF: ROM:001AEF00j
 		clr.b	AICounter(a5)
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF1E6:					  ; CODE XREF: sub_1AF18A+6j
-						  ; sub_1AF18A+2Ej
+_riseMiss:
 		tst.b	d0
 		rts
-; End of function sub_1AF18A
 
-; ---------------------------------------------------------------------------
+; Unreachable leftover: Ifrit's face-the-player helper, never called
+; here.
 		bsr.w	GetDirToPlayer
 		move.b	d2,d1
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		rts
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
 
-loc_1AF1FC:					  ; CODE XREF: j_InitSpritePalettes+AAE0j
+; States $20+: 0 = nothing, 1 = tail earthquake, 2 = flame breath,
+; 3 = advancing spit, 4/5 = descend/rise glides, 6 = the dive onto
+; the player, 7+ = the spread of three.
+_attackStates:
 		andi.b	#$0F,d0
-		beq.s	locret_1AF234
+		beq.s	_stateRts
 		cmpi.b	#$01,d0
-		beq.s	loc_1AF236
+		beq.s	_quake
 		cmpi.b	#$02,d0
-		beq.w	loc_1AF29E
+		beq.w	_breath
 		cmpi.b	#$03,d0
-		beq.w	loc_1AF372
+		beq.w	_advance
 		cmpi.b	#$04,d0
-		beq.w	loc_1AF34E
+		beq.w	_glide
 		cmpi.b	#$05,d0
-		beq.w	loc_1AF34E
+		beq.w	_glide
 		cmpi.b	#$06,d0
-		beq.w	loc_1AF35C
-		bra.w	loc_1AF4FE
-; ---------------------------------------------------------------------------
+		beq.w	_dive
+		bra.w	_tripleFireball
 
-locret_1AF234:					  ; CODE XREF: j_InitSpritePalettes+ADECj
+_stateRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF236:					  ; CODE XREF: j_InitSpritePalettes+ADF2j
+; The tail earthquake: tick 1 swaps the background tiles to raise
+; the tail (j_DoTileSwap 8, with the thud); at tick $10 it slams -
+; stun the player (forced input playback 8) if he is standing on the
+; ground and not already in hitstun, swap the tail back ($10) and
+; shake the screen; tick $11 decides the follow-up dive.
+_quake:
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		beq.w	loc_1AF27A
+		beq.w	_quakeStart
 		cmpi.b	#$10,AICounter(a5)
-		bne.w	loc_1AF292
+		bne.w	_quakeWait
 		move.b	(Player_Z+1).l,d0
 		cmp.b	(Player_FloorHeight).l,d0
-		bne.s	loc_1AF26E
+		bne.s	_quakeShake
 		tst.b	(g_PlayerHurtTimer).l
-		bne.s	loc_1AF26E
+		bne.s	_quakeShake
 		move.b	#$08,d0
 		jsr	(j_PlaybackInput).l
 
-loc_1AF26E:					  ; CODE XREF: j_InitSpritePalettes+AE46j
-						  ; j_InitSpritePalettes+AE4Ej
+_quakeShake:
 		move.b	#$10,d0
-		bsr.s	sub_1AF27E
+		bsr.s	_tailSwap
 		bsr.w	ScreenShake
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF27A:					  ; CODE XREF: j_InitSpritePalettes+AE2Cj
+_quakeStart:
 		move.b	#$08,d0
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF27E:					  ; CODE XREF: j_InitSpritePalettes+AE5Ep
+; Play the thud and run background tile swap d0 (8 = tail raised,
+; $10 = tail down).
+_tailSwap:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Thud
-; ---------------------------------------------------------------------------
 		movem.l	a5,-(sp)
 		jsr	(j_DoTileSwap).l
 		movem.l	(sp)+,a5
 		rts
-; End of function sub_1AF27E
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
-
-loc_1AF292:					  ; CODE XREF: j_InitSpritePalettes+AE36j
+_quakeWait:
 		cmpi.b	#$11,AICounter(a5)
-		beq.w	loc_1AF0D8
+		beq.w	_quakeDive
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF29E:					  ; CODE XREF: j_InitSpritePalettes+ADF8j
+; The flame breath, on a 3-tick cycle: tick 1 loads the flame
+; graphics and palettes and turns CRAM colours 0 and 15 deep red
+; ($000E); tick 2 reloads the palettes and blacks them out again;
+; tick 3 spits a level-flying fireball (BHVS_PROJECTILE_LEVEL) and
+; starts over - so the room pulses red as she breathes, until the
+; pause behaviour ends and the B routine lifts her away.
+_breath:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AF2F4
+		bne.s	_breathFlashOff
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jsr	(j_LoadMagicSwordEffect).l
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
@@ -416,12 +387,11 @@ loc_1AF29E:					  ; CODE XREF: j_InitSpritePalettes+ADF8j
 		move.w	#$000E,(VDP_DATA_REG).l
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
 		move.w	#$000E,(VDP_DATA_REG).l
-		bra.w	loc_1AF348
-; ---------------------------------------------------------------------------
+		bra.w	_breathTick
 
-loc_1AF2F4:					  ; CODE XREF: j_InitSpritePalettes+AE9Aj
+_breathFlashOff:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AF332
+		bne.w	_breathSpawn
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
 		bsr.w	LoadPal3Low
@@ -429,160 +399,151 @@ loc_1AF2F4:					  ; CODE XREF: j_InitSpritePalettes+AE9Aj
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
-		bra.w	loc_1AF348
-; ---------------------------------------------------------------------------
+		bra.w	_breathTick
 
-loc_1AF332:					  ; CODE XREF: j_InitSpritePalettes+AEE6j
+_breathSpawn:
 		cmpi.b	#$03,AICounter(a5)
-		bne.w	loc_1AF348
-		move.w	#$0368,d6
-		bsr.w	sub_1AF448
+		bne.w	_breathTick
+		move.w	#BHVS_PROJECTILE_LEVEL,d6
+		bsr.w	_spawnFireball
 		clr.b	AICounter(a5)
 
-loc_1AF348:					  ; CODE XREF: j_InitSpritePalettes+AEDCj
-						  ; j_InitSpritePalettes+AF1Aj	...
+_breathTick:
 		bsr.w	j_j_OnTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF34E:					  ; CODE XREF: j_InitSpritePalettes+AE08j
-						  ; j_InitSpritePalettes+AE10j
-		bsr.w	j_j_OnTick
-		tst.b	BehavCmd(a5)
-		beq.w	sub_1AEF04
-		rts
-; ---------------------------------------------------------------------------
-
-loc_1AF35C:					  ; CODE XREF: j_InitSpritePalettes+AE18j
+; Descend / rise (states 4/5): ride the glide behaviour; when it
+; finishes (BehavCmd 0), reset.
+_glide:
 		bsr.w	j_j_OnTick
 		tst.b	BehavCmd(a5)
-		beq.s	loc_1AF368
+		beq.w	_reset
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF368:					  ; CODE XREF: j_InitSpritePalettes+AF50j
+; The dive onto the stunned player (state 6): ride the descent, then
+; breathe fire in his face for 30 ticks.
+_dive:
+		bsr.w	j_j_OnTick
+		tst.b	BehavCmd(a5)
+		beq.s	_diveBreath
+		rts
+
+_diveBreath:
 		move.w	#BHVS_PAUSE_30_AI_IDLE,BehaviourLUTIndex(a5)
-		bra.w	loc_1AF068
-; ---------------------------------------------------------------------------
+		bra.w	_startBreath
 
-loc_1AF372:					  ; CODE XREF: j_InitSpritePalettes+AE00j
+; Advancing spit (state 3): the cast sequence on AICounter (flame
+; graphics, palettes, one straight fireball at tick $A, recover to
+; $14), while every tick the steering below temporarily turns her
+; along her edge axis toward the player for the behaviour tick.
+_advance:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AF398
+		bne.s	_advPalette
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jsr	(j_LoadMagicSwordEffect).l
-		bra.w	loc_1AF3E4
-; ---------------------------------------------------------------------------
+		bra.w	_advSteer
 
-loc_1AF398:					  ; CODE XREF: j_InitSpritePalettes+AF6Ej
+_advPalette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AF3B2
+		bne.w	_advThrow
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
 		bsr.w	LoadPal3Low
-		bra.w	loc_1AF3E4
-; ---------------------------------------------------------------------------
+		bra.w	_advSteer
 
-loc_1AF3B2:					  ; CODE XREF: j_InitSpritePalettes+AF8Aj
+_advThrow:
 		cmpi.b	#$0A,AICounter(a5)
-		bhi.w	loc_1AF3D4
-		bcs.w	loc_1AF3E4
+		bhi.w	_advRecover
+		bcs.w	_advSteer
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
-		move.w	#$0345,d6
-		bsr.w	sub_1AF448
-		bcs.w	loc_1AF43A
-		bra.s	loc_1AF3E4
-; ---------------------------------------------------------------------------
+		move.w	#BHVS_PROJECTILE_64,d6
+		bsr.w	_spawnFireball
+		bcs.w	_advDone
+		bra.s	_advSteer
 
-loc_1AF3D4:					  ; CODE XREF: j_InitSpritePalettes+AFA4j
+_advRecover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$14,AICounter(a5)
-		beq.w	loc_1AF43A
+		beq.w	_advDone
 
-loc_1AF3E4:					  ; CODE XREF: j_InitSpritePalettes+AF80j
-						  ; j_InitSpritePalettes+AF9Aj	...
+; Steer: north-edge Gola (facing SW) slides along X, west-edge
+; (facing SE) along Y - temporarily face toward the player on that
+; axis for the behaviour tick (or skip the tick when aligned with
+; him), then restore the real facing.
+_advSteer:
 		move.b	RotationAndSize(a5),d0
 		movem.w	d0,-(sp)
 		andi.b	#$C0,d0
 		cmpi.b	#$80,d0
-		beq.s	loc_1AF40E
+		beq.s	_steerAlongX
 		move.b	#$00,d1
 		move.b	Y(a5),d0
 		cmp.b	(Player_Y).l,d0
-		beq.s	loc_1AF430
-		bhi.s	loc_1AF422
+		beq.s	_steerDone
+		bhi.s	_steerApply
 		move.b	#$80,d1
-		bra.s	loc_1AF422
-; ---------------------------------------------------------------------------
+		bra.s	_steerApply
 
-loc_1AF40E:					  ; CODE XREF: j_InitSpritePalettes+AFE0j
+_steerAlongX:
 		move.b	#$C0,d1
 		move.b	(a5),d0
 		cmp.b	(Player_X).l,d0
-		beq.s	loc_1AF430
-		bhi.s	loc_1AF422
+		beq.s	_steerDone
+		bhi.s	_steerApply
 		move.b	#$40,d1
 
-loc_1AF422:					  ; CODE XREF: j_InitSpritePalettes+AFF2j
-						  ; j_InitSpritePalettes+AFF8j	...
+_steerApply:
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
 		bsr.w	j_j_OnTick
 
-loc_1AF430:					  ; CODE XREF: j_InitSpritePalettes+AFF0j
-						  ; j_InitSpritePalettes+B006j
+_steerDone:
 		movem.w	(sp)+,d0
 		move.b	d0,RotationAndSize(a5)
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF43A:					  ; CODE XREF: j_InitSpritePalettes+AFBAj
-						  ; j_InitSpritePalettes+AFCCj
+_advDone:
 		bclr	#$00,InteractFlags(a5)
 		clr.b	AICounter(a5)
-		bra.w	sub_1AEF04
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
+		bra.w	_reset
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_1AF448:					  ; CODE XREF: j_InitSpritePalettes+AF2Cp
-						  ; j_InitSpritePalettes+AFB6p	...
+; Spawn one large fireball with behaviour d6, $1A ahead of her
+; facing: SPR_GOLAFIREBALL, AttackStrength $1400, at her Z, tiles at
+; $64B4, speed 4, no gravity, invincible, InteractFlags bit 7 (kept
+; in the Init copy too). Carry set if no free slot.
+_spawnFireball:
 		move.b	RotationAndSize(a5),d2
 		movem.w	d6,-(sp)
 		movem.w	d2,-(sp)
 		jsr	(j_FindFreeSpriteSlot).l
 		movem.w	(sp)+,d1
 		movem.w	(sp)+,d6
-		bcs.w	loc_1AF4F8
+		bcs.w	_spawnFail
 		move.w	CentreX(a5),d2
 		move.w	CentreY(a5),d3
 		andi.b	#$C0,d1
-		beq.s	loc_1AF482
+		beq.s	_aimNE
 		cmpi.b	#$80,d1
-		bcs.s	loc_1AF488
-		beq.s	loc_1AF48E
-		subi.w	#$001A,d2
-		bra.s	loc_1AF492
-; ---------------------------------------------------------------------------
+		bcs.s	_aimSE
+		beq.s	_aimSW
+		subi.w	#$001A,d2	; NW: X - $1A
+		bra.s	_spawn
 
-loc_1AF482:					  ; CODE XREF: sub_1AF448+2Aj
-		subi.w	#$001A,d3
-		bra.s	loc_1AF492
-; ---------------------------------------------------------------------------
+_aimNE:
+		subi.w	#$001A,d3	; NE: Y - $1A
+		bra.s	_spawn
 
-loc_1AF488:					  ; CODE XREF: sub_1AF448+30j
-		addi.w	#$001A,d2
-		bra.s	loc_1AF492
-; ---------------------------------------------------------------------------
+_aimSE:
+		addi.w	#$001A,d2	; SE: X + $1A
+		bra.s	_spawn
 
-loc_1AF48E:					  ; CODE XREF: sub_1AF448+32j
-		addi.w	#$001A,d3
+_aimSW:
+		addi.w	#$001A,d3	; SW: Y + $1A
 
-loc_1AF492:					  ; CODE XREF: sub_1AF448+38j
-						  ; sub_1AF448+3Ej ...
+_spawn:
 		move.w	d2,d0
 		andi.b	#$0F,d0
 		move.b	d0,SubX(a1)
@@ -608,61 +569,55 @@ loc_1AF492:					  ; CODE XREF: sub_1AF448+38j
 		bset	#$07,InitInteractFlags(a1)
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF4F8:					  ; CODE XREF: sub_1AF448+1Aj
+_spawnFail:
 		ori	#$01,ccr
 		rts
-; End of function sub_1AF448
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR j_InitSpritePalettes
-
-loc_1AF4FE:					  ; CODE XREF: j_InitSpritePalettes+AE1Cj
+; The spread of three (state 7+): flame graphics and palettes, then
+; at tick $10 three fireballs - one straight, one diagonally right, one
+; diagonally left - and recovery until tick $20.
+_tripleFireball:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$01,AICounter(a5)
-		bne.s	loc_1AF520
+		bne.s	_triplePalette
 		lea	($00009880).l,a2
-		move.b	#$01,d0
+		move.b	#ITM_MAGICSWORD,d0
 		jmp	(j_LoadMagicSwordEffect).l
-; ---------------------------------------------------------------------------
 
-loc_1AF520:					  ; CODE XREF: j_InitSpritePalettes+B0FAj
+_triplePalette:
 		cmpi.b	#$02,AICounter(a5)
-		bne.w	loc_1AF536
+		bne.w	_tripleThrow
 		move.b	#$01,d0
 		bsr.w	LoadProjectilePalette
 		bra.w	LoadPal3Low
-; ---------------------------------------------------------------------------
 
-loc_1AF536:					  ; CODE XREF: j_InitSpritePalettes+B112j
+_tripleThrow:
 		cmpi.b	#$10,AICounter(a5)
-		bhi.w	loc_1AF56C
-		bcs.w	locret_1AF57C
+		bhi.w	_tripleRecover
+		bcs.w	_tripleRts
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
-		move.w	#$0345,d6
-		bsr.w	sub_1AF448
-		bcs.w	loc_1AF57E
-		move.w	#$0346,d6
-		bsr.w	sub_1AF448
-		bcs.w	loc_1AF57E
-		move.w	#$0347,d6
-		bsr.w	sub_1AF448
+		move.w	#BHVS_PROJECTILE_64,d6
+		bsr.w	_spawnFireball
+		bcs.w	_tripleDone
+		move.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
+		bsr.w	_spawnFireball
+		bcs.w	_tripleDone
+		move.w	#BHVS_PROJECTILE_DIAG_LEFT,d6
+		bsr.w	_spawnFireball
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF56C:					  ; CODE XREF: j_InitSpritePalettes+B128j
+_tripleRecover:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$20,AICounter(a5)
-		beq.w	loc_1AF57E
+		beq.w	_tripleDone
 
-locret_1AF57C:					  ; CODE XREF: j_InitSpritePalettes+B12Cj
+_tripleRts:
 		rts
-; ---------------------------------------------------------------------------
 
-loc_1AF57E:					  ; CODE XREF: j_InitSpritePalettes+B13Ej
-						  ; j_InitSpritePalettes+B14Aj	...
+_tripleDone:
 		clr.b	AICounter(a5)
-		bra.w	sub_1AEF04
-; END OF FUNCTION CHUNK	FOR j_InitSpritePalettes
+		bra.w	_reset
+
+		modend

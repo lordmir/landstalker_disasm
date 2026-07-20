@@ -117,8 +117,8 @@ _cmdTable:
 		bra.w	EB_PlaySound				; $62
 		bra.w	EB_ProjectileMove			; $63
 		bra.w	EB_StartHiCutscene			; $64
-		bra.w	EB_ProjectileWeaveCW		; $65
-		bra.w	EB_ProjectileWeaveCCW		; $66
-		bra.w	EB_ProjectileFall			; $67
+		bra.w	EB_ProjectileDiagRight		; $65
+		bra.w	EB_ProjectileDiagLeft		; $66
+		bra.w	EB_ProjectileLevel			; $67
 
 		modend

@@ -49,8 +49,8 @@ BHVS_CHASE_8:               equ $267 ; follow 8 ticks at speed 4, idle
 BHVS_ENEMY_HITSTUN_2:       equ $268 ; identical to BHVS_ENEMY_HITSTUN
 BHVS_CHARGE_TO_WALL:        equ $320 ; charge at speed 8 until collision, AI
 BHVS_PROJECTILE_64:         equ $345 ; fly straight 64 ticks, despawn (Ifrit's fireball)
-BHVS_PROJECTILE_WEAVE_CW:   equ $346 ; weave clockwise 64 ticks, despawn
-BHVS_PROJECTILE_WEAVE_CCW:  equ $347 ; weave anticlockwise 64 ticks, despawn
+BHVS_PROJECTILE_DIAG_RIGHT: equ $346 ; fly diagonally right of facing 64 ticks, despawn
+BHVS_PROJECTILE_DIAG_LEFT:  equ $347 ; fly diagonally left of facing 64 ticks, despawn
 BHVS_DASH_NE:               equ $34A ; pause 15, face NE, no-clip dash 14 at speed 8, idle
 BHVS_DASH_SE:               equ $34B ; pause 15, face SE, no-clip dash 14 at speed 8, idle
 BHVS_DASH_SW:               equ $34C ; pause 15, face SW, no-clip dash 14 at speed 8, idle
@@ -59,6 +59,7 @@ BHVS_DESCEND_6:             equ $361 ; move down 6.0, idle
 BHVS_ASCEND_15:             equ $362 ; move up 15.0, idle
 BHVS_FORWARD_12:            equ $363 ; move forward 12.5, idle
 BHVS_KNOCK_UP:              equ $364 ; launched upward 16 ticks, AI
+BHVS_PROJECTILE_LEVEL:      equ $368 ; fly forward holding its height, despawn on impact (Gola's breath)
 BHVS_BOOMERANG:             equ $36A ; fly out 32 ticks, turn 180, fly back 32, despawn
 BHVS_PAUSE_60_AI_IDLE:      equ $383 ; stand 60 ticks, AI once, then idle
 BHVS_PAUSE_30_AI_IDLE:      equ $384 ; stand 30 ticks, AI once, then idle

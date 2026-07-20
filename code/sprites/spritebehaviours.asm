@@ -828,44 +828,45 @@ EB_FleePlayer:
 		move.w	CentreX(a5),d0
 		move.w	CentreY(a5),d1
 		sub.w	(Player_CentreX).l,d0
-		beq.s	_mtpXNone
-		bpl.s	_mtpXPos
+		beq.s	_fleeXNone
+		bpl.s	_fleeXPos
 		neg.w	d0
 		move.b	#DIR_NW,d2
-		bra.s	_mtpChkY
+		bra.s	_fleeChkY
 
-_mtpXPos:
+_fleeXPos:
 		move.b	#DIR_SE,d2
-		bra.s	_mtpChkY
+		bra.s	_fleeChkY
 
-_mtpXNone:
+_fleeXNone:
 		move.b	#$FF,d2
 
-_mtpChkY:
+_fleeChkY:
 		sub.w	(Player_CentreY).l,d1
-		beq.s	_mtpYNone
-		bpl.s	_mtpYPos
+		beq.s	_fleeYNone
+		bpl.s	_fleeYPos
 		neg.w	d1
 		clr.b	d3
-		bra.s	_mtpSteer
+		bra.s	_fleeSteer
 
-_mtpYPos:
+_fleeYPos:
 		move.b	#DIR_SW,d3
-		bra.s	_mtpSteer
+		bra.s	_fleeSteer
 
-_mtpYNone:
+_fleeYNone:
 		move.b	#$FF,d3
 
-_mtpSteer:
+_fleeSteer:
 		bra.w	_steerToTarget
 
-; Cmd $5B: load TargetX/Y/SubX/SubY from the script's 4 arguments.
+; Cmd $5B: load the target position - two 12.4-pixel words (X then
+; Y) - from the script's 4 argument bytes.
 EB_SetTargetPosition:
 		movea.l	BehaviourLUTPtr(a5),a6
 		move.b	1(a6),TargetX(a5)
-		move.b	2(a6),TargetY(a5)
-		move.b	3(a6),TargetSubX(a5)
-		move.b	4(a6),TargetSubY(a5)
+		move.b	2(a6),TargetX+1(a5)
+		move.b	3(a6),TargetY(a5)
+		move.b	4(a6),TargetY+1(a5)
 		moveq	#$5,d0
 		bsr.w	LoadNextCmd
 		bra.w	ProcessNextCmd
@@ -875,7 +876,7 @@ EB_SetTargetPosition:
 ; sprite running this passes through the player (ApplyContactDamage).
 EB_MoveToTargetPosition:
 		move.w	TargetX(a5),d2
-		move.w	TargetSubX(a5),d3
+		move.w	TargetY(a5),d3
 		move.w	CentreX(a5),d0
 		move.w	CentreY(a5),d1
 		andi.w	#$FFFC,d0
@@ -2125,31 +2126,32 @@ _pmDespawn:
 		rts
 
 ; Cmd $65: as EB_ProjectileMove, but each tick also takes a second
-; step rotated 90 degrees CW - a diagonal path between two facings.
-EB_ProjectileWeaveCW:
+; step rotated 90 degrees CW (undone straight after) - a straight
+; diagonal to the right of the facing.
+EB_ProjectileDiagRight:
 		bsr.w	MoveSpriteForward
-		bcs.s	_wcwHit
+		bcs.s	_pdrHit
 
-_wcwStep2:
+_pdrStep2:
 		bsr.s	RotateFacingCW
 		bsr.w	MoveSpriteForward
-		bcs.s	_wcwHit
+		bcs.s	_pdrHit
 		bsr.s	RotateFacingCCW
 		subq.b	#$01,BehavParam(a5)
-		bne.s	_wcwRts
+		bne.s	_pdrRts
 		bra.w	ProcessNextCmdImmediately_2
 
-_wcwRts:
+_pdrRts:
 		rts
 
-_wcwHit:
+_pdrHit:
 		tst.b	d7
-		beq.s	_wcwDespawn
+		beq.s	_pdrDespawn
 		move.b	SpriteType(a5),d0
 		cmp.b	SpriteType(a0),d0
-		beq.s	_wcwStep2
+		beq.s	_pdrStep2
 
-_wcwDespawn:
+_pdrDespawn:
 		bsr.s	RotateFacingCCW
 		bra.s	_pmHit
 
@@ -2171,37 +2173,40 @@ RotateFacingCCW:
 		or.b	d0,RotationAndSize(a5)
 		rts
 
-; Cmd $66: mirror of EB_ProjectileWeaveCW (second step rotated CCW).
-EB_ProjectileWeaveCCW:
+; Cmd $66: mirror of EB_ProjectileDiagRight (second step rotated
+; CCW - diagonally left of the facing).
+EB_ProjectileDiagLeft:
 		bsr.w	MoveSpriteForward
-		bcs.s	_wccwHit
+		bcs.s	_pdlHit
 
-_wccwStep2:
+_pdlStep2:
 		bsr.s	RotateFacingCCW
 		bsr.w	MoveSpriteForward
-		bcs.s	_wccwHit
+		bcs.s	_pdlHit
 		bsr.s	RotateFacingCW
 		subq.b	#$01,BehavParam(a5)
-		bne.s	_wccwRts
+		bne.s	_pdlRts
 		bra.w	ProcessNextCmdImmediately_2
 
-_wccwRts:
+_pdlRts:
 		rts
 
-_wccwHit:
+_pdlHit:
 		tst.b	d7
-		beq.s	_wccwDespawn
+		beq.s	_pdlDespawn
 		move.b	SpriteType(a5),d0
 		cmp.b	SpriteType(a0),d0
-		beq.s	_wccwStep2
+		beq.s	_pdlStep2
 
-_wccwDespawn:
+_pdlDespawn:
 		bsr.s	RotateFacingCW
-		bra.s	_wcwHit
+		bra.s	_pdrHit
 
-; Cmd $67: as EB_ProjectileMove, but also sinking (Speed per tick);
-; despawns on landing.
-EB_ProjectileFall:
+; Cmd $67: as EB_ProjectileMove with a floor clamp: it tries to sink
+; by Speed each tick but undoes the drop at the floor, so in practice
+; (Gola's breath) the projectile holds a constant height; despawns on
+; landing.
+EB_ProjectileLevel:
 		bsr.w	MoveSpriteForward
 		bcs.w	_pfHit
 		bsr.w	MoveSpriteDownToFloor

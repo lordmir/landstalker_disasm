@@ -8,7 +8,7 @@ Ifrit	module
 ; random other pit facing the player; or a fireball cast (the rest -
 ; always): 75% a single medium fireball (SPR_IFRITFIREBALL,
 ; AttackStrength $F00, BHVS_PROJECTILE_64), 25% a spread of three
-; (straight, weave clockwise, weave anticlockwise) from the three
+; (straight, diagonally right, diagonally left) from the three
 ; cells ahead of him. Being hurt pins him in place (Speed cleared).
 
 ; B routine (behaviour command $2B): reset, then teleport away.
@@ -347,8 +347,7 @@ _castDone:
 		bra.w	_reset
 
 ; The spread of three (state 4+): as the single cast, but the throw
-; comes at tick $10 - one straight, one weaving clockwise, one
-; anticlockwise, from the three cells ahead - and recovery runs to
+; comes at tick $10 - one straight, one diagonally right, one left, from the three cells ahead - and recovery runs to
 ; tick $20.
 _castThree:
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
@@ -373,10 +372,10 @@ _cast3Throw:
 		move.w	#BHVS_PROJECTILE_64,d6
 		bsr.s	_spawnFireball
 		bcs.w	_cast3Done
-		move.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		move.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
 		bsr.s	_spawnFireball
 		bcs.w	_cast3Done
-		move.w	#BHVS_PROJECTILE_WEAVE_CCW,d6
+		move.w	#BHVS_PROJECTILE_DIAG_LEFT,d6
 		bsr.s	_spawnFireball
 		rts
 
@@ -393,8 +392,8 @@ _cast3Done:
 		bra.w	_reset
 
 ; Spawn one medium fireball with behaviour d6. The spawn cell is one
-; ahead of Ifrit's facing; the weave-clockwise one starts one cell
-; further to one side, the anticlockwise one to the other, so the
+; ahead of Ifrit's facing; the diagonal-right one starts one cell
+; further to one side, the diagonal-left one to the other, so the
 ; spread fans out. Set up: SPR_IFRITFIREBALL, AttackStrength $F00,
 ; $20 above his Z, tiles at $24B4, speed 4, no gravity (FallRate
 ; $80), invincible, and InteractFlags bit 7 (kept in the Init copy
@@ -417,7 +416,7 @@ _spawnFireball:
 		cmpi.w	#BHVS_PROJECTILE_64,d6
 		beq.s	_spawn
 		subi.w	#$0001,d0
-		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		cmpi.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
 		beq.s	_spawn
 		addi.w	#$0002,d0
 		bra.s	_spawn
@@ -427,7 +426,7 @@ _aimNE:
 		cmpi.w	#BHVS_PROJECTILE_64,d6
 		beq.s	_spawn
 		addi.w	#$0100,d0
-		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		cmpi.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
 		beq.s	_spawn
 		subi.w	#$0200,d0
 		bra.s	_spawn
@@ -437,7 +436,7 @@ _aimSE:
 		cmpi.w	#BHVS_PROJECTILE_64,d6
 		beq.s	_spawn
 		addi.w	#$0001,d0
-		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		cmpi.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
 		beq.s	_spawn
 		subi.w	#$0002,d0
 		bra.s	_spawn
@@ -447,7 +446,7 @@ _aimSW:
 		cmpi.w	#BHVS_PROJECTILE_64,d6
 		beq.s	_spawn
 		subi.w	#$0100,d0
-		cmpi.w	#BHVS_PROJECTILE_WEAVE_CW,d6
+		cmpi.w	#BHVS_PROJECTILE_DIAG_RIGHT,d6
 		beq.s	_spawn
 		addi.w	#$0200,d0
 

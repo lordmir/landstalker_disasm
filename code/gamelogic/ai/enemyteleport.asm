@@ -1,7 +1,5 @@
-EnemyTeleport	module
-; Teleport-in helper shared by the spectres and Nole (this file is
-; included from the middle of nole.asm to keep the ROM byte order).
-
+; Teleport-in helper shared by the spectres and Nole.
+;
 ; Move the sprite to a random spot beside the player: an offset of
 ; 3-10 cells, positive or negative, applied to the player's X or Y
 ; (staying aligned with him on the other axis), dropped to the
@@ -9,6 +7,10 @@ EnemyTeleport	module
 ; if the spot does not validate, parks back at the hidden floating
 ; height (Z $100) and returns carry clear through TeleportFail
 ; (which Nole's teleport try also branches to directly).
+;
+; This file is included from the middle of nole.asm (to keep the ROM
+; byte order) and deliberately has no module wrapper: its local
+; labels belong to the enclosing Nole module.
 
 TeleportBesidePlayer:
 		movem.w	d1,-(sp)
@@ -59,5 +61,3 @@ TeleportFail:
 _teleportOk:
 		ori	#$01,ccr
 		rts
-
-		modend
