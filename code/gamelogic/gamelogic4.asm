@@ -230,7 +230,7 @@ _padDone:
 _warpGo:
 		cmpi.w	#ROOM_NOLE_WARP,(g_CurrentRoom).l	  ; Nole warp room
 		bne.s	_padWarp
-		moveq	#$7,d0
+		moveq	#VFX_NOLE_WARP_OUT,d0
 		bsr.w	DoVisualEffect		  ; 0,1	- Warp-pad transition
 						  ; 2,3	- Tree warp transition
 						  ; 4 -	Black flash
@@ -242,7 +242,7 @@ _warpGo:
 		clr.b	d0
 		bsr.w	LoadRoom_0
 		bsr.w	InitRoomDisplay
-		moveq	#$8,d0
+		moveq	#VFX_NOLE_WARP_IN,d0
 		bsr.w	DoVisualEffect		  ; 0,1	- Warp-pad transition
 						  ; 2,3	- Tree warp transition
 						  ; 4 -	Black flash
@@ -264,7 +264,7 @@ _padWarp:
 		bra.w	InitRoomDisplayAndFadeIn
 
 _treeWarp:
-		moveq	#$2,d0
+		moveq	#VFX_TREE_WARP_OUT,d0
 		bsr.w	DoVisualEffect		  ; 0,1	- Warp-pad transition
 						  ; 2,3	- Tree warp transition
 						  ; 4 -	Black flash
@@ -276,7 +276,7 @@ _treeWarp:
 		clr.b	d0
 		bsr.w	LoadRoom_0
 		bsr.w	InitRoomDisplay
-		moveq	#$3,d0
+		moveq	#VFX_TREE_WARP_IN,d0
 		bra.w	DoVisualEffect		  ; 0,1	- Warp-pad transition
 						  ; 2,3	- Tree warp transition
 						  ; 4 -	Black flash
@@ -512,7 +512,7 @@ HandleGoddessStatue:
 		move.w	(Player_CurrentHealth).l,d0
 		cmp.w	(Player_MaxHealth).l,d0
 		beq.s	_goddessDone
-		move.w	#$0005,d0
+		move.w	#VFX_WHITE_FLASH,d0
 		jsr	(j_DoVisualEffect).l
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(j_CopyBasePaletteToActivePalette).l

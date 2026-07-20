@@ -1,11 +1,27 @@
+Inventory3	module
+; The item screen of the inventory menu: setup (InitInv), the item
+; grid drawing, and the interactive cursor loop (RunItemMenu). The
+; cursor, scrolling and select handlers it threads through live in
+; inventory4.asm, which jumps back into ItemMenuLoop /
+; ItemMenuExit here.
+;
+; While the menu is open, g_Buffer doubles as its state block:
+; +4 the vblank counter at open, +6 the selected slot * 4, +$A/+$C
+; the cursor position restored from g_InvCursorPos, +$E the
+; palette-dim marker, +$10 the cursor column the nav loop tests,
+; +$1C the saved palette line 1, +$5C the 40-byte item list (2
+; columns x 20 rows) and +$84 the window tilemap working copy.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
+; Open the item screen: build the item list (inventory4), clear
+; the icon VRAM and stream in all 63 item icons ($10 tiles apart,
+; flushing the queue every 4), save palette line 1 into the state
+; block, load the menu's palette line 0 and stamp the opening
+; time. The FR/DE builds keep their larger menu font, so the icon
+; tiles live at different VRAM addresses.
+InitInv:
 		jsr	(WaitUntilVBlank).l
-		bsr.w	sub_D9FC
-		bsr.w	sub_D996
+		bsr.w	LoadMenuFont
+		bsr.w	LoadMenuCursorGfx
 		jsr	(WaitUntilVBlank).l
 	if REGION=FR
 		move.w	#$A880,d0
@@ -29,7 +45,7 @@ InitInv:					  ; CODE XREF: CheckForMenuOpen+3Cp
 		clr.w	d0
 		move.w	#$003E,d7
 
-loc_D28A:					  ; CODE XREF: InitInv+56j
+_iiIcon:
 		movem.w	d0-d1/d7,-(sp)
 		jsr	(LoadItemIconGfx).l
 		movem.w	(sp)+,d0-d1/d7
@@ -37,88 +53,84 @@ loc_D28A:					  ; CODE XREF: InitInv+56j
 		addi.w	#$0010,d1
 		movem.w	d7,-(sp)
 		andi.b	#$03,d7
-		bne.s	loc_D2AE
+		bne.s	_iiNext
 		jsr	(FlushDMACopyQueue).l
 
-loc_D2AE:					  ; CODE XREF: InitInv+4Aj
+_iiNext:
 		movem.w	(sp)+,d7
-		dbf	d7,loc_D28A
+		dbf	d7,_iiIcon
 		lea	(g_Pal1Base).l,a0
 		lea	(g_Buffer).l,a1
 		lea	$0000001C(a1),a2
 		moveq	#$0000001F,d7
 
-loc_D2C8:					  ; CODE XREF: InitInv+6Ej
+_iiSavePal1:
 		move.w	(a0)+,(a2)+
-		dbf	d7,loc_D2C8
+		dbf	d7,_iiSavePal1
 		clr.w	$0000000E(a1)
 		lea	InvPalette1(pc),a0
 		lea	(g_Pal0Base).l,a1
 		moveq	#$00000007,d7
 
-loc_D2DE:					  ; CODE XREF: InitInv+84j
+_iiPal0:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_D2DE
+		dbf	d7,_iiPal0
 		lea	(g_Buffer).l,a0
 		move.w	(g_VBlankCounter).l,0000000004(a0)
 		rts
-; End of function InitInv
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_D2F4:					  ; CODE XREF: ClearInventoryWindow+3Cp
+; Load the greyed-out item palette into line 2 (used for icons the
+; player cannot select).
+_loadGreyedPal2:
 		lea	InvPalette2_GreyedOut(pc),a0
 		lea	(g_Pal2Base).l,a1
 		moveq	#$00000007,d7
 
-loc_D300:					  ; CODE XREF: sub_D2F4+Ej
+_gpCopy:
 		move.l	(a0)+,(a1)+
-		dbf	d7,loc_D300
+		dbf	d7,_gpCopy
 		rts
-; End of function sub_D2F4
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_D308:					  ; CODE XREF: ClearInventoryWindowp
-		move.b	(byte_FF1BF2).l,d0
+; Rebuild the cursor state from its saved copy: g_InvSelectedSlot
+; (reset to 0 if past $10) becomes the slot word at +6, and
+; g_InvCursorPos unpacks into the column (+$A, bit 0) and row
+; (+$C, bits 1-2); BuildOwnedItemList (inventory4) then applies it.
+_restoreCursor:
+		move.b	(g_InvSelectedSlot).l,d0
 		andi.w	#$001F,d0
 		cmpi.b	#$11,d0
-		bcs.s	loc_D31A
+		bcs.s	_rcSlotOk
 		clr.w	d0
 
-loc_D31A:					  ; CODE XREF: sub_D308+Ej
+_rcSlotOk:
 		mulu.w	#$0004,d0
 		lea	((g_Buffer+6)).l,a0
 		move.w	d0,(a0)
-		move.b	(byte_FF1BF3).l,d1
+		move.b	(g_InvCursorPos).l,d1
 		clr.w	d0
 		lsr.b	#$01,d1
-		bcc.s	loc_D334
+		bcc.s	_rcRow
 		addq.w	#$01,d0
 
-loc_D334:					  ; CODE XREF: sub_D308+28j
+_rcRow:
 		ext.w	d1
 		lea	((g_Buffer+$A)).l,a0
 		move.w	d0,(a0)
 		lea	((g_Buffer+$C)).l,a0
 		move.w	d1,(a0)
-		bsr.w	sub_DC28
+		bsr.w	BuildOwnedItemList
 		rts
-; End of function sub_D308
 
-; ---------------------------------------------------------------------------
-
-loc_D34C:					  ; CODE XREF: ROM:0000D3D8j
-						  ; ROM:0000DBB8j
+; Leave the item menu: pack the cursor back into g_InvSelectedSlot
+; / g_InvCursorPos (so the menu reopens where it closed), then
+; fall through to return the exit code. Also jumped to from the
+; select handler in inventory4.
+ItemMenuExit:
 		movem.w	d0,-(sp)
 		lea	((g_Buffer+6)).l,a0
 		move.w	(a0),d0
 		lsr.b	#$02,d0
-		lea	(byte_FF1BF2).l,a0
+		lea	(g_InvSelectedSlot).l,a0
 		move.b	d0,(a0)
 		lea	((g_Buffer+$A)).l,a0
 		move.w	(a0),d0
@@ -128,215 +140,208 @@ loc_D34C:					  ; CODE XREF: ROM:0000D3D8j
 		andi.b	#$03,d1
 		add.b	d1,d1
 		or.b	d1,d0
-		lea	(byte_FF1BF3).l,a0
+		lea	(g_InvCursorPos).l,a0
 		move.b	d0,(a0)
 		movem.w	(sp)+,d0
-; START	OF FUNCTION CHUNK FOR sub_EAD4
 
-loc_D38A:					  ; CODE XREF: sub_EAD4-8j
+; d1 = 2 if Start is held, 1 if B, else 0. Also used on its own by
+; the save-prompt code in inventory5.
+ReadMenuExitButtons:
 		move.b	(g_Controller1State).l,d1
 		btst	#CTRL_START,d1
-		beq.s	loc_D39A
+		beq.s	_rebB
 		moveq	#$00000002,d1
-		bra.s	locret_D3A6
+		bra.s	_rebDone
 ; ---------------------------------------------------------------------------
 
-loc_D39A:					  ; CODE XREF: sub_EAD4-1740j
+_rebB:
 		btst	#CTRL_B,d1
-		beq.s	loc_D3A4
+		beq.s	_rebNone
 		moveq	#$00000001,d1
-		bra.s	locret_D3A6
+		bra.s	_rebDone
 ; ---------------------------------------------------------------------------
 
-loc_D3A4:					  ; CODE XREF: sub_EAD4-1736j
+_rebNone:
 		moveq	#$00000000,d1
 
-locret_D3A6:					  ; CODE XREF: sub_EAD4-173Cj
-						  ; sub_EAD4-1732j
+_rebDone:
 		rts
-; END OF FUNCTION CHUNK	FOR sub_EAD4
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_D3A8:					  ; CODE XREF: sub_7766:loc_776Ep
+; Restore palette line 1 from the copy InitInv saved in the state
+; block (called while the menu closes).
+RestoreSavedPal1:
 		lea	((g_Buffer+$1C)).l,a0
 		lea	(g_Pal1Base).l,a1
 		moveq	#$0000001F,d7
 
-loc_D3B6:					  ; CODE XREF: sub_D3A8+10j
+_rspCopy:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_D3B6
+		dbf	d7,_rspCopy
 		rts
-; End of function sub_D3A8
 
-; ---------------------------------------------------------------------------
-
-loc_D3BE:					  ; CODE XREF: CheckForMenuOpen:loc_774Ap
+; The item screen's interactive loop. Runs until B/Start backs out
+; (via ItemMenuExit; d1 = the exit code) or the select handler in
+; inventory4 (ItemMenuSelect, on A/C) picks an item - it rejoins at
+; ItemMenuLoop to keep browsing or leaves through ItemMenuExit
+; with d1 = 0 and the item in d0. The cursor roams a 2 x 4 window
+; over the 2 x 20 item grid: in the outer rows up/down scroll the
+; list instead (four sub-row steps per item row, SND_CursorMove
+; per step), falling back to a plain cursor move at the ends.
+RunItemMenu:
 		bsr.w	ClearInventoryWindow
-		bsr.w	sub_D96A
+		bsr.w	WaitMenuButtonsRelease
 
-loc_D3C6:					  ; CODE XREF: ROM:loc_D424j
-						  ; ROM:0000DBC0j
+ItemMenuLoop:
 		moveq	#$0000000F,d0
-		bsr.w	sub_D88A
+		bsr.w	UpdateMenuDPadRepeat
 		move.b	(g_Controller1State).l,d1
 		move.b	d1,d0
 		andi.b	#CTRLBF_BSTART,d0
-		bne.w	loc_D34C
+		bne.w	ItemMenuExit
 		move.b	d1,d0
 		andi.b	#CTRLBF_AC,d0
-		bne.w	loc_DB28
+		bne.w	ItemMenuSelect
 		lea	(g_Buffer).l,a1
 		lea	0000000010(a1),a0
 		lea	$0000000C(a1),a1
 		move.b	(g_Controller1State).l,d0
 		btst	#CTRL_UP,d0
-		bne.w	loc_D426
+		bne.w	_imUp
 		btst	#CTRL_DOWN,d0
-		bne.w	loc_D45C
+		bne.w	_imDown
 		btst	#CTRL_LEFT,d0
-		bne.w	loc_D4A0
+		bne.w	_imLeft
 		btst	#CTRL_RIGHT,d0
-		bne.w	loc_D494
+		bne.w	_imRight
 
-loc_D41A:					  ; CODE XREF: ROM:0000D454j
-						  ; ROM:0000D48Cj ...
-		bsr.w	sub_D730
+_imRedraw:
+		bsr.w	GetInvCursorPos
 		clr.l	d2
-		bsr.w	sub_D714
+		bsr.w	UpdateInvCursorSprites
 
-loc_D424:					  ; CODE XREF: ROM:0000D430j
-						  ; ROM:0000D450j ...
-		bra.s	loc_D3C6
+_imNext:
+		bra.s	ItemMenuLoop
 ; ---------------------------------------------------------------------------
 
-loc_D426:					  ; CODE XREF: ROM:0000D3FEj
+_imUp:
 		cmpi.w	#$0002,(a1)
-		bcs.s	loc_D432
-		bsr.w	sub_D68C
-		bra.s	loc_D424
+		bcs.s	_imScrollUp
+		bsr.w	InvCursorUp
+		bra.s	_imNext
 ; ---------------------------------------------------------------------------
 
-loc_D432:					  ; CODE XREF: ROM:0000D42Aj
+_imScrollUp:
 		movem.l	a0-a1,-(sp)
-		bsr.w	sub_D7DE
-		bcc.s	loc_D440
+		bsr.w	InvScrollUp
+		bcc.s	_imUpSteps
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
 
-loc_D440:					  ; CODE XREF: ROM:0000D43Aj
-		bsr.w	sub_D7DE
-		bsr.w	sub_D7DE
-		bsr.w	sub_D7DE
+_imUpSteps:
+		bsr.w	InvScrollUp
+		bsr.w	InvScrollUp
+		bsr.w	InvScrollUp
 		movem.l	(sp)+,a0-a1
-		bcs.s	loc_D424
+		bcs.s	_imNext
 		move.w	(a1),d0
-		beq.s	loc_D41A
-		bsr.w	sub_D68C
-		bra.s	loc_D424
+		beq.s	_imRedraw
+		bsr.w	InvCursorUp
+		bra.s	_imNext
 ; ---------------------------------------------------------------------------
 
-loc_D45C:					  ; CODE XREF: ROM:0000D406j
+_imDown:
 		cmpi.w	#$0002,(a1)
-		bcc.s	loc_D468
-		bsr.w	sub_D6AA
-		bra.s	loc_D424
+		bcc.s	_imScrollDown
+		bsr.w	InvCursorDown
+		bra.s	_imNext
 ; ---------------------------------------------------------------------------
 
-loc_D468:					  ; CODE XREF: ROM:0000D460j
+_imScrollDown:
 		movem.l	a0-a1,-(sp)
-		bsr.w	loc_D7F4
-		bcc.s	loc_D476
+		bsr.w	InvScrollDown
+		bcc.s	_imDownSteps
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
-word_D474:	dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
+		dc.w SND_CursorMove
 
-loc_D476:					  ; CODE XREF: ROM:0000D470j
-		bsr.w	loc_D7F4
-		bsr.w	loc_D7F4
-		bsr.w	loc_D7F4
+_imDownSteps:
+		bsr.w	InvScrollDown
+		bsr.w	InvScrollDown
+		bsr.w	InvScrollDown
 		movem.l	(sp)+,a0-a1
-		bcs.s	loc_D424
+		bcs.s	_imNext
 		cmpi.w	#$0003,(a1)
-		bcc.s	loc_D41A
-		bsr.w	sub_D6AA
-		bra.s	loc_D424
+		bcc.s	_imRedraw
+		bsr.w	InvCursorDown
+		bra.s	_imNext
 ; ---------------------------------------------------------------------------
 
-loc_D494:					  ; CODE XREF: ROM:0000D416j
+_imRight:
 		cmpi.w	#$0001,(a0)
-		bcc.s	loc_D41A
-		bsr.w	loc_D6EC
-		bra.s	loc_D424
+		bcc.s	_imRedraw
+		bsr.w	InvCursorRight
+		bra.s	_imNext
 ; ---------------------------------------------------------------------------
 
-loc_D4A0:					  ; CODE XREF: ROM:0000D40Ej
+_imLeft:
 		move.w	(a0),d0
-		beq.w	loc_D41A
-		bsr.w	loc_D6C8
-		bra.w	loc_D424
+		beq.w	_imRedraw
+		bsr.w	InvCursorLeft
+		bra.w	_imNext
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-; Blanks the inventory window tilemap (fills the g_Buffer copy and
-; the plane B blocks with the empty tile) and restores the palette if
-; it was dimmed, then flushes the DMA queue.
-ClearInventoryWindow:					  ; CODE XREF: CheckForMenuOpen+88p
-						  ; ConsumeItem+14p ...
-		bsr.w	sub_D308
+; Reset the inventory window to the plain item-grid view: restore
+; the saved cursor, blank the window tilemap working copy and the
+; plane B blocks, redraw all 40 item slots, reload the greyed-out
+; palette, and un-dim the palette if a submenu had dimmed it
+; (state +$E), then flush the DMA queue.
+ClearInventoryWindow:
+		bsr.w	_restoreCursor
 		lea	(g_Buffer).l,a1
 		lea	$00000084(a1),a0
-		move.w	(a0),d0
-		move.w	#$A000,d0
-		ori.w	#$0000,d0
+		move.w	(a0),d0			  ; leftover: d0 is
+		move.w	#$A000,d0		  ; overwritten, and the
+		ori.w	#$0000,d0		  ; ori is a no-op
 		move.w	#$0B63,d7
 
-loc_D4CA:					  ; CODE XREF: ClearInventoryWindow+1Ej
+_ciwFillWin:
 		move.w	d0,(a0)+
-		dbf	d7,loc_D4CA
-		bsr.w	sub_D50C
+		dbf	d7,_ciwFillWin
+		bsr.w	_drawItemGrid
 		lea	((g_ForegroundBlocks+$204)).l,a0
 		move.w	(a0)+,d0
 		move.w	#$043E,d7
 
-loc_D4E0:					  ; CODE XREF: ClearInventoryWindow+34j
+_ciwFillB:
 		move.w	d0,(a0)+
-		dbf	d7,loc_D4E0
+		dbf	d7,_ciwFillB
 		bsr.w	QueueInventoryScrBTilemapDMA
-		bsr.w	sub_D2F4
+		bsr.w	_loadGreyedPal2
 		lea	((g_Buffer+$E)).l,a0
 		move.w	(a0),d0
 		move.w	#$FFFF,(a0)
 		tst.w	d0
-		beq.s	loc_D504
+		beq.s	_ciwFlush
 		jsr	(CopyBasePaletteToActivePalette).l
 
-loc_D504:					  ; CODE XREF: ClearInventoryWindow+4Ej
+_ciwFlush:
 		jsr	(FlushDMACopyQueue).l
 		rts
-; End of function ClearInventoryWindow
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_D50C:					  ; CODE XREF: ClearInventoryWindow+22p
+; Draw all 40 item slots: 20 rows (4 units apart) of 2 columns (x
+; = 2 and $13), item ids read from the state block's list at +$5C;
+; GetInvWindowPtr positions each slot and PopulateItemSlot draws its icon
+; and quantity. Ends by refreshing the cursor.
+_drawItemGrid:
 		move.w	#$0000,d1
 		move.w	#$0013,d6
 		lea	((g_Buffer+$5C)).l,a2
 
-loc_D51A:					  ; CODE XREF: sub_D50C+3Cj
+_dgRow:
 		move.w	#$0002,d0
 		move.w	#$0001,d7
 
-loc_D522:					  ; CODE XREF: sub_D50C+36j
+_dgSlot:
 		movem.w	d0-d1/d6-d7,-(sp)
-		bsr.w	sub_D86C
+		bsr.w	GetInvWindowPtr
 		clr.w	d0
 		move.b	(a2)+,d0
 		movem.l	a2,-(sp)
@@ -344,14 +349,13 @@ loc_D522:					  ; CODE XREF: sub_D50C+36j
 		movem.l	(sp)+,a2
 		movem.w	(sp)+,d0-d1/d6-d7
 		addi.w	#$0011,d0
-		dbf	d7,loc_D522
+		dbf	d7,_dgSlot
 		addq.w	#$04,d1
-		dbf	d6,loc_D51A
-		bsr.w	sub_D828
-		bsr.w	sub_D730
+		dbf	d6,_dgRow
+		bsr.w	RefreshItemWindow
+		bsr.w	GetInvCursorPos
 		moveq	#$00000001,d2
-		bsr.w	sub_D714
+		bsr.w	UpdateInvCursorSprites
 		rts
-; End of function sub_D50C
 
-; ---------------------------------------------------------------------------
+	modend

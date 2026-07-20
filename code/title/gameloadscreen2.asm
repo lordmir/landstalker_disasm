@@ -27,7 +27,7 @@ loc_F71C:					  ; CODE XREF: InitGameStartScreen+48j
 		bsr.w	sub_F736
 		move.l	(sp)+,d0
 		dbf	d0,loc_F71C
-		bsr.w	sub_F306
+		bsr.w	CopySaveScreenToPlaneA
 		rts
 ; End of function InitGameStartScreen
 
@@ -38,7 +38,7 @@ loc_F71C:					  ; CODE XREF: InitGameStartScreen+48j
 sub_F72E:					  ; CODE XREF: ROM:0000EFB0p
 						  ; ROM:0000EFE8p ...
 		bsr.s	sub_F736
-		bsr.w	sub_F306
+		bsr.w	CopySaveScreenToPlaneA
 		rts
 ; End of function sub_F72E
 
@@ -242,7 +242,7 @@ sub_F8C4:					  ; CODE XREF: sub_F89C+Ep
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_F8C6:					  ; CODE XREF: sub_F8C6+32j
+DarkenPaletteStep:					  ; CODE XREF: DarkenPaletteStep+32j
 						  ; DATA XREF: sub_E48E+28t
 		move.w	(a0),d0
 		move.w	d0,d1
@@ -251,29 +251,29 @@ sub_F8C6:					  ; CODE XREF: sub_F8C6+32j
 		bpl.s	loc_F8D6
 		clr.w	d1
 
-loc_F8D6:					  ; CODE XREF: sub_F8C6+Cj
+loc_F8D6:					  ; CODE XREF: DarkenPaletteStep+Cj
 		move.w	d0,d2
 		andi.w	#$00E0,d2
 		subi.w	#$0020,d2
 		bpl.s	loc_F8E4
 		clr.w	d2
 
-loc_F8E4:					  ; CODE XREF: sub_F8C6+1Aj
+loc_F8E4:					  ; CODE XREF: DarkenPaletteStep+1Aj
 		move.w	d0,d3
 		andi.w	#$000E,d3
 		subi.w	#$0002,d3
 		bpl.s	loc_F8F2
 		clr.w	d3
 
-loc_F8F2:					  ; CODE XREF: sub_F8C6+28j
+loc_F8F2:					  ; CODE XREF: DarkenPaletteStep+28j
 		or.w	d2,d1
 		or.w	d3,d1
 		move.w	d1,(a0)+
-		dbf	d7,sub_F8C6
+		dbf	d7,DarkenPaletteStep
 		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(EnableDMAQueueProcessing).l
 		rts
-; End of function sub_F8C6
+; End of function DarkenPaletteStep
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -308,7 +308,7 @@ loc_F924:					  ; CODE XREF: sub_F90A+16j
 sub_F92A:					  ; CODE XREF: ROM:loc_EEF6p
 		jsr	(ClearVDPSpriteTable).l
 		bsr.w	LoadGameStartPalette
-		bsr.w	sub_F202
+		bsr.w	ClearSaveSlotHighlights
 		bsr.s	sub_F958
 
 loc_F93A:					  ; CODE XREF: sub_F92A+26j
@@ -372,7 +372,7 @@ sub_F958:					  ; CODE XREF: ROM:0000EEC8p
 
 sub_F992:					  ; CODE XREF: ROM:0000EF94p
 						  ; ROM:0000EFC4p
-		bsr.w	sub_F1FA
+		bsr.w	DrawSaveNigelStill
 		move.w	#$0090,(word_FF1194).l
 		move.w	#$0046,d1
 		bsr.w	j_j_LoadUncompressedString
@@ -381,7 +381,7 @@ sub_F992:					  ; CODE XREF: ROM:0000EF94p
 		bsr.w	j_j_LoadUncompressedString
 		jsr	(WaitUntilVBlank).l
 		bsr.w	DMACopyTextBuffer
-		bsr.w	sub_F218
+		bsr.w	UpdateSaveSlotHighlights
 		move.w	#$0118,d0
 	if 	REGION=JP
 		move.w	#$0138,d1
@@ -420,7 +420,7 @@ var_2		= -2
 		move.w	d3,var_A(a4)
 		jsr	(CopyBasePaletteToActivePalette).l
 		jsr	(WaitUntilVBlank).l
-		bsr.w	sub_F306
+		bsr.w	CopySaveScreenToPlaneA
 		bsr.s	sub_FA24
 		move.w	var_2(a4),d0
 		unlk	a4
@@ -433,7 +433,7 @@ var_2		= -2
 
 sub_FA24:					  ; CODE XREF: sub_F9D6+44p
 						  ; sub_FA24+46j
-		bsr.w	sub_F2E2
+		bsr.w	SuppressHeldInputs
 		move.b	(g_Controller1State).l,d1
 		cmpi.b	#$10,d1
 		bcs.s	loc_FA58
@@ -550,7 +550,7 @@ sub_FAE6:					  ; CODE XREF: ROM:0000EF54p
 
 
 sub_FAF0:					  ; CODE XREF: ROM:0000EFF2p
-						  ; sub_F0F8:loc_F116p
+						  ; StartSaveNigelAnim:loc_F116p
 		move.w	-$00000002(a6),d0
 		move.b	d0,(g_SaveSlot).l
 		jsr	(LoadSavedGame).l

@@ -525,7 +525,7 @@ g_PlayerPendingHit:               equ $FF1143
 byte_FF1144:                      equ $FF1144
 g_PlayerAnimation:                equ $FF1145
 g_PlayerStatus:                   equ $FF1146
-byte_FF1147:                      equ $FF1147
+g_StatusAnimCounter:              equ $FF1147
 g_PoisonStepCounter:              equ $FF1148
 g_PoisonHitsLeft:                 equ $FF1149
 g_ParalysisCheckCount:            equ $FF114A
@@ -536,7 +536,7 @@ g_EquippedSword:                  equ $FF114E
 g_EquippedArmour:                 equ $FF114F
 g_EquippedBoots:                  equ $FF1150
 g_EquippedRing:                   equ $FF1151
-byte_FF1152:                      equ $FF1152
+g_ItemBeingUsed:                  equ $FF1152
 g_LockPlayerActions:              equ $FF1153
 g_TalkSoundEffect:                equ $FF1154
 byte_FF1155:                      equ $FF1155
@@ -667,9 +667,9 @@ word_FF1B04:                      equ $FF1B04
 word_FF1B08:                      equ $FF1B08
 unk_FF1B0C:                       equ $FF1B0C
 g_CurrentEquippedItems:           equ $FF1BF0
-byte_FF1BF2:                      equ $FF1BF2
-byte_FF1BF3:                      equ $FF1BF3
-unk_FF1BF4:                       equ $FF1BF4
+g_InvSelectedSlot:                equ $FF1BF2
+g_InvCursorPos:                   equ $FF1BF3
+g_EquipCursorPos:                 equ $FF1BF4
 byte_FF1BFA:                      equ $FF1BFA
 unk_FF1BFB:                       equ $FF1BFB
 g_HUD_Row1:                       equ $FF1C00

@@ -1,6 +1,12 @@
-; ---------------------------------------------------------------------------
+Items3	module
+; Item use, part 3: the rest of the pre-use handlers, the shared
+; exits, and the post-use pass - RunItemPostUse runs after the menu
+; has closed and the room reloaded, for the items whose effects
+; warp, run cutscenes or swap tiles.
 
-ItemUseGarlic:					  ; CODE XREF: ROM:0000864Aj
+; Garlic: only in Miro's room of Mir's Tower; the effect itself is the
+; post-use flag.
+ItemUseGarlic:
 		cmpi.w	#ROOM_MIRS_TOWER_MIRO,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		cmpi.b	#$11,(Player_Y).l
@@ -8,7 +14,8 @@ ItemUseGarlic:					  ; CODE XREF: ROM:0000864Aj
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
-ItemUseAntiparalyze:				  ; CODE XREF: ROM:00008650j
+; Anti Paralyze: cure paralysis.
+ItemUseAntiparalyze:
 		jsr	(j_GetPlayerStatus).l
 		btst	#STATUS_PARALYSIS,d0
 		beq.w	ReturnFailure
@@ -16,17 +23,22 @@ ItemUseAntiparalyze:				  ; CODE XREF: ROM:00008650j
 		move.b	#STATUS_PARALYSIS,d0
 		jsr	(j_ClearPlayerStatus).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
+
+; Unreachable leftover: turn the player into the dog sprite.
+_orphanDogForm:
 		move.b	#$01,(Player_AnimCtrl).l
 		move.b	#SpriteB_Dog,(Player_SpriteGraphic).l
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseEinsteinWhistle:				  ; CODE XREF: ROM:00008656j
+; Einstein Whistle: only on the whistle spot above the Sunstone in
+; Greenmaze (and, with FIX_WHISTLE_CHECK, only once); the cutscene
+; runs in the post-use pass.
+ItemUseEinsteinWhistle:
 		cmpi.w	#ROOM_GREENMAZE_SUNSTONE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
@@ -44,27 +56,32 @@ ItemUseEinsteinWhistle:				  ; CODE XREF: ROM:00008656j
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
-ItemUseSpellbook:				  ; CODE XREF: ROM:0000865Cj
+; Spell Book: no effect - it is just consumed.
+ItemUseSpellbook:
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseLithograph:				  ; CODE XREF: ROM:00008662j
+; Lithograph: never usable (its hint text is read in the menu).
+ItemUseLithograph:
 		bra.w	ReturnFailure
 ; ---------------------------------------------------------------------------
 
-ItemUsePawnTicket:				  ; CODE XREF: ROM:00008668j
+; Pawn Ticket: once per game (g_AdditionalFlags+$19 bit 7), trade
+; health for gold - one heart at a time for 10 gold each, with a
+; chime every 10 frames, until a sliver ($FF) remains.
+ItemUsePawnTicket:
 		bset	#$07,(g_AdditionalFlags+$19).l
 		bne.w	ReturnFailure
 
-loc_88DE:					  ; CODE XREF: ROM:00008928j
+_ptDrain:
 		move.w	(Player_CurrentHealth).l,d0
 		subi.w	#$0100,d0
-		bcs.w	loc_892A
-		bne.s	loc_88F2
+		bcs.w	_ptDone
+		bne.s	_ptStore
 		move.w	#$00FF,d0
 
-loc_88F2:					  ; CODE XREF: ROM:000088ECj
+_ptStore:
 		move.w	d0,(Player_CurrentHealth).l
 		move.w	#$000A,d0
 		jsr	(j_AddGold).l
@@ -73,19 +90,20 @@ loc_88F2:					  ; CODE XREF: ROM:000088ECj
 		jsr	(j_RefreshHUD).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover1
-; ---------------------------------------------------------------------------
+
 		move.w	#00010,d0
 		jsr	(j_Sleep).l
-		bra.s	loc_88DE
+		bra.s	_ptDrain
 ; ---------------------------------------------------------------------------
 
-loc_892A:					  ; CODE XREF: ROM:000088E8j
+_ptDone:
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseGolasEye:				  ; CODE XREF: ROM:0000866Ej
+; Gola's Eye: only on the statue spot in the mountains, at floor
+; height $20, once; the flags are set in the post-use pass.
+ItemUseGolasEye:
 		cmpi.w	#ROOM_MOUNTAINS_STATUE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
@@ -103,42 +121,44 @@ ItemUseGolasEye:				  ; CODE XREF: ROM:0000866Ej
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
-ItemUseDeathStatue:				  ; CODE XREF: ROM:00008674j
+; Death Statue: print its text ($1C) and roll 0-19: 0-7 a random
+; status effect (roll & 3), 8-11 a full heal, 12-19 fill the
+; rolled bonus item's stock to 9.
+ItemUseDeathStatue:
 		move.w	#$001C,d0
 		jsr	(j_PrintString).l
 		move.w	#00020,d6
 		bsr.w	GenerateRandomNumber
 		cmpi.b	#$08,d7
-		bcs.s	loc_899A
+		bcs.s	_dsStatus
 		cmpi.b	#$0C,d7
-		bcs.s	loc_89A8
-		bra.s	loc_89C6
+		bcs.s	_dsHeal
+		bra.s	_dsGrant
 ; ---------------------------------------------------------------------------
 
-loc_899A:					  ; CODE XREF: ROM:00008990j
+_dsStatus:
 		andi.b	#$03,d7
 		move.w	d7,d0
 		jsr	(j_AddStatusEffect).l
-		bra.s	loc_89D8
+		bra.s	_dsConsume
 ; ---------------------------------------------------------------------------
 
-loc_89A8:					  ; CODE XREF: ROM:00008996j
+_dsHeal:
 		move.w	#$FFFF,d0
 		lea	(Player_X).l,a5
 		jsr	(j_AddHealth).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
-		bra.s	loc_89D8
+		bra.s	_dsConsume
 ; ---------------------------------------------------------------------------
 
-loc_89C6:					  ; CODE XREF: ROM:00008998j
+_dsGrant:
 		subi.w	#$000C,d7
 		move.b	DeathStatueItemBonus(pc,d7.w),d0
 		move.b	#$09,d1
 		jsr	(j_SetItemQuantity).l
 
-loc_89D8:					  ; CODE XREF: ROM:000089A6j
-						  ; ROM:000089C4j
+_dsConsume:
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
@@ -153,7 +173,8 @@ DeathStatueItemBonus:dc.b ITM_EKEEKE
 		dcb.b 2,ITM_EKEEKE
 ; ---------------------------------------------------------------------------
 
-ItemUseDahl:					  ; CODE XREF: ROM:0000867Aj
+; Dahl: a full heal.
+ItemUseDahl:
 		move.w	#$FFFF,d0
 		lea	(Player_X).l,a5
 		jsr	(j_AddHealth).l
@@ -161,13 +182,14 @@ ItemUseDahl:					  ; CODE XREF: ROM:0000867Aj
 		jsr	(j_RefreshHUD).l
 		bsr.w	ConsumeItem
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseRestoration:				  ; CODE XREF: ROM:00008680j
+; Restoration: cure poison, confusion and paralysis (needs at
+; least one of them).
+ItemUseRestoration:
 		jsr	(j_GetPlayerStatus).l
 		andi.b	#$07,d0
 		beq.w	ReturnFailure
@@ -179,15 +201,16 @@ ItemUseRestoration:				  ; CODE XREF: ROM:00008680j
 		jsr	(j_ClearPlayerStatus).l
 		bsr.w	ConsumeItem
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseLogs:					  ; CODE XREF: ROM:00008686j
+; Logs: build the raft - each of the two raft rooms has its own
+; landing spot and one-time flag.
+ItemUseLogs:
 		cmpi.w	#ROOM_LABRYNTH_RAFT1,(g_CurrentRoom).l
-		bne.s	loc_8A7A
+		bne.s	_logsRaft2
 		move.w	(Player_X).l,d0
 		andi.w	#$FEFE,d0
 		cmpi.w	#$2C2E,d0
@@ -198,7 +221,7 @@ ItemUseLogs:					  ; CODE XREF: ROM:00008686j
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-loc_8A7A:					  ; CODE XREF: ROM:00008A52j
+_logsRaft2:
 		cmpi.w	#ROOM_LABRYNTH_RAFT2,(g_CurrentRoom).l
 		bne.w	ReturnFailure
 		move.b	(Player_X).l,d0
@@ -216,11 +239,15 @@ loc_8A7A:					  ; CODE XREF: ROM:00008A52j
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseOracleStone:				  ; CODE XREF: ROM:0000868Cj
+; Oracle Stone: does nothing (its reading was printed in the
+; menu).
+ItemUseOracleStone:
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseIdolStone:				  ; CODE XREF: ROM:00008692j
+; Idol Stone: on the spot before the Swamp Shrine entrance, once
+; (g_Flags bit 6); the tile swap runs in the post-use pass.
+ItemUseIdolStone:
 		btst	#$06,(g_Flags).l
 		bne.w	ReturnFailure
 		cmpi.w	#ROOM_SWAMP_SHRINE_ENTRANCE,(g_CurrentRoom).l
@@ -234,155 +261,153 @@ ItemUseIdolStone:				  ; CODE XREF: ROM:00008692j
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
-ItemUseKey:					  ; CODE XREF: ROM:00008698j
+; Key: standing on a locked-door floor type; the SE/SW door types
+; also validate through CheckUnlockDoor. The unlock itself is the
+; post-use pass.
+ItemUseKey:
 		move.b	(Player_GroundType).l,d0
 		andi.b	#$3F,d0
 		cmpi.b	#FLOOR_LOCKED_DOOR,d0
 		bcs.w	ReturnFailure
 		cmpi.b	#$1D,d0
-		bcs.s	loc_8B34
+		bcs.s	_keyConsume
 		cmpi.b	#FLOOR_LOCKED_DOOR_SE,d0
-		beq.s	loc_8B2A
+		beq.s	_keyCheckDoor
 		cmpi.b	#FLOOR_LOCKED_DOOR_SW,d0
 		bne.w	ReturnFailure
 
-loc_8B2A:					  ; CODE XREF: ROM:00008B20j
+_keyCheckDoor:
 		jsr	(j_CheckUnlockDoor).l
 		bcc.w	ReturnFailure
 
-loc_8B34:					  ; CODE XREF: ROM:00008B1Aj
+_keyConsume:
 		bsr.s	ConsumeItem
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
 
-ItemUseBell:					  ; CODE XREF: ROM:0000869Ej
+; Bell: rings out (with the chime) when a Lifestock is somewhere
+; in the room.
+ItemUseBell:
 		bsr.s	CheckForLifestock
 		bcc.w	ReturnFailure
 		bra.w	ReturnSuccess
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForLifestock:				  ; CODE XREF: DoorWarp+49Cp
-						  ; ROM:ItemUseBellp
+; Scan the 15 sprite slots for an item or chest holding a
+; Lifestock: carry set (and the chime played) when found. Also
+; used by DoorWarp.
+CheckForLifestock:
 		lea	(Sprite1_X).l,a0
 		moveq	#$0000000E,d7
 
-loc_8B4C:					  ; CODE XREF: CheckForLifestock+38j
+_clsScan:
 		tst.w	(a0)
-		bmi.s	loc_8B8C
+		bmi.s	_clsNone
 		cmpi.b	#$7F,X(a0)
-		beq.s	loc_8B78
+		beq.s	_clsNext
 		cmpi.b	#SpriteB_Item,SpriteGraphic(a0)
-		bne.s	loc_8B68
+		bne.s	_clsChest
 		cmpi.b	#ITM_LIFESTOCK,GoldOrChestContents(a0)
-		beq.s	loc_8B82
-		bra.s	loc_8B78
+		beq.s	_clsFound
+		bra.s	_clsNext
 ; ---------------------------------------------------------------------------
 
-loc_8B68:					  ; CODE XREF: CheckForLifestock+18j
+_clsChest:
 		cmpi.b	#SpriteB_Chest,SpriteGraphic(a0)
-		bne.s	loc_8B78
+		bne.s	_clsNext
 		cmpi.b	#ITM_LIFESTOCK,GoldOrChestContents(a0)
-		beq.s	loc_8B82
+		beq.s	_clsFound
 
-loc_8B78:					  ; CODE XREF: CheckForLifestock+10j
-						  ; CheckForLifestock+22j ...
+_clsNext:
 		lea	SPRITE_SIZE(a0),a0
-		dbf	d7,loc_8B4C
-		bra.s	loc_8B8C
+		dbf	d7,_clsScan
+		bra.s	_clsNone
 ; ---------------------------------------------------------------------------
 
-loc_8B82:					  ; CODE XREF: CheckForLifestock+20j
-						  ; CheckForLifestock+32j
+_clsFound:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover1
-; ---------------------------------------------------------------------------
+
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_8B8C:					  ; CODE XREF: CheckForLifestock+Aj
-						  ; CheckForLifestock+3Cj
+_clsNone:
 		tst.b	d0
 		rts
-; End of function CheckForLifestock
-
 ; ---------------------------------------------------------------------------
 
-ItemUseShortcake:				  ; CODE XREF: ROM:000086A4j
+; Shortcake: the 50/50 outcome plays out in the post-use pass.
+ItemUseShortcake:
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccessAndEnablePostUse
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ConsumeItem:					  ; CODE XREF: ROM:000086DCp
-						  ; ROM:00008726p ...
-		move.b	(byte_FF1152).l,d0
+; Take one of the item being used and reset the menu window.
+ConsumeItem:
+		move.b	(g_ItemBeingUsed).l,d0
 		jsr	(j_GetItemQtyAndMaxQty).l
 		subq.w	#$01,d1
 		jsr	(j_CheckAndConsumeItem).l
 		bsr.w	ClearInventoryWindow
 		rts
-; End of function ConsumeItem
-
 ; ---------------------------------------------------------------------------
 
-ReturnSuccessAndEnablePostUse:			  ; CODE XREF: ROM:0000884Aj
-						  ; ROM:000088C2j ...
-		bset	#$07,(byte_FF1152).l
+; Shared exits: arming bit 7 of g_ItemBeingUsed makes the item
+; match its ($80 | id) entry in PostUseItemTable after the room
+; reloads.
+ReturnSuccessAndEnablePostUse:
+		bset	#$07,(g_ItemBeingUsed).l
 
-ReturnSuccess:					  ; CODE XREF: ROM:000086F6j
-						  ; ROM:00008736j ...
+ReturnSuccess:
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
-ReturnFailure:					  ; CODE XREF: ROM:00008722j
-						  ; ROM:0000875Ej ...
+ReturnFailure:
 		bsr.w	PrintNothingHappenedString
 		tst.b	d0
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_8BC8:					  ; CODE XREF: CheckForMenuOpen+13Cp
-		move.b	(byte_FF1152).l,d0
+; The post-use pass, called by the menu (inventory1) once the room
+; has reloaded: find g_ItemBeingUsed's entry in PostUseItemTable -
+; only armed items match, since the table ids carry bit 7 - and
+; run it. Same {bra.w handler, id, $FF} format as the pre-use
+; table.
+RunItemPostUse:
+		move.b	(g_ItemBeingUsed).l,d0
 		lea	PostUseItemTable(pc),a0
 
-loc_8BD2:					  ; CODE XREF: sub_8BC8+1Aj
+_puScan:
 		move.b	0000000004(a0),d2
 		cmpi.b	#$FF,d2
-		beq.s	locret_8BE6
+		beq.s	_puDone
 		cmp.b	d0,d2
-		beq.s	loc_8BE4
+		beq.s	_puRun
 		addq.l	#$06,a0
-		bra.s	loc_8BD2
+		bra.s	_puScan
 ; ---------------------------------------------------------------------------
 
-loc_8BE4:					  ; CODE XREF: sub_8BC8+16j
+_puRun:
 		jmp	(a0)
 ; ---------------------------------------------------------------------------
 
-locret_8BE6:					  ; CODE XREF: sub_8BC8+12j
+_puDone:
 		rts
-; End of function sub_8BC8
-
 ; ---------------------------------------------------------------------------
 
-PostUseGarlic:					  ; CODE XREF: ROM:PostUseItemTablej
+; Garlic, after the reload: set the flag Miro reacts to.
+PostUseGarlic:
 		bset	#$00,(g_Flags+$17).l
 		rts
 ; ---------------------------------------------------------------------------
 
-PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
+; Einstein Whistle, after the reload: whistle, warp invisibly to
+; the woodcutter's clearing, play cutscene $B7 (Einstein comes
+; running), then warp back to the Sunstone spot, restore the BGM
+; and set the used flag.
+PostUseEinsteinWhistle:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_MusicDogWhistle
-; ---------------------------------------------------------------------------
+
 		move.w	#$0167,d0
 		jsr	(j_Sleep).l
 		move.l	(Player_X).l,d0
@@ -393,9 +418,8 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		bset	#$00,(g_AdditionalFlags+6).l
 		bsr.w	WarpToRoom
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_MusicDogWhistle
-; ---------------------------------------------------------------------------
+
 		move.w	#$00B7,d0
 		jsr	(FlushDMACopyQueue).l
 		jsr	(j_PlayCutsceneScript).l
@@ -407,24 +431,26 @@ PostUseEinsteinWhistle:				  ; CODE XREF: ROM:000086B6j
 		bsr.w	WarpToRoom
 		move.b	(g_BGM).l,d0
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_LoadFromD0
-; ---------------------------------------------------------------------------
+
 		bset	#$00,(g_AdditionalFlags+6).l
 		rts
 ; ---------------------------------------------------------------------------
 
-PostUseGolasEye:				  ; CODE XREF: ROM:000086BCj
+; Gola's Eye, after the reload: set its used flag and the story
+; flag that opens the way.
+PostUseGolasEye:
 		bset	#$06,(g_AdditionalFlags+$A).l
 		bset	#$00,(g_Flags+1).l
 		rts
 ; ---------------------------------------------------------------------------
 
-PostUseIdolStone:				  ; CODE XREF: ROM:000086C2j
+; Idol Stone, after the reload: rumble and run the two-stage tile
+; swap that opens the shrine entrance, then set its flag.
+PostUseIdolStone:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_Rumble
-; ---------------------------------------------------------------------------
+
 		move.b	#$08,d0
 		bsr.w	DoTileSwap
 		move.w	#$001E,d0
@@ -435,17 +461,19 @@ PostUseIdolStone:				  ; CODE XREF: ROM:000086C2j
 		rts
 ; ---------------------------------------------------------------------------
 
-PostUseKey:					  ; CODE XREF: ROM:000086C8j
+; Key, after the reload: unlock the door under the player - the
+; SE/SW door types through the UnlockDoor handler, the others with
+; a direct tile swap plus a ground-height refresh.
+PostUseKey:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_DoorLock
-; ---------------------------------------------------------------------------
+
 		move.b	(Player_GroundType).l,d2
 		andi.b	#$3F,d2
 		cmpi.b	#FLOOR_LOCKED_DOOR_SE,d2
-		beq.s	loc_8CEE
+		beq.s	_pukScripted
 		cmpi.b	#FLOOR_LOCKED_DOOR_SW,d2
-		beq.s	loc_8CEE
+		beq.s	_pukScripted
 		subi.b	#FLOOR_LOCKED_DOOR,d2
 		bsr.w	UnlockDoorTileSwap
 		move.l	#$00FF0000,d0
@@ -455,17 +483,19 @@ PostUseKey:					  ; CODE XREF: ROM:000086C8j
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_8CEE:					  ; CODE XREF: ROM:00008CC8j
-						  ; ROM:00008CCEj
+_pukScripted:
 		jsr	(j_UnlockDoor).l
 		rts
 ; ---------------------------------------------------------------------------
 
-PostUseShortcake:				  ; CODE XREF: ROM:000086CEj
+; Shortcake, after the reload - a coin flip: cutscene $153 and the
+; EkeEke stock filled to 9 plus a full heal, or cutscene $152 with
+; health dropped to a sliver ($FF) and the EkeEke stock wiped.
+PostUseShortcake:
 		move.w	#$0002,d6
 		bsr.w	GenerateRandomNumber
 		tst.b	d7
-		beq.s	loc_8D44
+		beq.s	_pusBad
 		move.w	#$0153,d0
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(j_PlayCutsceneScript).l
@@ -481,7 +511,7 @@ PostUseShortcake:				  ; CODE XREF: ROM:000086CEj
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_8D44:					  ; CODE XREF: ROM:00008D00j
+_pusBad:
 		move.w	#$0152,d0
 		jsr	(j_FlushDMACopyQueue).l
 		jsr	(j_PlayCutsceneScript).l
@@ -494,3 +524,5 @@ loc_8D44:					  ; CODE XREF: ROM:00008D00j
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 		rts
+
+	modend

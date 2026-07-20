@@ -354,7 +354,7 @@ InitPlayerForRoom:
 		bsr.w	CheckPocketsTransform
 		clr.b	(g_CarryPhase).l
 		clr.w	(g_CarriedEntity).l
-		clr.b	(byte_FF1147).l
+		clr.b	(g_StatusAnimCounter).l
 		clr.b	(g_PoisonStepCounter).l
 		lea	(Player_X).l,a1
 		move.w	#ACT_PICKUP_MASK,d1

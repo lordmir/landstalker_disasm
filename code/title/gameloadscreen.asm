@@ -1,3 +1,4 @@
+                            include "code\title\gameselectscreen.asm"
 GameLoadScreenRoutines1:    include "code\title\gameloadscreen1.asm"
 GameStartPalette:           incbin  "assets_packed\graphics\static\loadgame\loadgame.pal"
 GameLoadScreenRoutines2:    include "code\title\gameloadscreen2.asm"

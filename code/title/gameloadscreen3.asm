@@ -20,7 +20,7 @@ loc_FF1A:					  ; CODE XREF: HandleGameStartInput+Aj
 		move.w	#$0078,d7
 
 loc_FF32:					  ; CODE XREF: HandleGameStartInput+5Ej
-		bsr.w	sub_F2E2
+		bsr.w	SuppressHeldInputs
 		move.b	(g_Controller1State).l,d0
 		cmpi.b	#CTRLBF_B,d0
 		bcc.s	loc_FF74
@@ -29,7 +29,7 @@ loc_FF32:					  ; CODE XREF: HandleGameStartInput+5Ej
 		bsr.w	sub_10014
 		move.w	#$0046,d0
 		bsr.w	sub_FFE2
-		bsr.w	sub_F13A
+		bsr.w	DrawSaveNigel
 		move.w	#$0004,d0
 		bsr.w	sub_1007E
 		jsr	(WaitUntilVBlank).l
@@ -76,7 +76,7 @@ loc_FFB0:					  ; CODE XREF: sub_FF78+32j
 		addq.l	#$02,a0
 		dbf	d7,loc_FFA6
 		jsr	(WaitUntilVBlank).l
-		bsr.w	sub_F30E
+		bsr.w	CopySaveScreenToPlaneB
 		lea	((g_Buffer+2)).l,a0
 		move.w	#$045E,d7
 		move.w	(a0)+,d0
@@ -126,7 +126,7 @@ loc_FFF2:					  ; CODE XREF: sub_FFE2+Cj
 ; ---------------------------------------------------------------------------
 		dc.w SND_SwordSwing
 ; ---------------------------------------------------------------------------
-		bsr.w	sub_F0F8
+		bsr.w	StartSaveNigelAnim
 ; END OF FUNCTION CHUNK	FOR sub_FFE2
 		move.b	#$01,-$00000009(a4)
 ; START	OF FUNCTION CHUNK FOR sub_FFE2
@@ -134,7 +134,7 @@ loc_FFF2:					  ; CODE XREF: sub_FFE2+Cj
 loc_10002:					  ; CODE XREF: sub_FFE2:loc_FFF2j
 		tst.b	-$00000019(a6)
 		beq.s	locret_10012
-		bsr.w	sub_F1E4
+		bsr.w	SetSaveNigelStill
 		move.b	#$FF,-$00000009(a4)
 
 locret_10012:					  ; CODE XREF: sub_FFE2+24j

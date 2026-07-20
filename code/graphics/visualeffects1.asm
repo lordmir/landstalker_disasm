@@ -1,16 +1,18 @@
+VisualEffects1	module
+; Full-screen visual effects: palette flashes and the warp
+; transitions. Everything here runs synchronously (the game loop is
+; paused while an effect plays), driving the VDP directly and
+; restoring what it changed on the way out. The Nole warp's tick
+; helpers continue in visualeffects2.asm and share NoleWarp's stack
+; frame (the _nw_* vars below).
 
-; =============== S U B	R O U T	I N E =======================================
-
-; 0,1 -	Warp-pad transition
-; 2,3 -	Tree warp transition
-; 4 - Black flash
-; 5 - White flash
-; 6 - Red flash
-; 7 - Nole warp
-;
-
-DoVisualEffect:					  ; CODE XREF: DoorWarp+ECp
-						  ; DoorWarp+100p ...
+; Run visual effect d0 (VFX_* ids, constants/visualeffects.inc):
+;   0,1 - warp-pad darkness sweep (the id is not used by the handler)
+;   2   - tree warp out, 3 - tree warp in
+;   4   - black flash, 5 - white flash, 6 - red flash
+;   7   - Nole/Kazalt warp out, 8 - Nole/Kazalt warp in
+;   9,A - as 7,8 with an alternate sparkle centre (cutscene use)
+DoVisualEffect:
 		movem.l	d0-a6,-(sp)
 		lea	VisualFXTable(pc),a0
 		move.w	d0,d1
@@ -19,10 +21,8 @@ DoVisualEffect:					  ; CODE XREF: DoorWarp+ECp
 		jsr	(a0)
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function DoVisualEffect
 
-; ---------------------------------------------------------------------------
-VisualFXTable:	dc.l WarpPadFx			  ; DATA XREF: DoVisualEffect+4t
+VisualFXTable:	dc.l WarpPadFx
 		dc.l WarpPadFx
 		dc.l TreeWarpFx
 		dc.l TreeWarpFx
@@ -34,138 +34,141 @@ VisualFXTable:	dc.l WarpPadFx			  ; DATA XREF: DoVisualEffect+4t
 		dc.l NoleWarp
 		dc.l NoleWarp
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-WarpPadFx:					  ; CODE XREF: DoorWarp+114p
-						  ; DATA XREF: j_WarpPadFxt ...
+; Warp-pad transition: a banded darkness gradient that sweeps down
+; the screen. Builds 8 copies of the palette in g_Buffer, each one
+; step darker than the last, then for $51 frames rewrites CRAM
+; mid-frame at 8 raster splits whose scanlines follow a parabola
+; (max(phase + 6i, 0)^2 / 16) - darkest band first, so the gradient
+; accelerates downward as the phase advances. Restores the VDP
+; auto-increment on exit.
+WarpPadFx:
 		lea	(g_Buffer).l,a5
 		movea.l	a5,a1
 		lea	(g_Pal0Base).l,a0
 		moveq	#$00000037,d7
 
-loc_E164:					  ; CODE XREF: WarpPadFx+12j
+_wpSavePal:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_E164
+		dbf	d7,_wpSavePal
 		movea.l	a5,a0
 		lea	$00000070(a0),a1
 		move.w	#$0187,d7
 
-loc_E174:					  ; CODE XREF: WarpPadFx+50j
+; Each of the next 7 x $38 words is the entry $70 bytes back with
+; every component one step darker (clamped at 0): g_Buffer ends up
+; holding the palette at 8 darkness levels.
+_wpDarken:
 		move.w	(a0)+,d0
 		move.w	d0,d1
 		move.w	d0,d2
 		andi.w	#$0E00,d0
 		subi.w	#$0200,d0
-		bpl.s	loc_E186
+		bpl.s	_wpBlueOk
 		clr.w	d0
 
-loc_E186:					  ; CODE XREF: WarpPadFx+2Ej
+_wpBlueOk:
 		andi.w	#$00E0,d1
 		subi.w	#$0020,d1
-		bpl.s	loc_E192
+		bpl.s	_wpGreenOk
 		clr.w	d1
 
-loc_E192:					  ; CODE XREF: WarpPadFx+3Aj
+_wpGreenOk:
 		andi.w	#$000E,d2
 		subi.w	#$0002,d2
-		bpl.s	loc_E19E
+		bpl.s	_wpRedOk
 		clr.w	d2
 
-loc_E19E:					  ; CODE XREF: WarpPadFx+46j
+_wpRedOk:
 		or.w	d1,d0
 		or.w	d2,d0
 		move.w	d0,(a1)+
-		dbf	d7,loc_E174
+		dbf	d7,_wpDarken
 		move.w	#$0000,d7
 
-loc_E1AC:					  ; CODE XREF: WarpPadFx+7Aj
+_wpPass:
 		move.w	#$FFE8,d0
 		move.w	#$0050,d5
 
-loc_E1B4:					  ; CODE XREF: WarpPadFx+76j
+_wpPhase:
 		move.w	#$0000,d6
 
-loc_E1B8:					  ; CODE XREF: WarpPadFx+70j
+_wpFrame:
 		movem.w	d0/d5-d7,-(sp)
-		bsr.w	sub_E1DE
+		bsr.w	_wpDrawFrame
 		movem.w	(sp)+,d0/d5-d7
-		dbf	d6,loc_E1B8
+		dbf	d6,_wpFrame
 		addq.w	#$01,d0
-		dbf	d5,loc_E1B4
-		dbf	d7,loc_E1AC
+		dbf	d5,_wpPhase
+		dbf	d7,_wpPass
 		move.w	#$8F02,d0
 		jsr	(SetVDPReg).l
 		rts
-; End of function WarpPadFx
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E1DE:					  ; CODE XREF: WarpPadFx+68p
+; One frame of the sweep, phase d0: fill the row table at
+; g_Buffer+$380 with the 8 split scanlines, sync to the top of the
+; frame (HV counter $FF), then walk the table blasting the darkest
+; palette at the first split down to the lightest at the last.
+_wpDrawFrame:
 		lea	$00000380(a5),a0
 		moveq	#$00000007,d7
 		move.w	d0,d1
 
-loc_E1E6:					  ; CODE XREF: sub_E1DE+24j
+_dfRow:
 		move.w	d1,d2
-		bpl.s	loc_E1EC
+		bpl.s	_dfSquare
 		clr.w	d2
 
-loc_E1EC:					  ; CODE XREF: sub_E1DE+Aj
+_dfSquare:
 		muls.w	d2,d2
 		lsr.l	#$04,d2
 		cmpi.l	#$000000B7,d2
-		bcs.s	loc_E1FC
+		bcs.s	_dfStore
 		move.b	#$DF,d2
 
-loc_E1FC:					  ; CODE XREF: sub_E1DE+18j
+_dfStore:
 		move.b	d2,(a0)+
 		addi.w	#$0006,d1
-		dbf	d7,loc_E1E6
+		dbf	d7,_dfRow
 		jsr	(WaitUntilVBlank).l
 
-loc_E20C:					  ; CODE XREF: sub_E1DE+36j
-						  ; sub_E1DE+4Cj
+_dfSyncHB:
 		btst	#$02,(VDP_CTRL_REG+1).l
-		beq.s	loc_E20C
+		beq.s	_dfSyncHB
 
-loc_E216:					  ; CODE XREF: sub_E1DE+40j
+_dfSyncHBEnd:
 		btst	#$02,(VDP_CTRL_REG+1).l
-		bne.s	loc_E216
+		bne.s	_dfSyncHBEnd
 		move.b	(VDP_HVCTR_REG).l,d2
 		cmpi.b	#$FF,d2
-		bne.s	loc_E20C
+		bne.s	_dfSyncHB
 		lea	$00000380(a5),a4
 		moveq	#$00000007,d7
 		moveq	#$00000007,d0
 
-loc_E234:					  ; CODE XREF: sub_E1DE+6Aj
+_dfBands:
 		movem.w	d0/d7,-(sp)
-		bsr.w	sub_E24E
+		bsr.w	_wpBlastBand
 		movem.w	(sp)+,d0/d7
-		bcs.w	locret_E24C
+		bcs.w	_dfDone
 		subi.b	#$01,d0
-		dbf	d7,loc_E234
+		dbf	d7,_dfBands
 
-locret_E24C:					  ; CODE XREF: sub_E1DE+62j
+_dfDone:
 		rts
-; End of function sub_E1DE
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E24E:					  ; CODE XREF: sub_E1DE+5Ap
+; One raster band: skip rows above the visible area, otherwise blast
+; darkness level d0 & 7's palette into CRAM (56 colours, 28 longs)
+; and spin on the HV counter until the beam passes this band's
+; scanline. Returns carry set once the beam is past the bottom of
+; the screen (ending the frame early).
+_wpBlastBand:
 		move.b	(a4)+,d1
 		cmpi.b	#$17,d1
-		bcc.s	loc_E25A
+		bcc.s	_bbWrite
 		tst.b	d0
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E25A:					  ; CODE XREF: sub_E24E+6j
+_bbWrite:
 		move.b	d0,d2
 		andi.w	#$0007,d2
 		mulu.w	#$0070,d2
@@ -208,60 +211,59 @@ loc_E25A:					  ; CODE XREF: sub_E24E+6j
 		move.l	d3,(a1)
 		move.l	(sp)+,d1
 
-loc_E2C6:					  ; CODE XREF: sub_E24E+80j
-						  ; sub_E24E+96j ...
+_bbWaitHB:
 		btst	#$02,(VDP_CTRL_REG+1).l
-		beq.s	loc_E2C6
+		beq.s	_bbWaitHB
 
-loc_E2D0:					  ; CODE XREF: sub_E24E+8Aj
+_bbWaitHBEnd:
 		btst	#$02,(VDP_CTRL_REG+1).l
-		bne.s	loc_E2D0
+		bne.s	_bbWaitHBEnd
 		move.b	(VDP_HVCTR_REG).l,d2
 		cmpi.b	#$17,d2
-		bcs.s	loc_E2C6
+		bcs.s	_bbWaitHB
 		cmpi.b	#$B7,d2
-		bcs.s	loc_E2F2
+		bcs.s	_bbCmpRow
 		ori	#$01,ccr
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E2F2:					  ; CODE XREF: sub_E24E+9Cj
+_bbCmpRow:
 		addq.b	#$01,d2
 		cmp.b	d1,d2
-		bcs.s	loc_E2C6
+		bcs.s	_bbWaitHB
 		tst.b	d0
 		rts
-; End of function sub_E24E
 
-; ---------------------------------------------------------------------------
+; Unreachable leftover: turn the display off (VDP reg 01 = $24).
 		move.w	#$8124,(VDP_CTRL_REG).l
 		move.w	#$8124,(g_VDPReg01_ModeSet2).l
 		rts
 
-; =============== S U B	R O U T	I N E =======================================
+; Tree warp transition: line-scroll waves. Saves the palette and
+; scroll state, switches the VDP to per-line horizontal scroll, then
+; either builds the waves up while the palette darkens (out, id 2)
+; or lets them die down while fading in from black (in, id 3); every
+; scanline is offset by sin(frame * rate + line * step) * amplitude.
+; Restores the scroll mode, scroll data and palette on exit.
 
-; Attributes: bp-based frame
+_tw_fadeTimer	 = -$8E		; palette fade countdown (a step every 4)
+_tw_phaseStep	 = -$8C		; sine phase advance per scanline
+_tw_amplitude	 = -$8A		; wave amplitude (rewritten every frame)
+_tw_phaseRate	 = -$88		; sine phase advance per frame
+_tw_savedVScroll = -$86
+_tw_savedHScroll = -$84
+_tw_effectId	 = -$82
+_tw_palBackup	 = -$80		; saved g_Pal0Base ($80 bytes)
 
-TreeWarpFx:					  ; DATA XREF: ROM:0000E130o
-						  ; ROM:0000E134o
-
-var_8E		= -$8E
-var_8C		= -$8C
-var_8A		= -$8A
-var_88		= -$88
-var_86		= -$86
-var_84		= -$84
-var_82		= -$82
-
+TreeWarpFx:
 		link	a6,#-$008E
-		move.w	d0,var_82(a6)
-		move.w	(g_HorizontalScrollData).l,var_84(a6)
-		move.w	(g_VSRAMData).l,var_86(a6)
-		move.w	#$0006,var_88(a6)
-		move.w	#$0003,var_8A(a6)
-		move.w	#$0008,var_8C(a6)
-		move.w	#$001C,var_8E(a6)
-		bsr.w	sub_E3F8
+		move.w	d0,_tw_effectId(a6)
+		move.w	(g_HorizontalScrollData).l,_tw_savedHScroll(a6)
+		move.w	(g_VSRAMData).l,_tw_savedVScroll(a6)
+		move.w	#$0006,_tw_phaseRate(a6)
+		move.w	#$0003,_tw_amplitude(a6)
+		move.w	#$0008,_tw_phaseStep(a6)
+		move.w	#$001C,_tw_fadeTimer(a6)
+		bsr.w	_twSavePalette
 		move.w	(g_HorizontalScrollData).l,d6
 		jsr	(FillHScrollData).l
 		jsr	(FillHScrollDataOffset1).l
@@ -269,258 +271,223 @@ var_82		= -$82
 		moveq	#$0000000B,d0
 		moveq	#$00000003,d1
 		jsr	(OrVDPReg).l
-		cmpi.w	#$0002,var_82(a6)
-		bne.s	loc_E372
-		bsr.w	sub_E398
-		bra.s	loc_E376
-; ---------------------------------------------------------------------------
+		cmpi.w	#$0002,_tw_effectId(a6)
+		bne.s	_twIn
+		bsr.w	_twWavesOut
+		bra.s	_twTeardown
 
-loc_E372:					  ; CODE XREF: TreeWarpFx+5Cj
-		bsr.w	sub_E3C0
+_twIn:
+		bsr.w	_twWavesIn
 
-loc_E376:					  ; CODE XREF: TreeWarpFx+62j
+_twTeardown:
 		moveq	#$0000000B,d0
 		moveq	#$0000000C,d1
 		jsr	(MaskVDPReg).l
-		move.w	var_84(a6),(g_HorizontalScrollData).l
-		move.w	var_86(a6),(g_VSRAMData).l
-		bsr.w	sub_E40C
+		move.w	_tw_savedHScroll(a6),(g_HorizontalScrollData).l
+		move.w	_tw_savedVScroll(a6),(g_VSRAMData).l
+		bsr.w	_twRestorePalette
 		unlk	a6
 		rts
-; End of function TreeWarpFx
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E398:					  ; CODE XREF: TreeWarpFx+5Ep
+; Warp out: the amplitude grows 1 -> $7F as the frame counter runs
+; $FF down to $80, and over the last $20 frames the base palette is
+; darkened in place one step every 4 ticks (a cumulative fade-out).
+_twWavesOut:
 		move.w	#$00FF,d7
 
-loc_E39C:					  ; CODE XREF: sub_E398+24j
+_twoFrame:
 		move.l	d7,-(sp)
-		bsr.w	sub_E420
-		bsr.w	sub_E43A
-		bsr.w	sub_E446
-		bsr.w	sub_E48E
+		bsr.w	_twSetAmplitude
+		bsr.w	_twAbsFrame
+		bsr.w	_twBuildHScroll
+		bsr.w	_twFadePulseOut
 		jsr	(WaitUntilVBlank).l
 		move.l	(sp)+,d7
 		subq.w	#$01,d7
 		cmpi.w	#$0080,d7
-		bcc.s	loc_E39C
+		bcc.s	_twoFrame
 		rts
-; End of function sub_E398
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E3C0:					  ; CODE XREF: TreeWarpFx:loc_E372p
+; Warp in: blacks the active palette out, then over $80 frames the
+; amplitude shrinks $7F -> 0 while the palette fades in from black
+; (a darken step from the base palette every 4 ticks).
+_twWavesIn:
 		lea	(g_Pal0Active).l,a0
 		moveq	#$00000037,d7
 
-loc_E3C8:					  ; CODE XREF: sub_E3C0+Aj
+_twiClearPal:
 		clr.w	(a0)+
-		dbf	d7,loc_E3C8
+		dbf	d7,_twiClearPal
 		jsr	(InitFadeFromBlackParams).l
 		move.w	#$007F,d7
 
-loc_E3D8:					  ; CODE XREF: sub_E3C0+32j
+_twiFrame:
 		move.l	d7,-(sp)
-		bsr.w	sub_E420
-		bsr.w	sub_E43A
-		bsr.w	sub_E446
-		bsr.w	sub_E4C0
+		bsr.w	_twSetAmplitude
+		bsr.w	_twAbsFrame
+		bsr.w	_twBuildHScroll
+		bsr.w	_twFadePulseIn
 		jsr	(WaitUntilVBlank).l
 		move.l	(sp)+,d7
-		dbf	d7,loc_E3D8
+		dbf	d7,_twiFrame
 		rts
-; End of function sub_E3C0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E3F8:					  ; CODE XREF: TreeWarpFx+30p
+; Save the base palette into the stack frame.
+_twSavePalette:
 		lea	(g_Pal0Base).l,a0
-		lea	-$00000080(a6),a1
+		lea	_tw_palBackup(a6),a1
 		moveq	#$0000001F,d7
 
-loc_E404:					  ; CODE XREF: sub_E3F8+Ej
+_tspCopy:
 		move.l	(a0)+,(a1)+
-		dbf	d7,loc_E404
+		dbf	d7,_tspCopy
 		rts
-; End of function sub_E3F8
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E40C:					  ; CODE XREF: TreeWarpFx+82p
+; Restore the base palette from the stack frame.
+_twRestorePalette:
 		lea	(g_Pal0Base).l,a1
-		lea	-$00000080(a6),a0
+		lea	_tw_palBackup(a6),a0
 		moveq	#$0000001F,d7
 
-loc_E418:					  ; CODE XREF: sub_E40C+Ej
+_trpCopy:
 		move.l	(a0)+,(a1)+
-		dbf	d7,loc_E418
+		dbf	d7,_trpCopy
 		rts
-; End of function sub_E40C
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E420:					  ; CODE XREF: sub_E398+6p
-						  ; sub_E3C0+1Ap
+; Amplitude for this frame: |low byte of the frame counter d7|,
+; clamped to $7F.
+_twSetAmplitude:
 		move.w	d7,d0
 		tst.b	d0
-		bpl.s	loc_E428
+		bpl.s	_tsaPos
 		neg.b	d0
 
-loc_E428:					  ; CODE XREF: sub_E420+4j
+_tsaPos:
 		ext.w	d0
 		cmpi.w	#$0080,d0
-		bcs.s	loc_E434
+		bcs.s	_tsaStore
 		move.w	#$007F,d0
 
-loc_E434:					  ; CODE XREF: sub_E420+Ej
-		move.w	d0,-$0000008A(a6)
+_tsaStore:
+		move.w	d0,_tw_amplitude(a6)
 		rts
-; End of function sub_E420
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E43A:					  ; CODE XREF: sub_E398+Ap
-						  ; sub_E3C0+1Ep
+; Leftover: computes |low byte of d7| into d0, but the result is
+; never used (_twBuildHScroll recomputes its phase from d7).
+_twAbsFrame:
 		move.w	d7,d0
 		tst.b	d0
-		bpl.s	loc_E442
+		bpl.s	_tafPos
 		neg.b	d0
 
-loc_E442:					  ; CODE XREF: sub_E43A+4j
+_tafPos:
 		ext.w	d0
 		rts
-; End of function sub_E43A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E446:					  ; CODE XREF: sub_E398+Ep
-						  ; sub_E3C0+22p
-		move.w	-$00000084(a6),d2
+; Build the per-line H-scroll table: for each of the 256 scanlines,
+; offset = sin(frame * rate + line * step) * amplitude / 1024 added
+; to the saved base scroll, written for both planes, then queued as
+; a DMA update.
+_twBuildHScroll:
+		move.w	_tw_savedHScroll(a6),d2
 		lea	(g_HorizontalScrollData).l,a0
 		move.w	d7,d1
-		mulu.w	-$00000088(a6),d1
+		mulu.w	_tw_phaseRate(a6),d1
 		move.w	#$00FF,d6
 
-loc_E45A:					  ; CODE XREF: sub_E446+36j
+_tbhLine:
 		move.w	d1,d0
-		jsr	(sub_22EF0).l
-		move.w	-$0000008A(a6),d3
-		bne.s	loc_E46C
+		jsr	(j_Sine).l
+		move.w	_tw_amplitude(a6),d3
+		bne.s	_tbhScale
 		clr.l	d0
-		bra.s	loc_E46E
-; ---------------------------------------------------------------------------
+		bra.s	_tbhStore
 
-loc_E46C:					  ; CODE XREF: sub_E446+20j
+_tbhScale:
 		muls.w	d3,d0
 
-loc_E46E:					  ; CODE XREF: sub_E446+24j
+_tbhStore:
 		lsr.l	#$08,d0
 		lsr.l	#$02,d0
 		add.w	d2,d0
 		move.w	d0,(a0)+
 		move.w	d0,(a0)+
-		add.w	-$0000008C(a6),d1
-		dbf	d6,loc_E45A
+		add.w	_tw_phaseStep(a6),d1
+		dbf	d6,_tbhLine
 		jsr	(QueueHScrollDMAUpdate).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function sub_E446
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E48E:					  ; CODE XREF: sub_E398+12p
+; Warp-out palette fade: idle until the frame counter drops below
+; $A0, then every 4th tick of the fade timer darken the base
+; palette one step in place (DarkenPaletteStep, cumulative).
+_twFadePulseOut:
 		cmpi.w	#$00A0,d7
-		bcs.s	loc_E496
+		bcs.s	_tfoActive
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E496:					  ; CODE XREF: sub_E48E+4j
-		move.w	-$0000008E(a6),d0
-		bne.s	loc_E49E
+_tfoActive:
+		move.w	_tw_fadeTimer(a6),d0
+		bne.s	_tfoTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E49E:					  ; CODE XREF: sub_E48E+Cj
+_tfoTick:
 		subq.w	#$01,d0
-		move.w	d0,-$0000008E(a6)
+		move.w	d0,_tw_fadeTimer(a6)
 		andi.w	#$0003,d0
-		beq.s	loc_E4AC
+		beq.s	_tfoStep
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E4AC:					  ; CODE XREF: sub_E48E+1Aj
+_tfoStep:
 		moveq	#$00000037,d7
 		lea	(g_Pal0Base).l,a0
 		move.l	d7,-(sp)
-		jsr	(sub_F8C6).l
+		jsr	(DarkenPaletteStep).l
 		move.l	(sp)+,d7
 		rts
-; End of function sub_E48E
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E4C0:					  ; CODE XREF: sub_E3C0+26p
-		move.w	-$0000008E(a6),d0
-		bne.s	loc_E4C8
+; Warp-in palette fade: every 4th tick of the fade timer take one
+; DarkenPalette step from the base palette into the active one
+; (the fade-from-black set up by _twWavesIn).
+_twFadePulseIn:
+		move.w	_tw_fadeTimer(a6),d0
+		bne.s	_tfiTick
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E4C8:					  ; CODE XREF: sub_E4C0+4j
+_tfiTick:
 		subq.w	#$01,d0
-		move.w	d0,-$0000008E(a6)
+		move.w	d0,_tw_fadeTimer(a6)
 		andi.w	#$0003,d0
-		beq.s	loc_E4D6
+		beq.s	_tfiStep
 		rts
-; ---------------------------------------------------------------------------
 
-loc_E4D6:					  ; CODE XREF: sub_E4C0+12j
+_tfiStep:
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
 		moveq	#$00000037,d5
 		jsr	(DarkenPalette).l
 		rts
-; End of function sub_E4C0
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-BlackFlash:					  ; DATA XREF: ROM:0000E138o
+; Id 4: rebuild the active palette from the base one with every
+; colour turned to greyscale (the average of its components).
+BlackFlash:
 		clr.l	d2
-		bra.s	loc_E4F2
-; ---------------------------------------------------------------------------
+		bra.s	_flashGrey
 
-WhiteFlash:					  ; CODE XREF: ContinueKazaltWarpFx+16j
-						  ; DATA XREF: ROM:0000E13Co
+; Id 5: as BlackFlash but with the greyscale inverted - a white
+; flash. Also strobed by the Kazalt warp (ContinueKazaltWarpFx,
+; visualeffects2.asm).
+WhiteFlash:
 		moveq	#$FFFFFFFF,d2
 
-loc_E4F2:					  ; CODE XREF: BlackFlash+2j
+_flashGrey:
 		jsr	(CopyBasePaletteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		movea.l	a0,a1
 		moveq	#$00000039,d7
 		moveq	#$0000000E,d6
 
-loc_E504:					  ; CODE XREF: BlackFlash+40j
+_fgColour:
 		move.b	(a0)+,d0
 		and.l	d6,d0
 		move.b	(a0),d1
@@ -532,31 +499,28 @@ loc_E504:					  ; CODE XREF: BlackFlash+40j
 		add.w	d1,d0
 		divu.w	#$0003,d0
 		tst.b	d2
-		beq.s	loc_E520
+		beq.s	_fgStore
 		not.w	d0
 
-loc_E520:					  ; CODE XREF: BlackFlash+30j
+_fgStore:
 		and.w	d6,d0
 		move.b	d0,(a1)+
 		move.b	d0,d1
 		lsl.b	#$04,d1
 		or.b	d1,d0
 		move.b	d0,(a1)+
-		dbf	d7,loc_E504
+		dbf	d7,_fgColour
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function BlackFlash
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-RedFlash:					  ; DATA XREF: ROM:0000E140o
+; Id 6: red flash - rebuild the active palette keeping each colour's
+; red component but crushing green and blue to at most one step.
+RedFlash:
 		jsr	(CopyBasePaletteToActivePalette).l
 		lea	(g_Pal0Active).l,a0
 		moveq	#$00000039,d7
 
-loc_E546:					  ; CODE XREF: RedFlash+26j
+_rfColour:
 		move.b	(a0),d0
 		lsr.b	#$03,d0
 		move.b	d0,(a0)+
@@ -567,116 +531,130 @@ loc_E546:					  ; CODE XREF: RedFlash+26j
 		andi.b	#$0E,d1
 		or.b	d1,d0
 		move.b	d0,(a0)+
-		dbf	d7,loc_E546
+		dbf	d7,_rfColour
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function RedFlash
 
+; Nole/Kazalt warp (ids 7/8; 9/A remap to them with a different
+; sparkle centre): the screen whites out while a fountain of sparkle
+; sprites rises from the centre (NoleWarpAnimateStars,
+; visualeffects2.asm - all the NoleWarp* helpers there share this
+; stack frame). Out (7): fade to black, then 600 frames of sparkles
+; while the palette ramps up to white; once the timer passes $23A
+; the Kazalt strobe kicks in - WhiteFlash alternating with the
+; normal palette, the two KazaltWarpPalette colours cycling and
+; SND_KazaltWarp restarting every $20 ticks (NoleWarpKazaltFlash
+; below). In (8): start from white, 360 frames of sparkles with the
+; palette ramping back down, then fade in from black.
 
-; =============== S U B	R O U T	I N E =======================================
+_nw_starCount	= -$134		; star spawn seed (stars drawn = /16, max $28)
+_nw_whitenOut	= -$132		; warp-out whiten countdown (NoleWarpOutTick)
+_nw_whitenIn	= -$130		; warp-in whiten countdown (NoleWarpInTick)
+; -$12A/-$12C/-$12E: brighten-ramp current/step/target - only
+; touched by the visualeffects2.asm helpers
+_nw_timer	= -$128		; effect timer (out counts up, in down)
+_nw_effectId	= -$126		; 7 = out, 8 = in (9/A remapped here)
+_nw_centreY	= -$124		; sparkle fountain centre (VDP sprite coords)
+_nw_centreX	= -$122
+_nw_stars	= -$120		; $28 records {radius, angle, age, rate}
+_nw_palBackup	= -$80		; saved g_Pal0Base ($80 bytes)
 
-; Attributes: bp-based frame
-
-NoleWarp:					  ; DATA XREF: ROM:0000E144o
-						  ; ROM:0000E148o ...
-
-var_134		= -$134
-var_132		= -$132
-var_130		= -$130
-var_128		= -$128
-var_126		= -$126
-var_124		= -$124
-var_122		= -$122
-var_120		= -$120
-var_80		= -$80
-
+NoleWarp:
 		link	a6,#-$0134
-		move.w	d0,var_126(a6)
+		move.w	d0,_nw_effectId(a6)
 		cmpi.b	#$09,d0
-		bcc.s	loc_E586
-		move.w	#$0120,var_122(a6)
-		move.w	#$00F0,var_124(a6)
-		bra.s	loc_E596
+		bcc.s	_nwAltCentre
+		move.w	#$0120,_nw_centreX(a6)
+		move.w	#$00F0,_nw_centreY(a6)
+		bra.s	_nwInit
 ; ---------------------------------------------------------------------------
 
-loc_E586:					  ; CODE XREF: NoleWarp+Cj
-		move.w	#$0130,var_122(a6)
-		move.w	#$00C8,var_124(a6)
-		subq.w	#$02,var_126(a6)
+_nwAltCentre:
+		move.w	#$0130,_nw_centreX(a6)
+		move.w	#$00C8,_nw_centreY(a6)
+		subq.w	#$02,_nw_effectId(a6)
 
-loc_E596:					  ; CODE XREF: NoleWarp+1Aj
+_nwInit:
 		lea	(g_Pal0Base).l,a0
-		lea	var_80(a6),a1
-		bsr.w	sub_E780
-		lea	var_120(a6),a0
+		lea	_nw_palBackup(a6),a1
+		bsr.w	_copyFullPalette
+		lea	_nw_stars(a6),a0
 		moveq	#$00000027,d7
 
-loc_E5AA:					  ; CODE XREF: NoleWarp+48j
+; Every star starts with age $FF, so each respawns with random
+; parameters on its first update.
+_nwStarInit:
 		clr.w	(a0)+
 		move.b	#$FF,(a0)+
 		clr.b	(a0)+
-		dbf	d7,loc_E5AA
-		cmpi.w	#$0007,var_126(a6)
-		bne.s	loc_E608
-		clr.w	var_128(a6)
-		clr.w	var_134(a6)
-		move.w	#$001C,var_132(a6)
-		clr.w	var_130(a6)
-		bsr.w	sub_E866
+		dbf	d7,_nwStarInit
+		cmpi.w	#$0007,_nw_effectId(a6)
+		bne.s	_nwWarpIn
+		clr.w	_nw_timer(a6)
+		clr.w	_nw_starCount(a6)
+		move.w	#$001C,_nw_whitenOut(a6)
+		clr.w	_nw_whitenIn(a6)
+		bsr.w	NoleWarpRampUpParams
 		jsr	(InitFadeToBlackParams).l
 		moveq	#$0000003C,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
-		bsr.w	sub_E78A
-		bsr.w	sub_E78A
-		bsr.w	sub_E78A
+		bsr.w	_fadeStepSleep
+		bsr.w	_fadeStepSleep
+		bsr.w	_fadeStepSleep
 		moveq	#$0000003C,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		lea	(g_Pal0Active).l,a0
 		lea	(g_Pal0Base).l,a1
-		bsr.w	sub_E780
-		bra.s	loc_E66C
+		bsr.w	_copyFullPalette
+		bra.s	_nwStarTile
 ; ---------------------------------------------------------------------------
 
-loc_E608:					  ; CODE XREF: NoleWarp+52j
-		move.w	#$0168,var_128(a6)
-		move.w	(0000000300).w,var_134(a6)
-		clr.w	var_132(a6)
-		move.w	#$001C,var_130(a6)
-		bsr.w	sub_E852
+; Warp in: seed the star counter from a constant word in the vector
+; table (address 300 decimal - surely a leftover), darken 3 steps,
+; keep the darkened first palette line as the ramp-down base and
+; blank the whole active palette to white.
+_nwWarpIn:
+		move.w	#$0168,_nw_timer(a6)
+		move.w	(0000000300).w,_nw_starCount(a6)
+		clr.w	_nw_whitenOut(a6)
+		move.w	#$001C,_nw_whitenIn(a6)
+		bsr.w	NoleWarpRampDownParams
 		jsr	(InitFadeToBlackParams).l
 		moveq	#$00000002,d7
-		bsr.w	sub_E7AA
+		bsr.w	_darkenPasses
 		lea	(g_Pal0Active).l,a0
 		lea	(g_Pal0Base).l,a1
 		moveq	#$0000000F,d7
-		bsr.w	sub_E782
+		bsr.w	_copyPalette
 		lea	(g_Pal0Active).l,a0
 		move.w	#$0EEE,d0
 		moveq	#$0000003F,d7
 
-loc_E64C:					  ; CODE XREF: NoleWarp+E4j
+_nwWhiteFill:
 		move.w	d0,(a0)+
-		dbf	d7,loc_E64C
+		dbf	d7,_nwWhiteFill
 		jsr	(QueueFullPaletteDMA).l
 		jsr	(FlushDMACopyQueue).l
 		moveq	#$0000003B,d7
 
-loc_E660:					  ; CODE XREF: NoleWarp+FEj
+_nwPreRoll:
 		move.l	d7,-(sp)
-		bsr.w	sub_E8F8
+		bsr.w	NoleWarpAnimateStars
 		move.l	(sp)+,d7
-		dbf	d7,loc_E660
+		dbf	d7,_nwPreRoll
 
-loc_E66C:					  ; CODE XREF: NoleWarp+9Cj
+; Build the 8x8 sparkle tile (a small diamond) in g_Buffer and DMA
+; it to VRAM $2000 (tile $100).
+_nwStarTile:
 		lea	(g_Buffer).l,a0
 		move.l	#$0DDD0000,(a0)+
 		move.l	#$DEEED000,(a0)+
 		move.l	#$0DDD0000,(a0)+
 		moveq	#$00000004,d7
 
-loc_E686:					  ; CODE XREF: NoleWarp+11Ej
+_nwTileClr:
 		clr.l	(a0)+
-		dbf	d7,loc_E686
+		dbf	d7,_nwTileClr
 		lea	(g_Buffer).l,a0
 		lea	($00002000).w,a1
 		moveq	#$00000020,d0
@@ -685,131 +663,110 @@ loc_E686:					  ; CODE XREF: NoleWarp+11Ej
 						  ; a0 - DMA Source
 						  ; a1 - DMA Copy
 		jsr	(FlushDMACopyQueue).l
-		cmpi.w	#$0007,var_126(a6)
-		bne.s	loc_E6B4
+		cmpi.w	#$0007,_nw_effectId(a6)
+		bne.s	_nwShortRun
 		move.w	#$0258,d7
-		bra.s	loc_E6B8
+		bra.s	_nwMainLoop
 ; ---------------------------------------------------------------------------
 
-loc_E6B4:					  ; CODE XREF: NoleWarp+142j
+_nwShortRun:
 		move.w	#$0168,d7
 
-loc_E6B8:					  ; CODE XREF: NoleWarp+148j
-						  ; NoleWarp+1ACj
+; One frame: animate the sparkles, run both whiten tickers (only the
+; active variant's countdown is non-zero), and step the timer - up
+; for the warp out (skipping odd values past $1A4, so the Kazalt
+; strobe approaches faster), down to zero for the warp in.
+_nwMainLoop:
 		movem.w	d7,-(sp)
 		jsr	(UpdateControllerInputs).l
-		bsr.w	sub_E8F8
-		bsr.w	sub_E8A8
+		bsr.w	NoleWarpAnimateStars
+		bsr.w	NoleWarpInTick
 		move.w	#$023A,d0
-		bsr.w	sub_E87A
+		bsr.w	NoleWarpOutTick
 		jsr	(QueueFullPaletteDMA).l
 		move.b	(g_Controller1State).l,d1
 		jsr	(EnableDMAQueueProcessing).l
 		clr.w	d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
-		cmpi.w	#$0007,var_126(a6)
-		bne.s	loc_E708
-		move.w	var_128(a6),d0
+		cmpi.w	#$0007,_nw_effectId(a6)
+		bne.s	_nwTimerDown
+		move.w	_nw_timer(a6),d0
 		addq.w	#$01,d0
 		cmpi.w	#$01A4,d0
-		bcs.s	loc_E702
+		bcs.s	_nwStoreTimer
 		addq.w	#$01,d0
 
-loc_E702:					  ; CODE XREF: NoleWarp+194j
-		move.w	d0,var_128(a6)
-		bra.s	loc_E712
+_nwStoreTimer:
+		move.w	d0,_nw_timer(a6)
+		bra.s	_nwNext
 ; ---------------------------------------------------------------------------
 
-loc_E708:					  ; CODE XREF: NoleWarp+188j
-		subq.w	#$01,var_128(a6)
-		bpl.s	loc_E712
-		clr.w	var_128(a6)
+_nwTimerDown:
+		subq.w	#$01,_nw_timer(a6)
+		bpl.s	_nwNext
+		clr.w	_nw_timer(a6)
 
-loc_E712:					  ; CODE XREF: NoleWarp+19Cj
-						  ; NoleWarp+1A2j
+_nwNext:
 		movem.w	(sp)+,d7
-		dbf	d7,loc_E6B8
-		lea	var_80(a6),a0
+		dbf	d7,_nwMainLoop
+		lea	_nw_palBackup(a6),a0
 		lea	(g_Pal0Base).l,a1
-		bsr.w	sub_E780
-		cmpi.w	#$0007,var_126(a6)
-		bne.s	loc_E742
+		bsr.w	_copyFullPalette
+		cmpi.w	#$0007,_nw_effectId(a6)
+		bne.s	_nwFadeIn
 		lea	(g_Pal0Active).l,a0
 		lea	(g_Pal0Base).l,a1
-		bsr.w	sub_E780
-		bra.s	loc_E768
+		bsr.w	_copyFullPalette	  ; leftover: undone at _nwDone
+		bra.s	_nwDone
 ; ---------------------------------------------------------------------------
 
-loc_E742:					  ; CODE XREF: NoleWarp+1C4j
+_nwFadeIn:
 		moveq	#$0000001E,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		jsr	(InitFadeFromBlackParams).l
 		moveq	#$00000003,d7
-		bsr.w	sub_E79A
+		bsr.w	_fadeStep
 		jsr	(WaitUntilVBlank).l
-		bsr.w	sub_E78A
-		bsr.w	sub_E78A
-		bsr.w	sub_E78A
+		bsr.w	_fadeStepSleep
+		bsr.w	_fadeStepSleep
+		bsr.w	_fadeStepSleep
 
-loc_E768:					  ; CODE XREF: NoleWarp+1D6j
-		lea	var_80(a6),a0
+_nwDone:
+		lea	_nw_palBackup(a6),a0
 		lea	(g_Pal0Base).l,a1
-		bsr.w	sub_E780
+		bsr.w	_copyFullPalette
 		clr.w	(g_Pal0Active).l
 		unlk	a6
 		rts
-; End of function NoleWarp
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E780:					  ; CODE XREF: NoleWarp+36p
-						  ; NoleWarp+98p ...
+; Copy the full 64-colour palette a0 -> a1 (falls through).
+_copyFullPalette:
 		moveq	#$0000003F,d7
-; End of function sub_E780
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E782:					  ; CODE XREF: NoleWarp+D2p
-						  ; sub_E782+2j
+; Copy d7+1 palette words a0 -> a1.
+_copyPalette:
 		move.w	(a0)+,(a1)+
-		dbf	d7,sub_E782
+		dbf	d7,_copyPalette
 		rts
-; End of function sub_E782
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E78A:					  ; CODE XREF: NoleWarp+78p
-						  ; NoleWarp+7Cp ...
+; One darken pass, then sleep 19 frames.
+_fadeStepSleep:
 		clr.w	d7
-		bsr.w	sub_E79A
+		bsr.w	_fadeStep
 		moveq	#0000000019,d0
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		rts
-; End of function sub_E78A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E79A:					  ; CODE XREF: NoleWarp+1E8p
-						  ; sub_E78A+2p
-		bsr.w	sub_E7AA
+; d7+1 darken passes over the base palette, then queue the result.
+_fadeStep:
+		bsr.w	_darkenPasses
 		jsr	(QueueFullPaletteDMA).l
 		jmp	(EnableDMAQueueProcessing).l
-; End of function sub_E79A
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_E7AA:					  ; CODE XREF: NoleWarp+C0p
-						  ; sub_E79Ap ...
+; Darken the first 16 base colours into the active palette with the
+; g_PaletteDarken parameters, advancing the current brightness by
+; the fade extent; repeats for d7+1 passes.
+_darkenPasses:
 		move.l	d7,-(sp)
 		lea	(g_Pal0Base).l,a0
 		lea	(g_Pal0Active).l,a1
@@ -818,31 +775,29 @@ sub_E7AA:					  ; CODE XREF: NoleWarp+C0p
 		move.w	(g_PaletteDarkenTargetBrightness).l,d7
 		moveq	#$0000000F,d5
 
-loc_E7CC:					  ; CODE XREF: sub_E7AA+2Cj
+_dpColour:
 		move.w	(a0)+,d0
 		jsr	(DarkenColour).l
 		move.w	d0,(a1)+
-		dbf	d5,loc_E7CC
+		dbf	d5,_dpColour
 		add.w	d4,d3
 		move.w	d3,(g_PaletteDarkenCurrentBrightness).l
 		move.l	(sp)+,d7
-		dbf	d7,sub_E7AA
+		dbf	d7,_darkenPasses
 		rts
-; End of function sub_E7AA
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_E87A
-
-loc_E7EA:					  ; CODE XREF: sub_E87A+8j
-		move.w	-$00000128(a6),d0
+; Kazalt-warp colour flash, run by NoleWarpOutTick
+; (visualeffects2.asm) once the warp-out timer passes its threshold:
+; every $20 timer ticks restart SND_KazaltWarp, and cycle a pair of
+; KazaltWarpPalette colours into active palette entries 13-14.
+NoleWarpKazaltFlash:
+		move.w	_nw_timer(a6),d0
 		andi.w	#$001E,d0
-		bne.s	loc_E7F8
+		bne.s	_kfSetColours
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_KazaltWarp
-; ---------------------------------------------------------------------------
 
-loc_E7F8:					  ; CODE XREF: sub_E87A-88j
+_kfSetColours:
 		lsr.w	#$02,d0
 		lsl.w	#$02,d0
 		lea	KazaltWarpPalette(pc),a0
@@ -850,5 +805,5 @@ loc_E7F8:					  ; CODE XREF: sub_E87A-88j
 		lea	((g_Pal0Active+$1A)).l,a1
 		move.l	(a0),(a1)
 		rts
-; END OF FUNCTION CHUNK	FOR sub_E87A
-; ---------------------------------------------------------------------------
+
+	modend

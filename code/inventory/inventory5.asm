@@ -1,83 +1,96 @@
+Inventory5	module
+; The equip screen: a 4-row x 5-column grid (sword / armour / boots
+; / ring rows, candidates from the EquipInventoryLayout table, 5
+; item ids per row). The equipment itself is g_CurrentEquippedItems
+; - one nibble per slot holding the chosen column. The equipped
+; item in each row draws in the normal palette, everything else
+; greyed (palette line 2); picking a new item just rewrites the
+; slot's nibble. The name drawing and select handler live in
+; inventory6.asm (DrawEquipItemNames / EquipMenuSelect, which jumps
+; back into EquipMenuRefresh here).
+;
+; Equip-screen state in g_Buffer: +$10..+$16 = each slot's equipped
+; column, +$18/+$1A = the cursor column/row (saved across menus in
+; g_EquipCursorPos).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitInvEquipScreen:				  ; CODE XREF: sub_7718p
+; d0 = slot (0 sword / 1 armour / 2 boots / 3 ring): return the
+; equipped item id in d1 - the slot's nibble of
+; g_CurrentEquippedItems picks from its EquipInventoryLayout row;
+; bit-7 entries (the "nothing" placeholders) return 0.
+GetEquippedItem:
 		movem.l	d0/a0,-(sp)
 		move.w	(g_CurrentEquippedItems).l,d1
 		lea	EquipInventoryLayout(pc),a0
 		nop
 		tst.w	d0
-		beq.w	loc_EA34
+		beq.w	_geiLookup
 		subq.w	#$01,d0
 
-loc_EA2A:					  ; CODE XREF: InitInvEquipScreen+1Ej
+_geiSlot:
 		lsr.w	#$04,d1
 		lea	$00000005(a0),a0
-		dbf	d0,loc_EA2A
+		dbf	d0,_geiSlot
 
-loc_EA34:					  ; CODE XREF: InitInvEquipScreen+12j
+_geiLookup:
 		andi.w	#$0007,d1
 		move.b	(a0,d1.w),d1
 		btst	#$07,d1
-		beq.s	loc_EA44
+		beq.s	_geiDone
 		clr.b	d1
 
-loc_EA44:					  ; CODE XREF: InitInvEquipScreen+2Ej
+_geiDone:
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function InitInvEquipScreen
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EA4A:					  ; CODE XREF: DrawEquipInventoryp
+; Unpack the equip-screen state: each slot's equipped column
+; (nibble, clamped below 5) into +$10.., and the saved cursor
+; (g_EquipCursorPos: column in bits 0-2, row in bits 3-4) into
+; +$18/+$1A.
+_initEquipCursor:
 		lea	((g_Buffer+$10)).l,a0
 		move.w	(g_CurrentEquippedItems).l,d0
 		move.b	#$07,d1
 		move.b	#$05,d3
 		move.w	#$0003,d7
 
-loc_EA62:					  ; CODE XREF: sub_EA4A+28j
+_iecSlot:
 		move.b	d0,d2
 		and.b	d1,d2
 		cmp.b	d3,d2
-		bcs.s	loc_EA6C
+		bcs.s	_iecStore
 		clr.b	d2
 
-loc_EA6C:					  ; CODE XREF: sub_EA4A+1Ej
+_iecStore:
 		ext.w	d2
 		move.w	d2,(a0)+
 		lsr.w	#$04,d0
-		dbf	d7,loc_EA62
+		dbf	d7,_iecSlot
 		lea	(g_Buffer).l,a1
 		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
-		lea	(unk_FF1BF4).l,a2
+		lea	(g_EquipCursorPos).l,a2
 		move.b	(a2),d0
 		andi.w	#$0007,d0
 		cmpi.w	#$0005,d0
-		bcs.s	loc_EA98
+		bcs.s	_iecCol
 		clr.w	d0
 
-loc_EA98:					  ; CODE XREF: sub_EA4A+4Aj
+_iecCol:
 		move.w	d0,(a0)
 		move.b	(a2),d0
 		lsr.b	#$03,d0
 		andi.w	#$0003,d0
 		move.w	d0,(a1)
 		rts
-; End of function sub_EA4A
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_EAD4
-
-loc_EAA6:					  ; CODE XREF: sub_EAD4+54j
+; B/Start pressed: pack the cursor back into g_EquipCursorPos and
+; return the exit code (via inventory3's ReadMenuExitButtons) to
+; RunEquipMenu's caller.
+_emExit:
 		lea	(g_Buffer).l,a1
 		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
-		lea	(unk_FF1BF4).l,a2
+		lea	(g_EquipCursorPos).l,a2
 		move.w	(a1),d1
 		lsl.b	#$03,d1
 		andi.b	#$18,d1
@@ -85,225 +98,196 @@ loc_EAA6:					  ; CODE XREF: sub_EAD4+54j
 		andi.b	#$07,d0
 		or.b	d0,d1
 		move.b	d1,(a2)
-		bra.w	loc_D38A
-; END OF FUNCTION CHUNK	FOR sub_EAD4
+		bra.w	ReadMenuExitButtons
 ; ---------------------------------------------------------------------------
+
+; Unreachable leftover.
 		bsr.w	DrawEquipInventory
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EAD4:					  ; CODE XREF: CheckForMenuOpen+A6p
-
-; FUNCTION CHUNK AT 0000D38A SIZE 0000001E BYTES
-; FUNCTION CHUNK AT 0000EAA6 SIZE 0000002A BYTES
-; FUNCTION CHUNK AT 0000EE12 SIZE 00000072 BYTES
-
+; Run the equip screen (the main menu's Equip option; called from
+; CheckForMenuOpen). Starts with a debug leftover: with
+; DebugModeEnable set and Start held, it plays the end credits
+; forever. The loop reads the d-pad through the auto-repeat
+; handler, slides the cursor around the 4x5 grid, blinks it while
+; idle, confirms through EquipMenuSelect (inventory6, which
+; rejoins at EquipMenuRefresh) and leaves through _emExit on
+; B/Start.
+RunEquipMenu:
 		tst.w	(DebugModeEnable).w
-		bne.s	loc_EAF2
+		bne.s	EquipMenuRefresh
 		jsr	(UpdateControllerInputs).l
 		btst	#CTRL_START,(g_Controller1State).l
-		beq.s	loc_EAF2
+		beq.s	EquipMenuRefresh
 
-loc_EAEA:					  ; CODE XREF: sub_EAD4+1Cj
+_emCredits:
 		jsr	(j_PlayEndCredits).l
-		bra.s	loc_EAEA
+		bra.s	_emCredits
 ; ---------------------------------------------------------------------------
 
-loc_EAF2:					  ; CODE XREF: sub_EAD4+4j
-						  ; sub_EAD4+14j ...
-		bsr.w	GetInvEquipLayout
-		bsr.w	sub_EC60
-		bsr.w	sub_EDA6
-		bsr.w	sub_D96A
+; (Re)draw the whole screen: slot names, icon grid, cursor.
+EquipMenuRefresh:
+		bsr.w	DrawEquipItemNames
+		bsr.w	_drawEquipGrid
+		bsr.w	DrawEquipCursor
+		bsr.w	WaitMenuButtonsRelease
 
-loc_EB02:					  ; CODE XREF: sub_EAD4:loc_EB7Aj
-						  ; sub_EAD4:loc_EB86j	...
+_emStamp:
 		move.w	(g_VBlankCounter).l,d0
 		lea	(g_Buffer).l,a0
 		move.w	d0,0000000004(a0)
 		move.w	d0,$00000002(a0)
 
-loc_EB16:					  ; CODE XREF: sub_EAD4+9Cj
+_emTick:
 		moveq	#$00000006,d0
-		bsr.w	sub_D88A
+		bsr.w	UpdateMenuDPadRepeat
 		move.b	(g_Controller1State).l,d1
 		move.b	d1,d0
 		andi.b	#CTRLBF_BSTART,d0	  ; START or B
-		bne.w	loc_EAA6
+		bne.w	_emExit
 		move.b	d1,d0
 		andi.b	#CTRLBF_AC,d0		  ; A or C
-		bne.w	loc_EE12
+		bne.w	EquipMenuSelect
 		lea	(g_Buffer).l,a1
 		lea	$00000018(a1),a0
 		lea	$0000001A(a1),a1
 		move.b	d1,d0
 		btst	#CTRL_UP,d0
-		bne.w	loc_EB72
+		bne.w	_emUp
 		btst	#CTRL_DOWN,d0
-		bne.w	loc_EB7C
+		bne.w	_emDown
 		btst	#CTRL_LEFT,d0
-		bne.w	loc_EB8A
+		bne.w	_emLeft
 		btst	#CTRL_RIGHT,d0
-		bne.w	loc_EB96
-		bsr.w	sub_EDC4
+		bne.w	_emRight
+		bsr.w	GetEquipCursorPos
 		clr.b	d2
-		bsr.w	sub_EDAA
-		bra.s	loc_EB16
+		bsr.w	DrawEquipCursorSprite
+		bra.s	_emTick
 ; ---------------------------------------------------------------------------
 
-loc_EB72:					  ; CODE XREF: sub_EAD4+76j
+_emUp:
 		move.w	(a1),d0
-		beq.s	loc_EB7A
-		bsr.w	sub_EBA4
+		beq.s	_emUpEnd
+		bsr.w	_equipCursorUp
 
-loc_EB7A:					  ; CODE XREF: sub_EAD4+A0j
-		bra.s	loc_EB02
+_emUpEnd:
+		bra.s	_emStamp
 ; ---------------------------------------------------------------------------
 
-loc_EB7C:					  ; CODE XREF: sub_EAD4+7Ej
+_emDown:
 		cmpi.w	#$0003,(a1)
-		beq.s	loc_EB86
-		bsr.w	sub_EBBE
+		beq.s	_emDownEnd
+		bsr.w	_equipCursorDown
 
-loc_EB86:					  ; CODE XREF: sub_EAD4+ACj
-		bra.w	loc_EB02
+_emDownEnd:
+		bra.w	_emStamp
 ; ---------------------------------------------------------------------------
 
-loc_EB8A:					  ; CODE XREF: sub_EAD4+86j
+_emLeft:
 		tst.w	(a0)
-		beq.s	loc_EB92
-		bsr.w	sub_EBD6
+		beq.s	_emLeftEnd
+		bsr.w	_equipCursorLeft
 
-loc_EB92:					  ; CODE XREF: sub_EAD4+B8j
-		bra.w	loc_EB02
+_emLeftEnd:
+		bra.w	_emStamp
 ; ---------------------------------------------------------------------------
 
-loc_EB96:					  ; CODE XREF: sub_EAD4+8Ej
+_emRight:
 		cmpi.w	#$0004,(a0)
-		beq.s	loc_EBA0
-		bsr.w	sub_EBEE
+		beq.s	_emRightEnd
+		bsr.w	_equipCursorRight
 
-loc_EBA0:					  ; CODE XREF: sub_EAD4+C6j
-		bra.w	loc_EB02
-; End of function sub_EAD4
+_emRightEnd:
+		bra.w	_emStamp
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EBA4:					  ; CODE XREF: sub_EAD4+A2p
+; Slide the cursor one row up (8 4-pixel steps, drawn solid).
+_equipCursorUp:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
-		bsr.w	sub_EDC4
+
+		bsr.w	GetEquipCursorPos
 		subq.w	#$01,(a1)
 		moveq	#$00000007,d7
 
-loc_EBB0:					  ; CODE XREF: sub_EBA4+14j
+_ecuStep:
 		subq.w	#$04,d1
 		moveq	#$FFFFFFFF,d2
-		bsr.w	sub_EDAA
-		dbf	d7,loc_EBB0
+		bsr.w	DrawEquipCursorSprite
+		dbf	d7,_ecuStep
 		rts
-; End of function sub_EBA4
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EBBE:					  ; CODE XREF: sub_EAD4+AEp
+; Slide one row down.
+_equipCursorDown:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
-		bsr.w	sub_EDC4
+
+		bsr.w	GetEquipCursorPos
 		addq.w	#$01,(a1)
 		moveq	#$00000007,d7
 
-loc_EBCA:					  ; CODE XREF: sub_EBBE+12j
+_ecdStep:
 		addq.w	#$04,d1
-		bsr.w	sub_EDAA
-		dbf	d7,loc_EBCA
+		bsr.w	DrawEquipCursorSprite
+		dbf	d7,_ecdStep
 		rts
-; End of function sub_EBBE
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EBD6:					  ; CODE XREF: sub_EAD4+BAp
+; Slide one column left (8 5-pixel steps).
+_equipCursorLeft:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
-		bsr.w	sub_EDC4
+
+		bsr.w	GetEquipCursorPos
 		subq.w	#$01,(a0)
 		moveq	#$00000007,d7
 
-loc_EBE2:					  ; CODE XREF: sub_EBD6+12j
+_eclStep:
 		subq.w	#$05,d0
-		bsr.w	sub_EDAA
-		dbf	d7,loc_EBE2
+		bsr.w	DrawEquipCursorSprite
+		dbf	d7,_eclStep
 		rts
-; End of function sub_EBD6
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EBEE:					  ; CODE XREF: sub_EAD4+C8p
+; Slide one column right.
+_equipCursorRight:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_CursorMove
-; ---------------------------------------------------------------------------
-		bsr.w	sub_EDC4
+
+		bsr.w	GetEquipCursorPos
 		addq.w	#$01,(a0)
 		moveq	#$00000007,d7
 
-loc_EBFA:					  ; CODE XREF: sub_EBEE+12j
+_ecrStep:
 		addq.w	#$05,d0
-		bsr.w	sub_EDAA
-		dbf	d7,loc_EBFA
+		bsr.w	DrawEquipCursorSprite
+		dbf	d7,_ecrStep
 		rts
-; End of function sub_EBEE
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitEquipGreyedOutPal:				  ; CODE XREF: DrawEquipInventory+4p
+; Build the greyed-out palette line 2 from line 1: darken the blue
+; component and keep only a trace of green/red.
+InitEquipGreyedOutPal:
 		lea	(g_Pal1Base).l,a0
 		lea	(g_Pal2Base).l,a1
 		moveq	#$0000000F,d7
 
-loc_EC14:					  ; CODE XREF: InitEquipGreyedOutPal+22j
+_gopColour:
 		move.b	(a0)+,d0		  ; Only keep blue component, and darken
 		subq.b	#$02,d0
-		bpl.s	loc_EC1C
+		bpl.s	_gopStore
 		clr.b	d0
 
-loc_EC1C:					  ; CODE XREF: InitEquipGreyedOutPal+12j
+_gopStore:
 		move.b	d0,(a1)+
 		move.b	(a0)+,d0
 		lsr.b	#$03,d0
 		andi.b	#$22,d0
 		move.b	d0,(a1)+
-		dbf	d7,loc_EC14		  ; Only keep blue component, and darken
+		dbf	d7,_gopColour
 		jsr	(CopyBasePaletteToActivePalette).l
 		rts
-; End of function InitEquipGreyedOutPal
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-; Blanks the inventory window tilemap and draws the equip screen from
-; EquipInventoryLayout.
-DrawEquipInventory:					  ; CODE XREF: ROM:0000EAD0p
-						  ; DATA XREF: j_DrawEquipInventoryt
-		bsr.w	sub_EA4A
+; Blanks the inventory window tilemap and draws the equip screen
+; from EquipInventoryLayout.
+DrawEquipInventory:
+		bsr.w	_initEquipCursor
 		bsr.s	InitEquipGreyedOutPal
 		lea	(g_Buffer).l,a1
 		lea	$00000084(a1),a0
@@ -311,86 +295,81 @@ DrawEquipInventory:					  ; CODE XREF: ROM:0000EAD0p
 		ori.w	#$0000,d0
 		move.w	#$0B63,d7
 
-loc_EC50:					  ; CODE XREF: DrawEquipInventory+1Ej
+_dedFill:
 		move.w	d0,(a0)+
-		dbf	d7,loc_EC50
-		bsr.w	GetInvEquipLayout
-		bsr.w	sub_EC60
+		dbf	d7,_dedFill
+		bsr.w	DrawEquipItemNames
+		bsr.w	_drawEquipGrid
 		rts
-; End of function DrawEquipInventory
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_EC60:					  ; CODE XREF: sub_EAD4+22p
-						  ; DrawEquipInventory+26p
+; Draw the 4x5 icon grid: rows 4 sub-rows apart from column $A,
+; walking the whole EquipInventoryLayout with each row's equipped
+; column in d2, then push the window and draw the cursor.
+_drawEquipGrid:
 		moveq	#$00000001,d1
 		moveq	#$00000003,d7
 		lea	EquipInventoryLayout(pc),a3
 		lea	((g_Buffer+$10)).l,a4
 
-loc_EC6E:					  ; CODE XREF: sub_EC60+2Cj
+_degRow:
 		movem.w	d1/d7,-(sp)
 		moveq	#$0000000A,d0
-		bsr.w	sub_D86C
+		bsr.w	GetInvWindowPtr
 		moveq	#$00000004,d6
 		move.w	(a4)+,d2
 
-loc_EC7C:					  ; CODE XREF: sub_EC60+22j
+_degItem:
 		move.b	(a3)+,d0
-		bsr.w	sub_ECA6
-		dbf	d6,loc_EC7C
+		bsr.w	_drawSlotIcon
+		dbf	d6,_degItem
 		movem.w	(sp)+,d1/d7
 		addq.w	#$04,d1
-		dbf	d7,loc_EC6E
-		bsr.w	sub_D828
-		bsr.w	sub_EDC4
+		dbf	d7,_degRow
+		bsr.w	RefreshItemWindow
+		bsr.w	GetEquipCursorPos
 		moveq	#$00000001,d2
-		bsr.w	sub_EDAA
+		bsr.w	DrawEquipCursorSprite
 		jsr	(j_EnableDMAQueueProcessing).l
 		rts
-; End of function sub_EC60
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_ECA6:					  ; CODE XREF: sub_EC60+1Ep
+; One grid icon: bit-7 layout entries (the "nothing" placeholders)
+; always draw; real items only when owned. The equipped column
+; (d2, compared against 4 - d6) draws normal, everything else
+; greyed.
+_drawSlotIcon:
 		tst.b	d0
-		bmi.s	loc_ECB6
+		bmi.s	_dsiAlways
 		move.l	d2,-(sp)
 		jsr	(j_GetItemQtyAndMaxQty).l
 		move.l	(sp)+,d2
-		bra.s	loc_ECBC
+		bra.s	_dsiCheck
 ; ---------------------------------------------------------------------------
 
-loc_ECB6:					  ; CODE XREF: sub_ECA6+2j
+_dsiAlways:
 		andi.b	#$7F,d0
 		moveq	#$00000001,d1
 
-loc_ECBC:					  ; CODE XREF: sub_ECA6+Ej
+_dsiCheck:
 		tst.w	d1
-		bmi.s	loc_ECDA
+		bmi.s	_dsiNext
 		moveq	#$00000004,d7
 		sub.w	d6,d7
 		cmp.w	d2,d7
-		bne.s	loc_ECCC
+		bne.s	_dsiGreyed
 		clr.b	d1
-		bra.s	loc_ECCE
+		bra.s	_dsiDraw
 ; ---------------------------------------------------------------------------
 
-loc_ECCC:					  ; CODE XREF: sub_ECA6+20j
+_dsiGreyed:
 		moveq	#$00000001,d1
 
-loc_ECCE:					  ; CODE XREF: sub_ECA6+24j
+_dsiDraw:
 		movem.l	a0,-(sp)
-		bsr.w	sub_D642
+		bsr.w	DrawItemIcon
 		movem.l	(sp)+,a0
 
-loc_ECDA:					  ; CODE XREF: sub_ECA6+18j
+_dsiNext:
 		lea	$0000000A(a0),a0
 		rts
-; End of function sub_ECA6
 
-; ---------------------------------------------------------------------------
+	modend

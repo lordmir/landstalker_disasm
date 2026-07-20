@@ -221,20 +221,20 @@ sub_22EE8:					  ; DATA XREF: CheckOpenChest+7At
 
 ; Attributes: thunk
 
-sub_22EEC:					  ; DATA XREF: sub_E8F8+7Et
+j_Cosine:					  ; DATA XREF: sub_E8F8+7Et
 						  ; sub_3EA28+6t
-		jmp	sub_2A228(pc)
-; End of function sub_22EEC
+		jmp	Cosine(pc)
+; End of function j_Cosine
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 ; Attributes: thunk
 
-sub_22EF0:					  ; DATA XREF: sub_E446+16t
+j_Sine:					  ; DATA XREF: sub_E446+16t
 						  ; sub_E8F8+68t ...
-		jmp	sub_2A22C(pc)
-; End of function sub_22EF0
+		jmp	Sine(pc)
+; End of function j_Sine
 
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -874,7 +874,7 @@ loc_2A1D2:					  ; CODE XREF: ROM:0002A1DCj
 loc_2A1EC:					  ; CODE XREF: ROM:0002A200j
 		move.w	d1,d0
 		asr.w	#$08,d0
-		bsr.s	sub_2A22C
+		bsr.s	Sine
 		muls.w	d4,d0
 		asr.l	#$08,d0
 		move.w	d0,(a0)+
@@ -897,8 +897,8 @@ sub_2A206:					  ; CODE XREF: SpellBook+24p
 loc_2A20C:					  ; CODE XREF: sub_2A206+1Cj
 		move.w	d1,d0
 		asr.w	#$08,d0
-		bsr.s	sub_2A22C
-		bsr.s	sub_2A22C
+		bsr.s	Sine
+		bsr.s	Sine
 		muls.w	d4,d0
 		asr.l	#$08,d0
 		move.w	d0,(a0)+
@@ -914,15 +914,15 @@ loc_2A20C:					  ; CODE XREF: sub_2A206+1Cj
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2A228:					  ; DATA XREF: sub_22EECt
+Cosine:					  ; DATA XREF: j_Cosinet
 		addi.w	#$0040,d0
-; End of function sub_2A228
+; End of function Cosine
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_2A22C:					  ; CODE XREF: ROM:0002A1F0p
+Sine:					  ; CODE XREF: ROM:0002A1F0p
 						  ; sub_2A206+Ap ...
 		move.l	a0,-(sp)
 		lea	SineTable(pc),a0
@@ -932,6 +932,6 @@ sub_2A22C:					  ; CODE XREF: ROM:0002A1F0p
 		ext.l	d0
 		movea.l	(sp)+,a0
 		rts
-; End of function sub_2A22C
+; End of function Sine
 
 ; ---------------------------------------------------------------------------

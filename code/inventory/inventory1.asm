@@ -1,31 +1,38 @@
+Inventory1	module
+; Opening and closing the inventory menu, plus the equipment
+; appliers shared with the rest of the game: armour defence and the
+; sword hit-effect graphics.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckForMenuOpen:				  ; CODE XREF: GameLoop+10p
-
-; FUNCTION CHUNK AT 0000774A SIZE 0000001C BYTES
-
+; Run from the game loop: open the menu when Start (controller bit
+; 7) is pressed - unless menu opening is locked, a sword swing is
+; in progress, or an object is mid-lift (carrying is fine once the
+; lift has settled at phase $17). Fades out, switches the VDP to
+; the menu layout (H-int off, scroll and sprites cleared, the map
+; plane blanked) and hands over to the menu loop (sub_22E8C).
+; On return: carry clear = plain close; d0 = 0 = use the selected
+; item (_useItem); anything else = the Equip option - run the
+; equip screen (RunEquipMenu), apply the new equipment and
+; defence, then rebuild the room.
+CheckForMenuOpen:
 		tst.b	(g_Controller1State).l
-		bpl.w	locret_77A4
+		bpl.w	_cmDone
 		btst	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu
-		bne.w	locret_77A4
+		bne.w	_cmDone
 		tst.b	(g_SwordSwingFrame).l
-		bne.w	locret_77A4
+		bne.w	_cmDone
 		move.b	(g_CarryPhase).l,d0
-		beq.s	loc_7654
+		beq.s	_openMenu
 		cmpi.b	#$17,d0
-		bne.w	locret_77A4
+		bne.w	_cmDone
 
-loc_7654:					  ; CODE XREF: CheckForMenuOpen+26j
+_openMenu:
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_MenuOpen
-; ---------------------------------------------------------------------------
+
 		bsr.w	FadeOutToDarkness
-		bsr.w	sub_7816
+		bsr.w	_buildInvTilemap
 		bsr.w	InitInv
 		bsr.w	InitInvDisplay
 		jsr	(j_RefreshAndClearTextbox).l
@@ -43,63 +50,60 @@ loc_7654:					  ; CODE XREF: CheckForMenuOpen+26j
 		lea	((g_ForegroundBlocks+$180)).l,a0
 		move.w	#$04BF,d7
 
-loc_76A0:					  ; CODE XREF: CheckForMenuOpen+80j
+_blankPlane:
 		move.w	#$86BC,(a0)+
-		dbf	d7,loc_76A0
+		dbf	d7,_blankPlane
 		bsr.w	QueueInventoryScrBTilemapDMA
 		bsr.w	ClearInventoryWindow
 		jsr	(j_LoadYesNoPrompt).l
 		bsr.w	FadeInFromDarkness
 		jsr	(sub_22E8C).l
-		bcc.w	sub_7766
+		bcc.w	_closeMenu
 		tst.b	d0
-		beq.w	loc_774A
-		bsr.w	sub_EAD4
+		beq.w	_useItem
+		bsr.w	RunEquipMenu
 		movem.w	d1,-(sp)
 		bsr.w	FadeOutToDarkness
 		clr.b	d0
 		lea	(g_EquippedSword).l,a0
-		bsr.s	sub_7718
-		bsr.s	sub_7718
-		bsr.s	sub_7718
-		bsr.s	sub_7718
+		bsr.s	_reequipSlot
+		bsr.s	_reequipSlot
+		bsr.s	_reequipSlot
+		bsr.s	_reequipSlot
 		bsr.s	UpdatePlayerDefence
-		bra.w	loc_776E
-; End of function CheckForMenuOpen
+		bra.w	_cmReload
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdatePlayerDefence:				  ; CODE XREF: LoadRoom_0+6Cp
-						  ; CheckForMenuOpen+C2p
+; Set Player_Defence from the equipped armour: the breastplates
+; (ITM_STEELBREAST-ITM_HYPERBREAST) map to table entries 1-4,
+; anything else to entry 0. The value scales incoming damage
+; (x/256): none 1.00, steel $E6, chrome $CC, shell $B3, hyper $80.
+UpdatePlayerDefence:
 		clr.w	d0
 		move.b	(g_EquippedArmour).l,d0
 		subi.b	#ITM_STEELBREAST,d0
 		addq.b	#$01,d0
-		cmpi.b	#ITM_FIREPROOF,d0
-		bcs.s	loc_7702
+		cmpi.b	#$05,d0
+		bcs.s	_updIndexOk
 		clr.b	d0
 
-loc_7702:					  ; CODE XREF: UpdatePlayerDefence+12j
+_updIndexOk:
 		add.b	d0,d0
 		move.w	ArmourDefence(pc,d0.w),(Player_Defence).l
 		rts
-; End of function UpdatePlayerDefence
 
-; ---------------------------------------------------------------------------
 ArmourDefence:	dc.w $0100,$00E6,$00CC,$00B3,$0080
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_7718:					  ; CODE XREF: CheckForMenuOpen+BAp
-						  ; CheckForMenuOpen+BCp ...
-		bsr.w	InitInvEquipScreen
+; Re-derive equipment slot d0 (0 sword / 1 armour / 2 boots /
+; 3 ring; a0 = its g_Equipped* byte): GetEquippedItem picks the
+; slot's item into d1, and a changed sword also clears the charge
+; meter and redraws its HUD. Stores the item and advances a0/d0 to
+; the next slot.
+_reequipSlot:
+		bsr.w	GetEquippedItem
 		tst.b	d0
-		bne.s	loc_7744
+		bne.s	_rsStore
 		cmp.b	(a0),d1
-		beq.s	loc_7744
+		beq.s	_rsStore
 		clr.w	(g_SwordChargeMeter).l
 		movem.l	d0-d1/a0,-(sp)
 		jsr	(j_RefreshSwordChargeHUD).l
@@ -107,38 +111,38 @@ sub_7718:					  ; CODE XREF: CheckForMenuOpen+BAp
 		jsr	(j_RefreshHUD).l
 		movem.l	(sp)+,d0-d1/a0
 
-loc_7744:					  ; CODE XREF: sub_7718+6j
-						  ; sub_7718+Aj
+_rsStore:
 		move.b	d1,(a0)+
 		addq.b	#$01,d0
 		rts
-; End of function sub_7718
 
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR CheckForMenuOpen
-
-loc_774A:					  ; CODE XREF: CheckForMenuOpen+A2j
-		bsr.w	loc_D3BE
+; Run the item screen (RunItemMenu, inventory3): d1 non-zero means
+; the player backed out - just close. Otherwise an item was chosen
+; (id in d0): run its UseItem handler, close the menu (rebuilding
+; the room), then run the item's post-reload follow-up (RunItemPostUse)
+; with the item id back in d0.
+_useItem:
+		bsr.w	RunItemMenu
 		tst.b	d1
-		bne.s	sub_7766
+		bne.s	_closeMenu
 		movem.w	d0,-(sp)
 		bsr.w	UseItem
-		bsr.s	sub_7766
+		bsr.s	_closeMenu
 		movem.w	(sp)+,d0
-		bsr.w	sub_8BC8
+		bsr.w	RunItemPostUse
 		rts
-; END OF FUNCTION CHUNK	FOR CheckForMenuOpen
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_7766:					  ; CODE XREF: CheckForMenuOpen+9Cj
-						  ; CheckForMenuOpen+12Cj ...
+; Close the menu: fade out, restore the palettes and VDP state
+; (H-int back on, window back to the textbox strip), reload the
+; room and fade back in. The full-reload path enters at _cmReload
+; with d1 already saved; CheckForMenuOpen's early-outs return
+; through _cmDone.
+_closeMenu:
 		movem.w	d1,-(sp)
 		bsr.w	FadeOutToDarkness
 
-loc_776E:					  ; CODE XREF: CheckForMenuOpen+C4j
-		bsr.w	sub_D3A8
+_cmReload:
+		bsr.w	RestoreSavedPal1
 		bsr.w	UpdateEquipPal
 		bsr.w	ClearScrollPlanes
 		move.w	#$0000,d0
@@ -152,48 +156,39 @@ loc_776E:					  ; CODE XREF: CheckForMenuOpen+C4j
 		clr.b	(g_Controller1State).l
 		movem.w	(sp)+,d1
 
-locret_77A4:					  ; CODE XREF: CheckForMenuOpen+6j
-						  ; CheckForMenuOpen+12j ...
+_cmDone:
 		rts
-; End of function sub_7766
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadMagicSwordGfx:				  ; CODE XREF: j_LoadMagicSwordGfxj
-						  ; LoadGame+38p ...
+; (Re)load the equipped sword's hit-effect tiles to VRAM $F180:
+; the Magic, Thunder, Gaia and Ice swords each have their own
+; graphics, any other non-zero sword id gets CoinFallGfx, and no
+; sword loads nothing.
+LoadMagicSwordGfx:
 		bsr.w	FlushDMACopyQueue
 		move.b	(g_EquippedSword).l,d0
-		beq.s	locret_77F2
+		beq.s	_lsgDone
 		lea	MagicSwordGfx(pc),a0
 		cmpi.b	#ITM_MAGICSWORD,d0
-		beq.s	loc_77DE
+		beq.s	_lsgLoad
 		lea	ThunderSwordGfx(pc),a0
 		cmpi.b	#ITM_THUNDERSWORD,d0
-		beq.s	loc_77DE
+		beq.s	_lsgLoad
 		lea	GaiaSwordGfx(pc),a0
 		cmpi.b	#ITM_GAIASWORD,d0
-		beq.s	loc_77DE
+		beq.s	_lsgLoad
 		lea	IceSwordGfx(pc),a0
 		cmpi.b	#ITM_ICESWORD,d0
-		beq.s	loc_77DE
+		beq.s	_lsgLoad
 		lea	CoinFallGfx(pc),a0
 
-loc_77DE:					  ; CODE XREF: LoadMagicSwordGfx+14j
-						  ; LoadMagicSwordGfx+1Ej ...
+_lsgLoad:
 		lea	(g_Buffer).l,a1
 		lea	($0000F180).l,a2
 		bsr.w	DecompressAndQueueGfxCopy
 		bsr.w	FlushDMACopyQueue
 
-locret_77F2:					  ; CODE XREF: LoadMagicSwordGfx+Aj
+_lsgDone:
 		rts
-; End of function LoadMagicSwordGfx
-
-
-; =============== S U B	R O U T	I N E =======================================
-
 
 ; Load a sword's elemental hit-effect graphics: d0 = sword item id
 ; (ITM_MAGICSWORD / ITM_THUNDERSWORD, anything else gets the Ice
@@ -201,27 +196,24 @@ locret_77F2:					  ; CODE XREF: LoadMagicSwordGfx+Aj
 ; g_Buffer and queues the DMA copy. Besides the swords' burn-on-hit
 ; animation, enemy AIs (spectres, reapers, Ifrit, Mir, Gola) call
 ; this to load the flames for their fireball projectiles.
-
-LoadMagicSwordEffect:				  ; CODE XREF: j_LoadMagicSwordEffectj
+LoadMagicSwordEffect:
 		lea	MagicSwordGfx(pc),a0
 		cmpi.b	#ITM_MAGICSWORD,d0
-		beq.s	loc_780C
+		beq.s	_lseLoad
 		lea	ThunderSwordGfx(pc),a0
 		cmpi.b	#ITM_THUNDERSWORD,d0
-		beq.s	loc_780C
+		beq.s	_lseLoad
 		lea	IceSwordGfx(pc),a0
 
-loc_780C:					  ; CODE XREF: LoadMagicSwordEffect+8j
-						  ; LoadMagicSwordEffect+12j
+_lseLoad:
 		lea	(g_Buffer).l,a1
 		bra.w	DecompressAndQueueGfxCopy
-; End of function LoadMagicSwordEffect
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_7816:					  ; CODE XREF: CheckForMenuOpen+38p
+; Build the menu background: decompress InvScreenTilemap and copy
+; its 19 rows x 40 columns into g_InventoryTilemap (64-word row
+; stride) with the priority bit set, turning the blank tile $86BC
+; transparent, then fill the rows below with $86B4.
+_buildInvTilemap:
 		lea	InvScreenTilemap(pc),a0
 		lea	(g_Buffer).l,a1
 		bsr.w	DecompressLZ77Gfx
@@ -229,41 +221,40 @@ sub_7816:					  ; CODE XREF: CheckForMenuOpen+38p
 		lea	(g_InventoryTilemap).l,a1
 		move.w	#$0012,d7
 
-loc_7834:					  ; CODE XREF: sub_7816+3Aj
+_bitRow:
 		move.w	#$0027,d6
 
-loc_7838:					  ; CODE XREF: sub_7816+32j
+_bitCol:
 		move.w	(a0)+,d0
 		ori.w	#$8000,d0
 		cmpi.w	#$86BC,d0
-		bne.s	loc_7846
+		bne.s	_bitStore
 		clr.w	d0
 
-loc_7846:					  ; CODE XREF: sub_7816+2Cj
+_bitStore:
 		move.w	d0,(a1)+
-		dbf	d6,loc_7838
+		dbf	d6,_bitCol
 		adda.w	#$0030,a1
-		dbf	d7,loc_7834
+		dbf	d7,_bitRow
 		move.w	#$017F,d7
 
-loc_7858:					  ; CODE XREF: sub_7816+46j
+_bitFill:
 		move.w	#$86B4,(a1)+
-		dbf	d7,loc_7858
+		dbf	d7,_bitFill
 		rts
-; End of function sub_7816
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitInvDisplay:					  ; CODE XREF: CheckForMenuOpen+40p
+; Menu palettes and window plane: colours 10-14 of line 0 come from
+; line 3, the item icons' palette (InvItemPal) goes to line 1, the
+; sprite table is cleared and the window plane extended over the
+; screen (reg $12 = $1C).
+InitInvDisplay:
 		lea	((g_Pal3Base+$14)).l,a0
 		lea	((g_Pal0Base+$14)).l,a1
 		moveq	#$00000004,d7
 
-loc_7870:					  ; CODE XREF: InitInvDisplay+10j
+_iidPal:
 		move.w	(a0)+,(a1)+
-		dbf	d7,loc_7870
+		dbf	d7,_iidPal
 		lea	InvItemPal(pc),a0
 		lea	(g_Pal1Base).l,a1
 		bsr.w	CopyPalette
@@ -272,6 +263,5 @@ loc_7870:					  ; CODE XREF: InitInvDisplay+10j
 		move.w	#$921C,d0
 		bsr.w	SetVDPReg
 		rts
-; End of function InitInvDisplay
 
-; ---------------------------------------------------------------------------
+	modend

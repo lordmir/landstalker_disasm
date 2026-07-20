@@ -3249,7 +3249,7 @@ CSA_0102:					  ; CODE XREF: ROM:00012504j
 CSA_0103:					  ; CODE XREF: ROM:00012508j
 		move.w	#$00E9,d0		  ; Cutscene 0x0E9: 0x025600
 		bsr.w	LoadCutsceneDialogue
-		moveq	#$00000009,d0
+		moveq	#VFX_NOLE_WARP_OUT_2,d0
 		jsr	(j_DoVisualEffect).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -3286,7 +3286,7 @@ loc_149A8:					  ; CODE XREF: ROM:000149B6j
 ; ---------------------------------------------------------------------------
 
 CSA_0106:					  ; CODE XREF: ROM:00012514j
-		moveq	#$0000000A,d0
+		moveq	#VFX_NOLE_WARP_IN_2,d0
 		jsr	(j_DoVisualEffect).l
 		move.w	#$00EA,d0		  ; Cutscene 0x0EA: 0x025602
 		bra.w	LoadCutsceneDialogue
@@ -4192,7 +4192,7 @@ CSA_0153:					  ; CODE XREF: ROM:00012648j
 
 loc_154EE:					  ; CODE XREF: ROM:00015508j
 		movem.w	d7,-(sp)
-		moveq	#$00000006,d0
+		moveq	#VFX_RED_FLASH,d0
 		jsr	(j_DoVisualEffect).l
 		bsr.s	sub_15530
 		jsr	(j_CopyBasePaletteToActivePalette).l

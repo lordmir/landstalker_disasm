@@ -1,30 +1,39 @@
+Items1	module
+; Item use, part 1: the dispatcher. PreUseItemTable
+; (pointertables/items) is a list of {bra.w handler, item id, $FF}
+; entries terminated by id $FF; the matching entry is jumped into
+; directly. The handlers (items2/3.asm) leave through items3's
+; shared exits - ReturnSuccess, ReturnFailure, or
+; ReturnSuccessAndEnablePostUse, which arms the item's second pass
+; (RunItemPostUse, run by the menu after the room reloads) by
+; setting bit 7 of g_ItemBeingUsed.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-UseItem:					  ; CODE XREF: CheckForMenuOpen+132p
-		move.b	d0,(byte_FF1152).l
+; Use item d0 from the menu: remember it, find its pre-use entry
+; (ids matched with bit 7 masked off) and run it. Items without an
+; entry just print the failure text.
+UseItem:
+		move.b	d0,(g_ItemBeingUsed).l
 		lea	PreUseItemTable(pc),a0
 
-loc_85FC:					  ; CODE XREF: UseItem+1Ej
+_uiScan:
 		move.b	0000000004(a0),d2
 		cmpi.b	#$FF,d2
 		beq.s	PrintNothingHappenedString
 		andi.b	#$7F,d2
 		cmp.b	d0,d2
-		beq.s	loc_8612
+		beq.s	_uiRun
 		addq.l	#$06,a0
-		bra.s	loc_85FC
+		bra.s	_uiScan
 ; ---------------------------------------------------------------------------
 
-loc_8612:					  ; CODE XREF: UseItem+1Aj
+_uiRun:
 		jmp	(a0)
 ; ---------------------------------------------------------------------------
 
-PrintNothingHappenedString:			  ; CODE XREF: UseItem+12j
-						  ; ROM:ReturnFailurep
+; String $16: nothing happened.
+PrintNothingHappenedString:
 		move.w	#$0016,d0
 		jsr	(j_PrintString).l
 		rts
-; End of function UseItem
 
+	modend

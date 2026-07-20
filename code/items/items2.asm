@@ -1,36 +1,36 @@
-; ---------------------------------------------------------------------------
+Items2	module
+; Item use, part 2: the first batch of pre-use handlers, reached
+; through PreUseItemTable. The shared exits (ReturnSuccess /
+; ReturnFailure / ConsumeItem) are in items3.asm.
 
-ItemUseEkeEke:					  ; CODE XREF: ROM:PreUseItemTablej
+; EkeEke: restore health, consume one, redraw the HUD.
+ItemUseEkeEke:
 		bsr.s	EkeEkeHealthRecover
 		bsr.w	ConsumeItem
 		jsr	(j_UpdateEkeEkeHUD).l
 		jsr	(j_MarkHUDForUpdate).l
 		jsr	(j_RefreshHUD).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-EkeEkeHealthRecover:				  ; CODE XREF: ROM:ItemUseEkeEkep
-						  ; DATA XREF: j_EkeEkeHealthRecovert
+; The EkeEke heal: half the max health, but at least $A00 (10
+; units). Also used when Friday revives the player.
+EkeEkeHealthRecover:
 		lea	(Player_X).l,a5
 		jsr	(j_GetMaxHealth).l
 		lsr.w	#$01,d0
 		cmpi.w	#$0A00,d0
-		bcc.s	loc_8712
+		bcc.s	_ehrAdd
 		move.w	#$0A00,d0
 
-loc_8712:					  ; CODE XREF: EkeEkeHealthRecover+12j
+_ehrAdd:
 		jmp	(j_AddHealth).l
-; End of function EkeEkeHealthRecover
-
 ; ---------------------------------------------------------------------------
 
-ItemUseDetoxGrass:				  ; CODE XREF: ROM:00008626j
+; Detox Grass: cure poison (fails without it).
+ItemUseDetoxGrass:
 		jsr	(j_GetPlayerStatus).l
 		btst	#STATUS_POISON,d0
 		beq.w	ReturnFailure
@@ -38,39 +38,42 @@ ItemUseDetoxGrass:				  ; CODE XREF: ROM:00008626j
 		clr.b	d0
 		jsr	(j_ClearPlayerStatus).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseGaiaStatue:				  ; CODE XREF: ROM:0000862Cj
+; Gaia Statue: in the lava statue room the first use sets the
+; lava-cooling flag; anywhere else it needs a hostile enemy
+; present, and queues the Gaia attack.
+ItemUseGaiaStatue:
 		btst	#$02,(g_AdditionalFlags+7).l ; Check for lava room flag
-		bne.s	loc_8758
+		bne.s	_gsNeedEnemies
 		cmpi.w	#ROOM_LAVA_STATUE,(g_CurrentRoom).l
-		bne.s	loc_8758
+		bne.s	_gsNeedEnemies
 		bset	#$02,(g_AdditionalFlags+7).l
-		bra.s	loc_8762
+		bra.s	_gsQueue
 ; ---------------------------------------------------------------------------
 
-loc_8758:					  ; CODE XREF: ROM:00008742j
-						  ; ROM:0000874Cj
+_gsNeedEnemies:
 		jsr	(j_AnyHostileEnemies).l
 		bcc.w	ReturnFailure
 
-loc_8762:					  ; CODE XREF: ROM:00008756j
+_gsQueue:
 		bsr.w	ConsumeItem
 		bset	#$00,(g_GaiaAttackQueued).l
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseGoldenStatue:				  ; CODE XREF: ROM:00008632j
+; Golden Statue: start the 600-frame attack boost.
+ItemUseGoldenStatue:
 		move.w	#00600,(g_GoldenStatueTimer).l
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseMindRepair:				  ; CODE XREF: ROM:00008638j
+; Mind Repair: cure confusion.
+ItemUseMindRepair:
 		jsr	(j_GetPlayerStatus).l
 		btst	#STATUS_CONFUSION,d0
 		beq.w	ReturnFailure
@@ -78,17 +81,20 @@ ItemUseMindRepair:				  ; CODE XREF: ROM:00008638j
 		move.b	#STATUS_CONFUSION,d0
 		jsr	(j_ClearPlayerStatus).l
 		trap	#$00			  ; Trap00Handler
-; ---------------------------------------------------------------------------
 		dc.w SND_HealthRecover2
-; ---------------------------------------------------------------------------
+
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseBlueRibbon:				  ; CODE XREF: ROM:0000863Ej
+; Blue Ribbon: does nothing (its text was printed in the menu).
+ItemUseBlueRibbon:
 		bra.w	ReturnSuccess
 ; ---------------------------------------------------------------------------
 
-ItemUseLantern:					  ; CODE XREF: ROM:00008644j
+; Lantern: light the current room by setting its darkness flag
+; (located by CheckIfRoomIsLit; fails when already lit or the room
+; is not lightable).
+ItemUseLantern:
 		bsr.s	CheckIfRoomIsLit
 		bcs.w	ReturnFailure
 		tst.b	d7
@@ -96,43 +102,43 @@ ItemUseLantern:					  ; CODE XREF: ROM:00008644j
 		bset	d1,(a0,d0.w)
 		bra.w	ReturnSuccess
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CheckIfRoomIsLit:				  ; CODE XREF: SetRoomPalp
-						  ; ROM:ItemUseLanternp
+; Look the current room up in LightableRooms ({room word, flag
+; byte offset, bit} entries, negative terminator). Carry set =
+; already lit. Carry clear: d7 = $FF with a0 = g_Flags and the
+; flag's offset/bit in d0/d1 (ready to set), or d7 = 0 when the
+; room is not in the table. Also used by SetRoomPal.
+CheckIfRoomIsLit:
 		lea	LightableRooms(pc),a0
 
-loc_87C2:					  ; CODE XREF: CheckIfRoomIsLit+16j
+_crlScan:
 		move.w	(a0),d0
-		bmi.w	loc_87F2
+		bmi.w	_crlNoEntry
 		cmp.w	(g_CurrentRoom).l,d0
-		beq.w	loc_87D6
+		beq.w	_crlFound
 		addq.l	#$04,a0
-		bra.s	loc_87C2
+		bra.s	_crlScan
 ; ---------------------------------------------------------------------------
 
-loc_87D6:					  ; CODE XREF: CheckIfRoomIsLit+10j
+_crlFound:
 		clr.w	d0
 		move.b	$00000002(a0),d0
 		move.b	$00000003(a0),d1
 		lea	(g_Flags).l,a0
 		btst	d1,(a0,d0.w)
-		beq.s	loc_87F8
+		beq.s	_crlUnlit
 		ori	#$01,ccr
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_87F2:					  ; CODE XREF: CheckIfRoomIsLit+6j
+_crlNoEntry:
 		clr.b	d7
 		tst.b	d0
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_87F8:					  ; CODE XREF: CheckIfRoomIsLit+2Cj
+_crlUnlit:
 		move.b	#$FF,d7
 		tst.b	d0
 		rts
-; End of function CheckIfRoomIsLit
 
-; ---------------------------------------------------------------------------
+	modend

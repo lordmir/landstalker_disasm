@@ -396,7 +396,7 @@ loc_3EA0C:					  ; CODE XREF: sub_3E9F8+10j
 sub_3EA28:					  ; CODE XREF: sub_3E9F8+28p
 		move.w	-$0000008C(a6),d0
 		lsl.w	#$02,d0
-		jsr	(sub_22EEC).l
+		jsr	(j_Cosine).l
 		move.w	-$0000008E(a6),d1
 		mulu.w	d0,d1
 		lsr.l	#$08,d1
@@ -404,7 +404,7 @@ sub_3EA28:					  ; CODE XREF: sub_3E9F8+28p
 		move.w	d1,$00000006(a1)
 		move.w	-$0000008C(a6),d0
 		lsl.w	#$02,d0
-		jsr	(sub_22EF0).l
+		jsr	(j_Sine).l
 		move.w	-$0000008E(a6),d1
 		lsr.w	#$01,d1
 		mulu.w	d0,d1

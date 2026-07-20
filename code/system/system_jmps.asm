@@ -258,7 +258,8 @@ j_FadeInFromDarkness:
 j_CheckForDoorNW:
 		jmp	(CheckForDoorNW).l
 
-		jmp	(sub_D9FC).l
+j_LoadMenuFont:
+		jmp	(LoadMenuFont).l
 
 j_LoadPlayerPalette:
 		jmp	(LoadPlayerPalette).l
