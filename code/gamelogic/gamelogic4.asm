@@ -1428,7 +1428,6 @@ _chBox:
 		movea.l	a0,a4
 
 _chNext:
-						  ; CheckOpenChest+18j	...
 		lea	SPRITE_SIZE(a0),a0
 		dbf	d7,_chLoop
 

@@ -6,7 +6,6 @@ CutsceneDispatch	module
 ; script.
 
 ProcessDialogueScriptAction:
-						  ; LoadPlayerSpecialAnimation+F2j ...
 		lsl.w	#$02,d0
 		jmp	CustomScriptActionTable(pc,d0.w)
 

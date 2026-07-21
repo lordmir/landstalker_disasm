@@ -1,3 +1,20 @@
+; FM (YM2612) instrument patches, YM_INSTMT_00 .. YM_INSTMT_4F. An FM track
+; picks one with an instrument command; YM1/YM2_LoadInstrument then copies it
+; to the channel's operator registers, first scaling the carrier operators'
+; Total Levels by the channel volume (via t_YM_LEVELS / t_SLOTS_PER_ALGO).
+;
+; 29 bytes each: seven groups of four per-operator register values, in
+; YM2612 register order (operator slots S1, S3, S2, S4), then one
+; feedback/algorithm byte:
+;   +00  reg 30h  DT1 (detune) | MUL (frequency multiple)
+;   +04  reg 40h  TL  (total level = operator output attenuation)
+;   +08  reg 50h  RS  (rate scaling) | AR  (attack rate)
+;   +0C  reg 60h  AM  (LFO amplitude-mod enable) | D1R (first decay rate)
+;   +10  reg 70h  D2R (secondary decay rate)
+;   +14  reg 80h  D1L (sustain level) | RR  (release rate)
+;   +18  reg 90h  SSG-EG
+;   +1C  reg B0h  FB  (feedback) | ALG (algorithm); the low 3 bits (algorithm)
+;                 also select which operators are carriers - see t_SLOTS_PER_ALGO
 YM_INSTMT_00:	db   20h,  40h,	 33h,  32h,  1Bh,  7Fh,	 7Fh,  7Fh,  5Fh,  1Fh,	 1Fh,  1Fh,    3,  11h,	 11h
 				db   11h,    0,	   6,	 6,    6,  5Ah,	   0,	 0,    0,    0,	   0,	 0,    0,  3Dh
 YM_INSTMT_01:	db     3,  32h,	 31h,  71h,  23h,  24h,	 7Fh,  7Fh, 0DFh, 0DFh,	 9Fh,  99h,    0,    0,	 10h

@@ -1809,12 +1809,12 @@ CS_0016_0:
 					; 0x14C6: SET BIT 6 OF FLAG 0x018
 					; 0xE1B3: PRINT	MSG 0x0201, MSGBOX CLEARED, END: "{47}DU BIST ZU JUNG,{43}UM BEI MADAME	YARD 'REINZU-{43}KOMMEN. TUT MIR LEID.{4E}{47}KOMM NOCHMAL{43}WIEDER, WENN DU ERWACHSEN{43}BIST.{4A}"
 ; ---------------------------------------------------------------------------
-		move.w	#$C8,d0	; '╚'
+		move.w	#$C8,d0
 
 CS_0016_1:
 		bsr.w	TestFlagBit
 		beq.s	CS_0016_2
-		move.w	#$2C,d0	; ','
+		move.w	#$2C,d0
 		bsr.w	SetFlagBit
 
 CS_0016_2:
@@ -3069,7 +3069,7 @@ CS_00E5_0:
 ; ---------------------------------------------------------------------------
 
 CS_00E5_1:
-		move.w	#$C6,d0	; '╞'
+		move.w	#$C6,d0
 		bra.w	CS_0016_1
 ; ---------------------------------------------------------------------------
 

@@ -196,7 +196,7 @@ HandleInnStay_3:
 		dc.w SND_MusicInnRest
 ; ---------------------------------------------------------------------------
 		jsr	(j_RestoreBGM).l
-		move.w	#$80,d0	; '�'
+		move.w	#$80,d0
 		bsr.w	RemoveStatus
 		bsr.w	UpdateEkeEke
 		bsr.w	ScriptFadeFromBlack

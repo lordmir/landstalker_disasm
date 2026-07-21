@@ -1,36 +1,40 @@
+; Cold start: mask interrupts, set up the stack, initialise the volume, timer
+; and fade defaults, prime the chips via one Main pass, then run Main_Loop.
 init:
 		di
 		ld	sp, STACK_START
 		xor	a
-		ld	(SFX_USELESS_BYTE_1), a
+		ld	(SFX_TYPE2_PRIORITY_CUR), a
 		dec	a
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ld	a, 0Fh
 		ld	(MUSIC_LEVEL), a
 		ld	a, 0FFh
 		ld	(YM_TIMER_VALUE), a
 		ld	a, 0Fh
 		ld	(FADE_IN_PARAMETERS), a
-		ld	a, 20h ; ' '
+		ld	a, 20h
 		call	Main
 		call	LoadBank
 
-Main_Loop:				; CODE XREF: init+44j init+5Aj ...
+; Idle loop. Each pass services a pending command (Main) and a pending DAC
+; sample (LoadDacSound); while a sample plays it streams one PCM byte to the
+; YM2612 DAC, paced by the per-sample delay in the Dac_Loop counter.
+Main_Loop:
 		ld	a, (YM2612_A0)
 		and	2
 		jr	z, Dac_Loop
 		call	UpdateSound
-		jp	loc_34
+		jp	Main_CheckOps
 ; ---------------------------------------------------------------------------
 
-Dac_Loop:				; CODE XREF: init+28j
-					; DATA XREF: LoadDacSound+19w
+Dac_Loop:
 		ld	b, 5
 
-loc_32:					; CODE XREF: init:loc_32j
+Dac_SendDelay:
 		djnz	$
 
-loc_34:					; CODE XREF: init+2Dj
+Main_CheckOps:
 		ld	a, (NEW_OPERATION)
 		or	a
 		call	nz, Main
@@ -40,26 +44,26 @@ loc_34:					; CODE XREF: init+2Dj
 		ld	a, d
 		or	e
 		jr	z, Main_Loop
-		ld	b, 2Ah ; '*'
+		ld	b, 2Ah
 		ld	c, (hl)
 		inc	hl
 
-loc_4A:					; CODE XREF: init+4Fj
+Dac_WaitYMBusy:
 		ld	a, (YM2612_A0)
-		and	80h ; '�'
-		jr	nz, loc_4A
+		and	80h
+		jr	nz, Dac_WaitYMBusy
 		ld	a, b
 		ld	(YM2612_A0), a
 		ld	a, c
 		ld	(YM2612_D0), a
 		dec	de
 		jp	Main_Loop
-; End of function init
 
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR Main
 
-Mute_Sound:				; CODE XREF: Main+8j
+; Command FFh: key-off and zero every FM operator and silence all four PSG
+; channels, then spin until the next command arrives.
+Mute_Sound:
 		push	hl
 		push	de
 		xor	a
@@ -68,7 +72,7 @@ Mute_Sound:				; CODE XREF: Main+8j
 		ld	bc, 407Fh
 		ld	d, 4
 
-loc_6B:					; CODE XREF: Main-144j
+Mute_YM1_Loop:
 		call	YM_Input
 		inc	b
 		call	YM_Input
@@ -77,13 +81,13 @@ loc_6B:					; CODE XREF: Main-144j
 		inc	b
 		inc	b
 		dec	d
-		jr	nz, loc_6B
+		jr	nz, Mute_YM1_Loop
 		ld	a, 1
 		ld	(CALL_YM2_INSTEAD_OF_YM1), a
 		ld	bc, 407Fh
 		ld	d, 4
 
-loc_85:					; CODE XREF: Main-12Aj
+Mute_YM2_Loop:
 		call	YM2_Input
 		inc	b
 		call	YM2_Input
@@ -92,39 +96,36 @@ loc_85:					; CODE XREF: Main-12Aj
 		inc	b
 		inc	b
 		dec	d
-		jr	nz, loc_85
+		jr	nz, Mute_YM2_Loop
 		ld	hl, SN76489_PSG
-		ld	a, 9Fh ; '�'
+		ld	a, 9Fh
 		ld	(hl), a
-		ld	a, 0BFh	; '�'
+		ld	a, 0BFh
 		ld	(hl), a
-		ld	a, 0DFh	; '�'
+		ld	a, 0DFh
 		ld	(hl), a
 		ld	a, 0FFh
 		ld	(hl), a
 
-loc_A4:					; CODE XREF: Main-115j
+Mute_WaitForOp:
 		ld	a, (NEW_OPERATION)
 		or	a
-		jr	z, loc_A4
+		jr	z, Mute_WaitForOp
 		cp	0FFh
 		jr	nz, Update_YM_Instruments
 		xor	a
 		ld	(NEW_OPERATION), a
 
-Update_YM_Instruments:			; CODE XREF: Main-111j	Main-7Dj
+Update_YM_Instruments:
 		call	Update_YM_InstrumentsLevels
 		pop	de
 		pop	hl
 		pop	af
 		jp	Main_Loop
-; END OF FUNCTION CHUNK	FOR Main
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-Update_YM_InstrumentsLevels:		; CODE XREF: Main:Update_YM_Instrumentsp
-					; UpdateSound+1Ep
+; Re-sends each FM channel's instrument at the current volume, so a level
+; change takes effect on the notes already sounding.
+Update_YM_InstrumentsLevels:
 		ld	iy, CURRENT_CHANNEL
 		xor	a
 		ld	(CALL_YM2_INSTEAD_OF_YM1), a
@@ -144,7 +145,7 @@ Update_YM_InstrumentsLevels:		; CODE XREF: Main:Update_YM_Instrumentsp
 		ld	(iy+0),	a
 		ld	a, 1
 
-loc_F0:
+Update_Levels_YM2:
 		ld	(CALL_YM2_INSTEAD_OF_YM1), a
 		ld	ix, YM_CHANNEL_DATA_4
 		ld	a, (ix+4)
@@ -160,27 +161,26 @@ loc_F0:
 		ld	ix, SFX_TYPE_2_CHANNEL_DATA_1
 		ld	a, (ix+3)
 		or	a
-		jr	nz, loc_123
+		jr	nz, Update_Levels_Sfx2Ch2
 		ld	a, (ix+4)
 		call	YM2_Load_Instrument
 
-loc_123:				; CODE XREF: Update_YM_InstrumentsLevels+60j
+Update_Levels_Sfx2Ch2:
 		inc	(iy+0)
 		ld	ix, SFX_TYPE_2_CHANNEL_DATA_2
 		ld	a, (ix+3)
 		or	a
-		jr	nz, locret_136
+		jr	nz, Update_Levels_Ret
 		ld	a, (ix+4)
 		call	YM2_Load_Instrument
 
-locret_136:				; CODE XREF: Update_YM_InstrumentsLevels+73j
+Update_Levels_Ret:
 		ret
-; End of function Update_YM_InstrumentsLevels
 
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR Main
 
-Update_YM_Level:			; CODE XREF: Main+17j
+; Command F0h: clamp MUSIC_LEVEL to 0-0Fh, then re-apply it to the FM channels.
+Update_YM_Level:
 		push	hl
 		push	de
 		ld	hl, MUSIC_LEVEL
@@ -188,12 +188,9 @@ Update_YM_Level:			; CODE XREF: Main+17j
 		and	0Fh
 		ld	(hl), a
 		jp	Update_YM_Instruments
-; END OF FUNCTION CHUNK	FOR Main
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadBank:				; CODE XREF: init+20p LoadDacSound+2Ep ...
+; Pages the ROM bank in BANK_TO_LOAD into the Z80's banked window (DAC PCM).
+LoadBank:
 		ld	bc, 100h	; b - 0x01
 					; c - 0x00
 		push	hl
@@ -221,13 +218,9 @@ LoadBank:				; CODE XREF: init+20p LoadDacSound+2Ep ...
 		pop	de
 		pop	hl
 		ret
-; End of function LoadBank
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadMusicBank:				; CODE XREF: Main+2Bp Main+39p ...
+; Pages the bank in MUSIC_BANK_TO_LOAD into the banked window (song data).
+LoadMusicBank:
 		push	bc
 		push	hl
 		ld	bc, 100h
@@ -250,14 +243,9 @@ LoadMusicBank:				; CODE XREF: Main+2Bp Main+39p ...
 		pop	hl
 		pop	bc
 		ret
-; End of function LoadMusicBank
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadInstrumentsBank:			; CODE XREF: YM1_LoadInstrumentp
-					; YM2_Load_Instrumentp
+; Pages the fixed instrument-data bank (1F8000h) into the banked window.
+LoadInstrumentsBank:
 		push	bc
 		push	hl
 		ld	bc, 100h
@@ -279,21 +267,19 @@ LoadInstrumentsBank:			; CODE XREF: YM1_LoadInstrumentp
 		pop	hl
 		pop	bc
 		ret
-; End of function LoadInstrumentsBank
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadDacSound:				; CODE XREF: init+3Fp
-		cp	0FEh ; '�'
-		jr	nz, loc_196
+; Sets up DAC playback for NEW_SAMPLE_TO_LOAD: looks the sample up in
+; t_SAMPLE_LOAD_DATA, patches its playback rate, and returns hl = PCM start,
+; de = length. Id FEh selects silence.
+LoadDacSound:
+		cp	0FEh
+		jr	nz, LoadDacSound_FromTable
 		ld	hl, 0C000h
 		ld	de, 0
 		ret
 ; ---------------------------------------------------------------------------
 
-loc_196:				; CODE XREF: LoadDacSound+2j
+LoadDacSound_FromTable:
 		dec	a
 		ld	h, 0
 		ld	l, a
@@ -322,16 +308,10 @@ loc_196:				; CODE XREF: LoadDacSound+2j
 		ld	(NEW_SAMPLE_TO_LOAD), a
 		call	LoadBank
 		ret
-; End of function LoadDacSound
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-Main:					; CODE XREF: init+1Dp init+38p
-
-; FUNCTION CHUNK AT 0000005D SIZE 0000005E BYTES
-; FUNCTION CHUNK AT 00000137 SIZE 0000000C BYTES
+; Command dispatcher. Reads NEW_OPERATION and branches: FFh mute, FEh stop,
+; FDh fade out, F0h set level, >=41h play SFX, else start that music track.
+Main:
 
 		push	af
 		xor	a
@@ -339,19 +319,19 @@ Main:					; CODE XREF: init+1Dp init+38p
 		pop	af
 		cp	0FFh
 		jp	z, Mute_Sound
-		cp	0FEh ; '�'
+		cp	0FEh
 		jp	z, StopMusic
-		cp	0FDh ; '�'
+		cp	0FDh
 		jp	z, FadeOut
-		cp	0F0h ; '�'
+		cp	0F0h
 		jp	z, Update_YM_Level
-		cp	41h ; 'A'
+		cp	41h
 		jp	nc, Load_SFX
 		push	hl
 		push	de
 		push	af
-		cp	21h ; '!'
-		jr	nc, loc_1F2
+		cp	21h
+		jr	nc, Main_MusicBank0
 		ld	a, 1
 		ld	(MUSIC_BANK_TO_LOAD), a
 		call	LoadMusicBank
@@ -360,15 +340,28 @@ Main:					; CODE XREF: init+1Dp init+38p
 		jp	Load_Music
 ; ---------------------------------------------------------------------------
 
-loc_1F2:				; CODE XREF: Main+24j
+Main_MusicBank0:
 		xor	a
 		ld	(MUSIC_BANK_TO_LOAD), a
 		call	LoadMusicBank
 		pop	af
 		ld	de, Bank	; Selected 68k Bank
-		sub	20h ; ' '
+		sub	20h
 
-Load_Music:				; CODE XREF: Main+32j
+; ---------------------------------------------------------------------------
+; Music track data (in the banked ROM window). A track id indexes the per-bank
+; song pointer table (Bank / Bank+910h) to a header:
+;   +0      0 for a music track (a nonzero value re-routes to the SFX loader)
+;   +1 +2   auto-fade timeout in frames (-> MUSIC_AUTOFADE_TIMER; 0 = none)
+;   +3      tempo: written to YM2612 Timer B (reg 26h) as this value + 3
+;   +4..    ten little-endian pointers to the channels' event streams, in
+;           order YM 1-3, YM 4-6 / DAC, PSG tone 1-3, PSG noise.
+; SFX are similar: an id >= 41h indexes pt_SFX to a header whose +0 byte is the
+; type - type 1 gives pointers for all ten channels (a full-channel effect),
+; any other type gives three that overlay onto YM channels 4-6 on top of the
+; music. A channel pointer whose target begins with FFh is left untouched.
+; ---------------------------------------------------------------------------
+Load_Music:
 		dec	a
 		add	a, a
 		ld	h, 0
@@ -393,10 +386,10 @@ Load_Music:				; CODE XREF: Main+32j
 		inc	hl
 		ld	d, (hl)
 		inc	hl
-		ld	(MUSIC_DOESNT_USE_SAMPLES), de
+		ld	(MUSIC_AUTOFADE_TIMER), de
 		ld	bc, 2B80h
 		call	YM1_Input
-		ld	b, 26h ; '&'
+		ld	b, 26h
 		ld	c, (hl)
 		inc	c
 		inc	c
@@ -405,20 +398,20 @@ Load_Music:				; CODE XREF: Main+32j
 		xor	a
 		ld	(CURRENTLY_FADING_OUT),	a
 		ld	(FADE_OUT_COUNTER), a
-		ld	a, 63h ; 'c'
+		ld	a, 63h
 		ld	(FADE_OUT_TIMER), a
 		inc	hl
 		ld	b, 0Ah
 		ld	ix, YM_CHANNEL_DATA_1
 
-Load_Music_Channels:			; CODE XREF: Main+D0j
+Load_Music_Channels:
 		ld	e, (hl)
 		inc	hl
 		ld	d, (hl)
 		inc	hl
 		ld	(ix+0),	e
 		ld	(ix+1),	d
-		ld	a, 0C0h	; '�'
+		ld	a, 0C0h
 		ld	(ix+1Eh), a
 		xor	a
 		ld	(ix+2),	a
@@ -435,17 +428,18 @@ Load_Music_Channels:			; CODE XREF: Main+D0j
 		ld	e, (ix+0)
 		ld	a, (de)
 		cp	0FFh
-		jr	nz, loc_288
+		jr	nz, Load_Music_Channels_NoEnd
 		ld	a, 1
 		ld	(ix+3),	a
 
-loc_288:				; CODE XREF: Main+C4j
-		ld	de, 20h	; ' '
+Load_Music_Channels_NoEnd:
+		ld	de, 20h
 		add	ix, de
 		djnz	Load_Music_Channels
 		ld	b, 2
 
-Activate_Stereo_Outputs:		; CODE XREF: Main+E9j
+; Enables both stereo outputs on FM parts 1 and 2 (register B4h) as a track loads.
+Activate_Stereo_Outputs:
 		push	bc
 		ld	a, b
 		dec	a
@@ -458,23 +452,25 @@ Activate_Stereo_Outputs:		; CODE XREF: Main+E9j
 		call	YM_Input
 		pop	bc
 		djnz	Activate_Stereo_Outputs
-		ld	a, 0C0h	; '�'
+		ld	a, 0C0h
 		ld	(YM_CHANNEL_4_STEREO), a
 		ld	(YM_CHANNEL_5_STEREO), a
-		ld	a, 0FEh	; '�'
+		ld	a, 0FEh
 		ld	(NEW_SAMPLE_TO_LOAD), a
 		call	YM_LoadTimerB
 
-Load_End:				; CODE XREF: Main+12Fj	Main+139j ...
+Load_End:
 		pop	de
 		pop	hl
 		jp	LoadBank
 ; ---------------------------------------------------------------------------
 
-Load_SFX:				; CODE XREF: Main+1Cj Main+4Ej
+; Command >=41h: start a sound effect. Type 1 seizes all ten channels; other
+; types overlay a few channels on top of the music (Load_SFX_Type_2).
+Load_SFX:
 		push	hl
 		push	de
-		sub	41h ; 'A'
+		sub	41h
 		ld	h, 0
 		ld	l, a
 		add	hl, hl
@@ -491,35 +487,37 @@ Load_SFX:				; CODE XREF: Main+1Cj Main+4Ej
 		ld	b, 0Ah
 		ld	ix, YM_CHANNEL_DATA_1
 
-Load_SFX_Channels:			; CODE XREF: Main+12Dj
+Load_SFX_Channels:
 		ld	e, (hl)
 		inc	hl
 		ld	d, (hl)
 		inc	hl
 		ld	a, (de)
 		cp	0FFh
-		jr	z, loc_2E5
+		jr	z, Load_SFX_Channels_Skip
 		call	InitChannelDataForSFX
 
-loc_2E5:				; CODE XREF: Main+123j
-		ld	de, 20h	; ' '
+Load_SFX_Channels_Skip:
+		ld	de, 20h
 		add	ix, de
 		djnz	Load_SFX_Channels
 		jr	Load_End
 ; ---------------------------------------------------------------------------
 
-Load_SFX_Type_2:			; CODE XREF: Main+114j
-		ld	a, (SFX_USELESS_BYTE_1)
-		ld	d, a
-		ld	a, (SFX_USELESS_BYTE_2)
-		sub	d
+; Loads a type-2 (overlay) SFX into the three SFX_TYPE_2 channels, which play
+; over YM channels 4-6 without stopping the music.
+Load_SFX_Type_2:
+		ld	a, (SFX_TYPE2_PRIORITY_CUR)	; vestigial priority gate:
+		ld	d, a				; CUR is always 0, so NEW - CUR
+		ld	a, (SFX_TYPE2_PRIORITY_NEW)	; never borrows and this bail
+		sub	d				; is unreachable
 		jp	c, Load_End
 		ld	a, d
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ld	bc, 304h
 		ld	ix, SFX_TYPE_2_CHANNEL_DATA_1
 
-loc_304:				; CODE XREF: Main+169j
+Load_SFX_Type_2_Loop:
 		push	bc
 		ld	e, (hl)
 		inc	hl
@@ -527,33 +525,30 @@ loc_304:				; CODE XREF: Main+169j
 		inc	hl
 		ld	a, (de)
 		cp	0FFh
-		jr	z, loc_31F
+		jr	z, Load_SFX_Type_2_Skip
 		call	InitChannelDataForSFX
-		ld	b, 28h ; '('
+		ld	b, 28h
 		call	YM1_Input
 		ld	c, a
-		add	a, 0B0h	; '�'
+		add	a, 0B0h
 		ld	b, a
-		ld	c, 0C0h	; '�'
+		ld	c, 0C0h
 		call	YM2_Input
 
-loc_31F:				; CODE XREF: Main+14Fj
-		ld	de, 20h	; ' '
+Load_SFX_Type_2_Skip:
+		ld	de, 20h
 		add	ix, de
 		pop	bc
 		inc	c
-		djnz	loc_304
+		djnz	Load_SFX_Type_2_Loop
 		jp	Load_End
-; End of function Main
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-InitChannelDataForSFX:			; CODE XREF: Main+125p	Main+151p
+; Points a channel's state block at stream de and clears its counters/flags,
+; leaving it ready to parse from the start.
+InitChannelDataForSFX:
 		ld	(ix+0),	e
 		ld	(ix+1),	d
-		ld	a, 0C0h	; '�'
+		ld	a, 0C0h
 		ld	(ix+1Eh), a
 		xor	a
 		ld	(ix+2),	a
@@ -567,13 +562,10 @@ InitChannelDataForSFX:			; CODE XREF: Main+125p	Main+151p
 		ld	a, 1
 		ld	(ix+1Eh), a
 		ret
-; End of function InitChannelDataForSFX
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-StopMusic:				; CODE XREF: Main+Dj Main+60p	...
+; Command FEh: key-off every FM and PSG channel, mark them all finished, and
+; reset the fade state - leaves the driver silent.
+StopMusic:
 		push	hl
 		ld	iy, CURRENT_CHANNEL
 		xor	a
@@ -601,62 +593,59 @@ StopMusic:				; CODE XREF: Main+Dj Main+60p	...
 		ld	(iy+0),	a
 		ld	a, (SFX_TYPE_2_CHANNEL_DATA_1 + 3)
 		or	a
-		jr	z, loc_3AD
+		jr	z, StopMusic_Ch5
 		xor	a
 		ld	ix, YM_CHANNEL_DATA_4
 		call	YM2_Load_Instrument
 		ld	bc, 2804h
 		call	YM1_Input
 
-loc_3AD:				; CODE XREF: StopMusic+48j
+StopMusic_Ch5:
 		inc	(iy+0)
 		ld	a, (SFX_TYPE_2_CHANNEL_DATA_2 + 3)
 		or	a
-		jr	z, loc_3C4
+		jr	z, StopMusic_SilencePSG
 		xor	a
 		ld	ix, YM_CHANNEL_DATA_5
 		call	YM2_Load_Instrument
 		ld	bc, 2805h
 		call	YM1_Input
 
-loc_3C4:				; CODE XREF: StopMusic+5Fj
+StopMusic_SilencePSG:
 		ld	hl, SN76489_PSG
-		ld	a, 9Fh ; '�'
+		ld	a, 9Fh
 		ld	(hl), a
-		ld	a, 0BFh	; '�'
+		ld	a, 0BFh
 		ld	(hl), a
-		ld	a, 0DFh	; '�'
+		ld	a, 0DFh
 		ld	(hl), a
 		ld	a, 0FFh
 		ld	(hl), a
 		ld	hl, YM_CHANNEL_DATA_1 + 3
-		ld	de, 20h	; ' '
+		ld	de, 20h
 		ld	b, 0Ah
 		ld	a, 1
 
-loc_3DD:				; CODE XREF: StopMusic+8Aj
+StopMusic_KeyOffLoop:
 		ld	(hl), a
 		add	hl, de
-		djnz	loc_3DD
+		djnz	StopMusic_KeyOffLoop
 		pop	hl
 		ld	de, 0
 		xor	a
 		ld	(CURRENTLY_FADING_OUT),	a
 		ld	(FADE_OUT_COUNTER), a
-		ld	a, 63h ; 'c'
+		ld	a, 63h
 
-loc_3EE:
+StopMusic_SetFadeState:
 		ld	(FADE_OUT_TIMER), a
 		ld	a, 0FFh
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ret
-; End of function StopMusic
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-UpdateSound:				; CODE XREF: init+2Ap
+; Per-frame tick: step the fade-in and fade-out, then parse one event-tick of
+; every channel and push the results to the YM2612 and PSG.
+UpdateSound:
 		push	bc
 		push	de
 		push	hl
@@ -665,56 +654,54 @@ UpdateSound:				; CODE XREF: init+2Ap
 		ld	a, (FADE_IN_PARAMETERS)
 		rrca
 		rrca
-		and	3Ch ; '<'
-		jr	z, loc_418
+		and	3Ch
+		jr	z, UpdateSound_AfterFadeIn
 		cp	(hl)
-		jr	nz, loc_418
+		jr	nz, UpdateSound_AfterFadeIn
 		xor	a
 		ld	(hl), a
 		ld	hl, MUSIC_LEVEL
 		ld	a, (hl)
 		cp	0Fh
-		jr	z, loc_418
+		jr	z, UpdateSound_AfterFadeIn
 		inc	(hl)
 		call	Update_YM_InstrumentsLevels
 
-loc_418:				; CODE XREF: UpdateSound+Ej
-					; UpdateSound+11j ...
+UpdateSound_AfterFadeIn:
 		call	LoadMusicBank
-		ld	hl, (MUSIC_DOESNT_USE_SAMPLES)
+		ld	hl, (MUSIC_AUTOFADE_TIMER)
 		ld	a, h
 		or	l
-		jr	z, loc_42B
+		jr	z, UpdateSound_FadeOutCheck
 		dec	hl
-		ld	(MUSIC_DOESNT_USE_SAMPLES), hl
+		ld	(MUSIC_AUTOFADE_TIMER), hl
 		ld	a, h
 		or	l
 		call	z, FadeOut
 
-loc_42B:				; CODE XREF: UpdateSound+29j
+UpdateSound_FadeOutCheck:
 		ld	a, (CURRENTLY_FADING_OUT)
 		or	a
-		jr	z, loc_451
+		jr	z, UpdateSound_ParseAllChannels
 		ld	a, (FADE_OUT_TIMER)
 		or	a
-		jr	nz, loc_44D
+		jr	nz, UpdateSound_FadeOutTick
 		ld	a, (FADE_OUT_LENGTH)
 		ld	(FADE_OUT_TIMER), a
 		ld	a, (FADE_OUT_COUNTER)
 		inc	a
 		ld	(FADE_OUT_COUNTER), a
 		cp	0Ch
-		jr	nz, loc_451
+		jr	nz, UpdateSound_ParseAllChannels
 		call	StopMusic
-		jr	loc_4BA
+		jr	UpdateSound_Done
 ; ---------------------------------------------------------------------------
 
-loc_44D:				; CODE XREF: UpdateSound+3Ej
+UpdateSound_FadeOutTick:
 		dec	a
 		ld	(FADE_OUT_TIMER), a
 
-loc_451:				; CODE XREF: UpdateSound+38j
-					; UpdateSound+4Fj
+UpdateSound_ParseAllChannels:
 		call	YM_LoadTimerB
 		ld	iy, CURRENT_CHANNEL
 		xor	a
@@ -754,131 +741,102 @@ loc_451:				; CODE XREF: UpdateSound+38j
 		inc	(iy+0)
 		call	YM2_ParseChannel6Data
 
-loc_4BA:				; CODE XREF: UpdateSound+54j
+UpdateSound_Done:
 		call	LoadBank
 		pop	hl
 		pop	de
 		pop	bc
 		ret
-; End of function UpdateSound
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM_LoadTimerB:				; CODE XREF: Main+F8p
-					; UpdateSound:loc_451p
+; Re-arms the YM2612 timers (register 27h); Timer B is what paces UpdateSound.
+YM_LoadTimerB:
 		ld	bc, 273Ah
 		jr	YM1_Input
-; End of function YM_LoadTimerB
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_ConditionalInput:			; CODE XREF: sub_880-CEp sub_880+41p
+; As YM1_Input, but for an SFX-overlaid channel writes only while that channel
+; is active, so an idle SFX slot leaves the music untouched.
+YM1_ConditionalInput:
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
 		jr	nz, YM1_Input
 		exx
 		push	ix
 		pop	hl
-		ld	bc, 0E3h ; '�'
+		ld	bc, 0E3h
 		add	hl, bc
 		ld	a, (hl)
 		exx
 		or	a
 		jr	nz, YM1_Input
 		ret
-; End of function YM1_ConditionalInput
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM_Input:				; CODE XREF: Main:loc_6Bp Main-14Ep ...
+; Writes value c to YM2612 register b, choosing part 1 or 2 per CALL_YM2_INSTEAD_OF_YM1.
+YM_Input:
 		ld	a, (CALL_YM2_INSTEAD_OF_YM1)
 		or	a
 		jr	nz, YM2_ConditionalInput
-; End of function YM_Input
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_Input:				; CODE XREF: Main+6Fp Main+78p ...
+; Writes value c to register b on YM2612 part 1 (channels 1-3), after waiting
+; for the chip to be ready.
+YM1_Input:
 		ld	a, (YM2612_A0)
-		and	80h ; '�'
+		and	80h
 		jr	nz, YM1_Input
 		ld	a, b
 		ld	(YM2612_A0), a
 		ld	a, c
 		ld	(YM2612_D0), a
 		ret
-; End of function YM1_Input
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_ConditionalInput:			; CODE XREF: YM_Input+4j
-					; sub_880:loc_89Cp ...
+; As YM2_Input, but writes only while the current SFX channel is active.
+YM2_ConditionalInput:
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
 		jr	nz, YM2_Input
 		exx
 		push	ix
 		pop	hl
-		ld	bc, 0E3h ; '�'
+		ld	bc, 0E3h
 		add	hl, bc
 		ld	a, (hl)
 		exx
 		or	a
 		ret	z
-; End of function YM2_ConditionalInput
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_Input:				; CODE XREF: Main:loc_85p Main-134p ...
+; Writes value c to register b on YM2612 part 2 (channels 4-6).
+YM2_Input:
 		ld	a, (YM2612_A1)
-		and	80h ; '�'
+		and	80h
 		jr	nz, YM2_Input
 		ld	a, b
 		ld	(YM2612_A1), a
 		ld	a, c
 		ld	(YM2612_D1), a
 		ret
-; End of function YM2_Input
 
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR PSG_ParseToneData
 
-PSG_SetChannelAttenuation:		; CODE XREF: PSG_ParseToneData+4Fj
-					; PSG_ParseNoiseData+41j
+; Writes a 4-bit attenuation (a) to the current PSG channel's volume register.
+PSG_SetChannelAttenuation:
 		and	0Fh
 		ld	h, a
 		ld	a, (CURRENT_PSG_CHANNEL)
 		or	h
-		or	90h ; '�'
+		or	90h
 		ld	(SN76489_PSG), a
 		ret
-; END OF FUNCTION CHUNK	FOR PSG_ParseToneData
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DAC_SetNewSample:			; CODE XREF: YM2_ParseChannel6Data+24p
-					; YM2_ParseChannel6Data+85p
+; Requests DAC sample a. For music channels it only takes effect when the
+; channel is active, not fading, and at full volume, so SFX keep priority.
+DAC_SetNewSample:
 		ld	b, a
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
-		jr	nz, loc_53E
+		jr	nz, DAC_SetNewSample_Store
 		exx
 		push	ix
 		pop	hl
-		ld	bc, 0E3h ; '�'
+		ld	bc, 0E3h
 		add	hl, bc
 		ld	a, (hl)
 		exx
@@ -891,16 +849,46 @@ DAC_SetNewSample:			; CODE XREF: YM2_ParseChannel6Data+24p
 		cp	0Fh
 		ret	nz
 
-loc_53E:				; CODE XREF: DAC_SetNewSample+5j
+DAC_SetNewSample_Store:
 		ld	a, b
 		ld	(NEW_SAMPLE_TO_LOAD), a
 		ret
-; End of function DAC_SetNewSample
 
 ; ---------------------------------------------------------------------------
 
-YM1_ParseData:				; CODE XREF: UpdateSound+6Bp
-					; UpdateSound+71p ...
+; ---------------------------------------------------------------------------
+; Channel event streams. Each channel points at a byte stream the matching
+; parser below walks. A byte whose top five bits are all set (F8h-FFh) is a
+; command; any other byte is a note event:
+;
+;   note event:  %d ppppppp  [duration]
+;     ppppppp = pitch 00h-6Fh, or 70h = rest. Bit 7 (d) set means an explicit
+;     duration byte follows; clear reuses the previous duration. The pitch
+;     indexes the frequency table (after adding the channel's transpose). On
+;     the DAC channel the value is instead a sample id (played as id + 1); on
+;     the PSG noise channel its low 3 bits are the noise mode.
+;
+; Commands - the low 3 bits of the F8h-FFh byte select which. Which commands a
+; channel recognises differs by type; an unrecognised one skips two bytes:
+;
+;   byte  FM 1-6         DAC (ch 6)   PSG tone          PSG noise
+;   FFh   end / jump     end / jump   end / jump        end / jump
+;   FEh   set instrument    -            -                 -
+;   FDh   set volume        -         set envelope+vol  set envelope+vol
+;   FCh   slide / key-off  key-off     key-off           key-off
+;   FBh   vibrato           -         vibrato              -
+;   FAh   stereo / pan     stereo     set Timer B          -
+;   F9h   note shift        -         note shift           -
+;   F8h   loop command     loop        loop              loop
+;
+; FFh takes a 16-bit operand: a nonzero high byte jumps to that address (used
+; to loop a track); 0000h ends the channel; 00LLh ends it and posts LLh as a
+; new driver command. F8h (loop) takes a control byte whose top 3 bits pick a
+; sub-op: set or recall one of two loop markers, a counted repeat, or a
+; play-once conditional skip.
+; ---------------------------------------------------------------------------
+; Parses one event-tick of FM channels 1-3 (music part 1).
+YM1_ParseData:
 		ld	a, (iy+0)
 		ld	ix, YM_CHANNEL_DATA_1
 		push	af
@@ -913,46 +901,44 @@ YM1_ParseData:				; CODE XREF: UpdateSound+6Bp
 		ld	e, a
 		add	ix, de
 		pop	af
-		ld	c, 0A0h	; '�'
+		ld	c, 0A0h
 		add	a, c
-		ld	(loc_759+1), a
+		ld	(YM1_WriteFreqLo+1), a
 		ld	c, 4
 		add	a, c
-		ld	(loc_750+1), a
+		ld	(YM1_WriteFreqHi+1), a
 
-loc_562:				; CODE XREF: ROM:00000683j
+YM1_ParseData_Channel:
 		ld	a, (ix+3)
 		or	a
 		ret	nz
 		ld	a, (ix+6)
 		cp	(ix+2)
-		jr	nz, loc_57E
+		jr	nz, YM1_ParseData_Fetch
 		ld	a, (ix+8)
 		or	a
-		jr	nz, loc_57E
-		ld	b, 28h ; '('
+		jr	nz, YM1_ParseData_Fetch
+		ld	b, 28h
 		ld	a, (iy+0)
 		ld	c, a
 		call	YM1_Input
 
-loc_57E:				; CODE XREF: ROM:0000056Dj
-					; ROM:00000573j
+YM1_ParseData_Fetch:
 		ld	a, (ix+2)
 		or	a
-		jp	nz, loc_686
+		jp	nz, YM1_Parse_HeldNote
 		ld	d, (ix+1)
 		ld	e, (ix+0)
 
-YM1_Parsing_Start:			; CODE XREF: ROM:000005BDj
-					; ROM:000005C9j ...
+YM1_Parsing_Start:
 		xor	a
 		ld	(ix+0Dh), a
 		ld	a, (ix+9)
 		ld	(ix+0Ah), a
 		ld	a, (de)
-		and	0F8h ; '�'
-		cp	0F8h ; '�'
-		jp	nz, loc_612
+		and	0F8h
+		cp	0F8h
+		jp	nz, YM1_Parse_PlayNote
 		ld	a, (de)
 		cp	0FFh
 		jp	nz, YM1_Set_Instrument
@@ -966,23 +952,23 @@ YM1_Parsing_Start:			; CODE XREF: ROM:000005BDj
 		jr	nz, YM1_Parse_At_New_Offset
 		ld	a, l
 		or	a
-		jr	z, loc_5B3
+		jr	z, YM1_Parse_TrackDone
 		ld	(NEW_OPERATION), a
 
-loc_5B3:				; CODE XREF: ROM:000005AEj
+YM1_Parse_TrackDone:
 		ld	a, 1
 		ld	(ix+3),	a
 		xor	a
 		jp	YM1_LoadInstrument
 ; ---------------------------------------------------------------------------
 
-YM1_Parse_At_New_Offset:		; CODE XREF: ROM:000005AAj
+YM1_Parse_At_New_Offset:
 		ex	de, hl
 		jr	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Set_Instrument:			; CODE XREF: ROM:000005A0j
-		cp	0FEh ; '�'
+YM1_Set_Instrument:
+		cp	0FEh
 		jr	nz, YM1_Load_Note
 		inc	de
 		ld	a, (de)
@@ -991,8 +977,8 @@ YM1_Set_Instrument:			; CODE XREF: ROM:000005A0j
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Load_Note:				; CODE XREF: ROM:000005C1j
-		cp	0FDh ; '�'
+YM1_Load_Note:
+		cp	0FDh
 		jr	nz, YM1_Set_Slide_Or_Key_Release
 		inc	de
 		ld	a, (de)
@@ -1002,52 +988,52 @@ YM1_Load_Note:				; CODE XREF: ROM:000005C1j
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Set_Slide_Or_Key_Release:		; CODE XREF: ROM:000005CEj
-		cp	0FCh ; '�'
+YM1_Set_Slide_Or_Key_Release:
+		cp	0FCh
 		jr	nz, YM1_Load_Vibrato
 		call	YM1_SetSlideOrKeyRelease
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Load_Vibrato:			; CODE XREF: ROM:000005DDj
-		cp	0FBh ; '�'
+YM1_Load_Vibrato:
+		cp	0FBh
 		jr	nz, YM1_Set_Stereo
 		call	LoadVibrato
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Set_Stereo:				; CODE XREF: ROM:000005E7j
-		cp	0FAh ; '�'
+YM1_Set_Stereo:
+		cp	0FAh
 		jr	nz, YM1_Load_Note_Shift
 		call	YM1_SetStereo
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Load_Note_Shift:			; CODE XREF: ROM:000005F1j
-		cp	0F9h ; '�'
+YM1_Load_Note_Shift:
+		cp	0F9h
 		jr	nz, YM1_Loop_Command
 		call	LoadNoteShift
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Loop_Command:			; CODE XREF: ROM:000005FBj
-		cp	0F8h ; '�'
+YM1_Loop_Command:
+		cp	0F8h
 		jr	nz, YM1_Bad_Command
 		call	ParseLoopCommand
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM1_Bad_Command:			; CODE XREF: ROM:00000605j
+YM1_Bad_Command:
 		inc	de
 		inc	de
 		jp	YM1_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-loc_612:				; CODE XREF: ROM:0000059Aj
+YM1_Parse_PlayNote:
 		ld	a, (de)
-		and	7Fh ; ''
-		cp	70h ; 'p'
-		jp	z, loc_66A
+		and	7Fh
+		cp	70h
+		jp	z, YM1_Parse_ReadDuration
 		add	a, (ix+1Ch)
 		ld	l, a
 		ld	h, 0
@@ -1061,66 +1047,66 @@ loc_612:				; CODE XREF: ROM:0000059Aj
 		ld	b, 0
 		ld	c, (ix+1Dh)
 		add	hl, bc
-		ld	a, (loc_750+1)
+		ld	a, (YM1_WriteFreqHi+1)
 		ld	b, a
 		ld	c, h
 		ld	(ix+12h), c
 		ld	a, (ix+1Fh)
 		or	a
-		jr	nz, loc_644
+		jr	nz, YM1_Parse_FreqHiDone
 		ld	(ix+0Fh), c
 		xor	a
 		ld	(ix+12h), a
 
-loc_644:				; CODE XREF: ROM:0000063Bj
+YM1_Parse_FreqHiDone:
 		call	YM1_Input
-		ld	a, (loc_759+1)
+		ld	a, (YM1_WriteFreqLo+1)
 		ld	b, a
 		ld	c, l
 		ld	(ix+11h), c
 		ld	a, (ix+1Fh)
 		or	a
-		jr	nz, loc_65C
+		jr	nz, YM1_Parse_FreqLoDone
 		ld	(ix+0Eh), c
 		xor	a
 		ld	(ix+11h), a
 
-loc_65C:				; CODE XREF: ROM:00000653j
+YM1_Parse_FreqLoDone:
 		call	YM1_Input
-		ld	b, 28h ; '('
+		ld	b, 28h
 		ld	a, (iy+0)
-		or	0F0h ; '�'
+		or	0F0h
 		ld	c, a
 		call	YM1_Input
 
-loc_66A:				; CODE XREF: ROM:00000617j
+YM1_Parse_ReadDuration:
 		ld	a, (de)
 		bit	7, a
 		jr	nz, Command_F0
 		ld	a, (ix+7)
-		jr	loc_679
+		jr	YM1_Parse_StoreEvent
 ; ---------------------------------------------------------------------------
 
-Command_F0:				; CODE XREF: ROM:0000066Dj
+Command_F0:
 		inc	de
 		ld	a, (de)
 		ld	(ix+7),	a
 
-loc_679:				; CODE XREF: ROM:00000672j
+YM1_Parse_StoreEvent:
 		ld	(ix+2),	a
 		inc	de
 		ld	(ix+1),	d
 		ld	(ix+0),	e
-		jp	loc_562
+		jp	YM1_ParseData_Channel
 ; ---------------------------------------------------------------------------
 
-loc_686:				; CODE XREF: ROM:00000582j
+YM1_Parse_HeldNote:
 		dec	(ix+2)
 		ld	b, (ix+12h)
 		ld	c, (ix+11h)
 		ld	a, b
 		or	c
-		jr	z, loc_70A
+		jr	z, YM1_Vibrato
 		ld	a, (ix+0Fh)
 		ld	h, a
 		ld	a, (ix+0Eh)
@@ -1131,19 +1117,19 @@ loc_686:				; CODE XREF: ROM:00000582j
 		sbc	hl, bc
 		ld	a, h
 		ld	(TEMP_FREQUENCY), a
-		jr	nc, loc_6AE
+		jr	nc, YM1_Slide_Down
 		ld	b, 0
 		ld	c, (ix+1Fh)
-		jp	loc_6B6
+		jp	YM1_Slide_Apply
 ; ---------------------------------------------------------------------------
 
-loc_6AE:				; CODE XREF: ROM:000006A4j
+YM1_Slide_Down:
 		ld	b, 0FFh
 		ld	a, (ix+1Fh)
 		neg
 		ld	c, a
 
-loc_6B6:				; CODE XREF: ROM:000006ABj
+YM1_Slide_Apply:
 		pop	hl
 		add	hl, bc
 		pop	bc
@@ -1154,7 +1140,7 @@ loc_6B6:				; CODE XREF: ROM:000006ABj
 		xor	h
 		bit	7, a
 		pop	hl
-		jr	nz, loc_6FD
+		jr	nz, YM1_Slide_Reset
 		push	hl
 		ld	a, h
 		and	7
@@ -1163,54 +1149,51 @@ loc_6B6:				; CODE XREF: ROM:000006ABj
 		ld	bc, 4D4h
 		or	a
 		sbc	hl, bc
-		jr	c, loc_6DC
+		jr	c, YM1_Slide_ClampLow
 		ld	bc, 596h
-		jp	loc_6F0
+		jp	YM1_Slide_Store
 ; ---------------------------------------------------------------------------
 
-loc_6DC:				; CODE XREF: ROM:000006D4j
+YM1_Slide_ClampLow:
 		ld	hl, (TEMP_FREQUENCY)
 		ld	bc, 26Ah
 		or	a
 		sbc	hl, bc
-		jr	nc, loc_6ED
+		jr	nc, YM1_Slide_NoClamp
 		ld	bc, 0FA6Ah
-		jp	loc_6F0
+		jp	YM1_Slide_Store
 ; ---------------------------------------------------------------------------
 
-loc_6ED:				; CODE XREF: ROM:000006E5j
+YM1_Slide_NoClamp:
 		ld	bc, 0
 
-loc_6F0:				; CODE XREF: ROM:000006D9j
-					; ROM:000006EAj
+YM1_Slide_Store:
 		pop	hl
 		add	hl, bc
 		ld	a, h
 		ld	(ix+0Fh), a
 		ld	a, l
 		ld	(ix+0Eh), a
-		jp	loc_70A
+		jp	YM1_Vibrato
 ; ---------------------------------------------------------------------------
 
-loc_6FD:				; CODE XREF: ROM:000006C4j
+YM1_Slide_Reset:
 		ld	(ix+0Fh), b
 		ld	(ix+0Eh), c
 		xor	a
 		ld	(ix+11h), a
 		ld	(ix+12h), a
 
-loc_70A:				; CODE XREF: ROM:00000691j
-					; ROM:000006FAj
+YM1_Vibrato:
 		ld	a, (ix+0Ah)
 		or	a
-		jr	z, loc_716
+		jr	z, YM1_Vibrato_Read
 		dec	(ix+0Ah)
 		xor	a
 		jr	EndPart
 ; ---------------------------------------------------------------------------
 
-loc_716:				; CODE XREF: ROM:0000070Ej
-					; ROM:0000073Cj
+YM1_Vibrato_Read:
 		ld	a, (ix+0Ch)
 		ld	h, a
 		ld	a, (ix+0Bh)
@@ -1221,23 +1204,22 @@ loc_716:				; CODE XREF: ROM:0000070Ej
 		inc	(ix+0Dh)
 		add	hl, bc
 		ld	a, (hl)
-		cp	81h ; '�'
-		jr	nz, loc_733
+		cp	81h
+		jr	nz, YM1_Vibrato_Restart
 		dec	(ix+0Dh)
 		xor	a
 		jr	EndPart
 ; ---------------------------------------------------------------------------
 
-loc_733:				; CODE XREF: ROM:0000072Bj
-		cp	80h ; '�'
+YM1_Vibrato_Restart:
+		cp	80h
 		jp	nz, EndPart
 		xor	a
 		ld	(ix+0Dh), a
-		jp	loc_716
+		jp	YM1_Vibrato_Read
 ; ---------------------------------------------------------------------------
 
-EndPart:				; CODE XREF: ROM:00000714j
-					; ROM:00000731j ...
+EndPart:
 		ld	c, a
 		ld	a, (ix+0Eh)
 		ld	l, a
@@ -1245,21 +1227,19 @@ EndPart:				; CODE XREF: ROM:00000714j
 		ld	h, a
 		ld	b, 0
 		bit	7, c
-		jr	z, loc_74F
+		jr	z, YM1_EndPart_Neg
 		dec	b
 
-loc_74F:				; CODE XREF: ROM:0000074Cj
+YM1_EndPart_Neg:
 		add	hl, bc
 
-loc_750:				; DATA XREF: ROM:0000055Fw
-					; ROM:0000062Fr ...
+YM1_WriteFreqHi:
 		ld	b, 0
 		ld	c, h
 		ld	(ix+0Fh), c
 		call	YM1_Input
 
-loc_759:				; DATA XREF: ROM:00000559w
-					; ROM:00000647r ...
+YM1_WriteFreqLo:
 		ld	b, 0
 		ld	c, l
 		ld	(ix+0Eh), c
@@ -1271,8 +1251,9 @@ loc_759:				; DATA XREF: ROM:00000559w
 		jp	YM1_LoadInstrument
 ; ---------------------------------------------------------------------------
 
-YM2_ParseData:				; CODE XREF: UpdateSound+83p
-					; UpdateSound+89p ...
+; Parses one event-tick of FM channels 4-5 (part 2), or the type-2 SFX
+; channels when an overlay SFX is active.
+YM2_ParseData:
 		ld	a, (iy+0)
 		ld	ix, YM_CHANNEL_DATA_4
 		push	af
@@ -1286,52 +1267,51 @@ YM2_ParseData:				; CODE XREF: UpdateSound+83p
 		add	ix, de
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
-		jr	z, loc_78A
-		ld	de, 0E0h ; '�'
+		jr	z, YM2_ParseData_NoSfx2
+		ld	de, 0E0h
 		add	ix, de
 
-loc_78A:				; CODE XREF: ROM:00000783j
+YM2_ParseData_NoSfx2:
 		pop	af
-		ld	c, 0A0h	; '�'
+		ld	c, 0A0h
 		add	a, c
-		ld	(loc_9B3+1), a
+		ld	(YM2_WriteFreqLo+1), a
 		ld	c, 4
 		add	a, c
-		ld	(loc_9AA+1), a
-; START	OF FUNCTION CHUNK FOR sub_880
+		ld	(YM2_WriteFreqHi+1), a
 
-loc_797:				; CODE XREF: sub_880+5Dj
+YM2_ParseData_Channel:
 		ld	a, (ix+3)
 		or	a
 		ret	nz
 		ld	a, (ix+6)
 		cp	(ix+2)
-		jr	nz, loc_7B5
+		jr	nz, YM2_ParseData_Fetch
 		ld	a, (ix+8)
 		or	a
-		jr	nz, loc_7B5
-		ld	b, 28h ; '('
+		jr	nz, YM2_ParseData_Fetch
+		ld	b, 28h
 		ld	a, (iy+0)
 		add	a, 4
 		ld	c, a
 		call	YM1_ConditionalInput
 
-loc_7B5:				; CODE XREF: sub_880-DEj sub_880-D8j
+YM2_ParseData_Fetch:
 		ld	a, (ix+2)
 		or	a
-		jp	nz, loc_8E0
+		jp	nz, YM2_Parse_HeldNote
 		ld	d, (ix+1)
 		ld	e, (ix+0)
 
-YM2_Parsing_Start:			; CODE XREF: sub_880-6Bj sub_880-5Fj ...
+YM2_Parsing_Start:
 		xor	a
 		ld	(ix+0Dh), a
 		ld	a, (ix+9)
 		ld	(ix+0Ah), a
 		ld	a, (de)
-		and	0F8h ; '�'
-		cp	0F8h ; '�'
-		jp	nz, loc_86A
+		and	0F8h
+		cp	0F8h
+		jp	nz, YM2_Parse_PlayNote
 		ld	a, (de)
 		cp	0FFh
 		jp	nz, YM2_Set_Instrument
@@ -1346,36 +1326,36 @@ YM2_Parsing_Start:			; CODE XREF: sub_880-6Bj sub_880-5Fj ...
 		ld	a, 1
 		ld	(ix+3),	a
 		ld	a, 0FFh
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
-		jr	z, loc_810
+		jr	z, YM2_Parse_LoadSilent
 		ld	bc, 0FF20h
 		add	ix, bc
-		ld	a, 0B4h	; '�'
+		ld	a, 0B4h
 		add	a, (iy+0)
 		ld	b, a
 		ld	c, (ix+1Eh)
 		call	YM2_Input
 		ld	a, (ix+3)
 		or	a
-		jr	nz, loc_810
+		jr	nz, YM2_Parse_LoadSilent
 		ld	a, (ix+4)
 		jp	YM2_Load_Instrument
 ; ---------------------------------------------------------------------------
 
-loc_810:				; CODE XREF: sub_880-8Fj sub_880-78j
+YM2_Parse_LoadSilent:
 		xor	a
 		jp	YM2_Load_Instrument
 ; ---------------------------------------------------------------------------
 
-YM2_Parse_At_New_Offset:		; CODE XREF: sub_880-9Fj
+YM2_Parse_At_New_Offset:
 		ex	de, hl
 		jr	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Set_Instrument:			; CODE XREF: sub_880-A9j
-		cp	0FEh ; '�'
+YM2_Set_Instrument:
+		cp	0FEh
 		jr	nz, YM2_Load_Note
 		inc	de
 		ld	a, (de)
@@ -1384,8 +1364,8 @@ YM2_Set_Instrument:			; CODE XREF: sub_880-A9j
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Load_Note:				; CODE XREF: sub_880-67j
-		cp	0FDh ; '�'
+YM2_Load_Note:
+		cp	0FDh
 		jr	nz, YM2_Set_Slide_Or_Key_Release
 		inc	de
 		ld	a, (de)
@@ -1395,52 +1375,52 @@ YM2_Load_Note:				; CODE XREF: sub_880-67j
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Set_Slide_Or_Key_Release:		; CODE XREF: sub_880-5Aj
-		cp	0FCh ; '�'
+YM2_Set_Slide_Or_Key_Release:
+		cp	0FCh
 		jr	nz, YM2_Load_Vibrato
 		call	YM1_SetSlideOrKeyRelease
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Load_Vibrato:			; CODE XREF: sub_880-4Bj
-		cp	0FBh ; '�'
+YM2_Load_Vibrato:
+		cp	0FBh
 		jr	nz, YM2_Set_Stereo
 		call	LoadVibrato
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Set_Stereo:				; CODE XREF: sub_880-41j
-		cp	0FAh ; '�'
+YM2_Set_Stereo:
+		cp	0FAh
 		jr	nz, YM2_Load_Note_Shift
 		call	YM2_SetStereo
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Load_Note_Shift:			; CODE XREF: sub_880-37j
-		cp	0F9h ; '�'
+YM2_Load_Note_Shift:
+		cp	0F9h
 		jr	nz, YM2_Loop_Command
 		call	LoadNoteShift
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Loop_Command:			; CODE XREF: sub_880-2Dj
-		cp	0F8h ; '�'
+YM2_Loop_Command:
+		cp	0F8h
 		jr	nz, YM2_Bad_Command
 		call	ParseLoopCommand
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-YM2_Bad_Command:			; CODE XREF: sub_880-23j
+YM2_Bad_Command:
 		inc	de
 		inc	de
 		jp	YM2_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-loc_86A:				; CODE XREF: sub_880-AFj
+YM2_Parse_PlayNote:
 		ld	a, (de)
-		and	7Fh ; ''
-		cp	70h ; 'p'
-		jp	z, loc_8C4
+		and	7Fh
+		cp	70h
+		jp	z, YM2_Parse_ReadDuration
 		add	a, (ix+1Ch)
 		ld	l, a
 		ld	h, 0
@@ -1450,80 +1430,73 @@ loc_86A:				; CODE XREF: sub_880-AFj
 		ld	a, (hl)
 		dec	hl
 		ld	l, (hl)
-; END OF FUNCTION CHUNK	FOR sub_880
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_880:
-
-; FUNCTION CHUNK AT 00000797 SIZE 000000E9 BYTES
 
 		ld	h, a
 		ld	b, 0
 		ld	c, (ix+1Dh)
 		add	hl, bc
-		ld	a, (loc_750+1)
+		ld	a, (YM1_WriteFreqHi+1)
 		ld	b, a
 		ld	c, h
 		ld	(ix+12h), c
 		ld	a, (ix+1Fh)
 		or	a
-		jr	nz, loc_89C
+		jr	nz, YM2_Parse_FreqHiDone
 		ld	(ix+0Fh), c
 		xor	a
 		ld	(ix+12h), a
 
-loc_89C:				; CODE XREF: sub_880+13j
+YM2_Parse_FreqHiDone:
 		call	YM2_ConditionalInput
-		ld	a, (loc_759+1)
+		ld	a, (YM1_WriteFreqLo+1)
 		ld	b, a
 		ld	c, l
 		ld	(ix+11h), c
 		ld	a, (ix+1Fh)
 		or	a
-		jr	nz, loc_8B4
+		jr	nz, YM2_Parse_FreqLoDone
 		ld	(ix+0Eh), c
 		xor	a
 		ld	(ix+11h), a
 
-loc_8B4:				; CODE XREF: sub_880+2Bj
+YM2_Parse_FreqLoDone:
 		call	YM2_ConditionalInput
-		ld	b, 28h ; '('
+		ld	b, 28h
 		ld	a, (iy+0)
 		add	a, 4
-		or	0F0h ; '�'
+		or	0F0h
 		ld	c, a
 		call	YM1_ConditionalInput
 
-loc_8C4:				; CODE XREF: sub_880-11j
+YM2_Parse_ReadDuration:
 		ld	a, (de)
 		bit	7, a
-		jr	nz, loc_8CE
+		jr	nz, YM2_Parse_DurationByte
 		ld	a, (ix+7)
-		jr	loc_8D3
+		jr	YM2_Parse_StoreEvent
 ; ---------------------------------------------------------------------------
 
-loc_8CE:				; CODE XREF: sub_880+47j
+YM2_Parse_DurationByte:
 		inc	de
 		ld	a, (de)
 		ld	(ix+7),	a
 
-loc_8D3:				; CODE XREF: sub_880+4Cj
+YM2_Parse_StoreEvent:
 		ld	(ix+2),	a
 		inc	de
 		ld	(ix+1),	d
 		ld	(ix+0),	e
-		jp	loc_797
+		jp	YM2_ParseData_Channel
 ; ---------------------------------------------------------------------------
 
-loc_8E0:				; CODE XREF: sub_880-C7j
+YM2_Parse_HeldNote:
 		dec	(ix+2)
 		ld	b, (ix+12h)
 		ld	c, (ix+11h)
 		ld	a, b
 		or	c
-		jr	z, loc_964
+		jr	z, YM2_Vibrato
 		ld	a, (ix+0Fh)
 		ld	h, a
 		ld	a, (ix+0Eh)
@@ -1534,19 +1507,19 @@ loc_8E0:				; CODE XREF: sub_880-C7j
 		sbc	hl, bc
 		ld	a, h
 		ld	(TEMP_FREQUENCY), a
-		jr	nc, loc_908
+		jr	nc, YM2_Slide_Down
 		ld	b, 0
 		ld	c, (ix+1Fh)
-		jp	loc_910
+		jp	YM2_Slide_Apply
 ; ---------------------------------------------------------------------------
 
-loc_908:				; CODE XREF: sub_880+7Ej
+YM2_Slide_Down:
 		ld	b, 0FFh
 		ld	a, (ix+1Fh)
 		neg
 		ld	c, a
 
-loc_910:				; CODE XREF: sub_880+85j
+YM2_Slide_Apply:
 		pop	hl
 		add	hl, bc
 		pop	bc
@@ -1557,7 +1530,7 @@ loc_910:				; CODE XREF: sub_880+85j
 		xor	h
 		bit	7, a
 		pop	hl
-		jr	nz, loc_957
+		jr	nz, YM2_Slide_Reset
 		push	hl
 		ld	a, h
 		and	7
@@ -1566,51 +1539,51 @@ loc_910:				; CODE XREF: sub_880+85j
 		ld	bc, 4D4h
 		or	a
 		sbc	hl, bc
-		jr	c, loc_936
+		jr	c, YM2_Slide_ClampLow
 		ld	bc, 596h
-		jp	loc_94A
+		jp	YM2_Slide_Store
 ; ---------------------------------------------------------------------------
 
-loc_936:				; CODE XREF: sub_880+AEj
+YM2_Slide_ClampLow:
 		ld	hl, (TEMP_FREQUENCY)
 		ld	bc, 26Ah
 		or	a
 		sbc	hl, bc
-		jr	nc, loc_947
+		jr	nc, YM2_Slide_NoClamp
 		ld	bc, 0FA6Ah
-		jp	loc_94A
+		jp	YM2_Slide_Store
 ; ---------------------------------------------------------------------------
 
-loc_947:				; CODE XREF: sub_880+BFj
+YM2_Slide_NoClamp:
 		ld	bc, 0
 
-loc_94A:				; CODE XREF: sub_880+B3j sub_880+C4j
+YM2_Slide_Store:
 		pop	hl
 		add	hl, bc
 		ld	a, h
 		ld	(ix+0Fh), a
 		ld	a, l
 		ld	(ix+0Eh), a
-		jp	loc_964
+		jp	YM2_Vibrato
 ; ---------------------------------------------------------------------------
 
-loc_957:				; CODE XREF: sub_880+9Ej
+YM2_Slide_Reset:
 		ld	(ix+0Fh), b
 		ld	(ix+0Eh), c
 		xor	a
 		ld	(ix+11h), a
 		ld	(ix+12h), a
 
-loc_964:				; CODE XREF: sub_880+6Bj sub_880+D4j
+YM2_Vibrato:
 		ld	a, (ix+0Ah)
 		or	a
-		jr	z, loc_970
+		jr	z, YM2_Vibrato_Read
 		dec	(ix+0Ah)
 		xor	a
-		jr	loc_999
+		jr	YM2_EndPart
 ; ---------------------------------------------------------------------------
 
-loc_970:				; CODE XREF: sub_880+E8j sub_880+116j
+YM2_Vibrato_Read:
 		ld	a, (ix+0Ch)
 		ld	h, a
 		ld	a, (ix+0Bh)
@@ -1621,22 +1594,22 @@ loc_970:				; CODE XREF: sub_880+E8j sub_880+116j
 		inc	(ix+0Dh)
 		add	hl, bc
 		ld	a, (hl)
-		cp	81h ; '�'
-		jr	nz, loc_98D
+		cp	81h
+		jr	nz, YM2_Vibrato_Restart
 		dec	(ix+0Dh)
 		xor	a
-		jr	loc_999
+		jr	YM2_EndPart
 ; ---------------------------------------------------------------------------
 
-loc_98D:				; CODE XREF: sub_880+105j
-		cp	80h ; '�'
-		jp	nz, loc_999
+YM2_Vibrato_Restart:
+		cp	80h
+		jp	nz, YM2_EndPart
 		xor	a
 		ld	(ix+0Dh), a
-		jp	loc_970
+		jp	YM2_Vibrato_Read
 ; ---------------------------------------------------------------------------
 
-loc_999:				; CODE XREF: sub_880+EEj sub_880+10Bj	...
+YM2_EndPart:
 		ld	c, a
 		ld	a, (ix+0Eh)
 		ld	l, a
@@ -1644,19 +1617,19 @@ loc_999:				; CODE XREF: sub_880+EEj sub_880+10Bj	...
 		ld	h, a
 		ld	b, 0
 		bit	7, c
-		jr	z, loc_9A9
+		jr	z, YM2_EndPart_Neg
 		dec	b
 
-loc_9A9:				; CODE XREF: sub_880+126j
+YM2_EndPart_Neg:
 		add	hl, bc
 
-loc_9AA:				; DATA XREF: ROM:00000794w
+YM2_WriteFreqHi:
 		ld	b, 0
 		ld	c, h
 		ld	(ix+0Fh), c
 		call	YM2_ConditionalInput
 
-loc_9B3:				; DATA XREF: ROM:0000078Ew
+YM2_WriteFreqLo:
 		ld	b, 0
 		ld	c, l
 		ld	(ix+0Eh), c
@@ -1669,23 +1642,15 @@ loc_9B3:				; DATA XREF: ROM:0000078Ew
 		ret	nz
 		ld	a, (ix+4)
 		jp	YM2_Load_Instrument
-; End of function sub_880
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_SetChannelInstrument:		; CODE XREF: ROM:000005C5p
+; Records this FM channel's instrument number for the next note-on (command FEh).
+YM1_SetChannelInstrument:
 		ld	(ix+10h), a
 		ret
-; End of function YM1_SetChannelInstrument
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_LoadInstrument:			; CODE XREF: Update_YM_InstrumentsLevels+12p
-					; Update_YM_InstrumentsLevels+1Fp ...
+; Loads instrument (ix+10h)'s 29-byte patch to this part-1 FM channel's
+; operator registers, scaling the carriers' levels by volume a and the fade.
+YM1_LoadInstrument:
 		call	LoadInstrumentsBank
 		ld	(ix+4),	a
 		ld	a, (FADE_OUT_COUNTER)
@@ -1694,10 +1659,10 @@ YM1_LoadInstrument:			; CODE XREF: Update_YM_InstrumentsLevels+12p
 		ld	a, (MUSIC_LEVEL)
 		add	a, (ix+4)
 		sub	h
-		jr	nc, loc_9E6
+		jr	nc, YM1_LoadInstrument_Level
 		xor	a
 
-loc_9E6:				; CODE XREF: YM1_LoadInstrument+13j
+YM1_LoadInstrument_Level:
 		push	de
 		push	af
 		ld	a, (ix+10h)
@@ -1726,10 +1691,10 @@ loc_9E6:				; CODE XREF: YM1_LoadInstrument+13j
 		ld	(ix+5),	a
 		pop	hl
 		ld	a, (iy+0)
-		add	a, 30h ; '0'
+		add	a, 30h
 		ld	b, 4
 
-loc_A12:				; CODE XREF: YM1_LoadInstrument+4Ej
+YM1_LoadInstrument_DetuneMul:
 		push	bc
 		ld	b, a
 		ld	c, (hl)
@@ -1739,7 +1704,7 @@ loc_A12:				; CODE XREF: YM1_LoadInstrument+4Ej
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_A12
+		djnz	YM1_LoadInstrument_DetuneMul
 		ld	(TEMP_REGISTER), a
 		pop	af
 		push	hl
@@ -1757,37 +1722,37 @@ loc_A12:				; CODE XREF: YM1_LoadInstrument+4Ej
 		pop	hl
 		ld	b, 4
 
-loc_A3C:				; CODE XREF: YM1_LoadInstrument+8Aj
+YM1_LoadInstrument_TLLoop:
 		push	bc
 		ld	b, a
 		push	af
 		rr	d
-		jr	nc, loc_A51
-		ld	a, 7Fh ; ''
+		jr	nc, YM1_LoadInstrument_TLRaw
+		ld	a, 7Fh
 		sub	(hl)
 		add	a, c
 		ld	c, a
-		cp	7Fh ; ''
-		jr	c, loc_A4E
-		ld	c, 7Fh ; ''
+		cp	7Fh
+		jr	c, YM1_LoadInstrument_TLJoin
+		ld	c, 7Fh
 
-loc_A4E:				; CODE XREF: YM1_LoadInstrument+7Aj
-		jp	loc_A52
+YM1_LoadInstrument_TLJoin:
+		jp	YM1_LoadInstrument_TLSend
 ; ---------------------------------------------------------------------------
 
-loc_A51:				; CODE XREF: YM1_LoadInstrument+71j
+YM1_LoadInstrument_TLRaw:
 		ld	c, (hl)
 
-loc_A52:				; CODE XREF: YM1_LoadInstrument:loc_A4Ej
+YM1_LoadInstrument_TLSend:
 		call	YM1_Input
 		pop	af
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_A3C
+		djnz	YM1_LoadInstrument_TLLoop
 		ld	b, 14h
 
-loc_A5E:				; CODE XREF: YM1_LoadInstrument+9Aj
+YM1_LoadInstrument_Regs:
 		push	bc
 		ld	b, a
 		ld	c, (hl)
@@ -1797,51 +1762,42 @@ loc_A5E:				; CODE XREF: YM1_LoadInstrument+9Aj
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_A5E
+		djnz	YM1_LoadInstrument_Regs
 		add	a, 10h
 		ld	b, a
 		ld	c, (hl)
 		call	YM1_Input
 		pop	de
 		jp	LoadMusicBank
-; End of function YM1_LoadInstrument
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_SetChannelInstrument:		; CODE XREF: sub_880-63p
+; Records this part-2 FM channel's instrument number for the next note-on.
+YM2_SetChannelInstrument:
 		ld	(ix+10h), a
 		ret
-; End of function YM2_SetChannelInstrument
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_Load_Instrument:			; CODE XREF: Update_YM_InstrumentsLevels+3Fp
-					; Update_YM_InstrumentsLevels+4Cp ...
+; As YM1_LoadInstrument, for a part-2 FM channel (uses conditional writes so
+; an overlay SFX does not disturb the music).
+YM2_Load_Instrument:
 		call	LoadInstrumentsBank
 		ld	(ix+4),	a
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
-		jr	z, loc_A8C
+		jr	z, YM2_LoadInstrument_Level
 		ld	a, (ix+4)
-		jr	loc_A9C
+		jr	YM2_LoadInstrument_Setup
 ; ---------------------------------------------------------------------------
 
-loc_A8C:				; CODE XREF: YM2_Load_Instrument+Aj
+YM2_LoadInstrument_Level:
 		ld	a, (FADE_OUT_COUNTER)
 		add	a, 0Fh
 		ld	h, a
 		ld	a, (MUSIC_LEVEL)
 		add	a, (ix+4)
 		sub	h
-		jr	nc, loc_A9C
+		jr	nc, YM2_LoadInstrument_Setup
 		xor	a
 
-loc_A9C:				; CODE XREF: YM2_Load_Instrument+Fj
-					; YM2_Load_Instrument+1Ej
+YM2_LoadInstrument_Setup:
 		push	de
 		push	af
 		ld	a, (ix+10h)
@@ -1870,10 +1826,10 @@ loc_A9C:				; CODE XREF: YM2_Load_Instrument+Fj
 		ld	(ix+5),	a
 		pop	hl
 		ld	a, (iy+0)
-		add	a, 30h ; '0'
+		add	a, 30h
 		ld	b, 4
 
-loc_AC8:				; CODE XREF: YM2_Load_Instrument+59j
+YM2_LoadInstrument_DetuneMul:
 		push	bc
 		ld	b, a
 		ld	c, (hl)
@@ -1883,7 +1839,7 @@ loc_AC8:				; CODE XREF: YM2_Load_Instrument+59j
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_AC8
+		djnz	YM2_LoadInstrument_DetuneMul
 		ld	(TEMP_REGISTER), a
 		pop	af
 		push	hl
@@ -1901,37 +1857,37 @@ loc_AC8:				; CODE XREF: YM2_Load_Instrument+59j
 		pop	hl
 		ld	b, 4
 
-loc_AF2:				; CODE XREF: YM2_Load_Instrument+95j
+YM2_LoadInstrument_TLLoop:
 		push	bc
 		ld	b, a
 		push	af
 		rr	d
-		jr	nc, loc_B07
-		ld	a, 7Fh ; ''
+		jr	nc, YM2_LoadInstrument_TLRaw
+		ld	a, 7Fh
 		sub	(hl)
 		add	a, c
 		ld	c, a
-		cp	7Fh ; ''
-		jr	c, loc_B04
-		ld	c, 7Fh ; ''
+		cp	7Fh
+		jr	c, YM2_LoadInstrument_TLJoin
+		ld	c, 7Fh
 
-loc_B04:				; CODE XREF: YM2_Load_Instrument+85j
-		jp	loc_B08
+YM2_LoadInstrument_TLJoin:
+		jp	YM2_LoadInstrument_TLSend
 ; ---------------------------------------------------------------------------
 
-loc_B07:				; CODE XREF: YM2_Load_Instrument+7Cj
+YM2_LoadInstrument_TLRaw:
 		ld	c, (hl)
 
-loc_B08:				; CODE XREF: YM2_Load_Instrument:loc_B04j
+YM2_LoadInstrument_TLSend:
 		call	YM2_ConditionalInput
 		pop	af
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_AF2
+		djnz	YM2_LoadInstrument_TLLoop
 		ld	b, 14h
 
-loc_B14:				; CODE XREF: YM2_Load_Instrument+A5j
+YM2_LoadInstrument_Regs:
 		push	bc
 		ld	b, a
 		ld	c, (hl)
@@ -1941,56 +1897,49 @@ loc_B14:				; CODE XREF: YM2_Load_Instrument+A5j
 		inc	hl
 		add	a, 4
 		pop	bc
-		djnz	loc_B14
+		djnz	YM2_LoadInstrument_Regs
 		add	a, 10h
 		ld	b, a
 		ld	c, (hl)
 		call	YM2_ConditionalInput
 		pop	de
 		jp	LoadMusicBank
-; End of function YM2_Load_Instrument
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_ParseChannel6Data:			; CODE XREF: UpdateSound+8Fp
-					; UpdateSound+C0p
+; Parses one event-tick of FM channel 6, the DAC channel: its notes trigger
+; DAC samples rather than FM tones.
+YM2_ParseChannel6Data:
 		ld	ix, YM_CHANNEL_DATA_6
 		ld	a, (CURRENTLY_MANAGING_SFX_TYPE_2)
 		or	a
-		jr	z, loc_B3C
-		ld	de, 0E0h ; '�'
+		jr	z, DAC_ParseData_Channel
+		ld	de, 0E0h
 		add	ix, de
 
-loc_B3C:				; CODE XREF: YM2_ParseChannel6Data+8j
-					; YM2_ParseChannel6Data+A1j
+DAC_ParseData_Channel:
 		ld	a, (ix+3)
 		or	a
 		ret	nz
 		ld	a, (ix+6)
 		cp	(ix+2)
-		jr	nz, loc_B54
+		jr	nz, DAC_ParseData_Fetch
 		ld	a, (ix+8)
 		or	a
-		jr	nz, loc_B54
-		ld	a, 0FEh	; '�'
+		jr	nz, DAC_ParseData_Fetch
+		ld	a, 0FEh
 		call	DAC_SetNewSample
 
-loc_B54:				; CODE XREF: YM2_ParseChannel6Data+1Aj
-					; YM2_ParseChannel6Data+20j
+DAC_ParseData_Fetch:
 		ld	a, (ix+2)
 		or	a
-		jp	nz, loc_BD1
+		jp	nz, DAC_Parse_HeldNote
 		ld	d, (ix+1)
 		ld	e, (ix+0)
 
-DAC_Parsing_Start:			; CODE XREF: YM2_ParseChannel6Data+57j
-					; YM2_ParseChannel6Data+60j ...
+DAC_Parsing_Start:
 		ld	a, (de)
-		and	0F8h ; '�'
-		cp	0F8h ; '�'
-		jp	nz, loc_BA9
+		and	0F8h
+		cp	0F8h
+		jp	nz, DAC_Parse_PlaySample
 		ld	a, (de)
 		cp	0FFh
 		jp	nz, DAC_Set_Key_Release
@@ -2005,87 +1954,80 @@ DAC_Parsing_Start:			; CODE XREF: YM2_ParseChannel6Data+57j
 		ld	a, 1
 		ld	(ix+3),	a
 		ld	a, 0FFh
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ret
 ; ---------------------------------------------------------------------------
 
-DAC_Parse_At_New_Offset:		; CODE XREF: YM2_ParseChannel6Data+49j
+DAC_Parse_At_New_Offset:
 		ex	de, hl
 		jr	DAC_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-DAC_Set_Key_Release:			; CODE XREF: YM2_ParseChannel6Data+3Fj
-		cp	0FCh ; '�'
+DAC_Set_Key_Release:
+		cp	0FCh
 		jr	nz, DAC_Set_Stereo
 		call	SetRelease
 		jp	DAC_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-DAC_Set_Stereo:				; CODE XREF: YM2_ParseChannel6Data+5Bj
-		cp	0FAh ; '�'
+DAC_Set_Stereo:
+		cp	0FAh
 		jr	nz, DAC_Loop_Command
 		call	YM2_SetStereo
 		jp	DAC_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-DAC_Loop_Command:			; CODE XREF: YM2_ParseChannel6Data+65j
-		cp	0F8h ; '�'
+DAC_Loop_Command:
+		cp	0F8h
 		jr	nz, DAC_Bad_Command
 		call	ParseLoopCommand
 		jp	DAC_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-DAC_Bad_Command:			; CODE XREF: YM2_ParseChannel6Data+6Fj
+DAC_Bad_Command:
 		inc	de
 		inc	de
 		jp	DAC_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-loc_BA9:				; CODE XREF: YM2_ParseChannel6Data+39j
+DAC_Parse_PlaySample:
 		ld	a, (de)
-		and	7Fh ; ''
-		cp	70h ; 'p'
-		jp	z, loc_BB5
+		and	7Fh
+		cp	70h
+		jp	z, DAC_Parse_ReadDuration
 		inc	a
 		call	DAC_SetNewSample
 
-loc_BB5:				; CODE XREF: YM2_ParseChannel6Data+81j
+DAC_Parse_ReadDuration:
 		ld	a, (de)
 		bit	7, a
-		jr	nz, loc_BBF
+		jr	nz, DAC_Parse_DurationByte
 		ld	a, (ix+7)
-		jr	loc_BC4
+		jr	DAC_Parse_StoreEvent
 ; ---------------------------------------------------------------------------
 
-loc_BBF:				; CODE XREF: YM2_ParseChannel6Data+8Bj
+DAC_Parse_DurationByte:
 		inc	de
 		ld	a, (de)
 		ld	(ix+7),	a
 
-loc_BC4:				; CODE XREF: YM2_ParseChannel6Data+90j
+DAC_Parse_StoreEvent:
 		ld	(ix+2),	a
 		inc	de
 		ld	(ix+1),	d
 		ld	(ix+0),	e
-		jp	loc_B3C
+		jp	DAC_ParseData_Channel
 ; ---------------------------------------------------------------------------
 
-loc_BD1:				; CODE XREF: YM2_ParseChannel6Data+2Bj
+DAC_Parse_HeldNote:
 		dec	(ix+2)
 		ld	a, (FADE_OUT_TIMER)
 		or	a
 		ret	nz
 		ret
-; End of function YM2_ParseChannel6Data
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-PSG_ParseToneData:			; CODE XREF: UpdateSound+96p
-					; UpdateSound+9Cp ...
-
-; FUNCTION CHUNK AT 00000512 SIZE 0000000D BYTES
+; Parses one event-tick of a PSG tone channel.
+PSG_ParseToneData:
 
 		ld	a, (iy+0)
 		ld	ix, PSG_CHANNEL_DATA_TONE_1
@@ -2101,25 +2043,24 @@ PSG_ParseToneData:			; CODE XREF: UpdateSound+96p
 		rrca
 		rrca
 		rrca
-		and	60h ; '`'
+		and	60h
 		ld	(CURRENT_PSG_CHANNEL), a
 
-loc_BF4:				; CODE XREF: PSG_ParseToneData+106j
+PSG_ParseData_Channel:
 		ld	a, (ix+3)
 		or	a
 		ret	nz
 		ld	a, (ix+2)
 		or	a
-		jp	nz, loc_CE3
+		jp	nz, PSG_Parse_HeldNote
 		ld	d, (ix+1)
 		ld	e, (ix+0)
 
-PSG_Parsing_Start:			; CODE XREF: PSG_ParseToneData+53j
-					; PSG_ParseToneData+5Cj ...
+PSG_Parsing_Start:
 		ld	a, (de)
-		and	0F8h ; '�'
-		cp	0F8h ; '�'
-		jp	nz, loc_C76
+		and	0F8h
+		cp	0F8h
+		jp	nz, PSG_Parse_PlayNote
 		ld	a, (de)
 		cp	0FFh
 		jp	nz, PSG_Load_Instrument
@@ -2134,42 +2075,42 @@ PSG_Parsing_Start:			; CODE XREF: PSG_ParseToneData+53j
 		ld	a, 1
 		ld	(ix+3),	a
 		ld	a, 0FFh
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ld	a, 0Fh
 		jp	PSG_SetChannelAttenuation
 ; ---------------------------------------------------------------------------
 
-PSG_Parse_At_New_Offset:		; CODE XREF: PSG_ParseToneData+41j
+PSG_Parse_At_New_Offset:
 		ex	de, hl
 		jr	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Load_Instrument:			; CODE XREF: PSG_ParseToneData+37j
-		cp	0FDh ; '�'
+PSG_Load_Instrument:
+		cp	0FDh
 		jr	nz, PSG_Set_Key_Release
 		call	PSG_LoadInstrument
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Set_Key_Release:			; CODE XREF: PSG_ParseToneData+57j
-		cp	0FCh ; '�'
+PSG_Set_Key_Release:
+		cp	0FCh
 		jr	nz, PSG_Load_Vibrato
 		call	SetRelease
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Load_Vibrato:			; CODE XREF: PSG_ParseToneData+61j
-		cp	0FBh ; '�'
+PSG_Load_Vibrato:
+		cp	0FBh
 		jr	nz, PSG_Set_Timer
 		call	LoadVibrato
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Set_Timer:				; CODE XREF: PSG_ParseToneData+6Bj
-		cp	0FAh ; '�'
+PSG_Set_Timer:
+		cp	0FAh
 		jr	nz, PSG_Load_Note_Shift
 		inc	de
-		ld	b, 26h ; '&'
+		ld	b, 26h
 		ld	a, (de)
 		ld	c, a
 		inc	de
@@ -2177,31 +2118,31 @@ PSG_Set_Timer:				; CODE XREF: PSG_ParseToneData+6Bj
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Load_Note_Shift:			; CODE XREF: PSG_ParseToneData+75j
-		cp	0F9h ; '�'
+PSG_Load_Note_Shift:
+		cp	0F9h
 		jr	nz, PSG_Loop_Command
 		call	LoadNoteShift
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Loop_Command:			; CODE XREF: PSG_ParseToneData+85j
-		cp	0F8h ; '�'
+PSG_Loop_Command:
+		cp	0F8h
 		jr	nz, PSG_Bad_Command
 		call	ParseLoopCommand
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSG_Bad_Command:			; CODE XREF: PSG_ParseToneData+8Fj
+PSG_Bad_Command:
 		inc	de
 		inc	de
 		jp	PSG_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-loc_C76:				; CODE XREF: PSG_ParseToneData+31j
+PSG_Parse_PlayNote:
 		ld	a, (de)
-		and	7Fh ; ''
-		cp	70h ; 'p'
-		jp	z, loc_CBF
+		and	7Fh
+		cp	70h
+		jp	z, PSG_Parse_KeepInstr
 		push	af
 		ld	a, (ix+1Eh)
 		or	a
@@ -2212,7 +2153,7 @@ loc_C76:				; CODE XREF: PSG_ParseToneData+31j
 		ld	a, (ix+9)
 		ld	(ix+0Ah), a
 
-Set_New_Note:				; CODE XREF: PSG_ParseToneData+A9j
+Set_New_Note:
 		xor	a
 		ld	(ix+0Dh), a
 		pop	af
@@ -2236,48 +2177,47 @@ Set_New_Note:				; CODE XREF: PSG_ParseToneData+A9j
 		ld	c, h
 		ld	(ix+0Fh), c
 		ld	a, (ix+8)
-		and	80h ; '�'
-		jr	loc_CC4
+		and	80h
+		jr	PSG_Parse_ReadDuration
 ; ---------------------------------------------------------------------------
 
-loc_CBF:				; CODE XREF: PSG_ParseToneData+A1j
+PSG_Parse_KeepInstr:
 		ld	a, (ix+8)
 		or	1
 
-loc_CC4:				; CODE XREF: PSG_ParseToneData+E3j
+PSG_Parse_ReadDuration:
 		ld	(ix+8),	a
 		ld	a, (de)
 		bit	7, a
-		jr	nz, loc_CD1
+		jr	nz, PSG_Parse_DurationByte
 		ld	a, (ix+7)
-		jr	loc_CD6
+		jr	PSG_Parse_StoreEvent
 ; ---------------------------------------------------------------------------
 
-loc_CD1:				; CODE XREF: PSG_ParseToneData+F0j
+PSG_Parse_DurationByte:
 		inc	de
 		ld	a, (de)
 		ld	(ix+7),	a
 
-loc_CD6:				; CODE XREF: PSG_ParseToneData+F5j
+PSG_Parse_StoreEvent:
 		ld	(ix+2),	a
 		inc	de
 		ld	(ix+1),	d
 		ld	(ix+0),	e
-		jp	loc_BF4
+		jp	PSG_ParseData_Channel
 ; ---------------------------------------------------------------------------
 
-loc_CE3:				; CODE XREF: PSG_ParseToneData+23j
+PSG_Parse_HeldNote:
 		dec	(ix+2)
 		ld	a, (ix+0Ah)
 		or	a
 		jr	z, Apply_Vibrato
 		dec	(ix+0Ah)
 		xor	a
-		jr	loc_D1A
+		jr	PSG_Vibrato_Apply
 ; ---------------------------------------------------------------------------
 
-Apply_Vibrato:				; CODE XREF: PSG_ParseToneData+110j
-					; PSG_ParseToneData+13Dj
+Apply_Vibrato:
 		ld	a, (ix+0Ch)
 		ld	h, a
 		ld	a, (ix+0Bh)
@@ -2288,22 +2228,21 @@ Apply_Vibrato:				; CODE XREF: PSG_ParseToneData+110j
 		inc	(ix+0Dh)
 		add	hl, bc
 		ld	a, (hl)
-		cp	81h ; '�'
-		jr	nz, loc_D0E
+		cp	81h
+		jr	nz, PSG_Vibrato_Restart
 		dec	(ix+0Dh)
-		jr	loc_D35
+		jr	PSG_Parse_Envelope
 ; ---------------------------------------------------------------------------
 
-loc_D0E:				; CODE XREF: PSG_ParseToneData+12Dj
-		cp	80h ; '�'
-		jp	nz, loc_D1A
+PSG_Vibrato_Restart:
+		cp	80h
+		jp	nz, PSG_Vibrato_Apply
 		xor	a
 		ld	(ix+0Dh), a
 		jp	Apply_Vibrato
 ; ---------------------------------------------------------------------------
 
-loc_D1A:				; CODE XREF: PSG_ParseToneData+116j
-					; PSG_ParseToneData+136j
+PSG_Vibrato_Apply:
 		neg
 		ld	c, a
 		ld	a, (ix+0Eh)
@@ -2312,86 +2251,85 @@ loc_D1A:				; CODE XREF: PSG_ParseToneData+116j
 		ld	h, a
 		ld	b, 0
 		bit	7, c
-		jr	z, loc_D2C
+		jr	z, PSG_Vibrato_Neg
 		dec	b
 
-loc_D2C:				; CODE XREF: PSG_ParseToneData+14Fj
+PSG_Vibrato_Neg:
 		add	hl, bc
 		ld	a, h
 		ld	(ix+0Fh), a
 		ld	a, l
 		ld	(ix+0Eh), a
 
-loc_D35:				; CODE XREF: PSG_ParseToneData+132j
+PSG_Parse_Envelope:
 		call	PSG_GetInstrumentPointer
 		ld	b, (hl)
 		bit	7, b
-		jr	nz, loc_D41
+		jr	nz, PSG_Env_NoAdvance
 		inc	a
 		ld	(ix+12h), a
 
-loc_D41:				; CODE XREF: PSG_ParseToneData+161j
+PSG_Env_NoAdvance:
 		res	7, b
 		ld	a, 0Fh
 		sub	b
 		ld	b, a
 		ld	a, (ix+4)
 		sub	b
-		jr	nc, loc_D4E
+		jr	nc, PSG_Env_LevelClamp
 		xor	a
 
-loc_D4E:				; CODE XREF: PSG_ParseToneData+171j
+PSG_Env_LevelClamp:
 		ld	b, a
 		ld	a, (iy+0)
 		cp	2
-		jr	nz, loc_D5A
+		jr	nz, PSG_Env_UseMusicLevel
 		ld	a, 0Fh
-		jr	loc_D5D
+		jr	PSG_Env_AddLevel
 ; ---------------------------------------------------------------------------
 
-loc_D5A:				; CODE XREF: PSG_ParseToneData+17Aj
+PSG_Env_UseMusicLevel:
 		ld	a, (MUSIC_LEVEL)
 
-loc_D5D:				; CODE XREF: PSG_ParseToneData+17Ej
+PSG_Env_AddLevel:
 		add	a, b
 		sub	0Fh
-		jr	nc, loc_D63
+		jr	nc, PSG_Env_Store
 		xor	a
 
-loc_D63:				; CODE XREF: PSG_ParseToneData+186j
+PSG_Env_Store:
 		ld	(ix+5),	a
 		ld	b, (ix+8)
 		ld	a, (ix+2)
 		or	a
 		jr	z, PSG_Release_Key
 		bit	7, b
-		jr	nz, loc_D96
+		jr	nz, PSG_Parse_ApplyFade
 		cp	(ix+6)
-		jr	nz, loc_D96
+		jr	nz, PSG_Parse_ApplyFade
 
-PSG_Release_Key:			; CODE XREF: PSG_ParseToneData+193j
+PSG_Release_Key:
 		ld	a, b
 		or	a
-		jr	nz, loc_D96
+		jr	nz, PSG_Parse_ApplyFade
 		ld	c, 1
 		ld	(ix+1Eh), c
 		or	2
 		ld	(ix+8),	a
 
-loc_D86:				; CODE XREF: PSG_ParseToneData+1B7j
+PSG_Env_SkipLoop:
 		call	PSG_GetInstrumentPointer
 		ld	a, (hl)
-		and	80h ; '�'
-		jr	nz, loc_D93
+		and	80h
+		jr	nz, PSG_Env_SkipDone
 		inc	(ix+12h)
-		jr	loc_D86
+		jr	PSG_Env_SkipLoop
 ; ---------------------------------------------------------------------------
 
-loc_D93:				; CODE XREF: PSG_ParseToneData+1B2j
+PSG_Env_SkipDone:
 		inc	(ix+12h)
 
-loc_D96:				; CODE XREF: PSG_ParseToneData+197j
-					; PSG_ParseToneData+19Cj ...
+PSG_Parse_ApplyFade:
 		ld	a, (FADE_OUT_TIMER)
 		or	a
 		jr	nz, Transmit_Data
@@ -2404,8 +2342,7 @@ loc_D96:				; CODE XREF: PSG_ParseToneData+197j
 		dec	a
 		ld	(ix+4),	a
 
-Transmit_Data:				; CODE XREF: PSG_ParseToneData+1C0j
-					; PSG_ParseToneData+1C7j ...
+Transmit_Data:
 		ld	a, (ix+0Fh)
 		ld	b, a
 		ld	a, (ix+0Eh)
@@ -2414,7 +2351,7 @@ Transmit_Data:				; CODE XREF: PSG_ParseToneData+1C0j
 		ld	h, a
 		ld	a, (CURRENT_PSG_CHANNEL)
 		or	h
-		or	80h ; '�'
+		or	80h
 		ld	(SN76489_PSG), a
 		ld	a, c
 		srl	b
@@ -2423,24 +2360,20 @@ Transmit_Data:				; CODE XREF: PSG_ParseToneData+1C0j
 		rra
 		rra
 		rra
-		and	3Fh ; '?'
+		and	3Fh
 		ld	(SN76489_PSG), a
 		ld	a, 0Fh
 		sub	(ix+5)
 		ld	h, a
 		ld	a, (CURRENT_PSG_CHANNEL)
 		or	h
-		or	90h ; '�'
+		or	90h
 		ld	(SN76489_PSG), a
 		ret
-; End of function PSG_ParseToneData
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-PSG_GetInstrumentPointer:		; CODE XREF: PSG_ParseToneData:loc_D35p
-					; PSG_ParseToneData:loc_D86p ...
+; Returns hl = the current byte of this PSG channel's amplitude envelope
+; (base ix+10h/11h plus step index ix+12h).
+PSG_GetInstrumentPointer:
 		ld	a, (ix+11h)
 		ld	h, a
 		ld	a, (ix+10h)
@@ -2450,14 +2383,10 @@ PSG_GetInstrumentPointer:		; CODE XREF: PSG_ParseToneData:loc_D35p
 		ld	c, a
 		add	hl, bc
 		ret
-; End of function PSG_GetInstrumentPointer
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-PSG_LoadInstrument:			; CODE XREF: PSG_ParseToneData+59p
-					; PSG_ParseNoiseData+4Cp
+; Command FDh: selects the PSG amplitude envelope (operand high nibble) and
+; sets the channel volume (low nibble).
+PSG_LoadInstrument:
 		inc	de
 		ld	a, (de)
 		ld	c, a
@@ -2465,15 +2394,15 @@ PSG_LoadInstrument:			; CODE XREF: PSG_ParseToneData+59p
 		ld	b, a
 		ld	a, (iy+0)
 		cp	2
-		jr	z, loc_E02
+		jr	z, PSG_LoadInstrument_SetLevel
 		ld	a, (CURRENTLY_FADING_OUT)
 		or	a
-		jr	nz, loc_E05
+		jr	nz, PSG_LoadInstrument_Pointer
 
-loc_E02:				; CODE XREF: PSG_LoadInstrument+Bj
+PSG_LoadInstrument_SetLevel:
 		ld	(ix+4),	b
 
-loc_E05:				; CODE XREF: PSG_LoadInstrument+11j
+PSG_LoadInstrument_Pointer:
 		ld	a, c
 		rra
 		rra
@@ -2492,34 +2421,29 @@ loc_E05:				; CODE XREF: PSG_LoadInstrument+11j
 		ld	(ix+10h), c
 		ld	(ix+11h), b
 		ret
-; End of function PSG_LoadInstrument
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-PSG_ParseNoiseData:			; CODE XREF: UpdateSound+A8p
+; Parses one event-tick of the PSG noise channel.
+PSG_ParseNoiseData:
 		ld	a, (iy+0)
 		ld	ix, PSG_CHANNEL_DATA_NOISE
-		ld	a, 60h ; '`'
+		ld	a, 60h
 		ld	(CURRENT_PSG_CHANNEL), a
 
-loc_E2B:				; CODE XREF: PSG_ParseNoiseData+B1j
+PSGN_ParseData_Channel:
 		ld	a, (ix+3)
 		or	a
 		ret	nz
 		ld	a, (ix+2)
 		or	a
-		jp	nz, loc_ED3
+		jp	nz, PSGN_Parse_HeldNote
 		ld	d, (ix+1)
 		ld	e, (ix+0)
 
-PSGN_Parsing_Start:			; CODE XREF: PSG_ParseNoiseData+45j
-					; PSG_ParseNoiseData+4Fj ...
+PSGN_Parsing_Start:
 		ld	a, (de)
-		and	0F8h ; '�'
-		cp	0F8h ; '�'
-		jp	nz, loc_E8A
+		and	0F8h
+		cp	0F8h
+		jp	nz, PSGN_Parse_PlayNote
 		ld	a, (de)
 		cp	0FFh
 		jp	nz, PSGN_Load_Instrument
@@ -2530,159 +2454,158 @@ PSGN_Parsing_Start:			; CODE XREF: PSG_ParseNoiseData+45j
 		ld	a, (de)
 		ld	h, a
 		or	l
-		jr	nz, loc_E63
+		jr	nz, PSGN_Parse_NewOffset
 		ld	a, 1
 		ld	(ix+3),	a
 		ld	a, 0FFh
-		ld	(SFX_USELESS_BYTE_2), a
+		ld	(SFX_TYPE2_PRIORITY_NEW), a
 		ld	a, 0Fh
 		jp	PSG_SetChannelAttenuation
 ; ---------------------------------------------------------------------------
 
-loc_E63:				; CODE XREF: PSG_ParseNoiseData+33j
+PSGN_Parse_NewOffset:
 		ex	de, hl
 		jp	PSGN_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSGN_Load_Instrument:			; CODE XREF: PSG_ParseNoiseData+29j
-		cp	0FDh ; '�'
+PSGN_Load_Instrument:
+		cp	0FDh
 		jr	nz, PSGN_Set_Key_Release
 		call	PSG_LoadInstrument
 		jp	PSGN_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSGN_Set_Key_Release:			; CODE XREF: PSG_ParseNoiseData+4Aj
-		cp	0FCh ; '�'
+PSGN_Set_Key_Release:
+		cp	0FCh
 		jr	nz, PSGN_Loop_Command
 		call	SetRelease
 		jp	PSGN_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSGN_Loop_Command:			; CODE XREF: PSG_ParseNoiseData+54j
-		cp	0F8h ; '�'
+PSGN_Loop_Command:
+		cp	0F8h
 		jr	nz, PSGN_Bad_Command
 		call	ParseLoopCommand
 		jp	PSGN_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-PSGN_Bad_Command:			; CODE XREF: PSG_ParseNoiseData+5Ej
+PSGN_Bad_Command:
 		inc	de
 		inc	de
 		jp	PSGN_Parsing_Start
 ; ---------------------------------------------------------------------------
 
-loc_E8A:				; CODE XREF: PSG_ParseNoiseData+23j
+PSGN_Parse_PlayNote:
 		ld	a, (de)
-		and	7Fh ; ''
-		cp	70h ; 'p'
-		jp	z, loc_EAF
+		and	7Fh
+		cp	70h
+		jp	z, PSGN_Parse_KeepInstr
 		push	af
 		ld	a, (ix+1Eh)
 		or	a
-		jr	z, loc_EA0
+		jr	z, PSGN_Parse_NoteReset
 		xor	a
 		ld	(ix+12h), a
 		ld	(ix+1Eh), a
 
-loc_EA0:				; CODE XREF: PSG_ParseNoiseData+78j
+PSGN_Parse_NoteReset:
 		pop	af
 		and	7
-		or	0E0h ; '�'
+		or	0E0h
 		ld	(SN76489_PSG), a
 		ld	a, (ix+8)
-		and	80h ; '�'
-		jr	loc_EB4
+		and	80h
+		jr	PSGN_Parse_SetKeyOn
 ; ---------------------------------------------------------------------------
 
-loc_EAF:				; CODE XREF: PSG_ParseNoiseData+70j
+PSGN_Parse_KeepInstr:
 		ld	a, (ix+8)
 		or	1
 
-loc_EB4:				; CODE XREF: PSG_ParseNoiseData+8Ej
+PSGN_Parse_SetKeyOn:
 		ld	(ix+8),	a
 		ld	a, (de)
 		bit	7, a
-		jr	nz, loc_EC1
+		jr	nz, PSGN_Parse_DurationByte
 		ld	a, (ix+7)
-		jr	loc_EC6
+		jr	PSGN_Parse_StoreEvent
 ; ---------------------------------------------------------------------------
 
-loc_EC1:				; CODE XREF: PSG_ParseNoiseData+9Bj
+PSGN_Parse_DurationByte:
 		inc	de
 		ld	a, (de)
 		ld	(ix+7),	a
 
-loc_EC6:				; CODE XREF: PSG_ParseNoiseData+A0j
+PSGN_Parse_StoreEvent:
 		ld	(ix+2),	a
 		inc	de
 		ld	(ix+1),	d
 		ld	(ix+0),	e
-		jp	loc_E2B
+		jp	PSGN_ParseData_Channel
 ; ---------------------------------------------------------------------------
 
-loc_ED3:				; CODE XREF: PSG_ParseNoiseData+15j
+PSGN_Parse_HeldNote:
 		dec	(ix+2)
 		call	PSG_GetInstrumentPointer
 		ld	b, (hl)
 		bit	7, b
-		jr	nz, loc_EE2
+		jr	nz, PSGN_Env_NoAdvance
 		inc	a
 		ld	(ix+12h), a
 
-loc_EE2:				; CODE XREF: PSG_ParseNoiseData+BDj
+PSGN_Env_NoAdvance:
 		res	7, b
 		ld	a, 0Fh
 		sub	b
 		ld	b, a
 		ld	a, (ix+4)
 		sub	b
-		jr	nc, loc_EEF
+		jr	nc, PSGN_Env_LevelClamp
 		xor	a
 
-loc_EEF:				; CODE XREF: PSG_ParseNoiseData+CDj
+PSGN_Env_LevelClamp:
 		ld	b, a
 		ld	a, (MUSIC_LEVEL)
 		add	a, b
 		sub	0Fh
-		jr	nc, loc_EF9
+		jr	nc, PSGN_Env_Store
 		xor	a
 
-loc_EF9:				; CODE XREF: PSG_ParseNoiseData+D7j
+PSGN_Env_Store:
 		ld	(ix+5),	a
 		ld	b, (ix+8)
 		ld	a, (ix+2)
 		or	a
 		jr	z, Release_Key
 		bit	7, b
-		jr	nz, loc_F2C
+		jr	nz, PSGN_Parse_ApplyFade
 		cp	(ix+6)
-		jr	nz, loc_F2C
+		jr	nz, PSGN_Parse_ApplyFade
 
-Release_Key:				; CODE XREF: PSG_ParseNoiseData+E4j
+Release_Key:
 		ld	a, b
 		or	a
-		jr	nz, loc_F2C
+		jr	nz, PSGN_Parse_ApplyFade
 		ld	c, 1
 
-loc_F14:
+PSGN_Env_KeyOff:
 		ld	(ix+1Eh), c
 		or	2
 		ld	(ix+8),	a
 
-loc_F1C:				; CODE XREF: PSG_ParseNoiseData+108j
+PSGN_Env_SkipLoop:
 		call	PSG_GetInstrumentPointer
 		ld	a, (hl)
-		and	80h ; '�'
-		jr	nz, loc_F29
+		and	80h
+		jr	nz, PSGN_Env_SkipDone
 		inc	(ix+12h)
-		jr	loc_F1C
+		jr	PSGN_Env_SkipLoop
 ; ---------------------------------------------------------------------------
 
-loc_F29:				; CODE XREF: PSG_ParseNoiseData+103j
+PSGN_Env_SkipDone:
 		inc	(ix+12h)
 
-loc_F2C:				; CODE XREF: PSG_ParseNoiseData+E8j
-					; PSG_ParseNoiseData+EDj ...
+PSGN_Parse_ApplyFade:
 		ld	a, (FADE_OUT_TIMER)
 		or	a
 		jr	nz, Transmit_Attenuation
@@ -2692,64 +2615,51 @@ loc_F2C:				; CODE XREF: PSG_ParseNoiseData+E8j
 		dec	a
 		ld	(ix+4),	a
 
-Transmit_Attenuation:			; CODE XREF: PSG_ParseNoiseData+111j
-					; PSG_ParseNoiseData+117j
+Transmit_Attenuation:
 		ld	a, 0Fh
 		sub	(ix+5)
-		or	0F0h ; '�'
+		or	0F0h
 		ld	(SN76489_PSG), a
 		ret
-; End of function PSG_ParseNoiseData
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_SetSlideOrKeyRelease:		; CODE XREF: ROM:000005DFp sub_880-49p
+; Command FCh (FM): sets portamento speed, turns portamento off (operand FFh),
+; or sets the note key-off timing, depending on the operand.
+YM1_SetSlideOrKeyRelease:
 		inc	de
 		ld	a, (de)
 		cp	0FFh
-		jr	nz, loc_F53
+		jr	nz, YM1_SetSlide_NotFF
 		xor	a
 		ld	(ix+1Fh), a
 		inc	de
 		ret
 ; ---------------------------------------------------------------------------
 
-loc_F53:				; CODE XREF: YM1_SetSlideOrKeyRelease+4j
-		cp	81h ; '�'
-		jr	c, loc_F60
-		and	7Fh ; ''
+YM1_SetSlide_NotFF:
+		cp	81h
+		jr	c, SetKeyRelease_Store
+		and	7Fh
 		ld	(ix+1Fh), a
 		inc	de
 		ret
-; End of function YM1_SetSlideOrKeyRelease
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-SetRelease:				; CODE XREF: YM2_ParseChannel6Data+5Dp
-					; PSG_ParseToneData+63p ...
+; Command FCh (DAC/PSG): reads the key-off timing byte (release count + hold bit).
+SetRelease:
 		inc	de
 		ld	a, (de)
 
-loc_F60:				; CODE XREF: YM1_SetSlideOrKeyRelease+Ej
+SetKeyRelease_Store:
 		ld	c, a
-		and	80h ; '�'
+		and	80h
 		ld	(ix+8),	a
 		ld	a, c
-		and	7Fh ; ''
+		and	7Fh
 		ld	(ix+6),	a
 		inc	de
 		ret
-; End of function SetRelease
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadVibrato:				; CODE XREF: ROM:000005E9p sub_880-3Fp ...
+; Command FBh: picks a pitch-effect (vibrato) table and its speed for the channel.
+LoadVibrato:
 		inc	de
 		ld	a, (de)
 		push	af
@@ -2770,79 +2680,63 @@ LoadVibrato:				; CODE XREF: ROM:000005E9p sub_880-3Fp ...
 		pop	af
 		rla
 		and	1Eh
-		jr	z, loc_F8E
+		jr	z, LoadVibrato_Store
 		dec	a
 
-loc_F8E:				; CODE XREF: LoadVibrato+1Dj
+LoadVibrato_Store:
 		ld	(ix+9),	a
 		inc	de
 		ret
-; End of function LoadVibrato
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM1_SetStereo:				; CODE XREF: ROM:000005F3p
-
-; FUNCTION CHUNK AT 00000FBA SIZE 00000009 BYTES
+; Command FAh (FM part 1): writes the channel's stereo/pan bits to register B4h.
+YM1_SetStereo:
 
 		inc	de
 		ld	a, (de)
 		bit	0, a
-		jr	nz, loc_FBA
-		and	0C0h ; '�'
+		jr	nz, YM1_SetStereo_Ignore
+		and	0C0h
 		ld	c, a
-		ld	b, 0B4h	; '�'
+		ld	b, 0B4h
 		ld	a, (iy+0)
 		add	a, b
 		ld	b, a
 		inc	de
 		jp	YM1_Input
-; End of function YM1_SetStereo
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-YM2_SetStereo:				; CODE XREF: sub_880-35p
-					; YM2_ParseChannel6Data+67p
+; Command FAh (FM part 2 / DAC): writes the channel's stereo/pan bits (register B4h).
+YM2_SetStereo:
 		inc	de
 		ld	a, (de)
-		and	0C0h ; '�'
+		and	0C0h
 		ld	(ix+1Eh), a
 		ld	c, a
-		ld	b, 0B4h	; '�'
+		ld	b, 0B4h
 		ld	a, (iy+0)
 		add	a, b
 		ld	b, a
 		inc	de
 		jp	YM2_ConditionalInput
-; End of function YM2_SetStereo
 
 ; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR YM1_SetStereo
 
-loc_FBA:				; CODE XREF: YM1_SetStereo+4j
+YM1_SetStereo_Ignore:
 		ld	a, (USELESS_BYTE)
 		inc	a
 		ld	(USELESS_BYTE),	a
 		inc	de
 		ret
-; END OF FUNCTION CHUNK	FOR YM1_SetStereo
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-LoadNoteShift:				; CODE XREF: ROM:000005FDp sub_880-2Bp ...
+; Command F9h: sets the channel's note transpose (semitones) and fine detune.
+LoadNoteShift:
 		inc	de
 		ld	a, (de)
-		and	8Fh ; '�'
+		and	8Fh
 		bit	7, a
-		jr	z, loc_FCD
-		or	0F0h ; '�'
+		jr	z, LoadNoteShift_Store
+		or	0F0h
 
-loc_FCD:				; CODE XREF: LoadNoteShift+6j
+LoadNoteShift_Store:
 		ld	(ix+1Ch), a
 		ld	a, (de)
 		rrca
@@ -2852,13 +2746,10 @@ loc_FCD:				; CODE XREF: LoadNoteShift+6j
 		ld	(ix+1Dh), a
 		inc	de
 		ret
-; End of function LoadNoteShift
 
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-ParseLoopCommand:			; CODE XREF: ROM:00000607p sub_880-21p ...
+; Command F8h: the loop/marker sub-commands (top 3 bits of the operand) - set
+; or recall a loop point, run a counted repeat, or take a play-once jump.
+ParseLoopCommand:
 		inc	de
 		ld	a, (de)
 		ld	b, a
@@ -2873,7 +2764,7 @@ ParseLoopCommand:			; CODE XREF: ROM:00000607p sub_880-21p ...
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmd20:				; CODE XREF: ParseLoopCommand+9j
+_LoopCmd20:
 		cp	1
 		jr	nz, _LoopCmd40
 		ld	(ix+15h), e
@@ -2884,19 +2775,18 @@ _LoopCmd20:				; CODE XREF: ParseLoopCommand+9j
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmd40:				; CODE XREF: ParseLoopCommand+14j
+_LoopCmd40:
 		cp	2
 		jr	nz, _LoopCmd60
 		ld	a, (ix+1Ah)
 		or	a
-		jr	nz, loc_100F
+		jr	nz, LoopCmd40_Scan
 		ld	a, 1
 		ld	(ix+1Ah), a
 		ret
 ; ---------------------------------------------------------------------------
 
-loc_100F:				; CODE XREF: ParseLoopCommand+2Cj
-					; ParseLoopCommand+45j	...
+LoopCmd40_Scan:
 		ld	a, (de)
 		ld	b, a
 		inc	de
@@ -2905,40 +2795,38 @@ loc_100F:				; CODE XREF: ParseLoopCommand+2Cj
 		inc	de
 		ld	a, b
 		cp	0FFh
-		jr	z, loc_102A
-		cp	0F8h ; '�'
-		jr	z, loc_1025
-		and	80h ; '�'
-		jr	nz, loc_100F
+		jr	z, LoopCmd_Rewind2
+		cp	0F8h
+		jr	z, LoopCmd40_CheckEnd
+		and	80h
+		jr	nz, LoopCmd40_Scan
 		dec	de
-		jr	loc_100F
+		jr	LoopCmd40_Scan
 ; ---------------------------------------------------------------------------
 
-loc_1025:				; CODE XREF: ParseLoopCommand+41j
+LoopCmd40_CheckEnd:
 		ld	a, c
-		cp	60h ; '`'
-		jr	nz, loc_100F
+		cp	60h
+		jr	nz, LoopCmd40_Scan
 
-loc_102A:				; CODE XREF: ParseLoopCommand+3Dj
-					; ParseLoopCommand+6Bj	...
+LoopCmd_Rewind2:
 		dec	de
 		dec	de
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmd60:				; CODE XREF: ParseLoopCommand+26j
+_LoopCmd60:
 		cp	3
 		jr	nz, _LoopCmd80
 		ld	a, (ix+1Bh)
 		or	a
-		jr	nz, loc_103D
+		jr	nz, LoopCmd60_Scan
 		ld	a, 1
 		ld	(ix+1Bh), a
 		ret
 ; ---------------------------------------------------------------------------
 
-loc_103D:				; CODE XREF: ParseLoopCommand+5Aj
-					; ParseLoopCommand+73j	...
+LoopCmd60_Scan:
 		ld	a, (de)
 		ld	b, a
 		inc	de
@@ -2947,45 +2835,45 @@ loc_103D:				; CODE XREF: ParseLoopCommand+5Aj
 		inc	de
 		ld	a, b
 		cp	0FFh
-		jr	z, loc_102A
-		cp	0F8h ; '�'
-		jr	z, loc_1053
-		and	80h ; '�'
-		jr	nz, loc_103D
+		jr	z, LoopCmd_Rewind2
+		cp	0F8h
+		jr	z, LoopCmd60_CheckEnd
+		and	80h
+		jr	nz, LoopCmd60_Scan
 		dec	de
-		jr	loc_103D
+		jr	LoopCmd60_Scan
 ; ---------------------------------------------------------------------------
 
-loc_1053:				; CODE XREF: ParseLoopCommand+6Fj
+LoopCmd60_CheckEnd:
 		ld	a, c
-		cp	80h ; '�'
-		jr	nz, loc_103D
-		jr	loc_102A
+		cp	80h
+		jr	nz, LoopCmd60_Scan
+		jr	LoopCmd_Rewind2
 ; ---------------------------------------------------------------------------
 
-_LoopCmd80:				; CODE XREF: ParseLoopCommand+54j
+_LoopCmd80:
 		cp	4
 		jr	nz, _LoopCmdA0
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmdA0:				; CODE XREF: ParseLoopCommand+81j
+_LoopCmdA0:
 		cp	5
 		jr	nz, _LoopCmdC0
 		bit	0, b
-		jr	nz, loc_106E
+		jr	nz, LoopCmdA0_Alt
 		ld	e, (ix+15h)
 		ld	d, (ix+16h)
 		ret
 ; ---------------------------------------------------------------------------
 
-loc_106E:				; CODE XREF: ParseLoopCommand+8Aj
+LoopCmdA0_Alt:
 		ld	e, (ix+13h)
 		ld	d, (ix+14h)
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmdC0:				; CODE XREF: ParseLoopCommand+86j
+_LoopCmdC0:
 		cp	6
 		jr	nz, _LoopCmdE0
 		ld	(ix+17h), e
@@ -2997,17 +2885,16 @@ _LoopCmdC0:				; CODE XREF: ParseLoopCommand+86j
 		ret
 ; ---------------------------------------------------------------------------
 
-_LoopCmdE0:				; CODE XREF: ParseLoopCommand+9Cj
+_LoopCmdE0:
 		dec	(ix+19h)
 		ret	z
 		ld	e, (ix+17h)
 		ld	d, (ix+18h)
 		ret
-; End of function ParseLoopCommand
 
-; =============== S U B	R O U T	I N E =======================================
-
-FadeOut:				; CODE XREF: Main+12j UpdateSound+31p
+; Command FDh and the auto-fade timeout: begin a gradual fade-out; StopMusic
+; runs once it completes.
+FadeOut:
 		ld	a, 12h
 		ld	(FADE_OUT_LENGTH), a
 		ld	a, 1
@@ -3015,4 +2902,3 @@ FadeOut:				; CODE XREF: Main+12j UpdateSound+31p
 		ld	a, (FADE_OUT_LENGTH)
 		ld	(FADE_OUT_TIMER), a
 		ret
-; End of function FadeOut

@@ -1807,12 +1807,12 @@ CS_0016_0:
 					; 0x14C6: SET BIT 6 OF FLAG 0x018
 					; 0xE1B2: PRINT	MSG 0x0200, MSGBOX CLEARED, END: "{6A}Vous êtes	trop jeune{66}pour entrer chez Madame{66}Yard, je regrette.{71}{6A}Revenez dans{66}quelques années.{6D}"
 ; ---------------------------------------------------------------------------
-		move.w	#$C8,d0	; '╚'
+		move.w	#$C8,d0
 
 CS_0016_1:
 		bsr.w	TestFlagBit
 		beq.s	CS_0016_2
-		move.w	#$2C,d0	; ','
+		move.w	#$2C,d0
 		bsr.w	SetFlagBit
 
 CS_0016_2:
@@ -3065,7 +3065,7 @@ CS_00E5_0:
 ; ---------------------------------------------------------------------------
 
 CS_00E5_2:
-		move.w	#$C6,d0	; '╞'
+		move.w	#$C6,d0
 		bra.w	CS_0016_1
 ; ---------------------------------------------------------------------------
 

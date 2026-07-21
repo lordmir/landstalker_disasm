@@ -689,7 +689,10 @@ g_YesNoPromptResult:              equ $FF1904
 g_GameFlagProgress1:              equ $FF1906
 g_GameFlagProgress2:              equ $FF1907
 g_GameFlagProgress3:              equ $FF1908
-unk_FF190E:                       equ $FF190E
+; Eight-byte floor for g_GameFlagProgress1..8: HandleProgressDependentDialogue
+; raises each progress byte to at least the matching byte here. Nothing
+; writes it, so the floor is always zero (vestigial). IDA called it unk_FF190E.
+g_GameFlagProgressFloor:          equ $FF190E
 ; Debug menu: buttons held at the last poll, for new-press edge
 ; detection. IDA called it byte_FF1916.
 g_DebugMenuButtons:               equ $FF1916
@@ -743,7 +746,10 @@ g_TextBoxLine6:                   equ $FF2880
 g_TextBoxLine7:                   equ $FF2900
 g_TextBoxLine8:                   equ $FF2980
 g_Buffer:                         equ $FF2C00
-unk_FF34C2:                       equ $FF34C2
+; Scratch canvas where the finished title-screen tilemap is
+; assembled ($80-byte row stride) before being DMA'd to plane A.
+; IDA called it unk_FF34C2.
+g_TitleCanvasBuffer:              equ $FF34C2
 ; Pristine copy of a save window's 18x10 cells ($50-byte row
 ; stride), taken from the first window at load and stamped back
 ; before a window is redrawn. IDA called it unk_FF3562.

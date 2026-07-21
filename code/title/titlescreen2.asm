@@ -1,116 +1,121 @@
+TitleScreen2	module
+; Title screen, part 2 of 3: two of the build-up palette effects
+; driven by RunTitleSequence (titlescreen1). Each does nothing
+; until its done flag is clear and the frame counter (-$02) has
+; passed its start frame, then advances its own step counter.
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandlePaletteScroll:				  ; CODE XREF: ROM:00039A16p
+; Logo-outline ramp (done flag -$16, step counter -$08): brings
+; the ten palette-1 colours from $C up along a fixed +$22 per
+; step toward $44, one _hpsStep each. Done once all ten reach it.
+HandlePaletteScroll:
 		tst.b	-$00000016(a6)
-		bpl.s	loc_39B44
+		bpl.s	_hpsStarted
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39B44:					  ; CODE XREF: HandlePaletteScroll+4j
+_hpsStarted:
 		cmp.w	-$00000002(a6),d0
-		bcs.s	loc_39B4C
+		bcs.s	_hpsRun
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39B4C:					  ; CODE XREF: HandlePaletteScroll+Cj
+_hpsRun:
 		move.w	-$00000008(a6),d0
 		ext.l	d0
 		lea	((g_Pal1Base+$C)).l,a0
 		clr.b	d6
 		moveq	#$00000009,d7
 
-loc_39B5C:					  ; CODE XREF: HandlePaletteScroll+24j
-		bsr.w	sub_39B80
-		dbf	d7,loc_39B5C
+_hpsLoop:
+		bsr.w	_hpsStep
+		dbf	d7,_hpsLoop
 		move.l	d6,d7
 		move.b	-$00000016(a6),d6
 		ext.w	d6
 		neg.w	d6
 		cmpi.b	#$09,d7
-		bcs.s	loc_39B7A
+		bcs.s	_hpsNext
 		move.b	#$FF,-$00000016(a6)
 
-loc_39B7A:					  ; CODE XREF: HandlePaletteScroll+36j
+_hpsNext:
 		addq.w	#$01,-$00000008(a6)
 		rts
-; End of function HandlePaletteScroll
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39B80:					  ; CODE XREF: HandlePaletteScroll:loc_39B5Cp
+; One colour: bumps the R and G nibbles by 2 (+$22) toward $44,
+; clamping there and counting arrivals in d6 (also latched into
+; the done flag). Nothing until step 4/5 (region-dependent).
+_hpsStep:
 	if ((REGION=UK)!(REGION=DE))
 		subi.l	#5,d0
 	else
 		subi.l	#4,d0
 	endif
-		bmi.s	locret_39BA8
+		bmi.s	_hpsStepDone
 		andi.w	#$FFFC,d0
 		move.w	(a0),d1
 		addi.w	#$0022,d1
 		cmpi.w	#$0044,d1
-		bcs.s	loc_39BA2
+		bcs.s	_hpsStepWrite
 		move.w	#$0044,d1
 		addq.b	#$01,d6
 		move.b	d6,-$00000016(a6)
 
-loc_39BA2:					  ; CODE XREF: sub_39B80+16j
+_hpsStepWrite:
 		move.w	d1,(a0)+
 		addq.b	#$01,-$0000001D(a6)
 
-locret_39BA8:					  ; CODE XREF: sub_39B80+6j
+_hpsStepDone:
 		rts
-; End of function sub_39B80
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39BAA:					  ; CODE XREF: ROM:00039A1Ep
+; Logo-lettering fade-in (done flag -$17, step counter -$0A):
+; every 8th step, walks the five palette-1 colours from $2 up the
+; TitlePaletteYellowFade ramp via StepPaletteColourUp. Done once
+; 15 channel-arrivals have accumulated.
+FadeInYellowPalette:
 		tst.b	-$00000017(a6)
-		bpl.s	loc_39BB2
+		bpl.s	_fiyStarted
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39BB2:					  ; CODE XREF: sub_39BAA+4j
+_fiyStarted:
 		cmp.w	-$00000002(a6),d0
-		bcs.s	loc_39BBA
+		bcs.s	_fiyRun
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39BBA:					  ; CODE XREF: sub_39BAA+Cj
+_fiyRun:
 		move.w	-$0000000A(a6),d0
 		ext.l	d0
 		lea	((g_Pal1Base+2)).l,a0
 		lea	TitlePaletteYellowFade(pc),a1
 		clr.b	d6
 		andi.b	#$07,d0
-		bne.s	loc_39BEC
+		bne.s	_fiyNext
 		moveq	#$00000004,d7
 
-loc_39BD4:					  ; CODE XREF: sub_39BAA+2Ej
-		bsr.w	sub_39BF2
-		dbf	d7,loc_39BD4
+_fiyLoop:
+		bsr.w	StepPaletteColourUp
+		dbf	d7,_fiyLoop
 		addq.b	#$01,-$0000001D(a6)
 		cmpi.b	#$0F,d6
-		bcs.s	loc_39BEC
+		bcs.s	_fiyNext
 		move.b	#$FF,-$00000017(a6)
 
-loc_39BEC:					  ; CODE XREF: sub_39BAA+26j
-						  ; sub_39BAA+3Aj
+_fiyNext:
 		addq.w	#$01,-$0000000A(a6)
 		rts
-; End of function sub_39BAA
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39BF2:					  ; CODE XREF: sub_39BAA:loc_39BD4p
-						  ; HandlePaletteScroll2+2Ap ...
+; Steps colour (a0) one notch toward target (a1)+: each of the R,
+; G, B nibbles rises by 2, clamping at the target, and d6 counts
+; how many channels have reached it. Writes the blended colour
+; back and advances a0.
+StepPaletteColourUp:
 		move.w	#$000E,d5
 		move.w	(a0),d1
 		move.w	d1,d2
@@ -120,37 +125,36 @@ sub_39BF2:					  ; CODE XREF: sub_39BAA:loc_39BD4p
 		and.w	d5,d4
 		addq.w	#$02,d1
 		cmp.w	d4,d1
-		bcs.s	loc_39C0C
+		bcs.s	_spuGreen
 		move.w	d4,d1
 		addq.b	#$01,d6
 
-loc_39C0C:					  ; CODE XREF: sub_39BF2+14j
+_spuGreen:
 		lsl.w	#$04,d5
 		move.w	(a1),d4
 		and.w	d5,d2
 		and.w	d5,d4
 		addi.w	#$0020,d2
 		cmp.w	d4,d2
-		bcs.s	loc_39C20
+		bcs.s	_spuBlue
 		move.w	d4,d2
 		addq.b	#$01,d6
 
-loc_39C20:					  ; CODE XREF: sub_39BF2+28j
+_spuBlue:
 		lsl.w	#$04,d5
 		move.w	(a1)+,d4
 		and.w	d5,d3
 		and.w	d5,d4
 		addi.w	#$0200,d3
 		cmp.w	d4,d3
-		bcs.s	loc_39C34
+		bcs.s	_spuWrite
 		move.w	d4,d3
 		addq.b	#$01,d6
 
-loc_39C34:					  ; CODE XREF: sub_39BF2+3Cj
+_spuWrite:
 		or.w	d2,d1
 		or.w	d3,d1
 		move.w	d1,(a0)+
 		rts
-; End of function sub_39BF2
 
-; ---------------------------------------------------------------------------
+		modend

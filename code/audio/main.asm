@@ -16,6 +16,9 @@
 ; See: https://github.com/ShiningForceCentral/SF2DISASM/tree/build/standard/disasm/data/sound
 ; and  https://github.com/ShiningForceCentral/SF2DISASM/tree/build/standard/disasm/code/common/tech/sound
 ; for more details on the sound driver and its inner workings. (Credits to Wiz for the disassembly and documentation)
+;
+; The music / SFX data format (headers and channel command streams) is
+; documented in docs/sound_driver_format.md.
 
         cpu z80
         listing	off

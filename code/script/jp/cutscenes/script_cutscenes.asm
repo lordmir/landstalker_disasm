@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 
 XS_001B:
-		move.w	#$21,d0	; '!'
+		move.w	#$21,d0
 		bsr.w	TestFlagBit
 		bne.s	XS_001B_1
 		bsr.w	HandleYesNoPrompt
@@ -76,7 +76,7 @@ XS_002E:
 ; ---------------------------------------------------------------------------
 
 XS_0036:
-		move.w	#$23,d0	; '#'
+		move.w	#$23,d0
 		bsr.w	TestFlagBit
 		bne.s	XS_0036_1
 		trap	#1
@@ -897,7 +897,7 @@ XS_00B2:
 					; 0x864E: PRINT	MSG 0x069B
 					; 0xA64F: PRINT	MSG 0x069C, END
 ; ---------------------------------------------------------------------------
-		move.w	#$2E,d0	; '.'
+		move.w	#$2E,d0
 		bsr.w	GetRemainingItemAllowedCount
 		beq.s	XS_00B2_1
 		trap	#1
@@ -933,7 +933,7 @@ XS_00B3:
 					; 0x1BE8: LOAD SPECIAL CHARACTER 0x00
 					; 0xE654: PRINT	MSG 0x06A1, MSGBOX CLEARED, END
 ; ---------------------------------------------------------------------------
-		moveq	#$20,d0	; ' '
+		moveq	#$20,d0
 		bsr.w	CheckIfItemIsOwned
 		beq.s	XS_00B3_1
 		bsr.w	ClearTextbox
@@ -1095,7 +1095,7 @@ XS_0122:
 					; 0x8735: PRINT	MSG 0x0782
 					; 0xA736: PRINT	MSG 0x0783, END
 ; ---------------------------------------------------------------------------
-		moveq	#$32,d0	; '2'
+		moveq	#$32,d0
 
 XS_0122_1:
 		bsr.w	GetYesNoAnswer
@@ -1173,7 +1173,7 @@ XS_0128:
 					; 0x8743: PRINT	MSG 0x0790
 					; 0xA744: PRINT	MSG 0x0791, END
 ; ---------------------------------------------------------------------------
-		moveq	#$32,d0	; '2'
+		moveq	#$32,d0
 		bra.s	XS_0122_1
 ; ---------------------------------------------------------------------------
 
@@ -1233,10 +1233,10 @@ XS_012A_4:
 
 XS_012B:
 		clr.b	(g_YesNoPromptResult).l
-		move.w	#$E0,d0	; 'à'
+		move.w	#$E0,d0
 		bsr.w	TestFlagBit
 		beq.s	XS_012B_3
-		move.w	#$E1,d0	; 'á'
+		move.w	#$E1,d0
 		bsr.w	TestFlagBit
 		beq.s	XS_012B_1
 		trap	#1

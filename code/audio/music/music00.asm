@@ -151,7 +151,7 @@ MUSIC_00_YM5:
 		db   0Ch, 0B7h,	   6, 0F0h,  12h, 0AFh,	 18h, 0B0h,    6,  70h,	0FEh,	 9, 0FDh,    9,	0FAh,  80h
 		db  0ABh,    4,	0F0h,	 8, 0B0h,  0Ch,	0B2h,	 4, 0F0h,    8,	0F8h, 0A1h
 MUSIC_00_YM6:
-        db  0FFh,    0,	   0	; DATA XREF: ROM:895Eo
+        db  0FFh,    0,	   0
 MUSIC_00_PSG1:
         db  0FCh,    0,	0FBh,  4Ch, 0FDh,    0,	0F0h,  24h, 0F8h,    0,	0F0h,  0Ch, 0FDh,  1Ah,	 9Fh,  18h
 		db   1Fh,  1Fh,	 1Fh,  1Fh,  21h,  21h,	 21h,  21h,  21h,  21h,	 21h,  21h,  24h, 0A4h,	 0Ch, 0A3h

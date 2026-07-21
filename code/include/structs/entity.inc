@@ -27,7 +27,7 @@ Speed:                equ $09
 ;       sprite and LookupSpriteAnimFlags returns the default; the $7F
 ;       masks in those routines just strip bit 7 for the test.
 ;   Bit 7 = frame dirty: set whenever AnimationFrame1 changes; tells the
-;       render code (gamelogic3:loc_433E) to reload the sprite's frame
+;       render code (gamelogic3:_frameLoadSprite) to reload the sprite's frame
 ;       graphics, then cleared. Usually set together with RenderFlags bit 7.
 AnimCtrl:             equ $0A
 SpriteGraphic:        equ $0B
@@ -60,7 +60,7 @@ AnimPhase:            equ $0D
 ; Both cleared to 0 when the sprite is hidden, blinking or culled
 ; off-screen. Read by BuildVdpSpriteEntry to build VDP sprite attribute entries
 ; and to position status icons above the sprite. The previous frame's
-; values are saved to PrevScreenX/PrevScreenY (gamelogic3:loc_4128).
+; values are saved to PrevScreenX/PrevScreenY (gamelogic3:ProjectAllSprites).
 ScreenX:              equ $0E
 ScreenY:              equ $10
 Z:                    equ $12
@@ -139,7 +139,7 @@ InitTileSource:       equ $46
 ;       the shared move routine skips collision detection.
 ;   7 = Layout dirty: rebuild the sprite's VDP piece layout and reload
 ;       frame tiles (consumed together with AnimCtrl bit 7 by
-;       gamelogic3:loc_433E; set by AI/script code whenever it changes
+;       gamelogic3:_frameLoadSprite; set by AI/script code whenever it changes
 ;       the animation directly).
 RenderFlags:          equ $48
 ; SavedSpeed: Speed saved by CheckPickUpEntity when the player lifts
@@ -201,7 +201,7 @@ InitBehavCmd:         equ $6B
 ; four isometric directions (same layout as the Action1 walk bits:
 ; 0=NE/-Y, 1=SW/+Y, 2=NW/-X, 3=SE/+X), by both the player movement code
 ; and the entity behaviour move routines. ProcessGravity's helper
-; (gamelogic2:sub_32C6) tests the low nibble to decide whether to
+; (gamelogic2:GetDropDistance) tests the low nibble to decide whether to
 ; recompute FloorHeight. NB: initialised to $FF and never cleared, so in
 ; practice the recompute always runs -- looks like a vestigial
 ; optimisation. Bits 4-7 unused.

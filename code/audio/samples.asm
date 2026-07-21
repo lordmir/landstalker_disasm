@@ -1,3 +1,17 @@
+; DAC sample directory, indexed by (NEW_SAMPLE_TO_LOAD - 1). One 8-byte
+; entry per sample - four little-endian words, the first two of which use
+; only their low byte:
+;   +0  playback rate: patched into the DAC inter-byte delay loop
+;       (Dac_Loop+1); larger = slower playback / lower pitch.  (+1 unused)
+;   +2  ROM bank holding the PCM (-> BANK_TO_LOAD).                (+3 unused)
+;   +4  sample length in bytes.
+;   +6  start address within the banked window (8000h-DFFFh).
+; LoadDacSound reads the chosen entry; the main loop then streams the
+; unsigned 8-bit PCM from +6 to the YM2612 DAC (register 2Ah), one byte per
+; pass, until the length runs out. Samples are packed consecutively within
+; a bank, and several entries alias the same PCM at different rates (e.g.
+; the three below share start 99C8h at rates 01h/05h/09h). Sample id 0FEh
+; is the "silence" sentinel (start 0C000h, length 0), handled specially.
 t_SAMPLE_LOAD_DATA:
 		db 01h, 00h, 00h, 00h,  52h, 09h,  00h, 80h
 		db 01h,	00h, 00h, 00h,  76h, 10h,  52h, 89h

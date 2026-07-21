@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 
 XS_001B:
-		move.w	#$21,d0	; '!'
+		move.w	#$21,d0
 		bsr.w	TestFlagBit
 		bne.s	XS_001B_0
 		bsr.w	HandleYesNoPrompt
@@ -75,7 +75,7 @@ XS_002E:
 ; ---------------------------------------------------------------------------
 
 XS_0036:
-		move.w	#$23,d0	; '#'
+		move.w	#$23,d0
 		bsr.w	TestFlagBit
 		bne.s	XS_0036_0
 		trap	#1
@@ -1182,10 +1182,10 @@ XS_012A_3:
 
 XS_012B:
 		clr.b	(g_YesNoPromptResult).l
-		move.w	#$E0,d0	; 'α'
+		move.w	#$E0,d0
 		bsr.w	TestFlagBit
 		beq.s	XS_012B_2
-		move.w	#$E1,d0	; 'ß'
+		move.w	#$E1,d0
 		bsr.w	TestFlagBit
 		beq.s	XS_012B_0
 		trap	#1

@@ -1904,12 +1904,12 @@ CS_0016_0:
 					; 0x8264: PRINT	MSG 0x02B1: "{5B}: You're too young for{57}Madame Yard's.  I'm sorry.{62}"
 					; 0xE265: PRINT	MSG 0x02B2, MSGBOX CLEARED, END: "{5B}:	Please come again{57}when you've grown up.{5E}"
 ; ---------------------------------------------------------------------------
-		move.w	#$C8,d0	; '�'
+		move.w	#$C8,d0
 
 CS_0016_3:
 		bsr.w	TestFlagBit
 		beq.s	CS_0016_1
-		move.w	#$2C,d0	; ','
+		move.w	#$2C,d0
 		bsr.w	SetFlagBit
 
 CS_0016_1:
@@ -3244,7 +3244,7 @@ CS_00E5_0:
 ; ---------------------------------------------------------------------------
 
 CS_00E5_2:
-		move.w	#$C6,d0	; '�'
+		move.w	#$C6,d0
 		bra.w	CS_0016_3
 ; ---------------------------------------------------------------------------
 

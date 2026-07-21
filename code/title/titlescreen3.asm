@@ -1,98 +1,104 @@
+TitleScreen3	module
+; Title screen, part 3 of 3: the remaining build-up palette
+; effects, the plane-A reveal of the finished title, and the
+; tilemap helpers shared with the title setup (titlescreen1).
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-HandlePaletteScroll2:				  ; CODE XREF: ROM:00039A0Ep
+; Silhouette collapse (done flag -$18, step counter -$0C): every
+; other step, drives palette 0 up toward pure blue and palette 1
+; up toward pure yellow via StepPaletteColourUp, leaving a blue
+; artwork / yellow logo silhouette. Done after $5A channel
+; arrivals.
+HandlePaletteScroll2:
 		tst.b	-$00000018(a6)
-		bpl.s	loc_39C4E
+		bpl.s	_hps2Started
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39C4E:					  ; CODE XREF: HandlePaletteScroll2+4j
+_hps2Started:
 		cmp.w	-$00000002(a6),d0
-		bcs.s	loc_39C56
+		bcs.s	_hps2Run
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39C56:					  ; CODE XREF: HandlePaletteScroll2+Cj
+_hps2Run:
 		move.w	-$0000000C(a6),d0
 		ext.l	d0
 		clr.l	d6
 		andi.b	#$01,d0
-		bne.s	loc_39C9A
+		bne.s	_hps2Next
 		lea	((g_Pal0Base+2)).l,a0
 		moveq	#$0000000E,d7
 
-loc_39C6C:					  ; CODE XREF: HandlePaletteScroll2+2Cj
-		lea	Blue(pc),a1
-		bsr.s	sub_39BF2
-		dbf	d7,loc_39C6C
+_hps2LoopBlue:
+		lea	_titleBlue(pc),a1
+		bsr.s	StepPaletteColourUp
+		dbf	d7,_hps2LoopBlue
 		lea	((g_Pal1Base+2)).l,a0
 		moveq	#$0000000E,d7
 
-loc_39C7E:					  ; CODE XREF: HandlePaletteScroll2+40j
-		lea	Yellow(pc),a1
-		bsr.w	sub_39BF2
-		dbf	d7,loc_39C7E
+_hps2LoopYellow:
+		lea	_titleYellow(pc),a1
+		bsr.w	StepPaletteColourUp
+		dbf	d7,_hps2LoopYellow
 		addq.b	#$01,-$0000001D(a6)
 		cmpi.b	#$5A,d6
-		bcs.s	loc_39C9A
+		bcs.s	_hps2Next
 		move.b	#$FF,-$00000018(a6)
 
-loc_39C9A:					  ; CODE XREF: HandlePaletteScroll2+1Cj
-						  ; HandlePaletteScroll2+4Cj
+_hps2Next:
 		addq.w	#$01,-$0000000C(a6)
 		rts
-; End of function HandlePaletteScroll2
 
 ; ---------------------------------------------------------------------------
-Blue:		dc.w $0E00			  ; DATA XREF: HandlePaletteScroll2:loc_39C6Ct
-Yellow:		dc.w $00EE			  ; DATA XREF: HandlePaletteScroll2:loc_39C7Et
+_titleBlue:	dc.w $0E00
+_titleYellow:	dc.w $00EE
 
-; =============== S U B	R O U T	I N E =======================================
+; ---------------------------------------------------------------------------
 
-
-sub_39CA4:					  ; CODE XREF: ROM:00039A06p
+; Artwork resolve (done flag -$19, step counter -$0E): every 4th
+; step, walks the 16 palette-0 colours down toward Title3Palette
+; via StepPaletteColourDown. Done after $2D channel arrivals.
+FadePal0ToTitle3:
 		tst.b	-$00000019(a6)
-		bpl.s	loc_39CAC
+		bpl.s	_fp0Started
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39CAC:					  ; CODE XREF: sub_39CA4+4j
+_fp0Started:
 		cmp.w	-$00000002(a6),d0
-		bcs.s	loc_39CB4
+		bcs.s	_fp0Run
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39CB4:					  ; CODE XREF: sub_39CA4+Cj
+_fp0Run:
 		move.w	-$0000000E(a6),d0
 		ext.l	d0
 		clr.l	d6
 		andi.b	#$03,d0
-		bne.s	loc_39CE6
+		bne.s	_fp0Next
 		lea	(g_Pal0Base).l,a0
 		lea	Title3Palette(pc),a1
 		moveq	#$0000000F,d7
 
-loc_39CCE:					  ; CODE XREF: sub_39CA4+2Ej
-		bsr.w	sub_39CEC
-		dbf	d7,loc_39CCE
+_fp0Loop:
+		bsr.w	StepPaletteColourDown
+		dbf	d7,_fp0Loop
 		addq.b	#$01,-$0000001D(a6)
 		cmpi.b	#$2D,d6
-		bcs.s	loc_39CE6
+		bcs.s	_fp0Next
 		move.b	#$FF,-$00000019(a6)
 
-loc_39CE6:					  ; CODE XREF: sub_39CA4+1Cj
-						  ; sub_39CA4+3Aj
+_fp0Next:
 		addq.w	#$01,-$0000000E(a6)
 		rts
-; End of function sub_39CA4
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39CEC:					  ; CODE XREF: sub_39CA4:loc_39CCEp
+; Steps colour (a0) one notch toward target (a1)+: each of the R,
+; G, B nibbles drops by 2, clamping at the target, and d6 counts
+; how many channels have reached it. Writes the blended colour
+; back and advances a0.
+StepPaletteColourDown:
 		moveq	#$0000000E,d5
 		move.w	(a0),d1
 		move.w	d1,d2
@@ -101,88 +107,90 @@ sub_39CEC:					  ; CODE XREF: sub_39CA4:loc_39CCEp
 		and.w	d5,d1
 		and.w	d5,d4
 		subq.w	#$02,d1
-		bmi.s	loc_39D02
+		bmi.s	_spdClampR
 		cmp.w	d1,d4
-		bcs.s	loc_39D06
+		bcs.s	_spdGreen
 
-loc_39D02:					  ; CODE XREF: sub_39CEC+10j
+_spdClampR:
 		move.w	d4,d1
 		addq.b	#$01,d6
 
-loc_39D06:					  ; CODE XREF: sub_39CEC+14j
+_spdGreen:
 		lsl.w	#$04,d5
 		move.w	(a1),d4
 		and.w	d5,d2
 		and.w	d5,d4
 		subi.w	#$0020,d2
-		bmi.s	loc_39D18
+		bmi.s	_spdClampG
 		cmp.w	d2,d4
-		bcs.s	loc_39D1C
+		bcs.s	_spdBlue
 
-loc_39D18:					  ; CODE XREF: sub_39CEC+26j
+_spdClampG:
 		move.w	d4,d2
 		addq.b	#$01,d6
 
-loc_39D1C:					  ; CODE XREF: sub_39CEC+2Aj
+_spdBlue:
 		lsl.w	#$04,d5
 		move.w	(a1)+,d4
 		and.w	d5,d3
 		and.w	d5,d4
 		subi.w	#$0200,d3
-		bmi.s	loc_39D2E
+		bmi.s	_spdClampB
 		cmp.w	d3,d4
-		bcs.s	loc_39D32
+		bcs.s	_spdWrite
 
-loc_39D2E:					  ; CODE XREF: sub_39CEC+3Cj
+_spdClampB:
 		move.w	d4,d3
 		addq.b	#$01,d6
 
-loc_39D32:					  ; CODE XREF: sub_39CEC+40j
+_spdWrite:
 		or.w	d2,d1
 		or.w	d3,d1
 		move.w	d1,(a0)+
 		rts
-; End of function sub_39CEC
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39D3A:					  ; CODE XREF: ROM:000399FEp
+; One-shot reveal (done flag -$1A), triggered once the silhouette
+; collapse (-$18) has finished: loads the finished-title palette
+; line 1, blacks out palette 1, then stamps the Title3 tilemap
+; over plane A via CopyTitleMapToPlaneA.
+RevealTitle3:
 		tst.b	-$00000018(a6)
-		bmi.s	loc_39D42
+		bmi.s	_rt3Ready
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39D42:					  ; CODE XREF: sub_39D3A+4j
+_rt3Ready:
 		tst.b	-$0000001A(a6)
-		bpl.s	loc_39D4A
+		bpl.s	_rt3Do
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39D4A:					  ; CODE XREF: sub_39D3A+Cj
+_rt3Do:
 		lea	Title3PaletteHighlight(pc),a0
 		jsr	(j_LoadPaletteToRAM).l
 		lea	(g_Pal1Base).l,a0
 		moveq	#$0000000F,d7
 
-loc_39D5C:					  ; CODE XREF: sub_39D3A+24j
+_rt3Clear:
 		clr.w	(a0)+
-		dbf	d7,loc_39D5C
+		dbf	d7,_rt3Clear
 		addq.b	#$01,-$0000001A(a6)
 		addq.b	#$01,-$0000001D(a6)
-		bsr.w	sub_39D76
+		bsr.w	CopyTitleMapToPlaneA
 		move.b	#$FF,-$0000001A(a6)
 		rts
-; End of function sub_39D3A
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39D76:					  ; CODE XREF: DisplayTitle:loc_39948p
-						  ; sub_39D3A+30p
-		lea	(unk_FF34C2).l,a5
+; Assembles the finished Title3 tilemap (still in g_Buffer, with
+; its width,height header) into the g_TitleCanvasBuffer scratch
+; area at a $80-byte row stride, then DMAs $700 words of it to
+; plane A and clears plane B. JP/beta use a narrower canvas
+; (fixed 40-cell rows); the others take the width from the map.
+CopyTitleMapToPlaneA:
+		lea	(g_TitleCanvasBuffer).l,a5
 		movea.l	a5,a0
 	if ((REGION=JP)!(REGION=US_BETA))
 		move.w	#$045F,d7
@@ -190,9 +198,9 @@ sub_39D76:					  ; CODE XREF: DisplayTitle:loc_39948p
 		move.w	#$06FF,d7
 	endif
 
-loc_39D82:					  ; CODE XREF: sub_39D76+Ej
+_ctpClear:
 		clr.w	(a0)+
-		dbf	d7,loc_39D82
+		dbf	d7,_ctpClear
 		lea	(g_Buffer).l,a0
 		clr.w	d6
 	if ~((REGION=JP)!(REGION=US_BETA))
@@ -205,18 +213,18 @@ loc_39D82:					  ; CODE XREF: sub_39D76+Ej
 		subq.w	#$01,d7
 		movea.l	a5,a1
 
-loc_39D9E:					  ; CODE XREF: sub_39D76+38j
+_ctpRow:
 		movea.l	a1,a2
 		moveq	#$00000027,d6
 	if ~((REGION=JP)!(REGION=US_BETA))
 		move.w	d5,d6
 	endif
 
-loc_39DA4:					  ; CODE XREF: sub_39D76+30j
+_ctpCell:
 		move.w	(a0)+,(a1)+
-		dbf	d6,loc_39DA4
+		dbf	d6,_ctpCell
 		lea	$00000080(a2),a1
-		dbf	d7,loc_39D9E
+		dbf	d7,_ctpRow
 		movea.l	a5,a0
 		lea	($0000C000).l,a1
 		move.w	#$0700,d0
@@ -227,54 +235,52 @@ loc_39DA4:					  ; CODE XREF: sub_39D76+30j
 		clr.l	d2
 		jsr	(j_DoDMAFill).l
 		rts
-; End of function sub_39D76
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39DD8:					  ; CODE XREF: ROM:000399FAp
+; Logo-palette resolve (done flag -$1B, step counter -$10): every
+; 8th step, walks the 16 palette-1 colours up toward Title3Palette
+; via StepPaletteColourUp. Done after $30 channel arrivals.
+FadePal1ToTitle3:
 		tst.b	-$0000001B(a6)
-		bpl.s	loc_39DE0
+		bpl.s	_fp1Started
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39DE0:					  ; CODE XREF: sub_39DD8+4j
+_fp1Started:
 		cmp.w	-$00000002(a6),d0
-		bcs.s	loc_39DE8
+		bcs.s	_fp1Run
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_39DE8:					  ; CODE XREF: sub_39DD8+Cj
+_fp1Run:
 		move.w	-$00000010(a6),d0
 		ext.l	d0
 		lea	(g_Pal1Base).l,a0
 		lea	Title3Palette(pc),a1
 		clr.b	d6
 		andi.b	#$07,d0
-		bne.s	loc_39E1A
+		bne.s	_fp1Next
 		moveq	#$0000000F,d7
 
-loc_39E02:					  ; CODE XREF: sub_39DD8+2Ej
-		bsr.w	sub_39BF2
-		dbf	d7,loc_39E02
+_fp1Loop:
+		bsr.w	StepPaletteColourUp
+		dbf	d7,_fp1Loop
 		addq.b	#$01,-$0000001D(a6)
 		cmpi.b	#$30,d6
-		bcs.s	loc_39E1A
+		bcs.s	_fp1Next
 		move.b	#$FF,-$0000001B(a6)
 
-loc_39E1A:					  ; CODE XREF: sub_39DD8+26j
-						  ; sub_39DD8+3Aj
+_fp1Next:
 		addq.w	#$01,-$00000010(a6)
 		rts
-; End of function sub_39DD8
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-CopyTilemapToVDP:				  ; CODE XREF: DisplayTitle+12Cp
-						  ; DisplayTitle+160p ...
+; DMAs a decompressed tilemap (g_Buffer: width,height header then
+; cells) to VRAM a1 one row at a time, advancing the destination
+; by a full plane row ($80) each pass.
+CopyTilemapToVDP:
 		lea	(g_Buffer).l,a0
 		move.b	(a0)+,d0
 		ext.w	d0
@@ -282,22 +288,20 @@ CopyTilemapToVDP:				  ; CODE XREF: DisplayTitle+12Cp
 		ext.w	d1
 		subq.w	#$01,d1
 
-loc_39E30:					  ; CODE XREF: CopyTilemapToVDP+24j
+_ctvRow:
 		movem.l	d0-d1/a1,-(sp)
 		moveq	#$00000002,d1
 		jsr	(j_DoDMACopy).l
 		movem.l	(sp)+,d0-d1/a1
 		lea	$00000080(a1),a1
-		dbf	d1,loc_39E30
+		dbf	d1,_ctvRow
 		rts
-; End of function CopyTilemapToVDP
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-ReindexDecompTilemap:				  ; CODE XREF: DisplayTitle+122p
-						  ; DisplayTitle+156p ...
+; Rebases every cell's tile number in the g_Buffer tilemap: minus
+; $100 (the base the maps are stored against) plus d0.
+ReindexDecompTilemap:
 		lea	(g_Buffer).l,a0
 		move.b	(a0)+,d7
 		ext.w	d7
@@ -306,48 +310,45 @@ ReindexDecompTilemap:				  ; CODE XREF: DisplayTitle+122p
 		ext.w	d6
 		subq.w	#$01,d6
 
-loc_39E5C:					  ; CODE XREF: ReindexDecompTilemap+22j
+_rdtRow:
 		move.w	d6,d5
 
-loc_39E5E:					  ; CODE XREF: ReindexDecompTilemap+1Ej
+_rdtCell:
 		move.w	(a0),d1
 		subi.w	#$0100,d1
 		add.w	d0,d1
 		move.w	d1,(a0)+
-		dbf	d5,loc_39E5E
-		dbf	d7,loc_39E5C
+		dbf	d5,_rdtCell
+		dbf	d7,_rdtRow
 		rts
-; End of function ReindexDecompTilemap
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_39E72:					  ; CODE XREF: DisplayTitle+19Ap
-						  ; DisplayTitle+1A6p ...
+; ORs the palette bits d2 into every cell of a d6+1 by d7+1 block
+; of the g_Buffer tilemap whose top-left is cell (d0,d1). d4 (the
+; map's row stride) comes from GetTilePointer.
+SetTilemapRectPalette:
 		bsr.w	GetTilePointer
 
-loc_39E76:					  ; CODE XREF: sub_39E72+1Aj
+_strRow:
 		movea.l	a0,a5
 		move.w	d6,d5
 
-loc_39E7A:					  ; CODE XREF: sub_39E72+12j
+_strCell:
 		move.w	(a0),d0
 		andi.w	#$1FFF,d0
 		or.w	d2,d0
 		move.w	d0,(a0)+
-		dbf	d5,loc_39E7A
+		dbf	d5,_strCell
 		lea	(a5,d4.w),a0
-		dbf	d7,loc_39E76
+		dbf	d7,_strRow
 		rts
-; End of function sub_39E72
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-GetTilePointer:					  ; CODE XREF: sub_39E72p
-						  ; ROM:00039EB2p ...
+; Returns a0 = address of cell (d0,d1) in the g_Buffer tilemap
+; (2-byte header, width*2 row stride) and d4 = that row stride.
+GetTilePointer:
 		lea	(g_Buffer).l,a0
 		clr.w	d4
 		move.b	(a0)+,d4
@@ -358,10 +359,12 @@ GetTilePointer:					  ; CODE XREF: sub_39E72p
 		lea	(a0,d1.w),a0
 		lea	(a0,d0.w),a0
 		rts
-; End of function GetTilePointer
 
 ; ---------------------------------------------------------------------------
-loc_39EAE:
+
+; JP-only Title3 tilemap fixup: shifts a 17 x 5 cell block up and
+; left, from (19,14) to (17,13), before the map is copied out.
+CopyTitle3BlockJP:
 		moveq	#$00000011,d0
 		moveq	#$0000000D,d1
 		bsr.s	GetTilePointer
@@ -371,16 +374,17 @@ loc_39EAE:
 		bsr.s	GetTilePointer
 		moveq	#$00000004,d7
 
-loc_39EBE:					  ; CODE XREF: ROM:00039ED2j
+_ctbRow:
 		movea.l	a0,a4
 		movea.l	a1,a5
 		moveq	#$00000010,d5
 
-loc_39EC4:					  ; CODE XREF: ROM:00039EC6j
+_ctbCell:
 		move.w	(a0)+,(a1)+
-		dbf	d5,loc_39EC4
+		dbf	d5,_ctbCell
 		lea	(a4,d4.w),a0
 		lea	(a5,d4.w),a1
-		dbf	d7,loc_39EBE
+		dbf	d7,_ctbRow
 		rts
-; ---------------------------------------------------------------------------
+
+		modend

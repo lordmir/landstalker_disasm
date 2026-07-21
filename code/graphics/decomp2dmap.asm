@@ -1,175 +1,177 @@
-DecompTilemap:					  ; CODE XREF: LoadLithographTilemap+3Ap
-						  ; DisplayTitle+11Ap ...
+Decomp2DMap	module
+; Decompresses a tilemap from a0 to a1: a width,height byte pair,
+; then width*height cell words, built in two passes. Pass 1 fills
+; each cell's attribute byte (priority/palette/flip - the top
+; five bits of the cell's high byte) from RLE runs:
+;   %aaaaa1cc          - run of cc+1 cells
+;   %aaaaa0cc cccccccc - run with a 10-bit count (0 = end pass)
+; Pass 2 restarts at the first cell and ORs in the 11-bit tile
+; numbers:
+;   %00vvvvvv vvvvvvvv - one literal value (value $7FF = end)
+;   %01rrrvvv vvvvvvvv - run of rrr+1 cells of one value
+;   %10rrrrrr          - run of rrrrrr+1 cells of the last value
+;   %11rrrrrr          - run, values ascending from the last
+;                        %11 run's final value
+; (The first entry of pass 2 is decoded in the %01 form.)
+DecompTilemap:
 		movem.l	d0-a6,-(sp)
 		move.b	(a0)+,(a1)+
 		move.b	(a0)+,(a1)+
 		move.l	a1,-(sp)
 
-_GetTileAttrs:					  ; CODE XREF: DecompTilemap:_Continuej
+_dtAttrLoop:
 		move.b	(a0)+,d0
 		btst	#$02,d0
-		beq.s	_Get16BitRunLength
+		beq.s	_dtAttr16
 		bsr.w	DecompTM_8bitRLEFill
-		bra.s	_Continue
+		bra.s	_dtAttrNext
 ; ---------------------------------------------------------------------------
 
-_Get16BitRunLength:				  ; CODE XREF: DecompTilemap+10j
+_dtAttr16:
 		bsr.w	DecompTM_16bitRLEFill
 		tst.w	d7
-		beq.w	_GetTileValues
+		beq.w	_dtValues
 
-_Continue:					  ; CODE XREF: DecompTilemap+16j
-		bra.s	_GetTileAttrs
+_dtAttrNext:
+		bra.s	_dtAttrLoop
 ; ---------------------------------------------------------------------------
 
-_GetTileValues:					  ; CODE XREF: DecompTilemap+1Ej
+_dtValues:
 		movea.l	(sp)+,a1
 		move.b	(a0)+,d0
 		bsr.w	DecompTM_RLEFillOR
 		move.w	d0,d4			  ; d4 - incremental value
 		move.w	d0,d5			  ; d5 - last value
 
-_Loop:						  ; CODE XREF: DecompTilemap:_Continue2j
+_dtValLoop:
 		move.b	(a0)+,d0
-		bmi.s	_Bit7Set		  ; Bit	7 set
+		bmi.s	_dtValHigh
 		btst	#$06,d0
-		bne.s	_Bit7Clear6Set		  ; Bit	6 set
+		bne.s	_dtValRLE
 
-_Bit7Clear6Clear:
+_dtValWord:
 		bsr.w	DecompTM_CopySingleWord
 		cmpi.w	#$07FF,d0
-		beq.w	_Return
-		bra.s	_Continue1
+		beq.w	_dtDone
+		bra.s	_dtValNext1
 ; ---------------------------------------------------------------------------
 
-_Bit7Clear6Set:					  ; CODE XREF: DecompTilemap+38j
+_dtValRLE:
 		bsr.w	DecompTM_RLEFillOR
 		move.w	d0,d5			  ; d5 - last value
 
-_Continue1:					  ; CODE XREF: DecompTilemap+46j
-		bra.s	_Continue2
+_dtValNext1:
+		bra.s	_dtValNext2
 ; ---------------------------------------------------------------------------
 
-_Bit7Set:					  ; CODE XREF: DecompTilemap+32j
+_dtValHigh:
 		btst	#$06,d0
-		bne.s	_Bit7Set6Set		  ; Bit	6 set
+		bne.s	_dtValIncr
 
-_Bit7Set6Clear:					  ; d5 - last value
+_dtValLast:
 		move.w	d5,d1
 		bsr.w	DecompTM_FillWithLast
-		bra.s	_Continue2
+		bra.s	_dtValNext2
 ; ---------------------------------------------------------------------------
 
-_Bit7Set6Set:					  ; CODE XREF: DecompTilemap+54j
+_dtValIncr:
 		move.w	d4,d1			  ; d4 - incremental fill
 		bsr.w	DecompTM_IncrementalFill
 		move.w	d0,d4
 
-_Continue2:					  ; CODE XREF: DecompTilemap:_Continue1j
-						  ; DecompTilemap+5Cj
-		bra.s	_Loop
+_dtValNext2:
+		bra.s	_dtValLoop
 ; ---------------------------------------------------------------------------
 
-_Return:					  ; CODE XREF: DecompTilemap+42j
+_dtDone:
 		movem.l	(sp)+,d0-a6
 		rts
-; End of function DecompTilemap
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_8bitRLEFill:				  ; CODE XREF: DecompTilemap+12p
+; Attribute run, %aaaaa1cc form: cc+1 cells.
+DecompTM_8bitRLEFill:
 		move.b	d0,d7
 		andi.w	#$0003,d7
-		bra.w	loc_397F0
-; End of function DecompTM_8bitRLEFill
+		bra.w	_rleFill
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_16bitRLEFill:				  ; CODE XREF: DecompTilemap:_Get16BitRunLengthp
+; Attribute run, %aaaaa0cc cccccccc form: 10-bit count, 0 ending
+; the attribute pass.
+DecompTM_16bitRLEFill:
 		move.b	d0,d7
 		lsl.w	#$08,d7
 		move.b	(a0)+,d7
 		andi.w	#$03FF,d7
-		bne.s	loc_397F0
+		bne.s	_rleFill
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_397F0:					  ; CODE XREF: DecompTM_8bitRLEFill+6j
-						  ; DecompTM_16bitRLEFill+Aj
+_rleFill:
 		andi.b	#$F8,d0
 
-_Loop:						  ; CODE XREF: DecompTM_16bitRLEFill+16j
+_rleLoop:
 		move.b	d0,(a1)+
 		clr.b	(a1)+
-		dbf	d7,_Loop
+		dbf	d7,_rleLoop
 		rts
-; End of function DecompTM_16bitRLEFill
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_CopySingleWord:			  ; CODE XREF: DecompTilemap:_Bit7Clear6Clearp
+; ORs one literal 11-bit tile number into the next cell.
+DecompTM_CopySingleWord:
 		lsl.w	#$08,d0
 		move.b	(a0)+,d0
 		andi.w	#$07FF,d0
 		or.w	d0,(a1)+
 		rts
-; End of function DecompTM_CopySingleWord
 
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_RLEFillOR:				  ; CODE XREF: DecompTilemap+28p
-						  ; DecompTilemap:_Bit7Clear6Setp
+; Tile-number run, %01rrrvvv vvvvvvvv form: rrr+1 cells of one
+; 11-bit value, OR'd in.
+DecompTM_RLEFillOR:
 		move.b	d0,d7
 		lsr.b	#$03,d7
 		andi.w	#$0007,d7
 		lsl.w	#$08,d0
 		move.b	(a0)+,d0
-		bra.s	loc_39820
-; End of function DecompTM_RLEFillOR
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_FillWithLast:				  ; CODE XREF: DecompTilemap+58p
-		move.b	d0,d7
-		andi.w	#$003F,d7
-		move.w	d1,d0
-
-loc_39820:					  ; CODE XREF: DecompTM_RLEFillOR+Cj
-		andi.w	#$07FF,d0
-
-_Loop:						  ; CODE XREF: DecompTM_FillWithLast+Ej
-		or.w	d0,(a1)+
-		dbf	d7,_Loop
-		rts
-; End of function DecompTM_FillWithLast
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-DecompTM_IncrementalFill:			  ; CODE XREF: DecompTilemap+60p
-		move.b	d0,d7
-		andi.w	#$003F,d7
-		move.w	d1,d0
-		andi.w	#$07FF,d0
-
-_Loop:						  ; CODE XREF: DecompTM_IncrementalFill+10j
-		addq.w	#$01,d0
-		or.w	d0,(a1)+
-		dbf	d7,_Loop
-		rts
-; End of function DecompTM_IncrementalFill
+		bra.s	_orFill
 
 ; ---------------------------------------------------------------------------
-		jsr	(j_FadeToBlack).l
-; START	OF FUNCTION CHUNK FOR DisplayTitle
+
+; Tile-number run, %10rrrrrr form: repeats the last value (d1).
+DecompTM_FillWithLast:
+		move.b	d0,d7
+		andi.w	#$003F,d7
+		move.w	d1,d0
+
+_orFill:
+		andi.w	#$07FF,d0
+
+_orLoop:
+		or.w	d0,(a1)+
+		dbf	d7,_orLoop
+		rts
+
+; ---------------------------------------------------------------------------
+
+; Tile-number run, %11rrrrrr form: values ascending from the
+; last incremental value (d1).
+DecompTM_IncrementalFill:
+		move.b	d0,d7
+		andi.w	#$003F,d7
+		move.w	d1,d0
+		andi.w	#$07FF,d0
+
+_incLoop:
+		addq.w	#$01,d0
+		or.w	d0,(a1)+
+		dbf	d7,_incLoop
+		rts
+
+; ---------------------------------------------------------------------------
+		jsr	(j_FadeToBlack).l	  ; Unreachable leftover.
+
+		modend

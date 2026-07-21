@@ -267,7 +267,6 @@ _framesDone:
 ; Common setup for the frame-load loops: a2 = VDP sprite tail, a3 =
 ; draw list, a4 = sprite gfx pointers, d2 = first free VRAM tile.
 InitSpriteLoad:
-						  ; _loadAllSpriteFramesp
 		lea	(g_VDPSpr16_Y).l,a2
 		lea	(g_SpriteDrawList).l,a3
 		lea	(SpriteGfxPtrPtr).l,a4
@@ -1326,7 +1325,6 @@ _queueSwapBlockPair:
 ; walking g_BlockTableIndex with the same wrap rules as the camera;
 ; carry set if outside the +/-$C on-screen diamond.
 _screenBlockIndex:
-						  ; _swapScreenBlocks:_flatCellLoopp	...
 		movem.w	d0-d1/d6-d7,-(sp)
 		move.w	(g_BlockTableIndex).l,d5
 		move.b	(g_PlayerXFlattened).l,d6

@@ -198,7 +198,7 @@ _gdrFail:
 ; Run a character's progress-dependent dialogue. First refresh the
 ; eight story-progress bytes (GetFlagProgress recomputes
 ; g_GameFlagProgress1..+7 from the game flags), raising each to at
-; least the value in the block at unk_FF190E (nothing appears to
+; least the value in g_GameFlagProgressFloor (nothing appears to
 ; write that block - the merge looks like a vestigial floor).
 ;
 ; Inline data after the bsr: 4-byte records {progress byte index,
@@ -210,7 +210,7 @@ HandleProgressDependentDialogue:
 		movem.l	d0/a0-a2,-(sp)
 		bsr.w	GetFlagProgress
 		lea	(g_GameFlagProgress1).l,a0
-		lea	(unk_FF190E).l,a1
+		lea	(g_GameFlagProgressFloor).l,a1
 		moveq	#$00000007,d0
 
 _hpdMerge:
