@@ -1,203 +1,581 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 
+
+InitGameStartScreen:				  ; CODE XREF: ROM:0000EEC4p
+		bsr.w	ClearTextBuffer
+		lea	($000042C0).w,a1
+		moveq	#$00000003,d7
+
+loc_F6E6:					  ; CODE XREF: InitGameStartScreen+28j
+		movem.l	d7/a1,-(sp)
+		lea	(g_ScreenBuffer).l,a0
+		move.w	#$01C0,d0
+		moveq	#$00000002,d1
+		jsr	(j_DoDMACopy_1).l
+		movem.l	(sp)+,d7/a1
+		lea	$00000380(a1),a1
+		dbf	d7,loc_F6E6
+		move.w	#$0286,d0
+		lea	((g_Buffer+$738)).l,a1
+		move.w	#$0021,d7
+		bsr.w	sub_F5CA
+		moveq	#$00000003,d0
+
+loc_F71C:					  ; CODE XREF: InitGameStartScreen+48j
+		move.l	d0,-(sp)
+		bsr.w	sub_F736
+		move.l	(sp)+,d0
+		dbf	d0,loc_F71C
+		bsr.w	sub_F306
+		rts
+; End of function InitGameStartScreen
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F72E:					  ; CODE XREF: ROM:0000EFB0p
+						  ; ROM:0000EFE8p ...
+		bsr.s	sub_F736
+		bsr.w	sub_F306
+		rts
+; End of function sub_F72E
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F736:					  ; CODE XREF: InitGameStartScreen+42p
+						  ; sub_F72Ep
+		move.b	(g_SaveSlot).l,d1
+		move.l	d1,-(sp)
+		move.b	d0,(g_SaveSlot).l
+		cmpi.b	#$01,d0
+		bcc.s	loc_F756
+		lea	((g_Buffer+$56)).l,a5
+		move.w	#$0216,d0
+		bra.s	loc_F780
+; ---------------------------------------------------------------------------
+
+loc_F756:					  ; CODE XREF: sub_F736+12j
+		bne.s	loc_F764
+		lea	((g_Buffer+$7A)).l,a5
+		move.w	#$0232,d0
+		bra.s	loc_F780
+; ---------------------------------------------------------------------------
+
+loc_F764:					  ; CODE XREF: sub_F736:loc_F756j
+		cmpi.b	#$03,d0
+		bcc.s	loc_F776
+		lea	((g_Buffer+$376)).l,a5
+		move.w	#$024E,d0
+		bra.s	loc_F780
+; ---------------------------------------------------------------------------
+
+loc_F776:					  ; CODE XREF: sub_F736+32j
+		lea	((g_Buffer+$39A)).l,a5
+		move.w	#$026A,d0
+
+loc_F780:					  ; CODE XREF: sub_F736+1Ej
+						  ; sub_F736+2Cj ...
+		bsr.w	sub_F78E
+		move.l	(sp)+,d1
+		move.b	d1,(g_SaveSlot).l
+		rts
+; End of function sub_F736
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F78E:					  ; CODE XREF: sub_F736:loc_F780p
+		move.l	d0,-(sp)
+		jsr	(LoadSavedGame).l
+		lea	(unk_FF3562).l,a0
+		lea	(a5),a1
+		moveq	#$00000011,d6
+		moveq	#$00000009,d7
+		bsr.w	sub_F81A
+		move.l	(sp)+,d0
+		lea	$00000236(a5),a1
+		bsr.w	sub_F578
+		lea	$00000056(a5),a1
+		move.b	(g_SaveSlot).l,d0
+		addq.b	#$01,d0
+		bsr.w	sub_F3CC
+		move.w	(Player_CurrentHealth).l,d2
+		beq.s	loc_F7CC
+		addi.w	#$0100,d2
+
+loc_F7CC:					  ; CODE XREF: sub_F78E+38j
+		lsr.w	#$08,d2
+		beq.w	loc_F808
+		lea	$00000108(a5),a1
+		bsr.w	sub_F3A6
+		lea	$000001A4(a5),a1
+		bsr.w	GetPlayTimeDigits
+		lea	$000000FC(a5),a1
+		bsr.w	sub_F3E0
+		bsr.w	sub_F416
+		lea	$0000005A(a5),a1
+		bsr.w	sub_F448
+		lea	$00000068(a5),a1
+		bsr.w	sub_F478
+		lea	$00000068(a5),a1
+		bsr.w	sub_F53C
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F808:					  ; CODE XREF: sub_F78E+40j
+		lea	$000000F2(a5),a0
+		lea	$000000F4(a5),a1
+		moveq	#$0000000E,d6
+		moveq	#$00000003,d7
+		bsr.w	sub_F81A
+		rts
+; End of function sub_F78E
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F81A:					  ; CODE XREF: LoadGameSelectMenu+58p
+						  ; sub_F78E+14p ...
+		movem.l	d6-a1,-(sp)
+
+loc_F81E:					  ; CODE XREF: sub_F81A+18j
+		movea.l	a0,a2
+		movea.l	a1,a3
+		move.w	d6,d5
+
+loc_F824:					  ; CODE XREF: sub_F81A+Cj
+		move.w	(a0)+,(a1)+
+		dbf	d5,loc_F824
+		lea	$00000050(a2),a0
+		lea	$00000050(a3),a1
+		dbf	d7,loc_F81E
+		movem.l	(sp)+,d6-a1
+		rts
+; End of function sub_F81A
+
+; ---------------------------------------------------------------------------
+		move.w	-$0000000A(a6),d0
+		addq.w	#$01,-$0000000A(a6)
+		andi.b	#$1F,d0
+		beq.s	loc_F852
+		cmpi.b	#$10,d0
+		beq.s	loc_F87C
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F852:					  ; CODE XREF: ROM:0000F848j
+		lea	(g_Pal0Base).l,a0
+		lea	$00000020(a0),a1
+		moveq	#$0000000F,d7
+		move.w	#$0EEE,d1
+
+loc_F862:					  ; CODE XREF: ROM:0000F86Aj
+		move.w	(a0)+,d0
+		move.w	d1,d2
+		sub.w	d0,d2
+		move.w	d2,(a1)+
+		dbf	d7,loc_F862
+		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(EnableDMAQueueProcessing).l
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F87C:					  ; CODE XREF: ROM:0000F84Ej
+		lea	(g_Pal0Base).l,a0
+		lea	$00000020(a0),a1
+		moveq	#$0000000F,d7
+
+loc_F888:					  ; CODE XREF: ROM:0000F88Aj
+		move.w	(a0)+,(a1)+
+		dbf	d7,loc_F888
+		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(EnableDMAQueueProcessing).l
+		rts
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F89C:					  ; CODE XREF: sub_1007E:loc_10086p
+		bsr.w	sub_F90A
+		bcs.s	loc_F8A4
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F8A4:					  ; CODE XREF: sub_F89C+4j
+		lea	(g_Pal1Base).l,a0
+		bsr.w	sub_F8C4
+		lea	(g_Pal3Base).l,a0
+		bra.s	sub_F8C4
+; End of function sub_F89C
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F8B6:					  ; CODE XREF: ROM:loc_F08Ep
+						  ; sub_FA24+3Cp
+		bsr.w	sub_F90A
+		bcs.s	loc_F8BE
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F8BE:					  ; CODE XREF: sub_F8B6+4j
+		lea	(g_Pal3Base).l,a0
+; End of function sub_F8B6
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F8C4:					  ; CODE XREF: sub_F89C+Ep
+						  ; sub_F89C+18j
+		moveq	#$0000000F,d7
+; End of function sub_F8C4
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F8C6:					  ; CODE XREF: sub_F8C6+32j
+						  ; DATA XREF: sub_E48E+28t
+		move.w	(a0),d0
+		move.w	d0,d1
+		andi.w	#$0E00,d1
+		subi.w	#$0200,d1
+		bpl.s	loc_F8D6
+		clr.w	d1
+
+loc_F8D6:					  ; CODE XREF: sub_F8C6+Cj
+		move.w	d0,d2
+		andi.w	#$00E0,d2
+		subi.w	#$0020,d2
+		bpl.s	loc_F8E4
+		clr.w	d2
+
+loc_F8E4:					  ; CODE XREF: sub_F8C6+1Aj
+		move.w	d0,d3
+		andi.w	#$000E,d3
+		subi.w	#$0002,d3
+		bpl.s	loc_F8F2
+		clr.w	d3
+
+loc_F8F2:					  ; CODE XREF: sub_F8C6+28j
+		or.w	d2,d1
+		or.w	d3,d1
+		move.w	d1,(a0)+
+		dbf	d7,sub_F8C6
+		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(EnableDMAQueueProcessing).l
+		rts
+; End of function sub_F8C6
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F90A:					  ; CODE XREF: sub_F89Cp
+						  ; sub_F8B6p
+		move.w	-$0000000E(a6),d0
+		bne.s	loc_F912
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F912:					  ; CODE XREF: sub_F90A+4j
+		subq.w	#$01,d0
+		move.w	d0,-$0000000E(a6)
+		divu.w	#$0006,d0
+		swap	d0
+		tst.w	d0
+		beq.s	loc_F924
+		rts
+; ---------------------------------------------------------------------------
+
+loc_F924:					  ; CODE XREF: sub_F90A+16j
+		ori	#$01,ccr
+		rts
+; End of function sub_F90A
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F92A:					  ; CODE XREF: ROM:loc_EEF6p
+		jsr	(ClearVDPSpriteTable).l
+		bsr.w	LoadGameStartPalette
+		bsr.w	sub_F202
+		bsr.s	sub_F958
+
+loc_F93A:					  ; CODE XREF: sub_F92A+26j
+	if REGION=JP
+		move.w	#$00B0,d0
+		move.w	#$0138,d1
+		moveq	#$50,d2
+	elseif REGION=FR
+		move.w	#$0096,d0
+		move.w	#$0134,d1
+		moveq	#$60,d2
+	else
+		move.w	#$00B0,d0
+		move.w	#$0134,d1
+		moveq	#$50,d2
+	endif
+		moveq	#3,d3
+		clr.w	-12(a6)
+		bsr.w	sub_F9D6
+		tst.w	d0
+		bmi.s	loc_F93A
+		move.w	d0,-12(a6)
+		rts
+; End of function sub_F92A
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F958:					  ; CODE XREF: ROM:0000EEC8p
+						  ; sub_F92A+Ep
+		bsr.w	ClearTextBuffer
+	if REGION=FR
+		move.w	#$10,(word_FF1194).l
+	else
+		move.w	#$28,(word_FF1194).l
+	endif
+		move.w	#$43,d1
+		bsr.w	j_j_LoadUncompressedString ; Start
+	if REGION=FR
+		move.w	#$0070,(word_FF1194).l
+	else
+		move.w	#$0078,(word_FF1194).l
+	endif
+		move.w	#$0044,d1
+		bsr.w	j_j_LoadUncompressedString ; Copy
+	if REGION=FR
+		move.w	#$00D0,(word_FF1194).l
+	else
+		move.w	#$00C8,(word_FF1194).l
+	endif
+		move.w	#$0045,d1
+		bsr.w	j_j_LoadUncompressedString ; Delete
+		bsr.w	DMACopyTextBuffer
+		rts
+; End of function sub_F958
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_F992:					  ; CODE XREF: ROM:0000EF94p
+						  ; ROM:0000EFC4p
+		bsr.w	sub_F1FA
+		move.w	#$0090,(word_FF1194).l
+		move.w	#$0046,d1
+		bsr.w	j_j_LoadUncompressedString
+		move.w	#$00D0,(word_FF1194).l
+		move.w	#$0047,d1
+		bsr.w	j_j_LoadUncompressedString
+		jsr	(WaitUntilVBlank).l
+		bsr.w	DMACopyTextBuffer
+		bsr.w	sub_F218
+		move.w	#$0118,d0
+	if 	REGION=JP
+		move.w	#$0138,d1
+	else
+		move.w	#$0134,d1
+	endif
+		moveq	#$00000040,d2
+		moveq	#$00000002,d3
+		bsr.w	sub_F9D6
+		rts
+; End of function sub_F992
+
+
+; =============== S U B	R O U T	I N E =======================================
+
 ; Attributes: bp-based frame
 
-HandleGameStartInput:				  ; CODE XREF: ROM:0000EF32p
+sub_F9D6:					  ; CODE XREF: sub_F92A+20p
+						  ; sub_F992+3Ep
 
+var_A		= -$A
+var_8		= -8
+var_6		= -6
+var_4		= -4
 var_2		= -2
 
-		link	a4,#-$000C
-		movea.l	a4,a0
-		moveq	#$0000000B,d7
-
-loc_FF1A:					  ; CODE XREF: HandleGameStartInput+Aj
-		clr.b	-(a0)
-		dbf	d7,loc_FF1A
-		clr.b	-$00000019(a6)
-		bsr.w	sub_FF78
-		move.w	#$0060,-$0000000E(a6)
-		move.w	#$0078,d7
-
-loc_FF32:					  ; CODE XREF: HandleGameStartInput+5Ej
-		bsr.w	sub_F2E2
-		move.b	(g_Controller1State).l,d0
-		cmpi.b	#CTRLBF_B,d0
-		bcc.s	loc_FF74
-		movem.w	d7,-(sp)
-		move.w	#$0000,d0
-		bsr.w	sub_10014
-		move.w	#$0046,d0
-		bsr.w	sub_FFE2
-		bsr.w	sub_F13A
-		move.w	#$0004,d0
-		bsr.w	sub_1007E
+		link	a4,#-$000A
+		move.w	d1,var_6(a4)
+		move.w	d1,(g_VDPSpr00_Y).l
+		move.b	#$05,(g_VDPSpr00_Size).l
+		move.w	#$A0AA,(g_VDPSpr00_TileSource).l
+		move.w	d0,var_4(a4)
+		move.w	d0,(g_VDPSpr00_X).l
+		move.w	d2,var_8(a4)
+		clr.w	var_2(a4)
+		move.w	d3,var_A(a4)
+		jsr	(CopyBasePalleteToActivePalette).l
 		jsr	(WaitUntilVBlank).l
-		addq.w	#$01,var_2(a4)
-		movem.w	(sp)+,d7
-		dbf	d7,loc_FF32
-
-loc_FF74:					  ; CODE XREF: HandleGameStartInput+2Ej
+		bsr.w	sub_F306
+		bsr.s	sub_FA24
+		move.w	var_2(a4),d0
 		unlk	a4
 		rts
-; End of function HandleGameStartInput
+; End of function sub_F9D6
 
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_FF78:					  ; CODE XREF: HandleGameStartInput+12p
-		lea	((g_Buffer+2)).l,a0
-		move.w	#$6000,d0
-		move.w	(a0),d1
-		move.w	#$036F,d7
-
-loc_FF88:					  ; CODE XREF: sub_FF78+1Aj
-		move.w	(a0),d2
-		and.w	d0,d2
-		bne.s	loc_FF90
-		move.w	d0,(a0)
-
-loc_FF90:					  ; CODE XREF: sub_FF78+14j
-		addq.l	#$02,a0
-		dbf	d7,loc_FF88
-		lea	((g_Buffer+$52)).l,a0
-		move.w	#$6000,d0
-		move.w	(a0),d1
-		move.w	#$0437,d7
-
-loc_FFA6:					  ; CODE XREF: sub_FF78+3Aj
-		move.w	(a0),d2
-		and.w	d0,d2
-		bne.s	loc_FFB0
-		ori.w	#$2000,(a0)
-
-loc_FFB0:					  ; CODE XREF: sub_FF78+32j
-		addq.l	#$02,a0
-		dbf	d7,loc_FFA6
-		jsr	(WaitUntilVBlank).l
-		bsr.w	sub_F30E
-		lea	((g_Buffer+2)).l,a0
-		move.w	#$045E,d7
-		move.w	(a0)+,d0
-
-loc_FFCC:					  ; CODE XREF: sub_FF78+56j
-		move.w	d0,(a0)+
-		dbf	d7,loc_FFCC
-		jsr	(WaitUntilVBlank).l
-		move.w	-$00000002(a6),d0
-		bsr.w	sub_F72E
-		rts
-; End of function sub_FF78
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-sub_FFE2:					  ; CODE XREF: HandleGameStartInput+40p
-
-; FUNCTION CHUNK AT 0000FFF2 SIZE 0000000A BYTES
-; FUNCTION CHUNK AT 00010002 SIZE 00000012 BYTES
-
-		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_FFEA
+sub_FA24:					  ; CODE XREF: sub_F9D6+44p
+						  ; sub_FA24+46j
+		bsr.w	sub_F2E2
+		move.b	(g_Controller1State).l,d1
+		cmpi.b	#$10,d1
+		bcs.s	loc_FA58
+		clr.w	-$0000000A(a6)
+		jsr	sub_FABC(pc)
+		nop
+		move.b	(g_Controller1State).l,d1
+		andi.b	#$10,d1
+		beq.s	loc_FA52
+		move.w	#$FFFF,-$00000002(a4)
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_FFEA:					  ; CODE XREF: sub_FFE2+4j
-		tst.b	-$00000009(a4)
-		bpl.s	loc_FFF2
-; End of function sub_FFE2
-
-
-; =============== S U B	R O U T	I N E =======================================
-
-
-nullsub_3:
-		rts
-; End of function nullsub_3
-
-; ---------------------------------------------------------------------------
-; START	OF FUNCTION CHUNK FOR sub_FFE2
-
-loc_FFF2:					  ; CODE XREF: sub_FFE2+Cj
-		bne.s	loc_10002
+loc_FA52:					  ; CODE XREF: sub_FA24+24j
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
-		dc.w SND_SwordSwing
+		dc.w SND_CursorSelect
 ; ---------------------------------------------------------------------------
-		bsr.w	sub_F0F8
-; END OF FUNCTION CHUNK	FOR sub_FFE2
-		move.b	#$01,-$00000009(a4)
-; START	OF FUNCTION CHUNK FOR sub_FFE2
-
-loc_10002:					  ; CODE XREF: sub_FFE2:loc_FFF2j
-		tst.b	-$00000019(a6)
-		beq.s	locret_10012
-		bsr.w	sub_F1E4
-		move.b	#$FF,-$00000009(a4)
-
-locret_10012:					  ; CODE XREF: sub_FFE2+24j
 		rts
-; END OF FUNCTION CHUNK	FOR sub_FFE2
+; ---------------------------------------------------------------------------
+
+loc_FA58:					  ; CODE XREF: sub_FA24+Ej
+		bsr.s	loc_FA6C
+		move.w	d0,-$00000002(a4)
+		bsr.s	sub_FABC
+		bsr.w	sub_F8B6
+		jsr	(WaitUntilVBlank).l
+		bra.s	sub_FA24
+; End of function sub_FA24
+
+; ---------------------------------------------------------------------------
+
+loc_FA6C:					  ; CODE XREF: sub_FA24:loc_FA58p
+		move.w	-$00000002(a4),d0
+		move.w	-$00000008(a4),d1
+		move.w	-$0000000A(a4),d2
+		move.b	(g_Controller1State).l,d3
+		btst	#CTRL_LEFT,d3
+		bne.s	loc_FA8C
+		btst	#CTRL_RIGHT,d3
+		bne.s	loc_FAA2
+		rts
+; ---------------------------------------------------------------------------
+
+loc_FA8C:					  ; CODE XREF: ROM:0000FA82j
+		subq.w	#$01,d0
+		bpl.s	loc_FA94
+		clr.w	d0
+		bra.s	locret_FAA0
+; ---------------------------------------------------------------------------
+
+loc_FA94:					  ; CODE XREF: ROM:0000FA8Ej
+		sub.w	d1,-$00000004(a4)
+		clr.w	-$0000000A(a6)
+		trap	#$00			  ; Trap00Handler
+; ---------------------------------------------------------------------------
+		dc.w SND_CursorMove
+; ---------------------------------------------------------------------------
+
+locret_FAA0:					  ; CODE XREF: ROM:0000FA92j
+		rts
+; ---------------------------------------------------------------------------
+
+loc_FAA2:					  ; CODE XREF: ROM:0000FA88j
+		addq.w	#$01,d0
+		cmp.w	d2,d0
+		bcs.s	loc_FAAE
+		move.w	d2,d0
+		subq.w	#$01,d0
+		bra.s	locret_FABA
+; ---------------------------------------------------------------------------
+
+loc_FAAE:					  ; CODE XREF: ROM:0000FAA6j
+		add.w	d1,-$00000004(a4)
+		clr.w	-$0000000A(a6)
+		trap	#$00			  ; Trap00Handler
+; ---------------------------------------------------------------------------
+		dc.w SND_CursorMove
+; ---------------------------------------------------------------------------
+
+locret_FABA:					  ; CODE XREF: ROM:0000FAACj
+		rts
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_10014:					  ; CODE XREF: HandleGameStartInput+38p
-		tst.b	-$0000000B(a4)
-		beq.s	loc_1001C
+sub_FABC:					  ; CODE XREF: sub_FA24+3Ap
+						  ; DATA XREF: sub_FA24+14t
+		addq.w	#$01,-$0000000A(a6)
+		move.w	-$0000000A(a6),d0
+		andi.b	#$10,d0
+		beq.s	loc_FAD4
+		move.w	#$0001,(g_VDPSpr00_X).l
 		rts
 ; ---------------------------------------------------------------------------
 
-loc_1001C:					  ; CODE XREF: sub_10014+4j
-		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_10024
+loc_FAD4:					  ; CODE XREF: sub_FABC+Cj
+		move.w	-$00000004(a4),(g_VDPSpr00_X).l
+		move.w	-$00000006(a4),(g_VDPSpr00_Y).l
 		rts
-; ---------------------------------------------------------------------------
+; End of function sub_FABC
 
-loc_10024:					  ; CODE XREF: sub_10014+Cj
-		lea	word_1006E(pc),a0
-		move.w	-$00000004(a6),d0
-		lsl.w	#$02,d0
-		move.w	(a0,d0.w),d1
-		move.w	$00000002(a0,d0.w),d2
-		add.w	d1,-$00000010(a6)
-		add.w	d2,-$00000012(a6)
-		move.w	-$00000010(a6),d6
-		jsr	(j_FillHScrollData).l
-		move.w	-$00000012(a6),d6
-		neg.w	d6
-		jsr	(j_FillVSRAM).l
-		jsr	(j_EnableDMAQueueProcessing).l
-		addq.w	#$01,-$00000006(a4)
-		move.w	-$00000006(a4),d0
-		cmpi.w	#$0024,d0
-		bcs.s	locret_1006C
-		addq.b	#$01,-$0000000B(a4)
-
-locret_1006C:					  ; CODE XREF: sub_10014+52j
-		rts
-; End of function sub_10014
-
-; ---------------------------------------------------------------------------
-word_1006E:	dc.w $0002,$0001		  ; DATA XREF: sub_10014:loc_10024t
-		dc.w $FFFE,$0001
-		dc.w $0002,$FFFF
-		dc.w $FFFE,$FFFF
 
 ; =============== S U B	R O U T	I N E =======================================
 
 
-sub_1007E:					  ; CODE XREF: HandleGameStartInput+4Cp
-		cmp.w	-$00000002(a4),d0
-		bcs.s	loc_10086
+sub_FAE6:					  ; CODE XREF: ROM:0000EF54p
+		move.w	#$FFFF,(g_VDPSpr00_Y).l
 		rts
-; ---------------------------------------------------------------------------
+; End of function sub_FAE6
 
-loc_10086:					  ; CODE XREF: sub_1007E+4j
-		bsr.w	sub_F89C
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+sub_FAF0:					  ; CODE XREF: ROM:0000EFF2p
+						  ; sub_F0F8:loc_F116p
+		move.w	-$00000002(a6),d0
+		move.b	d0,(g_SaveSlot).l
+		jsr	(LoadSavedGame).l
+		lea	(g_Pal2Base).l,a1
+		bsr.w	LoadInitialPlayerPalette
+		jsr	(UpdateEquipPal).l
+		jsr	(CopyBasePalleteToActivePalette).l
+		jsr	(EnableDMAQueueProcessing).l
 		rts
-; End of function sub_1007E
+; End of function sub_FAF0
+
+
+; =============== S U B	R O U T	I N E =======================================
+
+
+LoadInitialPlayerPalette:			  ; CODE XREF: sub_FAF0+16p
+						  ; DATA XREF: j_LoadInitialPlayerPalettet
+		lea	InitialPlayerPal(pc),a0
+		lea	(g_Pal2Base).l,a1
+		moveq	#$0000000F,d7
+
+loc_FB2A:					  ; CODE XREF: LoadInitialPlayerPalette+Ej
+		move.w	(a0)+,(a1)+
+		dbf	d7,loc_FB2A
+		rts
+; End of function LoadInitialPlayerPalette
 
 ; ---------------------------------------------------------------------------

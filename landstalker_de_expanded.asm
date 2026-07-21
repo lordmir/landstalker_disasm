@@ -190,7 +190,7 @@ StringBankPtrs:             include "code\pointertables\strings\stringptrs_de.as
 SegaLogo:                   include "code\graphics\staticimages\segalogo.asm"
                             include "code\graphics\staticimages\lithograph.asm"
 LithographData:             include "code\graphics\staticimages\lithographdata.asm"
-TitleScreen:                include "code\graphics\staticimages\titlescreen_de.asm"
+TitleScreen:                include "code\title\titlescreen_de.asm"
                             include "code\graphics\staticimages\climaxlogo.asm"
 ClimaxLogoData:             include "code\graphics\staticimages\climaxlogodata.asm"
                             include "code\graphics\staticimages\islandmaproutines.asm"
