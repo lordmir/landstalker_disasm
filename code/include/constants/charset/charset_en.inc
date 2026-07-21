@@ -4,7 +4,7 @@ CHR_BEGIN_TALK:                 equ      $47
 CHR_DASH:                       equ      $48
 CHR_MULT:                       equ      $55
 CHR_STR_BEGIN:                  equ      $55
-CHR_ARROW_PROMPT:               equ      $56
+CHR_SELECTION_POINT:            equ      $56
 CHR_HYPHENATION_POINT:          equ      $69
 CHR_MENU_HYPHENATION_POINT:     equ      $69
 CHR_BREAKING_SPACE:             equ      $6A

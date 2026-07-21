@@ -6,7 +6,7 @@ CHR_BEGIN_TALK:                 equ      $2D
 CHR_DASH:                       equ      $2E
 CHR_SS:                         equ      $3E
 CHR_STR_BEGIN:                  equ      $41
-CHR_ARROW_PROMPT:               equ      $42
+CHR_SELECTION_POINT:            equ      $42
 CHR_MENU_DASH:                  equ      $47
 CHR_MULT:                       equ      $48
 CHR_HYPHENATION_POINT:          equ      $55

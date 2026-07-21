@@ -5,4 +5,4 @@ CHR_MULT:            equ      $80
 CHR_ELLIPSIS_DOT:    equ      $D8
 CHR_BEGIN_TALK:      equ      $D9
 CHR_STR_BEGIN:       equ      $E9
-CHR_ARROW_PROMPT:    equ      $EA
+CHR_SELECTION_POINT: equ      $EA

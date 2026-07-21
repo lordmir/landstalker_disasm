@@ -41,7 +41,7 @@ Constants:
     DASH: 46
     SS: 62
     STR_BEGIN: 65
-    ARROW_PROMPT: 66
+    SELECTION_POINT: 66
     MENU_DASH: 71
     MULT: 72
     HYPHENATION_POINT: 85

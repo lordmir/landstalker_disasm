@@ -25,7 +25,7 @@ StringFuncs1	module
 ; GetNextChar drains that list (g_InsertedStringPtr non-zero) before
 ; returning to the compressed stream.
 ;
-; Characters >= CHR_ARROW_PROMPT are control characters: ControlChars
+; Characters >= CHR_SELECTION_POINT are control characters: ControlChars
 ; maps them to a complemented control code, and ProcessChar sends
 ; negative codes to the HandleControlChars jump table.
 
@@ -189,7 +189,7 @@ _gncStream:
 		cmpi.b	#CHR_STR_BEGIN,d0	  ; String begin
 		beq.s	_gncEndOfString
 		bcs.s	_gncLiteral
-		subi.b	#CHR_ARROW_PROMPT,d0	  ; Control character
+		subi.b	#CHR_SELECTION_POINT,d0	  ; Control character
 		andi.w	#$00FF,d0
 		add.w	d0,d0
 		lea	ControlChars(pc),a1
@@ -653,7 +653,7 @@ _csbCopy:
 		rts
 
 ; ---------------------------------------------------------------------------
-; Maps each control character (offset from CHR_ARROW_PROMPT) to its
+; Maps each control character (offset from CHR_SELECTION_POINT) to its
 ; complemented HandleControlChars code.
 ControlChars:	dc.w ~$0015			  ; +$00: no-op (down-arrow prompt char)
 		dc.w ~$000E			  ; +$01: newline unless at home
