@@ -261,7 +261,7 @@ loc_230D6:
 		bra.s	locret_23102
 loc_230D4:
 	elseif REGION=FR
-		cmpi.b	#CHR_OPEN_BRACKET,d0
+		cmpi.b	#CHR_OPEN_PAREN,d0
 	endif
 		cmpi.b	#CHR_BEGIN_TALK,d0
 		bne.s	loc_230F4
@@ -288,7 +288,7 @@ loc_23104:					  ; CODE XREF: ProcessChar:loc_230F4p
 		beq.s	loc_23136
 		cmpi.b	#CHR_SPACE,d0
 		beq.s	loc_23136
-		cmpi.b	#CHR_PERIOD,d0
+		cmpi.b	#CHR_ELLIPSIS_DOT,d0
 		beq.s	loc_23136
 		addq.b	#$01,(byte_FF1155).l
 		btst	#$01,(byte_FF1155).l

@@ -127,7 +127,11 @@ loc_D600:					  ; CODE XREF: sub_D5E4+16j
 ; ---------------------------------------------------------------------------
 
 loc_D616:					  ; CODE XREF: sub_D5E4+22j
+	if	REGION=JP
+		cmpi.b	#CHR_MENU_DAKUTEN,d0
+	else
 		cmpi.b	#CHR_MENU_BREAKING_SPACE,d0
+	endif
 		bne.s	loc_D624
 	if	REGION=JP
 		move.w	d0,-$48(a0)
@@ -138,7 +142,11 @@ loc_D616:					  ; CODE XREF: sub_D5E4+22j
 ; ---------------------------------------------------------------------------
 
 loc_D624:					  ; CODE XREF: sub_D5E4+36j
+	if	REGION=JP
+		cmpi.b	#CHR_MENU_HANDAKUTEN,d0
+	else
 		cmpi.b	#CHR_MENU_BREAK_POINT,d0
+	endif
 		bne.s	loc_D632
 	if	REGION=JP
 		move.w	d0,-$48(a0)
@@ -216,11 +224,7 @@ sub_D666:
 		move.w	d0,$46(a0)
 		rts
 sub_D67A:
-	if REGION=FR
-		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
-	elseif REGION=DE
-		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
-	endif
+		cmpi.b	#(CHR_LAST_LETTER+1),d0
 		bcc.s	loc_D682
 locret_D680:
 		rts
