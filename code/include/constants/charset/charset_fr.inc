@@ -9,7 +9,7 @@ CHR_MENU_DASH:                  equ      $4A
 CHR_MULT:                       equ      $4B
 CHR_OPEN_PAREN:                 equ      $4E
 CHR_STR_BEGIN:                  equ      $64
-CHR_ARROW_PROMPT:               equ      $65
+CHR_SELECTION_POINT:               equ      $65
 CHR_HYPHENATION_POINT:          equ      $78
 CHR_MENU_HYPHENATION_POINT:     equ      $78
 CHR_BREAKING_SPACE:             equ      $79

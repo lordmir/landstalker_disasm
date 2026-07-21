@@ -178,7 +178,7 @@ loc_2304E:					  ; CODE XREF: GetNextChar+82j
 		cmpi.b	#CHR_STR_BEGIN,d0	  ; String begin
 		beq.s	loc_23080
 		bcs.s	loc_2307A
-		subi.b	#CHR_ARROW_PROMPT,d0	  ; Down arrow prompt
+		subi.b	#CHR_SELECTION_POINT,d0	  ; Down arrow prompt
 		andi.w	#$00FF,d0
 		add.w	d0,d0
 		lea	ControlChars(pc),a1
