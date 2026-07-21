@@ -105,7 +105,10 @@ _dqDraw:
 ; stream from LoadUncompressedString; the menu control characters
 ; wrap to the slot's second line - CHR_MENU_HYPHENATION_POINT
 ; draws a dash first, CHR_MENU_BREAKING_SPACE / BREAK_POINT wrap
-; silently. Also used by the equip screen (inventory6). The FR/DE
+; silently. Japanese has no wrapping here: it reuses those two
+; codes for the voicing marks, drawn a row above the cursor
+; without advancing it so they combine with the preceding kana.
+; Also used by the equip screen (inventory6). The FR/DE
 ; variant instead maps each character through the two-bank menu
 ; font (_frGlyph and friends below).
 DrawItemName:
@@ -142,10 +145,14 @@ _dnChar:
 ; ---------------------------------------------------------------------------
 
 _dnBreakSpace:
+	if	REGION=JP
+		cmpi.b	#CHR_MENU_DAKUTEN,d0
+	else
 		cmpi.b	#CHR_MENU_BREAKING_SPACE,d0
+	endif
 		bne.s	_dnBreakPoint
 	if	REGION=JP
-		move.w	d0,-$48(a0)
+		move.w	d0,-$48(a0)	  ; Voicing mark: one row up, cursor stays put
 	else
 		lea	$00000048(a1),a0
 	endif
@@ -153,10 +160,14 @@ _dnBreakSpace:
 ; ---------------------------------------------------------------------------
 
 _dnBreakPoint:
+	if	REGION=JP
+		cmpi.b	#CHR_MENU_HANDAKUTEN,d0
+	else
 		cmpi.b	#CHR_MENU_BREAK_POINT,d0
+	endif
 		bne.s	_dnPutChar
 	if	REGION=JP
-		move.w	d0,-$48(a0)
+		move.w	d0,-$48(a0)	  ; Voicing mark: one row up, cursor stays put
 	else
 		lea	$00000048(a1),a0
 	endif
@@ -243,13 +254,11 @@ _frGlyph:
 		rts
 
 ; Map text characters past the letters (apostrophe, dash,
-; accented) onto the menu font's glyph indices.
+; accented) onto the menu font's glyph indices. The alphabet ends
+; at lowercase z in French and at uppercase Z in the caps-only
+; German font, so the cutoff is per-region.
 _frMapChar:
-	if REGION=FR
-		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
-	elseif REGION=DE
-		cmpi.b	#(CHR_LOWERCASE_Z+1),d0
-	endif
+		cmpi.b	#(CHR_LAST_LETTER+1),d0
 		bcc.s	_fmcPunct
 
 _fmcDone:

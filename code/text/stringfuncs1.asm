@@ -273,7 +273,7 @@ _pcGlyph:
 		bra.s	_pcDone
 _pcNotSS:
 	elseif REGION=FR
-		cmpi.b	#CHR_OPEN_BRACKET,d0	; Leftover compare - result unused
+		cmpi.b	#CHR_OPEN_PAREN,d0	; Leftover compare - result unused
 	endif
 		cmpi.b	#CHR_BEGIN_TALK,d0
 		bne.s	_pcDraw
@@ -292,15 +292,17 @@ _pcDone:
 ; ---------------------------------------------------------------------------
 
 ; Voice blip: in talk mode (counter non-zero), count printed chars
-; (spaces and periods excluded) and play g_TalkSoundEffect on every
-; other pair, giving the two-on/two-off chatter rhythm.
+; and play g_TalkSoundEffect on every other pair, giving the
+; two-on/two-off chatter rhythm. Spaces and the ellipsis dot are
+; excluded so pauses stay silent - that dot is "." in the Western
+; fonts and the middle dot in the Japanese one.
 _talkTick:
 		movem.w	d0,-(sp)
 		tst.b	(g_TalkBlipCounter).l
 		beq.s	_ttDone
 		cmpi.b	#CHR_SPACE,d0
 		beq.s	_ttDone
-		cmpi.b	#CHR_PERIOD,d0
+		cmpi.b	#CHR_ELLIPSIS_DOT,d0
 		beq.s	_ttDone
 		addq.b	#$01,(g_TalkBlipCounter).l
 		btst	#$01,(g_TalkBlipCounter).l
