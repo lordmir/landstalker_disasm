@@ -8,7 +8,7 @@ ShopPrice_01:
 ; ---------------------------------------------------------------------------
 
 Shop_01:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $A,$0	; Sale prompt:	     Run text script at	offset 0x0286D0
 					; 0xA00A: PRINT	MSG 0x0057, END
@@ -28,7 +28,7 @@ ShopPrice_02:
 ; ---------------------------------------------------------------------------
 
 Shop_02:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $3D,$0	; Sale prompt:	     Run text script at	offset 0x028736
 					; 0xA03D: PRINT	MSG 0x008A, END
@@ -48,7 +48,7 @@ ShopPrice_03:
 ; ---------------------------------------------------------------------------
 
 Shop_03:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $4D,$0	; Sale prompt:	     Run text script at	offset 0x028756
 					; 0xA04D: PRINT	MSG 0x009A, END
@@ -68,7 +68,7 @@ ShopPrice_04:
 ; ---------------------------------------------------------------------------
 
 Shop_04:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $55,$0	; Sale prompt:	     Run text script at	offset 0x028766
 					; 0xA055: PRINT	MSG 0x00A2, END
@@ -88,7 +88,7 @@ ShopPrice_05:
 ; ---------------------------------------------------------------------------
 
 Shop_05:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $65,$0	; Sale prompt:	     Run text script at	offset 0x028786
 					; 0xA065: PRINT	MSG 0x00B2, END
@@ -107,7 +107,7 @@ ShopPrice_06:
 ; ---------------------------------------------------------------------------
 
 Shop_06:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $6E,$0	; Sale prompt:	     Run text script at	offset 0x028798
 					; 0xA06E: PRINT	MSG 0x00BB, END
@@ -138,7 +138,7 @@ ShopPrice_07:
 ; ---------------------------------------------------------------------------
 
 Shop_07:
-		bsr.w	HandleShopInterraction
+		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
 		ScriptJump  ShopSalePrompt_07,$0 ; Sale	prompt:	      Jump to address 0x026D96
 		ScriptJump  ShopSaleConfirm_07,$1 ; Sale confirmation: Jump to address 0x026DA2
@@ -267,7 +267,7 @@ ShopConfirmMap_07:
 ; ---------------------------------------------------------------------------
 
 HandleIdentifyRecordBook:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $24,$0	; Normal priest:   Run text script at offset 0x028704
 					; 0xE024: PRINT	MSG 0x0071, MSGBOX CLEARED, END
@@ -278,7 +278,7 @@ HandleIdentifyRecordBook:
 ; ---------------------------------------------------------------------------
 
 RequestGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $25,$0	; Normal priest:   Run text script at offset 0x028706
 					; 0xA025: PRINT	MSG 0x0072, END
@@ -289,7 +289,7 @@ RequestGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 InitiateGameSaveMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $26,$0	; Normal priest:   Run text script at offset 0x028708
 					; 0xA026: PRINT	MSG 0x0073, END
@@ -300,7 +300,7 @@ InitiateGameSaveMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveCompleteMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $27,$0	; Normal priest:   Run text script at offset 0x02870A
 					; 0xA027: PRINT	MSG 0x0074, END
@@ -311,7 +311,7 @@ GameSaveCompleteMsg:
 ; ---------------------------------------------------------------------------
 
 GameSaveRefusedMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $28,$0	; Normal priest:   Run text script at offset 0x02870C
 					; 0xA028: PRINT	MSG 0x0075, END
@@ -322,7 +322,7 @@ GameSaveRefusedMsg:
 ; ---------------------------------------------------------------------------
 
 RequestGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $29,$0	; Normal priest:   Run text script at offset 0x02870E
 					; 0xA029: PRINT	MSG 0x0076, END
@@ -333,7 +333,7 @@ RequestGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameContinueMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2A,$0	; Normal priest:   Run text script at offset 0x028710
 					; 0xE02A: PRINT	MSG 0x0077, MSGBOX CLEARED, END
@@ -344,7 +344,7 @@ ConfirmGameContinueMsg:
 ; ---------------------------------------------------------------------------
 
 ConfirmGameStopMsg:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $2B,$0	; Normal priest:   Run text script at offset 0x028712
 					; 0xE02B: PRINT	MSG 0x0078, MSGBOX CLEARED, END
@@ -355,7 +355,7 @@ ConfirmGameStopMsg:
 ; ---------------------------------------------------------------------------
 
 HandleRecordBookTheft:
-		bsr.s	HandleChurchInterraction
+		bsr.s	HandleChurchInteraction
 ; ---------------------------------------------------------------------------
 		ScriptID    $14,$0	; Normal priest:   Run text script at offset 0x0286E4
 					; 0xE014: PRINT	MSG 0x0061, MSGBOX CLEARED, END

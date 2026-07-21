@@ -93,7 +93,7 @@ loc_291C8:					  ; CODE XREF: SetItemQuantity+Ej
 
 
 GetItem:					  ; CODE XREF: ROM:00024B1Cp
-						  ; HandleShopInterraction+36p	...
+						  ; HandleShopInteraction+36p	...
 		movem.l	d0-a6,-(sp)
 		cmpi.b	#ITM_LIFESTOCK,d0
 		bne.s	loc_29202

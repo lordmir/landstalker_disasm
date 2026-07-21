@@ -75,7 +75,7 @@ j_AddGold:					  ; DATA XREF: CheckOpenChest+A4t
 
 ; Attributes: thunk
 
-j_RemoveGold:					  ; DATA XREF: HandleShopInterraction+22t
+j_RemoveGold:					  ; DATA XREF: HandleShopInteraction+22t
 						  ; ROM:00024F8At ...
 		jmp	RemoveGold(pc)
 ; End of function j_RemoveGold

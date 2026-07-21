@@ -149,7 +149,7 @@ loc_24AF4:					  ; CODE XREF: ROM:00024AE8j
 		move.w	#$0018,d0
 	endif
 		bsr.w	DisplayText		  ; Prints the compressed string identified by d0
-		bsr.w	Sleep_0
+		bsr.w	ScriptSleep
 ; ---------------------------------------------------------------------------
 		dc.w 00119
 ; ---------------------------------------------------------------------------

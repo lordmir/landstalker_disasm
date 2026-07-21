@@ -55,7 +55,7 @@ DisplayItemPriceMessage:			  ; CODE XREF: ROM:ShopPrice_01p
 ; =============== S U B	R O U T	I N E =======================================
 
 
-HandleShopInterraction:				  ; CODE XREF: ROM:Shop_01p
+HandleShopInteraction:				  ; CODE XREF: ROM:Shop_01p
 						  ; ROM:Shop_02p ...
 		movem.l	d0-d2/a0,-(sp)
 		bsr.w	GetItemShopSellPrice
@@ -69,7 +69,7 @@ HandleShopInterraction:				  ; CODE XREF: ROM:Shop_01p
 		bra.s	loc_24F50
 ; ---------------------------------------------------------------------------
 
-loc_24F2A:					  ; CODE XREF: HandleShopInterraction+18j
+loc_24F2A:					  ; CODE XREF: HandleShopInteraction+18j
 		move.w	d1,d0
 		jsr	(j_RemoveGold).l
 		bcc.s	loc_24F3E
@@ -78,18 +78,18 @@ loc_24F2A:					  ; CODE XREF: HandleShopInterraction+18j
 		bra.s	loc_24F50
 ; ---------------------------------------------------------------------------
 
-loc_24F3E:					  ; CODE XREF: HandleShopInterraction+28j
+loc_24F3E:					  ; CODE XREF: HandleShopInteraction+28j
 		move.w	d2,d0
 		bsr.w	GetItem
 		move.w	$00000002(a0),d0	  ; Purchased
 		move.b	#$FF,(byte_FF1903).l
 
-loc_24F50:					  ; CODE XREF: HandleShopInterraction+1Ej
-						  ; HandleShopInterraction+32j
+loc_24F50:					  ; CODE XREF: HandleShopInteraction+1Ej
+						  ; HandleShopInteraction+32j
 		bsr.w	RunTextCmd
 		bsr.w	RestoreFromNoMoneyEffect
 		movem.l	(sp)+,d0-d2/a0
 		addq.l	#$04,sp
 		rts
-; End of function HandleShopInterraction
+; End of function HandleShopInteraction
 

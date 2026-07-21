@@ -552,7 +552,7 @@ sub_3AA:					  ; CODE XREF: sub_191E4+1Ap
 
 ; Attributes: thunk
 
-j_GetSpeakerSpriteId:				  ; CODE XREF: HandleChurchInterraction+6p
+j_GetSpeakerSpriteId:				  ; CODE XREF: HandleChurchInteraction+6p
 						  ; GetSpeakerSfx+Cp
 		jmp	(GetSpeakerSpriteId).l	  ; d0 - current talker	script
 ; End of function j_GetSpeakerSpriteId		  ; d1 - current talker	sprite ID

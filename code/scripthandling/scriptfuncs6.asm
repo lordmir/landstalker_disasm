@@ -368,7 +368,7 @@ DisplayText:					  ; CODE XREF: ROM:00024AEEp
 ; =============== S U B	R O U T	I N E =======================================
 
 
-GetYesNoAnswer:					  ; CODE XREF: HandleShopInterraction+14p
+GetYesNoAnswer:					  ; CODE XREF: HandleShopInteraction+14p
 						  ; ROM:00024F7Cp ...
 		movem.l	d0-a6,-(sp)
 		clr.b	(g_YesNoPromptResult).l
@@ -386,7 +386,7 @@ loc_29000:					  ; CODE XREF: GetYesNoAnswer+10j
 
 ; ---------------------------------------------------------------------------
 
-NoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+2Ap
+NoMoneyEffect:					  ; CODE XREF: HandleShopInteraction+2Ap
 						  ; ROM:00024F92p ...
 		btst	#$01,(g_RightArrowCursorState).l
 		bne.s	locret_29024
@@ -403,7 +403,7 @@ locret_29024:					  ; CODE XREF: ROM:00029012j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-RestoreFromNoMoneyEffect:					  ; CODE XREF: HandleShopInterraction+4Ap
+RestoreFromNoMoneyEffect:					  ; CODE XREF: HandleShopInteraction+4Ap
 						  ; ROM:00024F9Ap ...
 		btst	#$01,(g_RightArrowCursorState).l
 		beq.s	locret_29044
@@ -423,7 +423,7 @@ locret_29044:					  ; CODE XREF: sub_29026+8j
 ; =============== S U B	R O U T	I N E =======================================
 
 
-Sleep_0:					  ; CODE XREF: ROM:00024B0Ep
+ScriptSleep:					  ; CODE XREF: ROM:00024B0Ep
 						  ; ROM:00024FA8p ...
 		movem.l	d0/a0,-(sp)
 		movea.l	$00000008(sp),a0	  ; Previous sp
@@ -432,7 +432,7 @@ Sleep_0:					  ; CODE XREF: ROM:00024B0Ep
 		jsr	(j_Sleep).l
 		movem.l	(sp)+,d0/a0
 		rts
-; End of function Sleep_0
+; End of function ScriptSleep
 
 ; ---------------------------------------------------------------------------
 
