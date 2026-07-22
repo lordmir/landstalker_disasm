@@ -59,7 +59,7 @@ _gsDone:
 ; CheckTileSwapFlags running immediately before.
 CheckTreeWarpFlags:
 		lea	TreeWarpGfxSwapFlags(pc),a0
-		btst	#$07,(g_AdditionalFlags+4).l
+		TestFlag	FLAG_TREE_WARPS_OPEN
 		beq.s	_twDone
 
 _twScan:

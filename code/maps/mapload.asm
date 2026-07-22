@@ -76,8 +76,8 @@ LoadGame:
 		bsr.w	ClearAndRefreshVDPSpriteTableDMA
 		tst.w	(Player_X).l
 		bne.s	_lgHaveSave
-		bset	#$03,(g_AdditionalFlags+7).l
-		move.b	#$03,(g_AdditionalFlags+$1B).l
+		SetFlag	FLAG_INTRO_IN_PROGRESS
+		move.b	#$03,(g_Flags+FLAGBYTE_CHICKEN_TOSS_BEST).l
 		bsr.w	ClearGameData
 		clr.b	d0
 		bra.w	LoadRoom_0
@@ -154,7 +154,7 @@ LoadRoom_0:
 		clr.w	d1
 		move.b	(g_RoomMaxHeight).l,d1
 		movem.w	d0-d1,-(sp)
-		clr.b	(g_Flags+1).l
+		clr.b	(g_Flags+FLAGBYTE_SCRATCH).l
 		bsr.w	CheckTempHealthRestore
 		move.w	(g_CurrentRoom).l,d0
 		bsr.w	SetRoomVisited
@@ -258,7 +258,7 @@ SetRoomVisited:
 ; restores Player_TempHealth as the current health, clears status
 ; bit 4 and re-enables the menu - used in the Fahl minigame.
 CheckTempHealthRestore:
-		bclr	#$07,(g_Flags+5).l
+		ClearFlag	FLAG_FAHL_DUEL_ACTIVE
 		beq.s	_thrDone
 		bclr	#$04,(g_PlayerStatus).l
 		bclr	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
@@ -298,21 +298,21 @@ LoadRoom:
 ; overrides - the sad village theme becomes the happy one once the
 ; village flag is set, and overworld 1 becomes overworld 2 later on.
 LoadRoomMusic:
-		btst	#$03,(g_AdditionalFlags+7).l
+		TestFlag	FLAG_INTRO_IN_PROGRESS
 		bne.s	_musicDone
 		move.b	(g_RoomBGM).l,d0
 		ext.w	d0
 		move.b	RoomMusicLUT(pc,d0.w),d0
 		cmpi.b	#SND_MusicEvilVillage,d0
 		bne.s	_chkOverworld
-		btst	#$05,(g_Flags+2).l
+		TestFlag	FLAG_SWAMP_SHRINE_BOSS_DEAD
 		beq.s	_chkOverworld
 		move.b	#SND_MusicHappyVillage,d0
 
 _chkOverworld:
 		cmpi.b	#SND_MusicOverworld1,d0
 		bne.s	_playMusic
-		btst	#$04,(g_AdditionalFlags+8).l
+		TestFlag	FLAG_SAILED_TO_VERLA
 		beq.s	_playMusic
 		move.b	#SND_MusicOverworld2,d0
 
@@ -403,7 +403,7 @@ _resetEntity:
 ; as Pockets; entering one of the RoomsPocketsXformReversed
 ; rooms reverts to Nigel, clears the flag and unlocks actions.
 CheckPocketsTransform:
-		btst	#$04,(g_Flags+3).l
+		TestFlag	FLAG_PLAYER_IS_POCKETS
 		beq.s	_pocketsDone
 		lea	RoomsPocketsXformReversed(pc),a0
 		move.w	(g_CurrentRoom).l,d0
@@ -420,7 +420,7 @@ _revertScan:
 _revertForm:
 		move.w	#$0000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
-		bclr	#$04,(g_Flags+3).l
+		ClearFlag	FLAG_PLAYER_IS_POCKETS
 		andi.b	#$F8,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
 						  ; Bit	1: Can't attack
 						  ; Bit	2: Can't open menu

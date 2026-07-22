@@ -52,7 +52,7 @@ _chkStage4:
 		move.w	d0,(Player_AnimationIndex).l
 		move.w	#$0010,(Player_AnimationFrame).l
 		ori.b	#$80,(Player_AnimCtrl).l
-		btst	#$07,(g_Flags+5).l
+		TestFlag	FLAG_FAHL_DUEL_ACTIVE
 		beq.s	_stage4Done
 		move.b	#$32,d0			  ; CSA_0032: reset the dojo opponent
 		bsr.w	ProcessDialogueScriptAction
@@ -64,7 +64,7 @@ _stage4Done:
 _chkFaintEnd:
 		cmpi.b	#$96,(g_PlayerAnimation).l
 		bne.w	_done
-		btst	#$07,(g_Flags+5).l
+		TestFlag	FLAG_FAHL_DUEL_ACTIVE
 		beq.s	OnFaint
 		move.b	#$33,d0			  ; CSA_0033: dojo defeat aftermath
 		bra.w	ProcessDialogueScriptAction
@@ -73,11 +73,11 @@ OnFaint:
 		bclr	#$00,(Player_InteractFlags).l
 		cmpi.w	#ROOM_MASSAN_WATERFALL,(g_CurrentRoom).l	  ; Waterfall Shrine Entrance
 		bne.s	EkeEkeRecover
-		btst	#$04,(g_Flags).l
+		TestFlag	FLAG_MASSAN_RESCUE_DONE
 		beq.w	_massanRescue
 
 EkeEkeRecover:
-		btst	#$00,(g_AdditionalFlags+$19).l
+		TestFlag	FLAG_FALLING_NO_EKEEKE
 		bne.w	_stall
 		move.b	#ITM_EKEEKE,d0
 		jsr	(j_GetItemQtyAndMaxQty).l

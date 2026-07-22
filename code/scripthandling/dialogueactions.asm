@@ -189,7 +189,7 @@ CSA_000D:
 		bsr.w	LoadCutsceneDialogue
 		move.b	#$09,d0
 		bsr.w	PlaybackInput
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -246,7 +246,7 @@ CSA_0011:
 		move.w	#$0000,d0	  ; Cutscene $000: Friday: "Now, let's start our adventure!!"
 		bsr.w	LoadCutsceneDialogue
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
-		bset	#$05,(g_Flags).l
+		SetFlag	FLAG_NOLE_CAVE_OUTSIDE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -272,7 +272,7 @@ CSA_0014:
 		move.w	#$0019,d0	  ; Cutscene $019: *: "I heard them! I heard them!"
 		bsr.w	LoadCutsceneDialogue
 		bset	#$01,(Player_CombatFlags).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -296,7 +296,7 @@ CSA_0016:
 		beq.s	_c0016No
 		move.b	#$08,d0
 		jsr	(j_DoTileSwap).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -326,7 +326,7 @@ CSA_0018:
 		beq.s	_c0018No
 		move.b	#$08,d0
 		jsr	(j_DoTileSwap).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -369,7 +369,7 @@ CSA_001D:
 		move.w	#$0005,d0	  ; Cutscene $005: Mayor: "Let him sleep for a while. You can stay in.." (+2)
 		bsr.w	LoadCutsceneDialogue
 		bsr.w	_fridayCastSpell
-		bset	#$07,(g_Flags).l
+		SetFlag	FLAG_MASSAN_MAYOR_SLEEP
 		jsr	(j_FadeOutToDarkness).l
 		move.b	#$11,(Player_X).l
 		move.b	#$10,(Player_Y).l
@@ -379,7 +379,7 @@ CSA_001D:
 		jsr	(j_InitRoomDisplayAndFadeIn).l
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		clr.w	(g_ControllerPlayback).l
-		bset	#$04,(g_Flags).l
+		SetFlag	FLAG_MASSAN_RESCUE_DONE
 		movem.l	(sp)+,d0
 		movem.l	(sp)+,a5
 		movem.l	(sp)+,d0
@@ -390,7 +390,7 @@ CSA_001D:
 ; Used by: behaviour scripts: Thieves' Hideout/3F/Godess Statue Room/219
 ; Ver1 (water) [Godess Statue].
 CSA_001E:
-		bset	#$03,(g_Flags).l
+		SetFlag	FLAG_THIEVES_GODDESS_STATUE
 		move.w	(g_CurrentRoom).l,d0
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_CurrentRoom).l
@@ -427,12 +427,12 @@ CSA_0020:
 CSA_0021:
 		move.w	#$0020,d0	  ; Cutscene $020: Mayor: "Nigel! We have been waiting for you! I real.." (+1)
 		bsr.w	LoadCutsceneDialogue
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		movea.l	(g_TalkingSprite).l,a0
 		move.b	RotationAndSize(a0),d0
 		andi.b	#DIR_MASK,d0
 		ori.b	#$01,d0
-		move.b	d0,(g_Flags+1).l
+		move.b	d0,(g_Flags+FLAGBYTE_SCRATCH).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -440,13 +440,13 @@ CSA_0021:
 CSA_0022:
 		move.w	#$0021,d0	  ; Cutscene $021: Mayor: "Please take this. I hope it will help you." (+1) [Safety Pass]
 		bsr.w	LoadCutsceneDialogue
-		bset	#$03,(g_Flags+4).l
+		SetFlag	FLAG_MERCATOR_ENTRY_GRANTED
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Used by: behaviour scripts: Ryuma/622 Mayor's House [Yellow Old Man].
 CSA_0023:
-		move.b	(g_Flags+1).l,d0
+		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d0
 		andi.b	#$C0,d0
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
@@ -483,7 +483,7 @@ CSA_0027:
 CSA_0028:
 		move.w	#$0036,d0	  ; Cutscene $036: *: "If ya ain't got a safe-conduct pass, ya ain.."
 		bsr.w	LoadCutsceneDialogue
-		btst	#$03,(g_Flags+4).l
+		TestFlag	FLAG_MERCATOR_ENTRY_GRANTED
 		beq.s	_c0028No
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
@@ -491,7 +491,7 @@ CSA_0028:
 ; ---------------------------------------------------------------------------
 		move.b	#$08,d0
 		jsr	(j_DoTileSwap).l
-		bset	#$07,(g_Flags+4).l
+		SetFlag	FLAG_MERCATOR_GATE_PASSED
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -504,7 +504,7 @@ _c0028No:
 CSA_0029:
 		move.b	#$09,d0
 		bsr.w	PlaybackInput
-		bset	#$00,(g_Flags+5).l
+		SetFlag	FLAG_MERCATOR_FIRST_VISIT
 		move.w	#$0032,d0	  ; Cutscene $032: *: "Mercator men tend to do some pretty stupid.."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -566,7 +566,7 @@ CSA_002F:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c002FNo
-		bset	#$02,(g_Flags+5).l
+		SetFlag	FLAG_PURIN_MET
 		bsr.w	CSA_015A
 		move.w	#$0030,d0	  ; Cutscene $030: Friday: "Hey, Nigel! What are you thinking of?!"
 		bsr.w	LoadCutsceneDialogue
@@ -606,12 +606,12 @@ _c002FNo:
 ; pick-up disabled.
 ; Used by: dialogue: Fahl (Mercator/Center/Interior/676 Fahl's Dojo).
 CSA_0030:
-		clr.b	(g_AdditionalFlags+$1A).l
+		clr.b	(g_Flags+FLAGBYTE_FAHL_WINS).l
 		move.w	#$0037,d0	  ; Cutscene $037: Fahl: "I'm a master of martial arts! I can give yo.." (+1)
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	_c0030Rts
-		bset	#$07,(g_Flags+5).l
+		SetFlag	FLAG_FAHL_DUEL_ACTIVE
 		bset	#$04,(g_PlayerStatus).l
 		bset	#$02,(g_LockPlayerActions).l
 		move.w	(Player_CurrentHealth).l,(Player_TempHealth).l
@@ -636,7 +636,7 @@ CSA_0031:
 		bset	#$07,InitInteractFlags(a1)
 		bclr	#$04,InteractFlags(a1)
 		clr.w	d0
-		move.b	(g_AdditionalFlags+$1A).l,d0
+		move.b	(g_Flags+FLAGBYTE_FAHL_WINS).l,d0
 		move.b	FahlEnemyList(pc,d0.w),d0
 		move.b	d0,SpriteType(a1)
 		bsr.w	LookupSpriteGfxIndex
@@ -743,18 +743,18 @@ CSA_0032:
 		bsr.w	_fahlApplySprite
 		tst.w	(Player_CurrentHealth).l
 		beq.w	_c0032Rts
-		addq.b	#$01,(g_AdditionalFlags+$1A).l
-		cmpi.b	#$05,(g_AdditionalFlags+$1A).l
+		addq.b	#$01,(g_Flags+FLAGBYTE_FAHL_WINS).l
+		cmpi.b	#$05,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win5
-		cmpi.b	#$0A,(g_AdditionalFlags+$1A).l
+		cmpi.b	#$0A,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win10
-		cmpi.b	#$14,(g_AdditionalFlags+$1A).l
+		cmpi.b	#$14,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win20
-		cmpi.b	#$1E,(g_AdditionalFlags+$1A).l
+		cmpi.b	#$1E,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win30
-		cmpi.b	#$28,(g_AdditionalFlags+$1A).l
+		cmpi.b	#$28,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win40
-		cmpi.b	#$32,(g_AdditionalFlags+$1A).l
+		cmpi.b	#$32,(g_Flags+FLAGBYTE_FAHL_WINS).l
 		beq.s	_c0032Win50
 
 _c0032Rts:
@@ -798,8 +798,8 @@ _c0032Win50:
 		bsr.w	LoadCutsceneDialogue
 
 _c0032End:
-		bclr	#$07,(g_Flags+5).l
-		bclr	#$06,(g_Flags+$C).l
+		ClearFlag	FLAG_FAHL_DUEL_ACTIVE
+		ClearFlag	FLAG_FAHL_DUEL_AFTERMATH
 		move.w	(Player_TempHealth).l,(Player_CurrentHealth).l
 		bsr.w	RefreshCurrentHealthHUD
 		bsr.w	MarkHUDForUpdate
@@ -854,28 +854,28 @@ CSA_0034:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	_c0034Rts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		bset	#$05,(Sprite2_InteractFlags).l
 
 _c0034Rts:
 		rts
 ; ---------------------------------------------------------------------------
 
-; Casino roulette win: pay 50/100/400 gold depending on which
+; Greenpea win: pay 50/100/400 gold depending on which
 ; g_Flags+1 bit the ball's resting place set (trigger TA_21).
 ; Used by: behaviour scripts: Mercator/Center/Interior/672 Greenpea's
 ; [Man 2].
 CSA_0035:
 		moveq	#0000000050,d0
-		btst	#$01,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT1
 		bne.s	_c0035Pay
 		moveq	#0000000100,d0
-		btst	#$02,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT2
 		bne.s	_c0035Pay
 		move.l	#0000000400,d0
 
 _c0035Pay:
-		add.w	d0,(g_AdditionalFlags+$1C).l
+		add.w	d0,(g_Flags+FLAGWORD_GREENPEA_WINNINGS).l
 		move.l	d0,(g_PrintNumericDwordValue).l
 		bsr.w	AddGold
 		move.w	#$0040,d0	  ; Cutscene $040: Owner: "Congratulations! You got golds! Great! Exce.."
@@ -884,42 +884,42 @@ _c0035Pay:
 		bra.w	RefreshHUD
 ; ---------------------------------------------------------------------------
 
-; Casino roulette loss: take the same stake back.
+; Greenpea loss: take the same stake back.
 ; Used by: behaviour scripts: Mercator/Center/Interior/672 Greenpea's
 ; [Invisible Cube].
 CSA_0036:
 		move.w	#$0041,d0	  ; Cutscene $041: Owner: "Oops! Oh well...it was close! See you next.."
 		bsr.w	LoadCutsceneDialogue
 		moveq	#0000000050,d0
-		btst	#$01,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT1
 		bne.s	_c0036Take
 		moveq	#0000000100,d0
-		btst	#$02,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT2
 		bne.s	_c0036Take
 		move.l	#0000000400,d0
-		btst	#$03,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT3
 		beq.s	_c0036Rts
 
 _c0036Take:
-		sub.w	d0,(g_AdditionalFlags+$1C).l
+		sub.w	d0,(g_Flags+FLAGWORD_GREENPEA_WINNINGS).l
 		bsr.w	RemoveGold
 
 _c0036Rts:
 		rts
 ; ---------------------------------------------------------------------------
 
-; Church donation: bump the 3-bit donation counter in g_Flags+$13
+; Vase rearrange counter: bump the 3-bit action counter in g_Flags+$13
 ; bits 5-7 (capped at 3).
 ; Used by: behaviour scripts: Mercator/Center/Interior/709 Old Woman's
 ; House, 2F [Old Lady].
 CSA_0037:
-		move.b	(g_Flags+$13).l,d0
+		move.b	(g_Flags+FLAGBYTE_VASE_COUNTER).l,d0
 		andi.b	#$E0,d0
 		cmpi.b	#$60,d0
 		bcc.s	_c0037Msg
 		addi.b	#$20,d0
-		andi.b	#$1F,(g_Flags+$13).l
-		or.b	d0,(g_Flags+$13).l
+		andi.b	#$1F,(g_Flags+FLAGBYTE_VASE_COUNTER).l
+		or.b	d0,(g_Flags+FLAGBYTE_VASE_COUNTER).l
 
 _c0037Msg:
 		move.w	#$0043,d0	  ; Cutscene $043: *: "Thank you very much. Here's your reward..." (+1)
@@ -933,7 +933,7 @@ CSA_0038:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	_c0038Rts
-		bset	#$02,(g_Flags+3).l
+		SetFlag	FLAG_OLD_WOMAN_HOUSE_VISITED
 
 _c0038Rts:
 		rts
@@ -943,7 +943,7 @@ _c0038Rts:
 CSA_0039:
 		move.w	#$0044,d0	  ; Cutscene $044: *: "My dad works in the castle. I sometimes com.." (+1)
 		bsr.w	LoadCutsceneDialogue
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -986,7 +986,7 @@ _c003DRts:
 ; Locks the player's actions and swaps their sprite for Pockets'
 ; (the rites' transformation).
 _transformToPockets:
-		bset	#$04,(g_Flags+3).l
+		SetFlag	FLAG_PLAYER_IS_POCKETS
 		move.b	#$07,(g_LockPlayerActions).l
 		move.w	#$8141,(Player_AnimCtrl).l
 		move.b	#SPR_POCKETS,(Player_SpriteType).l
@@ -1005,7 +1005,7 @@ _transformToPockets:
 CSA_003E:
 		move.w	#$004A,d0	  ; Cutscene $04A: Owner: "Good afternoon! First time here? Madame Yar.." (+3)
 		bsr.w	LoadCutsceneDialogue
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1080,7 +1080,7 @@ _c0043Spin:
 		dbf	d7,_c0043Outer
 		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
-		bclr	#$04,(g_Flags+3).l
+		ClearFlag	FLAG_PLAYER_IS_POCKETS
 		andi.b	#$F8,(g_LockPlayerActions).l
 		jsr	(j_LoadPlayerPalette).l
 		jsr	(j_CopyBasePaletteToActivePalette).l
@@ -1206,7 +1206,7 @@ CSA_004E:
 ; Used by: behaviour scripts: Mercator Castle/1F/Throne Room/051 Ver1
 ; (Duke) [Duke].
 CSA_004F:
-		bset	#$01,(g_Flags+$12).l
+		SetFlag	FLAG_DUKE_THRONE_SCENE
 		move.w	(g_CurrentRoom).l,d0
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_CurrentRoom).l
@@ -1222,17 +1222,17 @@ CSA_004F:
 ; * (Mercator Castle/2F/085 Banquet Hall); * (Mercator Castle/3F/097
 ; Nigel's Room); * (Mercator Castle/3F/103 Dexter's Room).
 CSA_0050:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		move.w	#$005A,d0	  ; Cutscene $05A: *: "Your room is ready upstairs."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
 
 ; Used by: dialogue of 5 NPCs.
 CSA_0051:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		move.b	(Sprite3_RotationAndSize).l,d0
 		andi.b	#$C0,d0
-		or.b	d0,(g_Flags+1).l
+		or.b	d0,(g_Flags+FLAGBYTE_SCRATCH).l
 		move.w	#$005C,d0	  ; Cutscene $05C: Arthur: "Hail, Sir Nigel. This is the Training Room."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ CSA_0051:
 ; Used by: behaviour scripts: Mercator Castle/2F/Training Room/083 Ver1
 ; (Banquet) [Lord Arthur].
 CSA_0052:
-		move.b	(g_Flags+1).l,d1
+		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d1
 		andi.b	#$C0,d1
 		movem.w	d1,-(sp)
 		andi.b	#$3F,RotationAndSize(a5)
@@ -1326,7 +1326,7 @@ _c0055Wait:
 		cmpi.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		bne.s	_c0055Wait
 		move.w	#$0061,d0	  ; Cutscene $061: Friday: "Sorry, Nigel... I got a little excited..."
-		btst	#$07,(g_Flags+$12).l
+		TestFlag	FLAG_CASTLE_SCENE_WAIT
 		beq.s	_c0055Msg
 		move.w	#$0062,d0	  ; Cutscene $062: Friday: "You were off your guard when you saw her nu.."
 
@@ -1467,7 +1467,7 @@ CSA_0062:
 		beq.w	_c0062No
 		move.b	#$1F,d0
 		bsr.w	PlaybackInput
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1533,7 +1533,7 @@ _c0063Collapse:
 		jsr	(j_RefreshHUD).l
 		move.w	#00120,d0
 		jsr	(j_Sleep).l
-		bset	#$00,(g_Flags+$14).l
+		SetFlag	FLAG_CASTLE_GUARDS_MOVED
 		move.w	#$140E,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
 		jsr	(j_WarpToRoomNoFade).l
@@ -1649,7 +1649,7 @@ CSA_0068:
 		jsr	(j_DisplayLithograph).l
 		move.w	#$0027,d0	  ; Cutscene $027: Friday: "Look! Five stones are inlaid on Gola's body.." (+9)
 		bsr.w	LoadCutsceneDialogue
-		bset	#$01,(g_Flags+4).l
+		SetFlag	FLAG_THIEVES_HIDEOUT_DONE
 		move.w	(g_CurrentRoom).l,d0
 		jsr	(j_CheckForRoomTransition).l
 		move.w	d0,(g_CurrentRoom).l
@@ -1703,7 +1703,7 @@ _showClashFrame:
 ; sprite 1 skips $18 bytes of its behaviour script.
 ; Used by: dialogue: * (Mercator/Center/630 Ver1 (First Visit)).
 CSA_006A:
-		bset	#$04,(g_Flags+$14).l
+		SetFlag	FLAG_MERCATOR_DUNGEON_DOOR_OPEN
 		move.w	#$0073,d0	  ; Cutscene $073: *: "Would you invest golds in me?"
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
@@ -1714,7 +1714,7 @@ CSA_006A:
 		jsr	(j_CheckForDoorNW).l
 		movem.w	(sp)+,d0
 		move.w	d0,(Player_HeightmapOffset).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1754,12 +1754,12 @@ CSA_006C:
 ; Used by: dialogue: * (Mercator/Harbour/Main Harbour/641 Ver1 (First
 ; Visit)).
 CSA_006D:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eori.b	#$40,d0
-		andi.b	#$3F,(g_Flags+1).l
-		or.b	d0,(g_Flags+1).l
+		andi.b	#$3F,(g_Flags+FLAGBYTE_SCRATCH).l
+		or.b	d0,(g_Flags+FLAGBYTE_SCRATCH).l
 		move.w	#$0075,d0	  ; Cutscene $075: *: "Hey, a buyer! You want variety goods? Sure,.."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -1768,7 +1768,7 @@ CSA_006D:
 ; (After Ship Arrives) [Sailor]; Mercator/Harbour/Main Harbour/643 Ver3
 ; (After Lighthouse Broken) [Sailor].
 CSA_006E:
-		move.b	(g_Flags+1).l,d0
+		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d0
 		andi.b	#$3F,RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		rts
@@ -1873,7 +1873,7 @@ CSA_0078:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		bne.w	_c0078Rts
-		bclr	#$02,(g_Flags+$16).l
+		ClearFlag	FLAG_CRYPT_RIDDLER_DONE
 
 _c0078Rts:
 		rts
@@ -1882,15 +1882,15 @@ _c0078Rts:
 ; Used by: dialogue: * (Mercator Crypt/656 Room 0, Riddler of the
 ; Underworld).
 CSA_0079:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Used by: dialogue: * (Mercator Crypt/655 Room 1, Betty Ross).
 CSA_007A:
-		btst	#$00,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_BETTY_ROSS
 		bne.s	_c007ARts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c007ARts:
 		rts
@@ -1911,9 +1911,9 @@ CSA_007B:
 
 ; Used by: dialogue: * (Mercator Crypt/654 Room 2, Ruby Silent).
 CSA_007C:
-		btst	#$01,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_RUBY_SILENT
 		bne.s	_c007CRts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c007CRts:
 		rts
@@ -1921,9 +1921,9 @@ _c007CRts:
 
 ; Used by: dialogue: * (Mercator Crypt/659 Room 4, Maria Hysterica).
 CSA_007D:
-		btst	#$03,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_MARIA_HYSTERICA
 		bne.s	_c007DRts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c007DRts:
 		rts
@@ -1931,9 +1931,9 @@ _c007DRts:
 
 ; Used by: dialogue: * (Mercator Crypt/658 Room 5, Jim Bright).
 CSA_007E:
-		btst	#$04,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_JIM_BRIGHT
 		bne.s	_c007ERts
-		bset	#$01,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT1
 
 _c007ERts:
 		rts
@@ -1941,9 +1941,9 @@ _c007ERts:
 
 ; Used by: dialogue: * (Mercator Crypt/657 Room 6, Larson E).
 CSA_007F:
-		btst	#$05,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_LARSON_E
 		bne.s	_c007FRts
-		bset	#$01,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT1
 
 _c007FRts:
 		rts
@@ -1951,9 +1951,9 @@ _c007FRts:
 
 ; Used by: dialogue: * (Mercator Crypt/652 Room 7, Dirk the Dark).
 CSA_0080:
-		btst	#$06,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_DIRK_THE_DARK
 		bne.s	_c0080Rts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c0080Rts:
 		rts
@@ -1967,7 +1967,7 @@ CSA_0081:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0081Rts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c0081Rts:
 		rts
@@ -1985,7 +1985,7 @@ CSA_0083:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0083No
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2044,12 +2044,12 @@ CSA_0088:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0088No
-		bset	#$05,(g_Flags+$16).l
+		SetFlag	FLAG_MIR_TOWER_Q1
 		rts
 ; ---------------------------------------------------------------------------
 
 _c0088No:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2059,12 +2059,12 @@ CSA_0089:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0089No
-		bset	#$06,(g_Flags+$16).l
+		SetFlag	FLAG_MIR_TOWER_Q2
 		rts
 ; ---------------------------------------------------------------------------
 
 _c0089No:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2074,7 +2074,7 @@ CSA_008A:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c008ARts
-		bset	#$07,(g_Flags+$16).l
+		SetFlag	FLAG_MIR_TOWER_GATE_OPEN
 
 _c008ARts:
 		rts
@@ -2272,7 +2272,7 @@ CSA_009B:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c009BRts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c009BRts:
 		rts
@@ -2387,7 +2387,7 @@ CSA_00A4:
 ; Moralis (Mercator Castle/B1F/042 Cell 2 (Moralis)); Moralis (Mercator
 ; Castle/B1F/044 Cell 4 (Empty with Hidden Door)).
 CSA_00A5:
-		bset	#$02,(g_Flags+$13).l
+		SetFlag	FLAG_MORALIS_FREED
 		move.w	#$0093,d0	  ; Cutscene $093: Moralis: "Thank you very much. I almost gave up hope..." (+3)
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -2702,7 +2702,7 @@ _showAnim8Frame:
 
 ; Used by: dialogue of 5 NPCs.
 CSA_00B5:
-		bset	#$06,(g_AdditionalFlags).l
+		SetFlag	FLAG_NPC_RELOCATED_106
 		move.w	#$00A0,d0	  ; Cutscene $0A0: Arthur: "Sir Nigel!" (+7) [Sun Stone]
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -2818,7 +2818,7 @@ _c00C2Turn:
 		move.b	#ITM_EKEEKE,d0
 		jsr	(j_CheckAndConsumeItem).l
 		jsr	(j_UpdateEkeEkeHUD).l
-		bset	#$00,(g_AdditionalFlags+4).l
+		SetFlag	FLAG_GREENMAZE_CUTTER_TURNED
 		jsr	(j_HideSprite).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -2871,8 +2871,8 @@ CSA_00C6:
 		move.w	#$00AB,d0	  ; Cutscene $0AB: Einstein: "Thanks, Nigel! I was attacked by savage For.." (+2)
 		bsr.w	LoadCutsceneDialogue
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
-		bset	#$04,(g_AdditionalFlags+4).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_GREENMAZE_CUTTER_MOVED
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2912,7 +2912,7 @@ _c00C8Wait:
 		move.b	#FRIDAY_PATH_8,(g_FridayAnimation1).l
 		move.b	#FRIDAY_FLAP,(g_FridayAnimation2).l
 		bsr.w	_fridayWait
-		bset	#$06,(g_AdditionalFlags+4).l
+		SetFlag	FLAG_GREENMAZE_SCENE_WAIT
 
 _c00C8Done:
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
@@ -2942,9 +2942,9 @@ CSA_00CB:
 
 ; Used by: dialogue: * (Mercator Crypt/648 Room 8, Whodini).
 CSA_00CC:
-		btst	#$07,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_WHODINI
 		bne.s	_c00CCRts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c00CCRts:
 		rts
@@ -2970,10 +2970,10 @@ CSA_00CE:
 CSA_00CF:
 		move.w	#$00BC,d0	  ; Cutscene $0BC: *: "Yo-ho!"
 		bsr.w	LoadCutsceneDialogue
-		bset	#$01,(g_AdditionalFlags+6).l
+		SetFlag	FLAG_SUN_STONE_PLACED
 		move.w	#ROOM_RYUMA_LIGHTHOUSE_TOP,(g_CurrentRoom).l	  ; Lighthouse
 		bsr.s	SpecialWarp
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		move.b	#ITM_SUNSTONE,d0
 		jsr	(j_CheckAndConsumeItem).l
 		movem.l	(sp)+,d0
@@ -3015,7 +3015,7 @@ CSA_00D1:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c00D1Rts
-		bset	#$04,(g_AdditionalFlags+$B).l
+		SetFlag	FLAG_HARBOUR_WHOLESALE_OPEN
 
 _c00D1Rts:
 		rts
@@ -3040,7 +3040,7 @@ CSA_00D2:
 		jsr	(j_DisplayIslandMap).l
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$80,(Player_RotationAndSize).l
-		bset	#$04,(g_AdditionalFlags+8).l
+		SetFlag	FLAG_SAILED_TO_VERLA
 		move.w	#ROOM_SHIP_TO_VERLA,(g_CurrentRoom).l	  ; Ship
 		move.w	#$2724,(Player_X).l
 		bsr.s	_warpReloadAll
@@ -3250,17 +3250,17 @@ CSA_00E4:
 ; Used by: behaviour scripts: Mercator Crypt/650 Room 9, Dead and End
 ; [Dexter].
 CSA_00E5:
-		clr.b	(g_Flags+8).l
-		clr.b	(g_Flags+9).l
+		clr.b	(g_Flags+FLAGBYTE_DOORS_1).l
+		clr.b	(g_Flags+FLAGBYTE_DOORS_2).l
 		move.w	#$00D2,d0	  ; Cutscene $0D2: Dexter: "NOOOOO!!! akkggghhh..........."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
 
 ; Used by: dialogue: * (Mercator Crypt/650 Room 9, Dead and End).
 CSA_00E6:
-		btst	#$03,(g_Flags+7).l
+		TestFlag	FLAG_CRYPT_DEAD_AND_END
 		bne.s	_c00E6Rts
-		bset	#$02,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT2
 
 _c00E6Rts:
 		rts
@@ -3339,7 +3339,7 @@ _c00EERts:
 
 ; Used by: dialogue: * (Mercator/Center/630 Ver1 (First Visit)).
 CSA_00EF:
-		bset	#$01,(g_AdditionalFlags+$A).l
+		SetFlag	FLAG_MERCATOR_FIRST_VISIT_2
 		move.w	#$00E3,d0	  ; Cutscene $0E3: *: "Company--salute! Do come in! Duke Mercator.."
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -3457,7 +3457,7 @@ _c00F5Sink:
 ; ---------------------------------------------------------------------------
 		dc.w SND_EnemyNoise
 ; ---------------------------------------------------------------------------
-		bset	#$00,(g_AdditionalFlags+$19).l
+		SetFlag	FLAG_FALLING_NO_EKEEKE
 		move.b	#$01,(g_PlayerAnimation).l
 		rts
 ; ---------------------------------------------------------------------------
@@ -3466,7 +3466,7 @@ _c00F5Sink:
 ; restore the health and hand back control.
 ; Used by: behaviour scripts: Lake Shrine/B3F/348 Treasure Room [Zak].
 CSA_00F6:
-		bclr	#$00,(g_AdditionalFlags+$19).l
+		ClearFlag	FLAG_FALLING_NO_EKEEKE
 		move.w	#$00DC,d0	  ; Cutscene $0DC: Duke: "Excellent, Zak! Ha ha ha ha! Got you, elf-b.." (+3)
 		bsr.w	LoadCutsceneDialogue
 		move.w	#$002F,d7
@@ -3511,7 +3511,7 @@ _c00F6Rise:
 		clr.b	(g_FridayAnimation1).l
 		clr.w	(gVDPSprFriday_Y).l
 		clr.w	(g_ControllerPlayback).l
-		bset	#$05,(g_AdditionalFlags+$A).l
+		SetFlag	FLAG_HARBOUR_SUNSTONE_SCENE
 		bra.w	CSA_009A
 ; ---------------------------------------------------------------------------
 ; Unreachable leftover.
@@ -3586,7 +3586,7 @@ _c00F9Rise:
 
 ; Used by: dialogue of 8 NPCs.
 CSA_00FA:
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		move.w	#$00E1,d0	  ; Cutscene $0E1: Zak: "Is this all right with you, little sister?.." (+1)
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -3755,10 +3755,10 @@ CSA_0109:
 ; Used by: behaviour scripts: Tibor/533 - Entrance [Invisible Cube].
 CSA_010A:
 		move.w	#$00FA,d0	  ; Cutscene $0FA: Tibor: "Hello! Me? Oh, I'm fine, now. Are my childr.."
-		btst	#$07,(g_AdditionalFlags+4).l
+		TestFlag	FLAG_TREE_WARPS_OPEN
 		bne.s	_c010AMsg
 		move.w	#$00F9,d0
-		btst	#$01,(g_Flags+4).l
+		TestFlag	FLAG_THIEVES_HIDEOUT_DONE
 		bne.s	_c010AMsg
 		move.w	#$00F8,d0	  ; Cutscene $0F8: Tibor: "Moooaaann... Grooooaaann...ooooaaannn..."
 
@@ -3905,7 +3905,7 @@ _c0111Wait:
 		move.w	#00060,d1
 		bsr.w	ShowCutsceneDialogueAndWait
 		jsr	(j_ClearTextbox).l
-		bset	#$03,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT3
 		rts
 
 ; Runs cutscene script d0, then sleeps d1 ticks.
@@ -3991,7 +3991,7 @@ CSA_0113:
 		move.w	#$0808,(Player_SubX).l
 		andi.b	#$3F,(Player_RotationAndSize).l
 		ori.b	#$80,(Player_RotationAndSize).l
-		bclr	#$03,(g_AdditionalFlags+7).l
+		ClearFlag	FLAG_INTRO_IN_PROGRESS
 		move.w	#$0090,(Player_Z).l
 		jsr	(j_FadeOutToDarkness).l
 		jsr	(j_LookupWarpDestination).l
@@ -4214,7 +4214,7 @@ CSA_0128:
 CSA_0129:
 		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
-		bclr	#$04,(g_Flags+3).l
+		ClearFlag	FLAG_PLAYER_IS_POCKETS
 		andi.b	#$F8,(g_LockPlayerActions).l
 		bclr	#STATUS_NOHEAL,(g_PlayerStatus).l
 		jsr	(j_LoadPlayerPalette).l
@@ -4239,7 +4239,7 @@ CSA_012A:
 
 ; Used by: dialogue: * (Mercator/Center/Interior/704 Inn 2F).
 CSA_012B:
-		bset	#$02,(g_AdditionalFlags+9).l
+		SetFlag	FLAG_INN_2F_SCENE
 		move.w	#$0120,d0	  ; Cutscene $120: *: "One more Diet Dahl Delight!"
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -4311,7 +4311,7 @@ CSA_0132:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0132Rts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c0132Rts:
 		rts
@@ -4322,7 +4322,7 @@ _c0132Rts:
 ; Used by: behaviour scripts: Mercator/Center/Casino/664 Roulette Room
 ; [Small Grey Ball].
 CSA_0133:
-		bset	#$02,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT2
 		cmpi.b	#$0E,(Sprite2_X).l
 		beq.s	_c0133ChkY
 		cmpi.b	#$12,(Sprite2_X).l
@@ -4352,7 +4352,7 @@ _c0133Miss:
 ; Used by: behaviour scripts: Mercator/Center/Casino/665 Chicken Race
 ; [Invisible Cube].
 CSA_0134:
-		btst	#$03,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_BIT3
 		beq.s	_c0134Alt
 		move.w	#$0129,d0	  ; Cutscene $129: (func XS_0129)
 		bra.w	LoadCutsceneDialogue
@@ -4370,7 +4370,7 @@ CSA_0135:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0135Rts
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 
 _c0135Rts:
 		rts
@@ -4407,7 +4407,7 @@ CSA_0137:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0137Rts
-		bset	#$03,(g_AdditionalFlags+9).l
+		SetFlag	FLAG_CASINO_CORRIDOR_DONE
 
 _c0137Rts:
 		rts
@@ -4420,7 +4420,7 @@ CSA_0138:
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0138Rts
-		bset	#$04,(g_AdditionalFlags+9).l
+		SetFlag	FLAG_TREE_GUARD_DONE
 
 _c0138Rts:
 		rts
@@ -4567,7 +4567,7 @@ CSA_0149:
 ; Mir's Tower/462 Twinkle Village [Invisible Cube].
 CSA_014A:
 		bsr.w	CSA_015A
-		btst	#$04,(g_AdditionalFlags+$18).l
+		TestFlag	FLAG_TWINKLE_VILLAGE_SCENE
 		bne.s	_c014ARts
 		move.w	#$0139,d0	  ; Cutscene $139: Friday: "Wow, Twinkle Village! How is everybody?"
 		bsr.w	LoadCutsceneDialogue
@@ -4972,7 +4972,7 @@ _c0157Scan:
 ; ---------------------------------------------------------------------------
 
 _c0157Count:
-		addq.b	#$01,(g_AdditionalFlags+$11).l
+		addq.b	#$01,(g_Flags+FLAGBYTE_CHICKEN_TOSS_COUNT).l
 
 _c0157Next:
 		lea	SPRITE_SIZE(a1),a1
@@ -4987,13 +4987,13 @@ _c0157Rts:
 ; Used by: behaviour scripts: Mercator/Center/Casino/666 Chicken Toss
 ; [Woman 3].
 CSA_0158:
-		bset	#$02,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT2
 		clr.l	d0
-		move.b	(g_AdditionalFlags+$11).l,d0
+		move.b	(g_Flags+FLAGBYTE_CHICKEN_TOSS_COUNT).l,d0
 		movem.l	d0,-(sp)
-		cmp.b	(g_AdditionalFlags+$1B).l,d0
+		cmp.b	(g_Flags+FLAGBYTE_CHICKEN_TOSS_BEST).l,d0
 		bls.s	_c0158Payout
-		move.b	d0,(g_AdditionalFlags+$1B).l
+		move.b	d0,(g_Flags+FLAGBYTE_CHICKEN_TOSS_BEST).l
 		move.l	d0,(g_PrintNumericDwordValue).l
 		move.w	#$0126,d0	  ; Cutscene $126: *: "Ding-ding! Ding-ding! New room record!"
 		bsr.w	LoadCutsceneDialogue
@@ -5031,14 +5031,14 @@ _c0158Rts:
 ; Casino/666 Chicken Toss), queued via g_PendingCutsceneAction.
 CSA_0159:
 		clr.l	d0
-		move.b	(g_AdditionalFlags+$1B).l,d0 ; Chicken toss room record
+		move.b	(g_Flags+FLAGBYTE_CHICKEN_TOSS_BEST).l,d0 ; Chicken toss room record
 		move.l	d0,(g_PrintNumericDwordValue).l
 		move.w	#$0125,d0	  ; Cutscene $125: *: "Hello! Let's play Chicken Toss! Try to catc.." (+4)
 		bsr.w	LoadCutsceneDialogue
 		tst.b	(g_YesNoPromptResult).l
 		beq.w	_c0159Rts
-		bset	#$00,(g_Flags+1).l
-		clr.b	(g_AdditionalFlags+$11).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
+		clr.b	(g_Flags+FLAGBYTE_CHICKEN_TOSS_COUNT).l
 
 _c0159Rts:
 		rts

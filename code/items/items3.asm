@@ -50,7 +50,7 @@ ItemUseEinsteinWhistle:
 		cmpi.b	#$04,d0
 		bcc.w	ReturnFailure
 	if	FIX_WHISTLE_CHECK
-		btst	#$00,(g_AdditionalFlags+6).l
+		TestFlag	FLAG_EINSTEIN_WHISTLE_USED
 		bne.w	ReturnFailure
 	endif
 		bra.w	ReturnSuccessAndEnablePostUse
@@ -71,7 +71,7 @@ ItemUseLithograph:
 ; health for gold - one heart at a time for 10 gold each, with a
 ; chime every 10 frames, until a sliver ($FF) remains.
 ItemUsePawnTicket:
-		bset	#$07,(g_AdditionalFlags+$19).l
+		SetFlag	FLAG_PAWN_TICKET_USED
 		bne.w	ReturnFailure
 
 _ptDrain:
@@ -116,7 +116,7 @@ ItemUseGolasEye:
 		bcc.w	ReturnFailure
 		cmpi.b	#$20,(Player_FloorHeight).l
 		bne.w	ReturnFailure
-		btst	#$06,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_GOLAS_EYE_USED
 		bne.w	ReturnFailure
 		bra.w	ReturnSuccessAndEnablePostUse
 ; ---------------------------------------------------------------------------
@@ -215,7 +215,7 @@ ItemUseLogs:
 		andi.w	#$FEFE,d0
 		cmpi.w	#$2C2E,d0
 		bne.w	ReturnFailure
-		bset	#$00,(g_AdditionalFlags+$B).l
+		SetFlag	FLAG_RAFT1_BUILT
 		bne.w	ReturnFailure
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
@@ -233,7 +233,7 @@ _logsRaft2:
 		andi.b	#$FE,d0
 		cmpi.w	#$0010,d0
 		bne.w	ReturnFailure
-		bset	#$01,(g_AdditionalFlags+$B).l
+		SetFlag	FLAG_RAFT2_BUILT
 		bne.w	ReturnFailure
 		bsr.w	ConsumeItem
 		bra.w	ReturnSuccess
@@ -248,7 +248,7 @@ ItemUseOracleStone:
 ; Idol Stone: on the spot before the Swamp Shrine entrance, once
 ; (g_Flags bit 6); the tile swap runs in the post-use pass.
 ItemUseIdolStone:
-		btst	#$06,(g_Flags).l
+		TestFlag	FLAG_SWAMP_SHRINE_OPENED
 		bne.w	ReturnFailure
 		cmpi.w	#ROOM_SWAMP_SHRINE_ENTRANCE,(g_CurrentRoom).l
 		bne.w	ReturnFailure
@@ -396,7 +396,7 @@ _puDone:
 
 ; Garlic, after the reload: set the flag Miro reacts to.
 PostUseGarlic:
-		bset	#$00,(g_Flags+$17).l
+		SetFlag	FLAG_GARLIC_USED
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -415,7 +415,7 @@ PostUseEinsteinWhistle:
 		move.w	#ROOM_GREENMAZE_CUTTER,(g_CurrentRoom).l	  ; Wood cutter	area
 		move.w	#$1732,(Player_X).l
 		bset	#$06,(Player_InteractFlags).l
-		bset	#$00,(g_AdditionalFlags+6).l
+		SetFlag	FLAG_EINSTEIN_WHISTLE_USED
 		bsr.w	WarpToRoom
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_MusicDogWhistle
@@ -427,21 +427,21 @@ PostUseEinsteinWhistle:
 		movem.l	(sp)+,d0
 		move.l	d0,(Player_X).l
 		bclr	#$06,(Player_InteractFlags).l
-		bclr	#$00,(g_AdditionalFlags+6).l
+		ClearFlag	FLAG_EINSTEIN_WHISTLE_USED
 		bsr.w	WarpToRoom
 		move.b	(g_BGM).l,d0
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_LoadFromD0
 
-		bset	#$00,(g_AdditionalFlags+6).l
+		SetFlag	FLAG_EINSTEIN_WHISTLE_USED
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Gola's Eye, after the reload: set its used flag and the story
 ; flag that opens the way.
 PostUseGolasEye:
-		bset	#$06,(g_AdditionalFlags+$A).l
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_GOLAS_EYE_USED
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -457,7 +457,7 @@ PostUseIdolStone:
 		jsr	(Sleep).l		  ; Sleeps for d0 frames
 		move.b	#$10,d0
 		bsr.w	DoTileSwap
-		bset	#$06,(g_Flags).l
+		SetFlag	FLAG_SWAMP_SHRINE_OPENED
 		rts
 ; ---------------------------------------------------------------------------
 

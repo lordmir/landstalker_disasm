@@ -726,7 +726,7 @@ _putDown:
 		move.b	(a0),d0
 		lsl.b	#$04,d0
 		move.b	d0,FloorHeight(a1,d1.w)
-		btst	#$03,(g_AdditionalFlags+7).l
+		TestFlag	FLAG_INTRO_IN_PROGRESS
 		bne.s	_dropDone
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_NigelDropObj1

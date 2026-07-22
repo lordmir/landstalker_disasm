@@ -4,7 +4,7 @@
 ; arrival clearing is safe. Indestructible obstacles (CombatFlags
 ; bit 0) are kept.
 ContinueTreeWarpCheck:
-		btst	#$07,(g_AdditionalFlags+4).l
+		TestFlag	FLAG_TREE_WARPS_OPEN
 		beq.w	_Done
 		lea	(Sprite1_X).l,a5
 		moveq	#$0E,d7
@@ -25,7 +25,7 @@ _twNext:
 _Next24:
 		cmpi.w	#ROOM_VERLA_MINE_BOSS_2,(g_CurrentRoom).l	  ; Verla mine exit tunnel entrance
 		bne.s	_Next25			  ; Witches' Hut
-		btst	#$07,(g_AdditionalFlags+6).l
+		TestFlag	FLAG_VERLA_MINE_BOSS2_DEAD
 		beq.w	_Done
 		move.b	#$00,d0
 		ext.w	d0
@@ -36,7 +36,7 @@ _Next24:
 _Next25:
 		cmpi.w	#ROOM_WITCHES_HUT,(g_CurrentRoom).l	  ; Witches' Hut
 		bne.s	_Next26			  ; Chicken race
-		btst	#$06,(g_AdditionalFlags+7).l
+		TestFlag	FLAG_WITCHES_HUT_AWAKE
 		beq.w	_Done
 		move.b	#$02,d0
 		ext.w	d0
@@ -83,7 +83,7 @@ _Next26:
 _Next27:
 		cmpi.w	#ROOM_LABRYNTH_LOGS_ENTRANCE,(g_CurrentRoom).l	  ; Cave logs entrance
 		bne.w	_Next28			  ; Castle dungeon entrance
-		btst	#$04,(g_AdditionalFlags+9).l
+		TestFlag	FLAG_TREE_GUARD_DONE
 		beq.w	_Done
 		move.b	#$00,d0
 		move.w	#$1718,d1
@@ -95,7 +95,7 @@ _Next27:
 _Next28:
 		cmpi.w	#ROOM_CASTLE_DUNGEON_ENTRANCE,(g_CurrentRoom).l	  ; Castle dungeon entrance
 		bne.w	_Next29
-		btst	#$05,(g_AdditionalFlags).l
+		TestFlag	FLAG_CASTLE_DUNGEON_ESCAPE
 		beq.w	_Done
 		move.b	#$02,d0
 		move.w	#$131A,d1
@@ -115,7 +115,7 @@ _Next28:
 _Next29:
 		cmpi.w	#ROOM_LABRYNTH_RAFT2,(g_CurrentRoom).l
 		bne.w	_Next30			  ; Cave Spinner
-		btst	#$01,(g_AdditionalFlags+$B).l
+		TestFlag	FLAG_RAFT2_BUILT
 		beq.w	_Done
 		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
@@ -123,7 +123,7 @@ _Next29:
 _Next30:
 		cmpi.w	#ROOM_LABRYNTH_SPINNER,(g_CurrentRoom).l	  ; Cave Spinner
 		bne.w	_Next31			  ; Cave Ifrit
-		btst	#$00,(g_AdditionalFlags+$18).l
+		TestFlag	FLAG_LABYRINTH_SPINNER_DEAD
 		beq.w	_Done
 		bclr	#$00,(Sprite2_StateFlags).l
 		bra.w	_Done
@@ -131,7 +131,7 @@ _Next30:
 _Next31:
 		cmpi.w	#ROOM_LABRYNTH_IFRIT,(g_CurrentRoom).l	  ; Cave Ifrit
 		bne.w	_Next32			  ; Cave Miro
-		btst	#$05,(g_AdditionalFlags+$18).l
+		TestFlag	FLAG_LABYRINTH_IFRIT_DEAD
 		beq.w	_Done
 		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
@@ -139,7 +139,7 @@ _Next31:
 _Next32:
 		cmpi.w	#ROOM_LABRYNTH_MIRO,(g_CurrentRoom).l	  ; Cave Miro
 		bne.w	_Next33			  ; Mir's tower first room
-		btst	#$02,(g_AdditionalFlags+$18).l
+		TestFlag	FLAG_LABYRINTH_MIRO_DEAD
 		beq.w	_Done
 		bclr	#$00,(Sprite1_StateFlags).l
 		bra.w	_Done
@@ -155,7 +155,7 @@ _Next33:
 _Next34:
 		cmpi.w	#ROOM_MERCATOR_HARBOUR_AFTER_MIR,(g_CurrentRoom).l	  ; Mercator Harbour
 		bne.s	_Next35
-		btst	#$05,(g_Flags+$14).l
+		TestFlag	FLAG_HARBOUR_NPC_MOVED
 		beq.w	_Done
 		move.b	#$08,d0
 		move.w	#$1E1A,d1

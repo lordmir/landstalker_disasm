@@ -52,7 +52,7 @@ _ta00Release:
 		bclr	#$07,$000001A0(a0)
 		bclr	#$07,$00000220(a0)
 		bclr	#$07,$000002A0(a0)
-		btst	#$06,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_GOLAS_EYE_USED
 		bne.w	_met
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ _ta02Skip:
 TA_03:
 		tst.b	(Sprite6_InteractFlags).l
 		bpl.w	_met
-		btst	#$03,(g_Flags+$A).l
+		TestFlag	FLAG_SWAMP_ORC_CHALLENGE_DONE
 		bne.w	_met
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ TA_03:
 TA_04:
 		tst.b	(Sprite7_InteractFlags).l
 		bpl.w	_met
-		btst	#$03,(g_Flags+$A).l
+		TestFlag	FLAG_SWAMP_ORC_CHALLENGE_DONE
 		bne.w	_met
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ TA_04:
 TA_05:
 		tst.b	(Sprite8_InteractFlags).l
 		bpl.w	_met
-		btst	#$03,(g_Flags+$A).l
+		TestFlag	FLAG_SWAMP_ORC_CHALLENGE_DONE
 		bne.w	_met
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
@@ -176,7 +176,7 @@ TA_07:
 ; stands at X $35, Y $1D or $1E.
 ; Used by: Waterfall Shrine/1F/180 Prospero's Room [Old Man].
 TA_08:
-		btst	#$01,(g_Flags+2).l
+		TestFlag	FLAG_WATERFALL_PROSPERO
 		bne.w	_notMet
 		cmpi.b	#$35,(Player_X).l
 		bne.w	_notMet
@@ -210,9 +210,9 @@ TA_0A:
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		bne.w	_notMet
-		btst	#$02,(g_Flags+2).l
+		TestFlag	FLAG_GUMI_RITES_DONE
 		beq.w	_notMet
-		move.b	(g_Flags+2).l,d0
+		move.b	(g_Flags+FLAGBYTE_GUMI_PROGRESS).l,d0
 		andi.b	#$18,d0
 		bne.w	_notMet
 		bra.w	_met
@@ -227,7 +227,7 @@ TA_0B:
 		bne.w	_notMet
 		cmpi.b	#$07,(Player_SubY).l
 		bcs.w	_notMet
-		move.b	(g_Flags+2).l,d0
+		move.b	(g_Flags+FLAGBYTE_GUMI_PROGRESS).l,d0
 		andi.b	#$14,d0
 		cmpi.b	#$04,d0
 		bne.w	_notMet
@@ -281,7 +281,7 @@ TA_0E:
 ; at X $1E, Y $21-$22.
 ; Used by: King Nole's Cave/1F/148 Outside [Invisible Cube].
 TA_0F:
-		btst	#$05,(g_Flags).l
+		TestFlag	FLAG_NOLE_CAVE_OUTSIDE
 		bne.w	_notMet
 		cmpi.b	#$1E,(Player_X).l
 		bne.w	_notMet
@@ -393,7 +393,7 @@ TA_16:
 TA_17:
 		cmpi.b	#$0A,(g_ControllerPlayback).l
 		bne.w	_notMet
-		btst	#$01,(g_Flags+4).l
+		TestFlag	FLAG_THIEVES_HIDEOUT_DONE
 		beq.w	_met
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
@@ -544,7 +544,7 @@ TA_21:
 		bne.w	_notMet
 
 _ta21SetFlag:
-		bset	d0,(g_Flags+1).l
+		bset	d0,(g_Flags+FLAGBYTE_SCRATCH).l
 		bra.w	_met
 ; ---------------------------------------------------------------------------
 
@@ -792,7 +792,7 @@ TA_35:
 ; stepping on one sets the latch and the trigger never fires again.
 ; Used by: Mercator Crypt/658 Room 5, Jim Bright [Invisible Cube].
 TA_36:
-		btst	#$04,(g_Flags+$15).l
+		TestFlag	FLAG_CRYPT_GHOST_JIM_BRIGHT
 		bne.w	_notMet
 		cmpi.w	#$1317,(Player_X).l
 		beq.s	_ta36Latch
@@ -810,7 +810,7 @@ TA_36:
 ; ---------------------------------------------------------------------------
 
 _ta36Latch:
-		bset	#$04,(g_Flags+$15).l
+		SetFlag	FLAG_CRYPT_GHOST_JIM_BRIGHT
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
 
@@ -893,9 +893,9 @@ _ta3BY:
 ; Trigger $3C: met once g_Flags+1 bit 0 or g_Flags+$16 bit 7 is set.
 ; Used by: Mir's Tower/1F/751 Entrance [Gate S].
 TA_3C:
-		btst	#$00,(g_Flags+1).l
+		TestFlag	FLAG_SCRATCH_EVENT_DONE
 		bne.w	_met
-		btst	#$07,(g_Flags+$16).l
+		TestFlag	FLAG_MIR_TOWER_GATE_OPEN
 		bne.w	_met
 		bra.w	_notMet
 ; ---------------------------------------------------------------------------
@@ -1247,7 +1247,7 @@ TA_5E:
 ; seven rooms across Destel Well, Mercator Castle, Lake Shrine and the
 ; Labyrinth.
 TA_5F:
-		move.b	(g_Flags+1).l,d0
+		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d0
 		andi.b	#$0F,d0
 		cmpi.b	#$0F,d0
 		bne.w	_notMet
@@ -1374,7 +1374,7 @@ TA_68:
 ; Used by: Mercator/Harbour/Wholesale Shop B1F/661 Ver2 (Items)
 ; [Invisible Cube].
 TA_69:
-		btst	#$04,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_WHOLESALER_STOCK_ALL
 		bne.w	_notMet
 		move.b	(Player_X).l,d0
 		subi.b	#$22,d0
@@ -1573,12 +1573,12 @@ _ta76Spr5:
 ; ---------------------------------------------------------------------------
 
 _ta76Set:
-		bset	#$03,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_BIT3
 		bra.w	_met
 ; ---------------------------------------------------------------------------
 
 _ta76Clear:
-		bclr	#$03,(g_Flags+1).l
+		ClearFlag	FLAG_SCRATCH_BIT3
 		bra.w	_met
 ; ---------------------------------------------------------------------------
 
@@ -1586,9 +1586,9 @@ _ta76Clear:
 ; is clear, the player is at X $14, and fewer than two Logs are held.
 ; Used by: Labyrinth/B1F/415 Tree Room [Gnome].
 TA_77:
-		btst	#$05,(g_AdditionalFlags+9).l
+		TestFlag	FLAG_GNOME_WANTS_LOGS
 		beq.w	_notMet
-		btst	#$01,(g_AdditionalFlags+$B).l
+		TestFlag	FLAG_RAFT2_BUILT
 		bne.w	_notMet
 		cmpi.b	#$14,(Player_X).l
 		bne.w	_notMet

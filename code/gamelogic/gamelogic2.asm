@@ -37,7 +37,7 @@ InitCameraFlattenedCoords:
 CheckForDebugButtons:
 		tst.w	(DebugModeEnable).w
 		bmi.w	_debugDone
-		tst.b	(g_Flags+8).l
+		tst.b	(g_Flags+FLAGBYTE_DOORS_1).l
 		beq.s	_chkWarp
 
 _dogLoop:

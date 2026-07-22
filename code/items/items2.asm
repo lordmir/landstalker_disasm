@@ -47,11 +47,11 @@ ItemUseDetoxGrass:
 ; lava-cooling flag; anywhere else it needs a hostile enemy
 ; present, and queues the Gaia attack.
 ItemUseGaiaStatue:
-		btst	#$02,(g_AdditionalFlags+7).l ; Check for lava room flag
+		TestFlag	FLAG_LAVA_COOLED ; Check for lava room flag
 		bne.s	_gsNeedEnemies
 		cmpi.w	#ROOM_LAVA_STATUE,(g_CurrentRoom).l
 		bne.s	_gsNeedEnemies
-		bset	#$02,(g_AdditionalFlags+7).l
+		SetFlag	FLAG_LAVA_COOLED
 		bra.s	_gsQueue
 ; ---------------------------------------------------------------------------
 

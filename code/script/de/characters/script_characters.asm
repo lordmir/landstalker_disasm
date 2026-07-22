@@ -2491,7 +2491,7 @@ CS_00CC_0:
 ; ---------------------------------------------------------------------------
 
 CS_001B:
-		cmpi.w	#01600,(g_AdditionalFlags+$1C).l
+		cmpi.w	#01600,(g_Flags+FLAGWORD_GREENPEA_WINNINGS).l
 		blt.s	CS_001B_0
 		bsr.w	CheckFlagAndDisplayMessage
 ; ---------------------------------------------------------------------------

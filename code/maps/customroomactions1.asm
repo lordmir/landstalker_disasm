@@ -9,7 +9,7 @@ CustomRoomActions    module
 DoCustomRoomActions:
 		cmpi.w	#ROOM_MERCATOR_CENTRE,(g_OriginalRoom).l
 		bne.s	_Next0
-		bclr	#$03,(g_AdditionalFlags+9).l
+		ClearFlag	FLAG_CASINO_CORRIDOR_DONE
 
 _Next0:
 		cmpi.w	#ROOM_MASSAN_WATERFALL,(g_CurrentRoom).l
@@ -29,7 +29,7 @@ _waterfallHide:
 _Next1:
 		cmpi.w	#ROOM_GUMI,(g_CurrentRoom).l	  ; Gumi
 		bne.s	_Next2			  ; Swamp shrine boss room
-		btst	#$02,(g_Flags+2).l
+		TestFlag	FLAG_GUMI_RITES_DONE
 		bne.w	EndCustomRoomAction
 		move.w	#$FFFF,(Sprite3_X).l
 		bra.w	EndCustomRoomAction
@@ -37,7 +37,7 @@ _Next1:
 _Next2:
 		cmpi.w	#ROOM_SWAMP_SHRINE_BOSS,(g_CurrentRoom).l	  ; Swamp shrine boss room
 		bne.s	_Next3			  ; Path between Gumi and Ryuma
-		btst	#$05,(g_Flags+2).l
+		TestFlag	FLAG_SWAMP_SHRINE_BOSS_DEAD
 		beq.w	EndCustomRoomAction
 		move.w	#$FFFF,(Sprite1_X).l
 		bra.w	EndCustomRoomAction
@@ -45,7 +45,7 @@ _Next2:
 _Next3:
 		cmpi.w	#ROOM_GUMI_PATH_LANDSLIDE,(g_CurrentRoom).l	  ; Path between Gumi and Ryuma
 		bne.s	_Next4			  ; Ryuma entrance to thieve's cave
-		btst	#$06,(g_Flags+2).l
+		TestFlag	FLAG_GUMI_LANDSLIDE_CLEARED
 		beq.w	EndCustomRoomAction
 		move.w	#$2119,(Sprite2_X).l
 		clr.w	(Sprite2_Z).l
@@ -90,14 +90,14 @@ _dryHideFar:
 _Next7:
 		cmpi.w	#ROOM_MASSAN_MAYORS_HOUSE,(g_CurrentRoom).l	  ; Massan mayor's house
 		bne.s	_Next8			  ; Jar	Lady Upstairs
-		tst.b	(g_Flags).l
+		tst.b	(g_Flags+FLAGBYTE_EARLY_STORY).l
 		bpl.w	EndCustomRoomAction
 		move.b	#$02,d0
 		bsr.w	HideSpriteAtD0
 		lea	(Sprite1_X).l,a1
 		move.w	#$1012,X(a1)
 		andi.b	#$3F,RotationAndSize(a1)
-		btst	#$04,(g_Flags).l
+		TestFlag	FLAG_MASSAN_RESCUE_DONE
 		bne.s	_mayorAltPose
 		clr.b	d1
 		bsr.w	SetSpriteRotationAnimFlags
@@ -124,7 +124,7 @@ _mayorAltPose:
 _Next8:
 		cmpi.w	#ROOM_MERCATOR_JARS_UPSTAIRS,(g_CurrentRoom).l	  ; Jar	Lady Upstairs
 		bne.s	_Next9			  ; Mercator North
-		btst	#$03,(g_Flags+3).l
+		TestFlag	FLAG_JAR_LADY_MOVED
 		beq.w	EndCustomRoomAction
 		move.b	#$07,d0
 		move.w	#$1F23,d1
@@ -136,7 +136,7 @@ _Next8:
 _Next9:
 		cmpi.w	#ROOM_MERCATOR_NORTH,(g_CurrentRoom).l	  ; Mercator North
 		bne.s	_Next10			  ; Mercator Harbour
-		btst	#$04,(g_Flags+$14).l
+		TestFlag	FLAG_MERCATOR_DUNGEON_DOOR_OPEN
 		beq.w	EndCustomRoomAction
 		move.b	#$00,d0
 		move.w	#$3336,d1
@@ -146,7 +146,7 @@ _Next9:
 _Next10:
 		cmpi.w	#ROOM_MERCATOR_HARBOUR,(g_CurrentRoom).l	  ; Mercator Harbour
 		bne.s	_Next11			  ; Castle entrance
-		btst	#$05,(g_Flags+$14).l
+		TestFlag	FLAG_HARBOUR_NPC_MOVED
 		beq.w	EndCustomRoomAction
 		move.b	#$04,d0
 		move.w	#$1E1A,d1
@@ -158,7 +158,7 @@ _Next10:
 _Next11:
 		cmpi.w	#ROOM_CASTLE_ENTRANCE,(g_CurrentRoom).l	  ; Castle entrance
 		bne.s	_Next12			  ; Crypt
-		btst	#$00,(g_Flags+$14).l
+		TestFlag	FLAG_CASTLE_GUARDS_MOVED
 		beq.w	EndCustomRoomAction
 		move.b	#$00,d0
 		move.w	#$2218,d1
@@ -171,9 +171,9 @@ _Next11:
 _Next12:
 		cmpi.w	#ROOM_CRYPT_MAIN_HALL,(g_CurrentRoom).l	  ; Crypt
 		bne.s	_Next13			  ; Castle
-		cmpi.b	#$FF,(g_Flags+$15).l
+		cmpi.b	#$FF,(g_Flags+FLAGBYTE_CRYPT_GHOSTS).l
 		bne.s	_cryptHideOff
-		bset	#$03,(g_Flags+$16).l
+		SetFlag	FLAG_CRYPT_ALL_GHOSTS_DONE
 		cmpi.b	#$21,(Player_X).l
 		bcs.s	_cryptWestHide
 		move.b	#$00,d0
@@ -183,7 +183,7 @@ _Next12:
 		bra.w	EndCustomRoomAction
 
 _cryptWestHide:
-		btst	#$06,(g_Flags+$14).l
+		TestFlag	FLAG_CRYPT_BOSS_DEAD
 		bne.s	_cryptHideOff
 		move.b	#$02,d0
 		bsr.w	HideSpriteAtD0
@@ -200,7 +200,7 @@ _cryptHideOff:
 _Next13:
 		cmpi.w	#ROOM_CASTLE_MAIN_HALL,(g_CurrentRoom).l	  ; Castle
 		bne.s	_Next14			  ; Marsh shrine EkeEke	fall
-		btst	#$00,(g_Flags+$14).l
+		TestFlag	FLAG_CASTLE_GUARDS_MOVED
 		beq.w	EndCustomRoomAction
 		move.b	#$00,d0
 		move.w	#$1619,d1
@@ -214,7 +214,7 @@ _Next13:
 _Next14:
 		cmpi.w	#ROOM_SWAMP_SHRINE_EKEEKE_PRIZE,(g_CurrentRoom).l	  ; Marsh shrine EkeEke	fall
 		bne.s	_Next15			  ; Prison cell
-		btst	#$02,(g_Flags+$A).l
+		TestFlag	FLAG_SWAMP_EKEEKE_PRIZE_TAKEN
 		beq.w	EndCustomRoomAction
 		move.b	#$00,d0
 		move.w	#$0010,d1
@@ -225,11 +225,11 @@ _Next15:
 		cmpi.w	#ROOM_CASTLE_PRISON_CELL_4,(g_CurrentRoom).l	  ; Prison cell
 		bne.s	_Next16			  ; Mercator Harbour
 		move.b	#$00,d0
-		btst	#$05,(g_AdditionalFlags).l
+		TestFlag	FLAG_CASTLE_DUNGEON_ESCAPE
 		beq.w	HideSpriteAtD0
-		btst	#$01,(g_AdditionalFlags+7).l
+		TestFlag	FLAG_PRISONER_RELEASED
 		bne.w	HideSpriteAtD0
-		btst	#$07,(g_AdditionalFlags).l
+		TestFlag	FLAG_PRISON_CELL_NPC_MOVED
 		beq.w	EndCustomRoomAction
 		move.w	#$0F10,d1
 		bsr.w	MoveSprite
@@ -238,7 +238,7 @@ _Next15:
 _Next16:
 		cmpi.w	#ROOM_MERCATOR_HARBOUR_AFTER_SUNSTONE,(g_CurrentRoom).l	  ; Mercator Harbour
 		bne.s	_Next17			  ; Verla mine exit to Destel
-		btst	#$05,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_HARBOUR_SUNSTONE_SCENE
 		bne.w	EndCustomRoomAction
 		cmpi.b	#$24,(Player_X).l
 		bhi.w	EndCustomRoomAction
@@ -257,7 +257,7 @@ _Next16:
 _Next17:
 		cmpi.w	#ROOM_VERLA_MINE_PATH_TO_DESTEL,(g_CurrentRoom).l	  ; Verla mine exit to Destel
 		bne.s	_Next18			  ; Crypt boss room
-		btst	#$00,(g_AdditionalFlags+8).l
+		TestFlag	FLAG_VERLA_MINE_PATH_NPCS
 		beq.w	EndCustomRoomAction
 		move.b	#$00,d0
 		move.w	#$0D11,d1
@@ -270,7 +270,7 @@ _Next17:
 _Next18:
 		cmpi.w	#ROOM_CRYPT_BOSS,(g_CurrentRoom).l	  ; Crypt boss room
 		bne.s	_Next19			  ; Jar	lady
-		btst	#$06,(g_Flags+$14).l
+		TestFlag	FLAG_CRYPT_BOSS_DEAD
 		beq.w	EndCustomRoomAction
 		move.b	#$01,d0
 		move.w	#$0020,d1
@@ -280,7 +280,7 @@ _Next18:
 _Next19:
 		cmpi.w	#ROOM_MERCATOR_JARS_DOWNSTAIRS,(g_CurrentRoom).l	  ; Jar	lady
 		bne.s	_Next20			  ; Wholesaler
-		move.b	(g_Flags+$13).l,d0
+		move.b	(g_Flags+FLAGBYTE_VASE_COUNTER).l,d0
 		andi.b	#$E0,d0
 		cmpi.b	#$60,d0
 		bcs.w	EndCustomRoomAction
@@ -293,9 +293,9 @@ _Next20:
 		cmpi.w	#ROOM_MERCATOR_WHOLESALER,(g_CurrentRoom).l	  ; Wholesaler
 		bne.s	_Next21			  ; Statue Warp	In Mountains
 		lea	(Sprite1_X).l,a0
-		btst	#$04,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_WHOLESALER_STOCK_ALL
 		bne.s	_hideAllStock
-		btst	#$03,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_WHOLESALER_STOCK_BACK
 		beq.s	_hideFrontStock
 
 
@@ -321,7 +321,7 @@ _hideFrontStock:
 _Next21:
 		cmpi.w	#ROOM_MOUNTAINS_STATUE,(g_CurrentRoom).l	  ; Statue Warp	In Mountains
 		bne.s	_Next22
-		btst	#$06,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_GOLAS_EYE_USED
 		beq.w	_Done
 		move.b	#$00,d0
 		move.w	#$362D,d1
@@ -331,7 +331,7 @@ _Next21:
 _Next22:
 		cmpi.w	#ROOM_CAVE_GAME_BEGIN,(g_CurrentRoom).l
 		bne.s	_Next23
-		btst	#$06,(g_AdditionalFlags+$A).l
+		TestFlag	FLAG_GOLAS_EYE_USED
 		beq.w	_Done
 		move.b	#$01,d0
 		move.w	#$1B2B,d1

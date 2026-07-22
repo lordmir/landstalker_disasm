@@ -124,7 +124,7 @@ _sweepZRestoreNW:
 _sweepHitNW:
 		btst	#$00,CombatFlags(a5)
 		beq.s	_sweepDamageNW
-		bset	#$03,(g_AdditionalFlags+8).l
+		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_SwordHit
 		bra.s	_sweepZRestoreNW
@@ -198,7 +198,7 @@ _sweepZRestoreNE:
 _sweepHitNE:
 		btst	#$00,CombatFlags(a5)
 		beq.s	_sweepDamageNE
-		bset	#$03,(g_AdditionalFlags+8).l
+		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_SwordHit
 		bra.s	_sweepZRestoreNE
@@ -272,7 +272,7 @@ _sweepZRestoreSW:
 _sweepHitSW:
 		btst	#$00,CombatFlags(a5)
 		beq.s	_sweepDamageSW
-		bset	#$03,(g_AdditionalFlags+8).l
+		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_SwordHit
 		bra.s	_sweepZRestoreSW
@@ -346,7 +346,7 @@ _sweepZRestoreSE:
 _sweepHitSE:
 		btst	#$00,CombatFlags(a5)
 		beq.s	_sweepDamageSE
-		bset	#$03,(g_AdditionalFlags+8).l
+		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_SwordHit
 		bra.s	_sweepZRestoreSE
@@ -635,14 +635,14 @@ _deadDone:
 ; item box isn't already on screen and the item limit allows), else
 ; drops GoldOrChestContents gold as a moneybag, else just despawns.
 _HandleEnemyDeath:
-		tst.b	(g_Flags+5).l
+		tst.b	(g_Flags+FLAGBYTE_MERCATOR_PROGRESS).l
 		bmi.w	_deathScripted
 		move.w	ItemDropProbability(a5),d6
 		cmpi.w	#$0001,d6
 		bne.s	_deathNormal
 		tst.b	GoldOrChestContents(a5)
 		bne.s	_deathNormal
-		btst	#$00,(g_Flags+3).l
+		TestFlag	FLAG_AXE_MAGIC_OBTAINED
 		beq.s	_ghostRespawn
 		bsr.w	SetSacredTreeCutFlag
 
@@ -739,7 +739,7 @@ _deathScripted:
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_EnemyDie1
 		andi.b	#$7F,InteractFlags(a5)
-		bset	#$00,(g_Flags+1).l
+		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 
 ; Mummy revival: steps a $38-frame get-up animation, then re-hostiles
