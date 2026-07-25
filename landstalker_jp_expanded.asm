@@ -212,6 +212,7 @@ EndCreditsData:             include "code\ending\endcreditsdata_jp.asm"
                             include "code\system\regioncheckjump.asm"
 RoomData_0:                 include "code\pointertables\maps\roomlist_jp.asm"
 RoomMaps:                   include "code\graphics\roommaps_jp.asm"
+                            Align   $2
 RoomPals:                   include "code\palettes\roompals.asm"
 RoomExits:                  incbin  "assets_packed\roomdata\warps\exits.bin"
 RegionCheck:                include "code\system\regioncheck.asm"
