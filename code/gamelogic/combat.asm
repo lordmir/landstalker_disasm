@@ -41,7 +41,7 @@ HandleAttack:
 		bne.s	_CheckFullCharge
 		bra.w	_SpawnChargeProjectile
 
-; Statue of Gaia was used (items2 sets g_GaiaAttackQueued): pretend a
+; Statue of Gaia was used (itemuse1 sets g_GaiaAttackQueued): pretend a
 ; charged Gaia Sword release and run the screen-wide quake attack.
 _GaiaStatueQuake:
 		move.b	#ITM_GAIASWORD,(g_ChargedSword).l

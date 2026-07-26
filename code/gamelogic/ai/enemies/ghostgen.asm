@@ -25,8 +25,8 @@ EnemyAI_GhostGen:
 ; hidden sprite is a ghost and a live ghost generator is present in
 ; the room, restore the ghost from its Init* fields at its spawn
 ; point with full health. If the spawn spot validates, continue with
-; FinishGhostRespawn (enemyai2) to start the materialise; if it is
-; blocked, fall through into enemyai2's MoveSpriteOffscreen (this
+; FinishGhostRespawn (enemyaicommon) to start the materialise; if it is
+; blocked, fall through into enemyaicommon's MoveSpriteOffscreen (this
 ; file is included directly before it) to stay hidden and retry.
 CheckRespawnGhost:
 		cmpi.b	#SpriteB_Ghost,InitSpriteGraphic(a5)
@@ -72,6 +72,6 @@ _genFound:
 		bsr.w	j_j_CalcSpriteHitbox
 		jsr	(j_ValidateSpritePosition).l
 		bcc.s	FinishGhostRespawn
-		; falls through into enemyai2's MoveSpriteOffscreen
+		; falls through into enemyaicommon's MoveSpriteOffscreen
 
 		modend

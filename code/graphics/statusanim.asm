@@ -1,6 +1,6 @@
 StatusAnim	module
 ; Streams the animated status-effect icon graphics for the marker
-; drawn above the player's head (the sprite piece gamelogic3 adds
+; drawn above the player's head (the sprite piece spriterender adds
 ; at tile $514 when any status bit is set). d1 = the player's
 ; status bits; the highest-priority active effect wins: curse >
 ; paralysis > confusion > poison. Every 8th call the next frame is

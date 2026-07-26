@@ -1,10 +1,10 @@
 LoadIsometricBlocks1	module
 ; Streams map blocks into the VDP plane name tables as the camera
 ; scrolls. Whenever the camera crosses a block boundary, the mover
-; (gamelogic1) calls two of the strip loaders below to convert the 12
+; (playermovement) calls two of the strip loaders below to convert the 12
 ; newly revealed blocks along each leading screen edge into tile cells,
 ; queued in g_ScreenBuffer and drained by ProcessPendingBlockCopies
-; (mapload) during HBlank. InitBlocks (gamelogic6) builds the initial
+; (mapload) during HBlank. InitBlocks (roominit) builds the initial
 ; window the same way, calling LoadTopTiles once per camera step.
 ;
 ; d2 is the destination slot in the plane ring: the name tables hold

@@ -1,8 +1,8 @@
-Items1	module
+ItemDispatch	module
 ; Item use, part 1: the dispatcher. PreUseItemTable
 ; (pointertables/items) is a list of {bra.w handler, item id, $FF}
 ; entries terminated by id $FF; the matching entry is jumped into
-; directly. The handlers (items2/3.asm) leave through items3's
+; directly. The handlers (itemuse1/itemuse2.asm) leave through itemuse2's
 ; shared exits - ReturnSuccess, ReturnFailure, or
 ; ReturnSuccessAndEnablePostUse, which arms the item's second pass
 ; (RunItemPostUse, run by the menu after the room reloads) by

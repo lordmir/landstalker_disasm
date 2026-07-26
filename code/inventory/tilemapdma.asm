@@ -1,4 +1,4 @@
-Inventory2	module
+TilemapDMA	module
 ; Hand-built DMA queue entries for the menu, textbox and HUD
 ; tilemaps. Each writes four longs straight into the DMA op queue:
 ; auto-increment 2 + length high, length low + source mid, source

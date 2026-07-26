@@ -275,7 +275,7 @@ _swcOpen:
 
 ; Action 7: queue cutscene action d0 to run when the dialogue ends
 ; (g_PendingCutsceneAction; reset to $FFFF by PlayerTalk and
-; dispatched by gamelogic4 afterwards). IDA called it
+; dispatched by playeractions afterwards). IDA called it
 ; LoadNextCharacter.
 QueueCutsceneAction:
 		movem.l	d0-d1/a1,-(sp)

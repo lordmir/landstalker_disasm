@@ -1,8 +1,8 @@
-StringFuncs1	module
+StringPrint	module
 ; Core text engine: prints a huffman-compressed string into the
 ; textbox tile buffer, character by character. String id d0 selects
 ; bank (id high byte) and entry (low byte) via StringPtr; DecodeChar
-; (stringfuncs3) decompresses one character at a time.
+; (huffmandecode) decompresses one character at a time.
 ;
 ; Two print modes, selected by bit 0 of g_TextFlags:
 ;   PrintString          - typewriter: the textbox is DMA-copied to

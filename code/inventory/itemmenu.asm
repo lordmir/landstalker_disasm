@@ -1,8 +1,8 @@
-Inventory3	module
+ItemMenu	module
 ; The item screen of the inventory menu: setup (InitInv), the item
 ; grid drawing, and the interactive cursor loop (RunItemMenu). The
 ; cursor, scrolling and select handlers it threads through live in
-; inventory4.asm, which jumps back into ItemMenuLoop /
+; itemmenuassets.asm, which jumps back into ItemMenuLoop /
 ; ItemMenuExit here.
 ;
 ; While the menu is open, g_Buffer doubles as its state block:
@@ -12,7 +12,7 @@ Inventory3	module
 ; +$1C the saved palette line 1, +$5C the 40-byte item list (2
 ; columns x 20 rows) and +$84 the window tilemap working copy.
 
-; Open the item screen: build the item list (inventory4), clear
+; Open the item screen: build the item list (itemmenuassets), clear
 ; the icon VRAM and stream in all 63 item icons ($10 tiles apart,
 ; flushing the queue every 4), save palette line 1 into the state
 ; block, load the menu's palette line 0 and stamp the opening
@@ -94,7 +94,7 @@ _gpCopy:
 ; Rebuild the cursor state from its saved copy: g_InvSelectedSlot
 ; (reset to 0 if past $10) becomes the slot word at +6, and
 ; g_InvCursorPos unpacks into the column (+$A, bit 0) and row
-; (+$C, bits 1-2); BuildOwnedItemList (inventory4) then applies it.
+; (+$C, bits 1-2); BuildOwnedItemList (itemmenuassets) then applies it.
 _restoreCursor:
 		move.b	(g_InvSelectedSlot).l,d0
 		andi.w	#$001F,d0
@@ -124,7 +124,7 @@ _rcRow:
 ; Leave the item menu: pack the cursor back into g_InvSelectedSlot
 ; / g_InvCursorPos (so the menu reopens where it closed), then
 ; fall through to return the exit code. Also jumped to from the
-; select handler in inventory4.
+; select handler in itemmenuassets.
 ItemMenuExit:
 		movem.w	d0,-(sp)
 		lea	((g_Buffer+6)).l,a0
@@ -145,7 +145,7 @@ ItemMenuExit:
 		movem.w	(sp)+,d0
 
 ; d1 = 2 if Start is held, 1 if B, else 0. Also used on its own by
-; the save-prompt code in inventory5.
+; the save-prompt code in equipmenu.
 ReadMenuExitButtons:
 		move.b	(g_Controller1State).l,d1
 		btst	#CTRL_START,d1
@@ -181,7 +181,7 @@ _rspCopy:
 
 ; The item screen's interactive loop. Runs until B/Start backs out
 ; (via ItemMenuExit; d1 = the exit code) or the select handler in
-; inventory4 (ItemMenuSelect, on A/C) picks an item - it rejoins at
+; itemmenuassets (ItemMenuSelect, on A/C) picks an item - it rejoins at
 ; ItemMenuLoop to keep browsing or leaves through ItemMenuExit
 ; with d1 = 0 and the item in d0. The cursor roams a 2 x 4 window
 ; over the 2 x 20 item grid: in the outer rows up/down scroll the

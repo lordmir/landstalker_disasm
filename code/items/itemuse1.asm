@@ -1,7 +1,7 @@
-Items2	module
+ItemUse1	module
 ; Item use, part 2: the first batch of pre-use handlers, reached
 ; through PreUseItemTable. The shared exits (ReturnSuccess /
-; ReturnFailure / ConsumeItem) are in items3.asm.
+; ReturnFailure / ConsumeItem) are in itemuse2.asm.
 
 ; EkeEke: restore health, consume one, redraw the HUD.
 ItemUseEkeEke:

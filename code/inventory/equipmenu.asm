@@ -1,4 +1,4 @@
-Inventory5	module
+EquipMenu	module
 ; The equip screen: a 4-row x 5-column grid (sword / armour / boots
 ; / ring rows, candidates from the EquipInventoryLayout table, 5
 ; item ids per row). The equipment itself is g_CurrentEquippedItems
@@ -6,7 +6,7 @@ Inventory5	module
 ; item in each row draws in the normal palette, everything else
 ; greyed (palette line 2); picking a new item just rewrites the
 ; slot's nibble. The name drawing and select handler live in
-; inventory6.asm (DrawEquipItemNames / EquipMenuSelect, which jumps
+; equipmenudraw.asm (DrawEquipItemNames / EquipMenuSelect, which jumps
 ; back into EquipMenuRefresh here).
 ;
 ; Equip-screen state in g_Buffer: +$10..+$16 = each slot's equipped
@@ -84,7 +84,7 @@ _iecCol:
 		rts
 
 ; B/Start pressed: pack the cursor back into g_EquipCursorPos and
-; return the exit code (via inventory3's ReadMenuExitButtons) to
+; return the exit code (via itemmenu's ReadMenuExitButtons) to
 ; RunEquipMenu's caller.
 _emExit:
 		lea	(g_Buffer).l,a1
@@ -109,7 +109,7 @@ _emExit:
 ; DebugModeEnable set and Start held, it plays the end credits
 ; forever. The loop reads the d-pad through the auto-repeat
 ; handler, slides the cursor around the 4x5 grid, blinks it while
-; idle, confirms through EquipMenuSelect (inventory6, which
+; idle, confirms through EquipMenuSelect (equipmenudraw, which
 ; rejoins at EquipMenuRefresh) and leaves through _emExit on
 ; B/Start.
 RunEquipMenu:

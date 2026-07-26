@@ -1,4 +1,4 @@
-Inventory1	module
+InventoryMenu	module
 ; Opening and closing the inventory menu, plus the equipment
 ; appliers shared with the rest of the game: armour defence and the
 ; sword hit-effect graphics.
@@ -9,7 +9,7 @@ Inventory1	module
 ; lift has settled at phase $17). Fades out, switches the VDP to
 ; the menu layout (H-int off, scroll and sprites cleared, the map
 ; plane blanked) and hands over to the Use/Equip action bar
-; (j_LoadUseEquipPrompt / j_RunUseEquipPrompt, stringfuncs3).
+; (j_LoadUseEquipPrompt / j_RunUseEquipPrompt, textprompts).
 ; On return: carry clear = plain close; d0 = 0 = use the selected
 ; item (_useItem); anything else = the Equip option - run the
 ; equip screen (RunEquipMenu), apply the new equipment and
@@ -115,7 +115,7 @@ _rsStore:
 		addq.b	#$01,d0
 		rts
 
-; Run the item screen (RunItemMenu, inventory3): d1 non-zero means
+; Run the item screen (RunItemMenu, itemmenu): d1 non-zero means
 ; the player backed out - just close. Otherwise an item was chosen
 ; (id in d0): run its UseItem handler, close the menu (rebuilding
 ; the room), then run the item's post-reload follow-up (RunItemPostUse)

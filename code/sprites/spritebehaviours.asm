@@ -592,7 +592,7 @@ EB_MakeInvisible:
 ; two profiles back to back - a straight drop at THROWPHASE_DROP and
 ; a directional throw at THROWPHASE_THROW - ending at the $FF
 ; terminator (THROWPHASE_THROW_END). See constants/throwphases.inc
-; and gamelogic4's carry state machine, which picks the entry phase.
+; and playeractions's carry state machine, which picks the entry phase.
 ThrowSpeedTable:	dc.b $08,$04,$04,$04,$04,$04,$04,$04,$02,$02
 		dc.b $02,$02,$02,$02,$02,$02,$02,$02,$01,$01
 		dc.b $01,$01,$01,$08,$08,$08,$08,$04,$04,$04
@@ -741,7 +741,7 @@ _toAirChk:
 		bra.s	_toChkStop
 
 ; Cmds $16/$32 ($32 = shop item): object just put down, still sliding
-; with momentum inherited from a moving platform (see gamelogic4
+; with momentum inherited from a moving platform (see playeractions
 ; _putDown). Keeps moving until it stops or hits something, then
 ; restores the saved behaviour (same special cases as EB_ThrownObject).
 EB_PutDownObject:

@@ -1,6 +1,6 @@
-Inventory6	module
+EquipMenuDraw	module
 ; The equip screen's name drawing and select handler - the grid,
-; cursor and input loop are in inventory5.asm. (The save-slot
+; cursor and input loop are in equipmenu.asm. (The save-slot
 ; select screen that used to sit in this file lives in
 ; code/title/gameselectscreen.asm.)
 
@@ -168,7 +168,7 @@ _onlNext:
 ; allowed, a real item only when owned. Store the column in the
 ; row's slot word, repack all four slot nibbles into
 ; g_CurrentEquippedItems, and redraw through EquipMenuRefresh
-; (inventory5). Unowned picks bounce back silently.
+; (equipmenu). Unowned picks bounce back silently.
 EquipMenuSelect:
 		lea	(g_Buffer).l,a1
 		lea	$00000018(a1),a0
