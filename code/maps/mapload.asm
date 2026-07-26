@@ -76,7 +76,9 @@ LoadGame:
 		bsr.w	ClearAndRefreshVDPSpriteTableDMA
 		tst.w	(Player_X).l
 		bne.s	_lgHaveSave
+	if ~def(DISABLE_INTRO)
 		SetFlag	FLAG_INTRO_IN_PROGRESS
+	endif
 		move.b	#$03,(g_Flags+FLAGBYTE_CHICKEN_TOSS_BEST).l
 		bsr.w	ClearGameData
 		clr.b	d0
@@ -143,7 +145,9 @@ _clrChestLoop:
 		move.b	#$18,(Player_Y).l
 		move.b	#$90,(Player_FloorHeight).l
 		move.w	#$0090,(Player_Z).l
+	if ~def(DISABLE_INTRO)
 		move.w	#$00FE,(g_ControllerPlayback).l
+	endif
 		rts
 
 

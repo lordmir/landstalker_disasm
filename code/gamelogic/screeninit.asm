@@ -20,8 +20,10 @@ StartGame:
 		bsr.w	LoadHUDSprites
 		bsr.w	InitScrollRegs
 		bsr.w	InitBlocks
+	if ~def(DISABLE_INTRO)
 		cmpi.w	#ROOM_INTRO_START,(g_CurrentRoom).l
 		beq.s	Intro
+	endif
 		jsr	(j_RefreshAllHUD).l
 		jsr	(j_RefreshHUD).l
 		jmp	(FadeFromBlack).l
@@ -151,8 +153,12 @@ VDPRegs:	dc.w $9100
 ; intro (room $8B), else the status bar tilemap at palette 3 /
 ; priority.
 LoadHUDTiles:
+	if def(DISABLE_INTRO)
+		bra.s	_copyTilemap
+	else
 		cmpi.w	#ROOM_INTRO_START,(g_CurrentRoom).l	  ; Intro start
 		bne.s	_copyTilemap
+	endif
 		lea	(g_HUD_Row1).l,a1	  ; Blank HUD
 		move.w	#$07FF,d7
 
