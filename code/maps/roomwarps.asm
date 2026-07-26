@@ -1,4 +1,4 @@
-Room1	module
+RoomWarps	module
 ; Room-load: fills the RAM WarpTbl for the current room, and - when
 ; the current room is a story variant - appends the original room's
 ; warps as well, so variant rooms keep their doorways.

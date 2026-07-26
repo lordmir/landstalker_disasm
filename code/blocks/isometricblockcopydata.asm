@@ -1,5 +1,5 @@
 ; Block-copy lookup tables for the isometric map streamer
-; (LoadIsometricBlocks1/2). Extracted from the former vdpcopyblockcmds.bin,
+; (loadblockstrips/blockptrcalc). Extracted from the former vdpcopyblockcmds.bin,
 ; ulmapoffsets.bin, dmapoffsets.bin and rmapoffsets.bin blobs so the data is
 ; legible; the emitted bytes are unchanged.
 

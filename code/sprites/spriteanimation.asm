@@ -1,4 +1,4 @@
-SpriteFuncs1	module
+SpriteAnim	module
 ; Advances the animation frame of every active sprite once per tick.
 UpdateFrames:
 		lea	(Sprite1_X).l,a0

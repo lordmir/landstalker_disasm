@@ -1,4 +1,4 @@
-LoadIsometricBlocks1	module
+LoadBlockStrips	module
 ; Streams map blocks into the VDP plane name tables as the camera
 ; scrolls. Whenever the camera crosses a block boundary, the mover
 ; (playermovement) calls two of the strip loaders below to convert the 12

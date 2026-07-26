@@ -1,4 +1,4 @@
-SpriteFuncs2	module
+PlayerSpecialAnim	module
 ; Runs the player's collapse animation, ticked from GameLoop while
 ; g_PlayerAnimation is non-zero (set when health reaches zero). The
 ; counter steps through the collapse poses (animation $44 or $48 by

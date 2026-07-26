@@ -1,4 +1,4 @@
-Sprites1	module
+SpriteBehaviourLoad	module
 j_LoadSpriteBehaviour:
 		jmp	LoadSpriteBehaviour(pc)	  ; D0 = spritedata[0x34] = bytes[4] & 0x03 << 8 | bytes[7]
 

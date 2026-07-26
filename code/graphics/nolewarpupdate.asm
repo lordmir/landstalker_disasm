@@ -1,6 +1,6 @@
-VisualEffects2	module
+NoleWarpUpdate	module
 ; The Nole/Kazalt warp's per-frame helpers, called from NoleWarp and
-; its main loop in visualeffects1.asm. They all run with a6 still
+; its main loop in nolewarpfx.asm. They all run with a6 still
 ; pointing at NoleWarp's stack frame, redeclared here:
 
 _nw_starCount	= -$134		; star spawn seed (stars drawn = /16, max $28)
@@ -51,7 +51,7 @@ NoleWarpRampUpParams:
 
 ; Warp-out per-frame tick, d0 = strobe threshold ($23A): past the
 ; threshold, run the Kazalt strobe and colour/sound flash
-; (NoleWarpKazaltFlash, visualeffects1.asm). Before it, count the
+; (NoleWarpKazaltFlash, nolewarpfx.asm). Before it, count the
 ; whiten timer down from $1C - SND_WarpPad on its first tick, one
 ; brighten-ramp pass every 4 ticks.
 NoleWarpOutTick:

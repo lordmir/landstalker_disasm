@@ -1,4 +1,4 @@
-SpriteFuncs3	module
+SpritePaletteLoad	module
 ; Sprite palette allocation. Palettes 1 and 3 carry the sprite
 ; colours: each has a "low" slot (colours 2-7); palette 1 also has a
 ; "high" slot (colours 8-14), while palette 3's high half belongs to

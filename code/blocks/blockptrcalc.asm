@@ -1,4 +1,4 @@
-LoadIsometricBlocks2	module
+BlockPtrCalc	module
 ; Map-row offset helpers. A map plane row is 74 block words = 148
 ; bytes, so cell (x,y) lives at byte offset y*148 + x*2. The multiply
 ; by 148 is a table lookup; _mult148NegTbl sits directly before

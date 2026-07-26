@@ -216,7 +216,7 @@ _darkenPal16:
 		moveq	#$0000000F,d7
 
 ; Darkens d7+1 colours at a0 by one step per component and commits
-; the palette. Also reached through the visualeffects1 fade tables.
+; the palette. Also reached through the visual-effects fade tables.
 DarkenPaletteStep:
 		move.w	(a0),d0
 		move.w	d0,d1

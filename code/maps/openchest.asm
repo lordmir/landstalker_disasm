@@ -1,4 +1,4 @@
-Chests2	module
+ChestOpen	module
 ; Marks chest a4 opened: empties its contents ($FF) and sets its
 ; ChestIndex bit in g_ChestOpenFlags - except in the Labrynth
 ; church room, whose chest is never marked and so refills every

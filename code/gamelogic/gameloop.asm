@@ -7,7 +7,7 @@ ResetGame:
 		bcc.w	ResetAll
 
 ; Entered from the title screen fall-through, and jumped to from
-; GameOver (system.asm) to reload the save and re-enter the main loop.
+; GameOver (startup.asm) to reload the save and re-enter the main loop.
 RestartFromSave:
 		bsr.w	LoadGame
 		bsr.w	StartGame

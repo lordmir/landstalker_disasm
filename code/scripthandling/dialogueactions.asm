@@ -728,7 +728,7 @@ FahlEnemyList:	dc.b SPR_ORC1
 ; the win (g_AdditionalFlags+$1A) and run the milestone script at
 ; 5/10/20/30/40 wins ("keep going?"); 50 wins ends the challenge.
 ; Used by: behaviour scripts: Mercator/Center/Interior/676 Fahl's Dojo
-; [Invisible Cube]; also LoadPlayerSpecialAnimation (spritefuncs2) when
+; [Invisible Cube]; also LoadPlayerSpecialAnimation (playerspecialanim) when
 ; the player collapses mid-challenge (health 0: only sprite 1 is reset,
 ; and the KO carries on to CSA_0033).
 CSA_0032:
@@ -823,7 +823,7 @@ _c0032End:
 
 ; Fahl's dojo defeat: the player was KO'd - restore the saved health
 ; and controls and admit the loss.
-; Used by: LoadPlayerSpecialAnimation (spritefuncs2) when the player's
+; Used by: LoadPlayerSpecialAnimation (playerspecialanim) when the player's
 ; collapse animation ends during Fahl's challenge.
 CSA_0033:
 		bset	#IF_TALKABLE,InteractFlags(a5)

@@ -1,4 +1,4 @@
-Chests1	module
+ChestLookup	module
 ; Assigns a spawning chest sprite (a1) its contents and global chest
 ; index: RoomChestOffsets (keyed on the original, pre-variant room
 ; number) gives the room's base index into ChestContents, plus
