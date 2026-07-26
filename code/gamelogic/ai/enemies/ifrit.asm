@@ -17,7 +17,7 @@ EnemyAI_Ifrit_B:
 
 ; A routine, run every tick.
 EnemyAI_Ifrit_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	EnemyAI_Ifrit
@@ -39,18 +39,18 @@ EnemyAI_Ifrit:
 ; Reset: drop the invincibility and alternate-bank flags, stand on
 ; the idle behaviour in the ready state ($10).
 _reset:
-		bclr	#$06,CombatFlags(a5)
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: standing in his pit, rolling for the next move. (The
 ; fourth call is never reached - the fireball try always succeeds.)
 _chooseMove:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	_tryDash
@@ -122,8 +122,8 @@ _startDash:
 		move.w	d1,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
-		bset	#$00,CombatFlags(a5)
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
 
@@ -143,7 +143,7 @@ _startTeleport:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		clr.b	AICounter(a5)
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		ori	#$01,ccr
 		rts
 
@@ -188,7 +188,7 @@ _tripleFireball:
 _facePlayer:
 		bsr.w	GetDirToPlayer
 		move.b	d2,d1
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		rts
 
@@ -212,8 +212,8 @@ _stateRts:
 ; behaviour glides him to the next pit; poses ACT_ATTACK3/4/5 with a
 ; Z hop (+$10 at tick $F, back down at $1D), done at tick $27.
 _dash:
-		bset	#$00,CombatFlags(a5)
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		move.w	#ACT_ATTACK3,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$05,AICounter(a5)
@@ -245,7 +245,7 @@ _dashDown:
 
 _dashTick:
 		bsr.w	j_j_OnTick
-		bclr	#$07,AnimCtrl(a5)
+		bclr	#AC_FRAME_DIRTY,AnimCtrl(a5)
 		rts
 
 ; Teleport: sink (ACT_ATTACK6, then ACT_ATTACK7 from tick 5),
@@ -254,7 +254,7 @@ _dashTick:
 ; already in - centred in the cell (SubX/SubY $0808). Surface at
 ; $14, facing the player; hold ACT_ATTACK6 until $1E, then reset.
 _teleport:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$05,AICounter(a5)
@@ -263,7 +263,7 @@ _teleport:
 		cmpi.b	#$0F,AICounter(a5)
 		bcs.s	_teleRts
 		bhi.s	_teleSurface
-		bset	#$06,InteractFlags(a5)
+		bset	#IF_NO_DRAW,InteractFlags(a5)
 		move.w	#00004,d6
 		jsr	(j_GenerateRandomNumber).l
 		add.b	d7,d7
@@ -292,7 +292,7 @@ _teleSurface:
 		bcs.s	_teleRts
 		bhi.s	_teleRecover
 		bsr.w	_facePlayer
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		rts
 
 _teleRecover:
@@ -464,9 +464,9 @@ _spawn:
 		move.b	#$04,Speed(a1)
 		move.b	#$80,FallRate(a1)
 		jsr	(j_InitSpawnedSprite).l
-		bset	#$00,CombatFlags(a1)
-		bset	#$07,InteractFlags(a1)
-		bset	#$07,InitInteractFlags(a1)
+		bset	#CF_INVINCIBLE,CombatFlags(a1)
+		bset	#IF_HOSTILE,InteractFlags(a1)
+		bset	#IF_HOSTILE,InitInteractFlags(a1)
 		tst.b	d0
 		rts
 

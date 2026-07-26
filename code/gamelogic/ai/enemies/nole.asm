@@ -17,7 +17,7 @@ EnemyAI_Nole_B:
 
 ; A routine, run every tick.
 EnemyAI_Nole_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -53,7 +53,7 @@ _startChase:
 ; State $10: chasing (invisibly, while vanished - the reappear try
 ; is gated on AICounter reaching $1E first). Try each move in turn.
 _chase:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		beq.s	_chaseMoves
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$1E,AICounter(a5)
@@ -85,7 +85,7 @@ _chaseTick:
 ; his height, hitbox top $1F above); success starts the fade-in
 ; (state $25).
 _tryReappear:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		beq.w	TeleportFail
 		move.w	#00100,d6
 		jsr	(j_GenerateRandomNumber).l
@@ -128,7 +128,7 @@ _vanishMiss:
 ; Visible, player in the $28-$A0 band ahead, $10 lateral: 301-in-1000
 ; chance to summon the axe projectile (state $21).
 _tryProjectile:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		bne.s	_projectileMiss
 		move.w	#$00A0,d5
 		move.w	#$FFD8,d6
@@ -154,7 +154,7 @@ _projectileMiss:
 ; 26-in-1000 chance to leap in swinging (state $22,
 ; BHVS_LEAP_ADVANCE).
 _tryLeapSwing:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		bne.s	_leapSwingMiss
 		move.w	#$0048,d5
 		move.w	#$0030,d6
@@ -179,7 +179,7 @@ _leapSwingMiss:
 ; Visible, player within $20 ahead, $8 lateral: swing, always (state
 ; $23).
 _trySwing:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		bne.s	_swingMiss
 		move.w	#$0020,d5
 		move.w	#$0000,d6
@@ -217,7 +217,7 @@ _attackStates:
 ; (InteractFlags bit 6) at the floating height with gravity off -
 ; and back to the chase state, invisible.
 _vanish:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$04,AICounter(a5)
@@ -225,10 +225,10 @@ _vanish:
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		cmpi.b	#$08,AICounter(a5)
 		bcs.s	_vanishRts
-		bset	#$06,InteractFlags(a5)
+		bset	#IF_NO_DRAW,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
-		bset	#$07,FallRate(a5)
+		bset	#FALLR_NO_GRAVITY,FallRate(a5)
 		clr.b	AICounter(a5)
 		bra.w	_startChase
 
@@ -239,7 +239,7 @@ _vanishRts:
 ; (ACT_ATTACK6 then 5, 4 ticks each), then drop the invincibility
 ; and gravity-off and resume the chase.
 _reappear:
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$04,AICounter(a5)
@@ -247,8 +247,8 @@ _reappear:
 		move.w	#ACT_ATTACK5,QueuedAction(a5)
 		cmpi.b	#$08,AICounter(a5)
 		bcs.s	_reappearRts
-		bclr	#$00,CombatFlags(a5)
-		bclr	#$07,FallRate(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a5)
 		bra.w	_startChase
 
 _reappearRts:

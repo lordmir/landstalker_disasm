@@ -10,7 +10,7 @@ EnemyAI_Ghost2_B:
 
 ; A routine, run every tick.
 EnemyAI_Ghost2_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_spawn
@@ -35,7 +35,7 @@ _startMaterialise:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$20,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
 
@@ -43,7 +43,7 @@ _startChase:
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		clr.b	AnimPhase(a5)
 		rts
 
@@ -167,7 +167,7 @@ _drainWait:
 ; The drain killed the player: clear their blink flag so they are
 ; drawn (a5 is the player here) and run the death sequence.
 _playerDead:
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		bra.w	j_j_PlayerDeath
 
 ; State $22 vanish: a large hit box ($29 ahead/behind, $19 lateral)

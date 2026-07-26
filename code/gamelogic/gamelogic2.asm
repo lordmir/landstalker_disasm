@@ -700,7 +700,7 @@ GetClearanceAbove:
 _caLoop:
 		cmpa.l	a5,a1
 		beq.s	_caNext
-		btst	#$06,StateFlags(a1)
+		btst	#SF_CARRIED,StateFlags(a1)
 		bne.s	_caNext
 		cmp.w	HitBoxXEnd(a1),d1
 		bhi.s	_caNext

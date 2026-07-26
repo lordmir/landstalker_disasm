@@ -286,7 +286,7 @@ SetSpriteRotationAnimFlags:
 		addi.b	#$40,d1
 		andi.b	#$80,d1
 		beq.s	_chkAnim3		  ; branch if d0 = 0xC0	or 0x40
-		btst	#$00,InteractFlags(a1)		  ; Check bit0 of spr[0xC]
+		btst	#IF_NO_ROTATE,InteractFlags(a1)		  ; Check bit0 of spr[0xC]
 		bne.s	_chkAnim3		  ; Only true for Zak
 		move.b	#$04,d2
 
@@ -316,11 +316,11 @@ _setAnim:
 		ext.w	d2
 		move.w	d2,AnimationIndex(a1)
 		clr.w	AnimationFrame(a1)
-		btst	#$04,AnimFlags(a1)
+		btst	#AF_SINGLE_ORIENT,AnimFlags(a1)
 		bne.s	_rotDone
 		andi.b	#$40,d0
 		lsr.b	#$03,d0
-		andi.b	#$F7,TileSource(a1)
+		andi.b	#($FF-(1<<TS_HFLIP)),TileSource(a1)
 		or.b	d0,TileSource(a1)
 
 _rotDone:
@@ -422,9 +422,9 @@ _chkStatic:
 		bne.s	_loadBehaviour
 		tst.w	BehavParam(a1)
 		bne.s	_loadBehaviour
-		btst	#$05,InteractFlags(a1)
+		btst	#IF_LIFTABLE,InteractFlags(a1)
 		bne.s	_loadBehaviour
-		bset	#$07,FallRate(a1)
+		bset	#FALLR_NO_GRAVITY,FallRate(a1)
 
 _loadBehaviour:
 		move.w	#$FFFF,SpriteUnderneath(a1)
@@ -477,7 +477,7 @@ _esScan:
 		move.b	1(a0),CurrentHealth(a1)	; Health
 		cmpi.b	#$FF,CurrentHealth(a1)	  ; 0xFF - indestructable
 		bne.s	_esStats
-		bset	#$00,CombatFlags(a1)
+		bset	#CF_INVINCIBLE,CombatFlags(a1)
 
 _esStats:
 		clr.b	CurrentSubHealth(a1)
@@ -564,7 +564,7 @@ _ispLoop:
 		movem.l	(sp)+,a1
 		cmpa.l	#Player_X,a1
 		beq.s	_ispPop
-		btst	#$00,StateFlags(a1)
+		btst	#SF_HIDDEN,StateFlags(a1)
 		bne.s	_ispPop
 		movea.l	a1,a5
 		jsr	(j_ValidateSpritePosition).l

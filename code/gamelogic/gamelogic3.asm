@@ -183,9 +183,9 @@ _projDone:
 ; Hidden or carried sprites get ScreenX cleared and drop out of the
 ; list unless their gfx-reload bit (RenderFlags bit 7) is pending.
 ProjectSpriteToScreen:
-		btst	#$06,InteractFlags(a6)
+		btst	#IF_NO_DRAW,InteractFlags(a6)
 		bne.w	_offScreen
-		btst	#$00,StateFlags(a6)
+		btst	#SF_HIDDEN,StateFlags(a6)
 		bne.w	_offScreen
 		move.w	Z(a6),d2
 		move.w	CentreX(a6),d0
@@ -235,13 +235,13 @@ ProjectSpriteToScreen:
 
 _offScreen:
 		clr.l	ScreenX(a6)
-		bclr	#$07,RenderFlags(a6)
+		bclr	#RF_LAYOUT_DIRTY,RenderFlags(a6)
 		beq.s	_clrAnimBit
 		move.w	d6,(a2)+
 		rts
 
 _clrAnimBit:
-		bclr	#$07,AnimCtrl(a6)
+		bclr	#AC_FRAME_DIRTY,AnimCtrl(a6)
 		rts
 
 
@@ -253,7 +253,7 @@ _frameLoop:
 		bmi.s	_framesDone
 		lea	(Player_X).l,a1
 		adda.w	d0,a1
-		btst	#$00,StateFlags(a1)
+		btst	#SF_HIDDEN,StateFlags(a1)
 		bne.s	_frameNext
 		bsr.s	LoadSpriteFrame
 
@@ -344,7 +344,7 @@ _loadTiles:
 		movem.l	(sp)+,a1-a2
 		tst.b	d0
 		beq.s	_buildEntry
-		bset	#$00,InteractFlags(a1)
+		bset	#IF_NO_ROTATE,InteractFlags(a1)
 
 _buildEntry:
 		bsr.w	BuildVdpSpriteEntry
@@ -394,13 +394,13 @@ _jmpDoDMACopy:
 						  ; a1 = DMA Destination
 
 _frameLoadSprite:
-		bclr	#$07,RenderFlags(a1)
+		bclr	#RF_LAYOUT_DIRTY,RenderFlags(a1)
 		beq.s	_chkAnimReload
-		bclr	#$07,AnimCtrl(a1)
+		bclr	#AC_FRAME_DIRTY,AnimCtrl(a1)
 		bra.s	_reload
 
 _chkAnimReload:
-		bclr	#$07,AnimCtrl(a1)
+		bclr	#AC_FRAME_DIRTY,AnimCtrl(a1)
 		beq.s	_noReload
 
 _reload:
@@ -435,7 +435,7 @@ _buildIfMoved:
 		movem.l	a3-a6,-(sp)
 		bclr	#ACTBH_REFRESH,QueuedAction(a1)
 		bne.s	_rebuild
-		btst	#$06,StateFlags(a1)
+		btst	#SF_CARRIED,StateFlags(a1)
 		bne.s	_rebuild
 		move.w	SpriteUnderneath(a1),d0
 		bmi.s	_chkAnimAction
@@ -488,7 +488,7 @@ _chkStatusIcon:
 		move.w	d1,(a2)+
 
 _chkHitOverlay:
-		btst	#$01,InteractFlags(a1)
+		btst	#IF_HURT,InteractFlags(a1)
 		beq.s	_emitPieces
 		move.b	RenderFlags(a1),d3
 		andi.b	#$07,d3

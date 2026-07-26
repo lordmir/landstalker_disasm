@@ -18,7 +18,7 @@ EnemyAI_GhostGen_A:
 EnemyAI_GhostGen:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; Chunk of RunEnemyAI, entered for hidden ($7F7F) enemy slots: if the
@@ -64,7 +64,7 @@ _genFound:
 		move.b	InitGoldOrChestCont(a5),GoldOrChestContents(a5)
 		move.w	InitDialogue(a5),Dialogue(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
-		bclr	#$00,StateFlags(a5)
+		bclr	#SF_HIDDEN,StateFlags(a5)
 		clr.b	AIState(a5)
 		clr.b	CombatFlags(a5)
 		movea.l	a5,a1

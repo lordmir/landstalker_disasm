@@ -636,7 +636,7 @@ _carryUpdate:
 		move.b	d0,(g_CarryPhase).l
 		cmpi.b	#$02,d0
 		bne.s	_carryPhase1
-		bset	#$05,StateFlags(a1,d1.w)
+		bset	#SF_GRABBED,StateFlags(a1,d1.w)
 
 _carryPhase1:
 		andi.w	#$FF3F,(Player_Action).l
@@ -655,8 +655,8 @@ _carryLift:
 		cmpi.b	#$10,d0
 		bcs.w	_eatAC
 		bne.s	_carryHold
-		bset	#$06,StateFlags(a1,d1.w)
-		bclr	#$05,StateFlags(a1,d1.w)
+		bset	#SF_CARRIED,StateFlags(a1,d1.w)
+		bclr	#SF_GRABBED,StateFlags(a1,d1.w)
 
 _carryHold:
 		andi.w	#$FF3F,(Player_Action).l
@@ -710,8 +710,8 @@ _putDown:
 		move.b	Height(a1,d1.w),d2
 		sub.w	d2,d0
 		move.w	d0,(Player_HitBoxZEnd).l
-		bclr	#$06,StateFlags(a1,d1.w)
-		bclr	#$07,FallRate(a1,d1.w)
+		bclr	#SF_CARRIED,StateFlags(a1,d1.w)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a1,d1.w)
 		bset	#ACTBH_REFRESH,QueuedAction(a1,d1.w)
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
@@ -747,7 +747,7 @@ _dropDone:
 		move.b	d0,Speed(a1,d1.w)
 		move.b	RotationAndSize(a0),d0
 		andi.b	#DIR_MASK,d0
-		andi.b	#$3F,RotationAndSize(a1,d1.w)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1,d1.w)
 		or.b	d0,RotationAndSize(a1,d1.w)
 		move.w	#BHV_PUT_DOWN_OBJECT,d2
 		cmpi.b	#BHV_SHOP_ITEM,BehavCmd(a1,d1.w)
@@ -784,15 +784,15 @@ _throwSet:
 		move.w	d0,BehavParam(a1,d1.w)
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a1,d1.w)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1,d1.w)
 		or.b	d0,RotationAndSize(a1,d1.w)
 		move.w	(Player_HitBoxZEnd).l,d0
 		clr.w	d2
 		move.b	Height(a1,d1.w),d2
 		sub.b	d2,d0
 		move.w	d0,(Player_HitBoxZEnd).l
-		bclr	#$06,StateFlags(a1,d1.w)
-		bclr	#$07,FallRate(a1,d1.w)
+		bclr	#SF_CARRIED,StateFlags(a1,d1.w)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a1,d1.w)
 		move.b	#SND_Throw,d0
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_LoadFromD0
@@ -1066,7 +1066,7 @@ CheckPickUpEntity:
 		lea	(Player_X).l,a5
 		bsr.w	ValidateSpritePosition
 		bcc.s	_puChkUnder
-		btst	#$05,InteractFlags(a1)
+		btst	#IF_LIFTABLE,InteractFlags(a1)
 		bne.w	_puFromValidate
 
 _puChkUnder:
@@ -1076,11 +1076,11 @@ _puChkUnder:
 _puUnderLoop:
 		tst.w	(a4)
 		bmi.s	_puScan
-		btst	#$00,StateFlags(a4)
+		btst	#SF_HIDDEN,StateFlags(a4)
 		bne.s	_puUnderNext
 		tst.w	SpriteUnderneath(a4)
 		bne.s	_puUnderNext
-		btst	#$05,InteractFlags(a4)
+		btst	#IF_LIFTABLE,InteractFlags(a4)
 		beq.s	_puUnderNext
 		cmpi.b	#BHV_THROWN_OBJECT,BehavCmd(a4)
 		beq.s	_puUnderNext
@@ -1103,7 +1103,7 @@ _puScan:
 _puLoop:
 		tst.w	(a0)
 		bmi.s	_puResolve
-		btst	#$05,InteractFlags(a0)
+		btst	#IF_LIFTABLE,InteractFlags(a0)
 		beq.s	_puNext
 		cmpi.b	#BHV_THROWN_OBJECT,BehavCmd(a0)
 		beq.s	_puNext
@@ -1115,7 +1115,7 @@ _puLoop:
 		bne.s	_puNext
 
 _puFacing:
-		btst	#$04,InteractFlags(a0)
+		btst	#IF_TALKABLE,InteractFlags(a0)
 		beq.s	_puBox
 		movem.w	d0-d1,-(sp)
 		move.b	RotationAndSize(a0),d0
@@ -1157,7 +1157,7 @@ _puResolve:
 		clr.w	d0
 		move.b	Height(a4),d0
 		sub.w	d0,HitBoxZEnd(a5)
-		btst	#$05,InteractFlags(a1)
+		btst	#IF_LIFTABLE,InteractFlags(a1)
 		bne.s	_puFromValidate
 
 _puNone:
@@ -1215,9 +1215,9 @@ _talkScan:
 _talkLoop:
 		tst.w	(a0)
 		bmi.s	_talkResolve
-		btst	#$04,InteractFlags(a0)
+		btst	#IF_TALKABLE,InteractFlags(a0)
 		beq.s	_talkNext
-		btst	#$00,StateFlags(a0)
+		btst	#SF_HIDDEN,StateFlags(a0)
 		bne.s	_talkNext
 		movea.w	d2,a5
 		cmpa.w	(a0,d1.w),a5
@@ -1284,9 +1284,9 @@ _talkStart:
 		move.b	Dialogue(a0),d0
 		lsr.b	#$02,d0
 		move.b	d0,(g_currentSpeakerScriptID).l
-		btst	#$00,InteractFlags(a0)
+		btst	#IF_NO_ROTATE,InteractFlags(a0)
 		bne.w	_talkNoFace
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eori.b	#DIR_FLIP,d0
@@ -1383,12 +1383,12 @@ _ntpSet:
 		ext.w	d0
 		move.w	d0,AnimationIndex(a0)
 		clr.w	AnimationFrame(a0)
-		andi.b	#$F7,TileSource(a0)
+		andi.b	#($FF-(1<<TS_HFLIP)),TileSource(a0)
 		move.b	RotationAndSize(a0),d0
 		andi.b	#$40,d0
 		lsr.b	#$03,d0
 		or.b	d0,TileSource(a0)
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		rts
 
 
@@ -1406,7 +1406,7 @@ _chLoop:
 		bmi.s	_chResolve
 		cmpi.b	#SpriteB_Chest,SpriteGraphic(a0)
 		bne.s	_chNext
-		btst	#$00,StateFlags(a0)
+		btst	#SF_HIDDEN,StateFlags(a0)
 		bne.s	_chNext
 		cmp.w	(a0,d1.w),d2
 		beq.s	_chBox
@@ -1513,7 +1513,7 @@ _chHUD:
 
 _chOpenAnim:
 		move.w	#$000C,AnimationFrame(a4)
-		ori.b	#$80,AnimCtrl(a4)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a4)
 		bsr.w	LoadSprites
 		bsr.w	UpdateAnimTiles
 		bsr.w	FlushDMACopyQueue
@@ -1578,7 +1578,7 @@ _chestCloseAnim:
 
 
 _chestAnimStep:
-		ori.b	#$80,AnimCtrl(a4)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a4)
 		movem.l	a4,-(sp)
 		bsr.w	LoadSprites
 		bsr.w	UpdateAnimTiles
@@ -1606,7 +1606,7 @@ UpdatePlayerSpriteFrame:
 		move.w	(Player_PrevAction).l,d2
 		move.w	(Player_Action).l,d0
 		move.w	d0,(Player_PrevAction).l
-		btst	#$00,InteractFlags(a0)
+		btst	#IF_NO_ROTATE,InteractFlags(a0)
 		bne.s	_upsDone
 		tst.w	d0
 		beq.s	_idle
@@ -1644,22 +1644,22 @@ SetPlayerIdlePose:
 		beq.s	_idleSW
 		bhi.s	_idleNW
 		move.w	#$0004,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _idleNE:
 		clr.w	AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _idleNW:
 		clr.w	AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _idleSW:
 		move.w	#$0004,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 PlayerPickUp:
@@ -1680,22 +1680,22 @@ _puFace:
 		beq.s	_puFaceSW
 		bhi.s	_puFaceNW
 		move.w	#$0014,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _puFaceNE:
 		move.w	#$0010,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _puFaceNW:
 		move.w	#$0010,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _puFaceSW:
 		move.w	#$0014,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 
@@ -1703,8 +1703,8 @@ _puFaceSW:
 _markFrameDirty:
 		cmp.w	d0,d2
 		beq.s	_mfdDone
-		bset	#$07,AnimCtrl(a0)
-		bset	#$07,RenderFlags(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0)
 
 _mfdDone:
 		rts
@@ -1745,7 +1745,7 @@ _walkStep:
 		move.b	AnimationFrame1(a0),d0
 		move.b	d0,d1
 		andi.b	#$E0,AnimationFrame1(a0)
-		btst	#$01,CombatFlags(a0)
+		btst	#CF_WALK_BACKWARDS,CombatFlags(a0)
 		beq.s	_walkFwdFrame
 		subq.b	#$04,d1
 		bra.s	_walkSetFrame
@@ -1756,12 +1756,12 @@ _walkFwdFrame:
 _walkSetFrame:
 		andi.b	#$1C,d1
 		or.b	d1,AnimationFrame1(a0)
-		bset	#$07,AnimCtrl(a0)
-		bset	#$07,RenderFlags(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0)
 
 _walkFacing:
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,CombatFlags(a0)
+		btst	#CF_WALK_BACKWARDS,CombatFlags(a0)
 		beq.s	_walkFace
 		eori.b	#DIR_FLIP,d0
 
@@ -1772,22 +1772,22 @@ _walkFace:
 		beq.s	_walkSW
 		bhi.s	_walkNW
 		ori.b	#$0C,AnimationIndex1(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _walkNE:
 		ori.b	#$08,AnimationIndex1(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _walkNW:
 		ori.b	#$08,AnimationIndex1(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _walkSW:
 		ori.b	#$0C,AnimationIndex1(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 PlayerJump:
@@ -1823,22 +1823,22 @@ _jumpFace:
 		beq.s	_jumpSW
 		bhi.s	_jumpNW
 		addi.w	#$0024,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _jumpNE:
 		addi.w	#$0020,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _jumpNW:
 		addi.w	#$0020,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _jumpSW:
 		addi.w	#$0024,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 PlayerAttack:
@@ -1862,33 +1862,33 @@ _atkFace:
 		beq.s	_atkSW
 		bhi.s	_atkNW
 		move.w	#$003C,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _atkNE:
 		move.w	#$0038,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _atkNW:
 		move.w	#$0038,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _atkSW:
 		move.w	#$003C,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 PlayerClimb:
 		move.w	#$0040,AnimationIndex(a0)
 		btst	#$06,RotationAndSize(a0)
 		beq.s	_climbNoFlip
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		bra.s	_climbFrame
 
 _climbNoFlip:
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 
 _climbFrame:
 		move.b	AnimPhase(a0),d0
@@ -1898,8 +1898,8 @@ _climbFrame:
 		andi.w	#$000C,d0
 		lsr.b	#$01,d0
 		move.w	FrameNumbers(pc,d0.w),AnimationFrame(a0)
-		bset	#$07,AnimCtrl(a0)
-		bset	#$07,RenderFlags(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0)
 
 _climbRet:
 		rts
@@ -1915,22 +1915,22 @@ PlayerTakeDamage:
 		beq.s	_dmgSW
 		bcs.s	_dmgNW
 		move.w	#$0044,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _dmgNE:
 		move.w	#$0044,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _dmgNW:
 		move.w	#$0048,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 _dmgSW:
 		move.w	#$0048,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 		modend

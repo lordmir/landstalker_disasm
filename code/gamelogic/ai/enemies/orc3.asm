@@ -10,7 +10,7 @@ EnemyAI_Orc3_B:
 
 ; A routine, run every tick.
 EnemyAI_Orc3_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle

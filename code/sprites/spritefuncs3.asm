@@ -71,11 +71,11 @@ _lutNext:
 		rts
 
 _typeFound:
-		btst	#$05,TileSource(a0)	  ; Palette is 1 or 3
+		btst	#TS_PAL_LO,TileSource(a0)	  ; Palette is 1 or 3
 		beq.s	_lutNext		  ; SKIP - Palette 1 is	the room palette, palette 3 is Nigel's palette. Either way, we already have the palette.
 		move.b	1(a1),d2
 		bmi.s	_hiSlot			  ; High bit set - High	palette
-		btst	#$06,TileSource(a0)	  ; Palette is 4 - we only have	a low slot, as the high	slot is	occupied by the	HUD.
+		btst	#TS_PAL_HI,TileSource(a0)	  ; Palette is 4 - we only have	a low slot, as the high	slot is	occupied by the	HUD.
 		beq.s	_loPal1
 		lea	((g_Pal3Base+4)).l,a2
 		lea	SpritePaletteLo(pc),a3
@@ -83,7 +83,7 @@ _typeFound:
 		bra.s	_loCopy			  ; Load low palette
 
 _hiSlot:
-		btst	#$06,TileSource(a0)
+		btst	#TS_PAL_HI,TileSource(a0)
 		bne.s	_hiOnPal3
 		lea	((g_Pal1Base+$10)).l,a2
 		lea	SpritePaletteHi(pc),a3

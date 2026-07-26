@@ -19,7 +19,7 @@ EnemyAI_Zak_B:
 
 ; A routine, run every tick.
 EnemyAI_Zak_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -231,7 +231,7 @@ _flyUp:
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$1F,AICounter(a5)
 		bhi.s	_dive
-		bset	#$07,FallRate(a5)
+		bset	#FALLR_NO_GRAVITY,FallRate(a5)
 		addi.w	#$0004,Z(a5)
 		addi.w	#$0004,HitBoxZEnd(a5)
 		move.b	AICounter(a5),d0
@@ -239,7 +239,7 @@ _flyUp:
 		lsl.w	#$07,d0
 		move.w	d0,QueuedAction(a5)
 		bsr.w	GetDirToPlayer
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_Slash1
@@ -251,7 +251,7 @@ _flyUp:
 ; once Zak is within $40 or $58 (random) of the player's Z (stashed
 ; in RepeatPtr).
 _dive:
-		bclr	#$07,FallRate(a5)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a5)
 		cmpi.b	#$20,AICounter(a5)
 		bne.s	_diveTrack
 		trap	#$00			  ; Trap00Handler
@@ -274,7 +274,7 @@ _diveHeightSet:
 ; the chase. Contact does the damage.
 _diveTrack:
 		subq.b	#$01,AICounter(a5)
-		bclr	#$07,FallRate(a5)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a5)
 		move.b	Action1(a5),d0
 		andi.b	#$30,d0
 		beq.w	_diveLand

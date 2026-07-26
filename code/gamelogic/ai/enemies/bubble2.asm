@@ -9,7 +9,7 @@ EnemyAI_Bubble2_B:
 
 ; A routine, run every tick.
 EnemyAI_Bubble2_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -26,7 +26,7 @@ EnemyAI_Bubble2:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; Idle: if not mid behaviour record, roll 0-999 and test the low byte
@@ -59,9 +59,9 @@ _startHop:
 
 ; Run the behaviour; while airborne queue the squash/stretch poses.
 _airPose:
-		btst	#$05,Action1(a5)	; ACT_JUMP bit
+		btst	#ACTB_JUMP,Action1(a5)	; ACT_JUMP bit
 		bne.s	_jumpPose
-		btst	#$04,Action1(a5)	; ACT_FALL bit
+		btst	#ACTB_FALL,Action1(a5)	; ACT_FALL bit
 		bne.s	_fallPose
 		bsr.w	j_j_OnTick
 		rts

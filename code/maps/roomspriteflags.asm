@@ -38,7 +38,7 @@ SetSpriteZ:
 		movem.w	d0,-(sp)
 		ext.w	d0
 		lsl.w	#$07,d0
-		bset	#$07,FallRate(a5,d0.w)
+		bset	#FALLR_NO_GRAVITY,FallRate(a5,d0.w)
 		movem.w	(sp)+,d0
 		rts
 
@@ -52,7 +52,7 @@ SetSpriteFacing:
 		lea	(Sprite1_X).l,a1
 		adda.w	d0,a1
 		lsl.b	#$06,d1
-		andi.b	#$3F,RotationAndSize(a1)  ; clear facing bits
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1)  ; clear facing bits
 		or.b	d1,RotationAndSize(a1)
 		bsr.w	SetSpriteRotationAnimFlags
 		movem.l	(sp)+,d0/a1
@@ -209,12 +209,12 @@ _psScan:
 		bcc.s	_psDone
 		btst	d0,(a1,d1.w)
 		beq.s	_psNext
-		andi.b	#$3F,RotationAndSize(a0,d2.w)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0,d2.w)
 		ori.b	#DIR_SW,RotationAndSize(a0,d2.w)
 		move.w	#$0004,AnimationIndex(a0,d2.w)
-		bclr	#$00,StateFlags(a0,d2.w)
+		bclr	#SF_HIDDEN,StateFlags(a0,d2.w)
 		clr.w	BehavParam(a0,d2.w)
-		bset	#$07,RenderFlags(a0,d2.w)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0,d2.w)
 
 _psNext:
 		movea.l	a6,a0

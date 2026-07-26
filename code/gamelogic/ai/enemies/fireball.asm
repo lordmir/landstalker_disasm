@@ -11,7 +11,7 @@ EnemyAI_SmallFireball_B:
 		nop
 
 EnemyAI_SmallFireball_A:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 

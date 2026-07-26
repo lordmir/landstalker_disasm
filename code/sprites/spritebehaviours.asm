@@ -98,9 +98,9 @@ _mncRts:
 ; One movement step ignoring walls and sprites: RenderFlags bit 6
 ; makes the shared move code skip its collision checks.
 MoveSpriteForwardNoClip:
-		bset	#$06,RenderFlags(a5)
+		bset	#RF_NOCLIP,RenderFlags(a5)
 		bsr.s	_moveFwd
-		bclr	#$06,RenderFlags(a5)
+		bclr	#RF_NOCLIP,RenderFlags(a5)
 		rts
 
 ; Moves the sprite one step in its facing direction at Speed (low
@@ -111,7 +111,7 @@ MoveSpriteForwardNoClip:
 ; and sets the walk Action1/MovedDirFlags bits (skipped while riding a
 ; platform). Carry set = blocked; d7 = $FF sprite / $00 wall.
 MoveSpriteForward:
-		bclr	#$06,RenderFlags(a5)
+		bclr	#RF_NOCLIP,RenderFlags(a5)
 
 _moveFwd:
 		move.b	RotationAndSize(a5),d0
@@ -128,7 +128,7 @@ _moveNE:
 		andi.w	#$000F,d0
 		sub.w	d0,HitBoxYStart(a5)
 		sub.w	d0,HitBoxYEnd(a5)
-		btst	#$06,RenderFlags(a5)
+		btst	#RF_NOCLIP,RenderFlags(a5)
 		bne.w	_neApply
 		move.w	HitBoxYStart(a5),d0
 		andi.b	#$08,d0
@@ -214,7 +214,7 @@ ApplyContactDamage:
 		bne.s	_cdSolid
 
 _cdFireball:
-		bset	#$00,(Player_RenderFlags).l
+		bset	#RF_HIT_MAGIC,(Player_RenderFlags).l
 
 _cdSolid:
 		move.b	#$FF,d7
@@ -244,7 +244,7 @@ _moveSE:
 		andi.w	#$000F,d0
 		add.w	d0,HitBoxXStart(a5)
 		add.w	d0,HitBoxXEnd(a5)
-		btst	#$06,RenderFlags(a5)
+		btst	#RF_NOCLIP,RenderFlags(a5)
 		bne.w	_seApply
 		move.w	HitBoxXEnd(a5),d0
 		andi.b	#$08,d0
@@ -310,7 +310,7 @@ _moveSW:
 		andi.w	#$000F,d0
 		add.w	d0,HitBoxYStart(a5)
 		add.w	d0,HitBoxYEnd(a5)
-		btst	#$06,RenderFlags(a5)
+		btst	#RF_NOCLIP,RenderFlags(a5)
 		bne.w	_swApply
 		move.w	HitBoxYEnd(a5),d0
 		andi.b	#$08,d0
@@ -376,7 +376,7 @@ _moveNW:
 		andi.w	#$000F,d0
 		sub.w	d0,HitBoxXStart(a5)
 		sub.w	d0,HitBoxXEnd(a5)
-		btst	#$06,RenderFlags(a5)
+		btst	#RF_NOCLIP,RenderFlags(a5)
 		bne.s	_nwApply
 		move.w	HitBoxXStart(a5),d0
 		andi.b	#$08,d0
@@ -462,7 +462,7 @@ EB_TurnNWImmediate:
 
 ; RefreshSpriteFacing unless rotation is disabled (InteractFlags bit 0).
 RefreshFacingIfRotatable:
-		btst	#$00,InteractFlags(a5)
+		btst	#IF_NO_ROTATE,InteractFlags(a5)
 		bne.s	_rfRts
 		bsr.s	RefreshSpriteFacing
 
@@ -481,8 +481,8 @@ RefreshSpriteFacing:
 		andi.b	#DIR_MASK,d1
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
-		ori.b	#$80,AnimCtrl(a5)
-		ori.b	#$80,RenderFlags(a5)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a5)
+		ori.b	#(1<<RF_LAYOUT_DIRTY),RenderFlags(a5)
 		rts
 
 EB_TurnCW:
@@ -511,7 +511,7 @@ EB_TurnNW:
 
 EB_SetDirCW:
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		addi.b	#$40,d0
 		andi.b	#$C0,d0
 		or.b	d0,RotationAndSize(a5)
@@ -520,7 +520,7 @@ EB_SetDirCW:
 
 EB_SetDirCCW:
 		move.b	RotationAndSize(a5),d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		subi.b	#$40,d0
 		andi.b	#$C0,d0
 		or.b	d0,RotationAndSize(a5)
@@ -528,18 +528,18 @@ EB_SetDirCCW:
 		bra.w	LoadNextCmd
 
 EB_SetDirNE:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		moveq	#$1,d0
 		bra.w	LoadNextCmd
 
 EB_SetDirSE:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		ori.b	#DIR_SE,RotationAndSize(a5)
 		moveq	#$1,d0
 		bra.w	LoadNextCmd
 
 EB_SetDirSW:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		ori.b	#DIR_SW,RotationAndSize(a5)
 		moveq	#$1,d0
 		bra.w	LoadNextCmd
@@ -561,7 +561,7 @@ EB_SetDirRandom:
 		move.w	#$0100,d6
 		jsr	(j_GenerateRandomNumber).l
 		andi.b	#$C0,d7
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d7,RotationAndSize(a5)
 		moveq	#$1,d0
 		bra.w	LoadNextCmd
@@ -581,11 +581,11 @@ EB_SetDir180:
 		bra.w	LoadNextCmd
 
 EB_MakeVisible:
-		andi.b	#$BF,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_NO_DRAW)),InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 EB_MakeInvisible:
-		ori.b	#$40,InteractFlags(a5)
+		ori.b	#(1<<IF_NO_DRAW),InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Per-tick speed profile of a thrown object, indexed by BehavParam:
@@ -645,7 +645,7 @@ _toMove:
 		andi.b	#$82,d0
 		cmpi.b	#$80,d0
 		bne.s	_toVase
-		btst	#$00,CombatFlags(a0)
+		btst	#CF_INVINCIBLE,CombatFlags(a0)
 		bne.s	_toVase
 		cmpi.w	#$0001,ItemDropProbability(a0)
 		bne.s	_toHitEnemy
@@ -660,7 +660,7 @@ _toHitEnemy:
 		addi.b	#$0A,d0
 		cmpa.l	a0,a5
 		bcs.s	_toApplyHit
-		bchg	#$06,InteractFlags(a0)
+		bchg	#IF_NO_DRAW,InteractFlags(a0)
 
 _toApplyHit:
 		movea.l	a0,a5
@@ -684,7 +684,7 @@ _toHitDone:
 _toVase:
 		cmpi.b	#SpriteB_Vase,SpriteGraphic(a5)
 		bne.s	_toBounce
-		bclr	#$05,InteractFlags(a5)
+		bclr	#IF_LIFTABLE,InteractFlags(a5)
 		move.w	#BHV_SPECIAL_ANIMATION,BehavParam(a5)
 		clr.b	Speed(a5)
 		rts
@@ -1056,26 +1056,26 @@ _xmRts:
 
 _xmSideStep:
 		andi.b	#$80,d3
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		eori.b	#DIR_FLIP,d3
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d3
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		eori.b	#DIR_FLIP,d2
 		andi.b	#$C0,d2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _turnToY:
 		cmpi.b	#$FF,d3
 		beq.w	_loadNext2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
@@ -1106,17 +1106,17 @@ _tyRts:
 		rts
 
 _tyFallback:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d4,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d3
 		or.b	d3,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
@@ -1131,21 +1131,21 @@ _xOpposed:
 
 _xoTryY:
 		andi.b	#$80,d3
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d4,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bra.w	TryStepForward
@@ -1196,25 +1196,25 @@ _ymRts:
 _ymSideStep:
 		ori.b	#$40,d2
 		andi.b	#$C0,d2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		eori.b	#DIR_FLIP,d2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
 		eori.b	#DIR_FLIP,d3
 		andi.b	#$C0,d3
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d3,RotationAndSize(a5)
 		bra.w	TryStepForward
 
 _turnToX:
 		cmpi.b	#$FF,d2
 		beq.w	_loadNext2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
@@ -1245,17 +1245,17 @@ _txRts:
 		rts
 
 _txFallback:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d4,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d2
 		or.b	d2,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.w	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
@@ -1270,23 +1270,23 @@ _yOpposed:
 
 _yoTryX:
 		ori.b	#$40,d2
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d2
 		or.b	d2,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.s	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.s	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d4
 		or.b	d4,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
 		bsr.w	TryStepForward
 		bcc.s	_stepRts
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		andi.b	#$C0,d2
 		or.b	d2,RotationAndSize(a5)
 		eori.b	#DIR_FLIP,RotationAndSize(a5)
@@ -1308,11 +1308,11 @@ EB_Jump:
 		bra.w	ProcessNextCmdImmediately_1
 
 EB_EnableRotation:
-		bclr	#$00,InteractFlags(a5)
+		bclr	#IF_NO_ROTATE,InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 EB_DisableRotation:
-		bset	#$00,InteractFlags(a5)
+		bset	#IF_NO_ROTATE,InteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $2D: money bag / dropped item waiting to be collected. Scans all
@@ -1416,11 +1416,11 @@ _lootNext:
 		move.w	CurrentHealth(a5),d0
 		cmpi.w	#$00F0,d0
 		bcs.s	_lootRts
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		move.w	d0,d1
 		andi.b	#$03,d1
 		bne.s	_lootBlink2
-		bset	#$06,InteractFlags(a5)
+		bset	#IF_NO_DRAW,InteractFlags(a5)
 
 _lootBlink2:
 		cmpi.w	#$0168,d0
@@ -1428,7 +1428,7 @@ _lootBlink2:
 		move.w	d0,d1
 		andi.b	#$01,d1
 		ror.b	#$02,d1
-		andi.b	#$BF,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_NO_DRAW)),InteractFlags(a5)
 		or.b	d1,InteractFlags(a5)
 
 _lootExpire:
@@ -1447,13 +1447,13 @@ _lootRts:
 ; a counter tile (FLOOR_COUNTER) at ground height (latched by
 ; CombatFlags bit 7) and runs the put-down script.
 EB_ShopItem:
-		btst	#$06,StateFlags(a5)
+		btst	#SF_CARRIED,StateFlags(a5)
 		beq.s	_shopPutDown
 		move.b	(Player_AnimAction1).l,d0
 		andi.b	#$C0,d0
 		cmpi.b	#$C0,d0
 		bne.s	_shopRts
-		bset	#$03,StateFlags(a5)
+		bset	#SF_SHOP_LIFTED,StateFlags(a5)
 		bne.s	_shopRts
 		move.b	GoldOrChestContents(a5),(g_ShopItemId).l
 		jsr	(j_RunShopItemPickUp).l
@@ -1471,7 +1471,7 @@ _shopRts:
 		rts
 
 _shopPutDown:
-		bclr	#$03,StateFlags(a5)
+		bclr	#SF_SHOP_LIFTED,StateFlags(a5)
 		move.b	GroundType(a5),d0
 		andi.b	#$3F,d0
 		cmpi.b	#FLOOR_COUNTER,d0
@@ -1483,7 +1483,7 @@ _shopPutDown:
 		lsl.b	#$04,d0
 		cmp.w	Z(a5),d0
 		bne.s	_shopReset
-		bset	#$07,CombatFlags(a5)
+		bset	#CF_SHOP_PUTDOWN,CombatFlags(a5)
 		bne.s	_shopRts
 		move.b	GoldOrChestContents(a5),(g_ShopItemId).l
 		jsr	(j_RunShopItemPutDown).l
@@ -1495,7 +1495,7 @@ _shopRts2:
 		rts
 
 _shopReset:
-		bclr	#$07,CombatFlags(a5)
+		bclr	#CF_SHOP_PUTDOWN,CombatFlags(a5)
 		rts
 
 ; Cmd $30: rise by Speed for BehavParam ticks; while blocked by
@@ -1533,7 +1533,7 @@ RaiseSpriteZ:
 		add.w	d0,HitBoxZEnd(a5)
 		add.w	d0,Z(a5)
 		bcc.s	_rzRts
-		bchg	#$06,InteractFlags(a5)
+		bchg	#IF_NO_DRAW,InteractFlags(a5)
 
 _rzRts:
 		rts
@@ -1613,7 +1613,7 @@ LowerSpriteZ:
 		sub.w	d0,HitBoxZEnd(a5)
 		sub.w	d0,Z(a5)
 		bcc.s	_lzRts
-		bchg	#$06,InteractFlags(a5)
+		bchg	#IF_NO_DRAW,InteractFlags(a5)
 
 _lzRts:
 		rts
@@ -1742,11 +1742,11 @@ _wfcRts:
 		rts
 
 EB_EnableGravity:
-		bclr	#$07,FallRate(a5)
+		bclr	#FALLR_NO_GRAVITY,FallRate(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 EB_DisableGravity:
-		bset	#$07,FallRate(a5)
+		bset	#FALLR_NO_GRAVITY,FallRate(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $41: set story flag [BehavParam] bit [script arg 2].
@@ -1791,7 +1791,7 @@ EB_WaitForFlagClear:
 
 ; Cmd $44: hide (StateFlags bit 0) but keep running the script.
 EB_Hide:
-		bset	#$00,StateFlags(a5)
+		bset	#SF_HIDDEN,StateFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $45: unhide as soon as nothing overlaps this spot.
@@ -1800,7 +1800,7 @@ EB_ShowWhenCollisionClear:
 		subi.l	#Player_X,d0
 		jsr	(j_CheckForCollision).l
 		bcs.s	_swcRts
-		bclr	#$00,StateFlags(a5)
+		bclr	#SF_HIDDEN,StateFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 _swcRts:
@@ -1888,11 +1888,11 @@ EB_ResetToInitParams:
 		jsr	(CalcSpriteHitbox).l
 		jsr	(j_ValidateSpritePosition).l
 		bcc.s	_resetOk
-		bset	#$00,StateFlags(a5)
+		bset	#SF_HIDDEN,StateFlags(a5)
 		rts
 
 _resetOk:
-		bclr	#$00,StateFlags(a5)
+		bclr	#SF_HIDDEN,StateFlags(a5)
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
@@ -1922,9 +1922,9 @@ EB_RotatePlayer:
 		move.b	BehavParam(a5),d0
 		lsl.b	#$06,d0
 		lea	(Player_X).l,a0
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
@@ -1933,16 +1933,16 @@ EB_RotatePlayer:
 
 ; Cmd $51: turn hostile and load this sprite type's enemy stats.
 EB_MakeHostile:
-		bset	#$07,InteractFlags(a5)
-		bset	#$07,InitInteractFlags(a5)
+		bset	#IF_HOSTILE,InteractFlags(a5)
+		bset	#IF_HOSTILE,InitInteractFlags(a5)
 		movea.l	a5,a1
 		bsr.w	GetEnemyStats
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $52: clear the hostile flag (also in the respawn template).
 EB_MakeNonHostile:
-		bclr	#$07,InteractFlags(a5)
-		bclr	#$07,InitInteractFlags(a5)
+		bclr	#IF_HOSTILE,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InitInteractFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $3E: despawn (thunk to HideSprite); also called by the
@@ -1956,13 +1956,13 @@ EB_RunSpecialAI:
 
 ; Cmd $53: walk normally again (clear CombatFlags bit 1).
 EB_DisableWalkBackwards:
-		bclr	#$01,CombatFlags(a5)
+		bclr	#CF_WALK_BACKWARDS,CombatFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $54: walk backwards (CombatFlags bit 1: walk cycle plays in
 ; reverse and the facing is drawn flipped 180 degrees).
 EB_EnableWalkBackwards:
-		bset	#$01,CombatFlags(a5)
+		bset	#CF_WALK_BACKWARDS,CombatFlags(a5)
 		bra.w	ProcessNextCmdImmediately_1
 
 ; Cmd $55: scripted collapse animation stepped by BehavParam: thud +
@@ -1978,7 +1978,7 @@ EB_SpecialAnimation:
 		dc.w SND_Thud
 		move.w	#$0008,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		rts
 
 _saMid:
@@ -1986,7 +1986,7 @@ _saMid:
 		bne.s	_saLate
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		rts
 
 _saLate:
@@ -1995,13 +1995,13 @@ _saLate:
 		bne.s	_saFlicker
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0008,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		subi.w	#$000C,HitBoxZEnd(a5)
 		subi.b	#$0C,Height(a5)
 		rts
 
 _saFlicker:
-		bchg	#$06,InteractFlags(a5)
+		bchg	#IF_NO_DRAW,InteractFlags(a5)
 		cmpi.b	#$1E,d0
 		bcs.s	_saRts
 		jmp	(j_HideSprite).l
@@ -2073,7 +2073,7 @@ _phHit:
 		tst.b	d7
 		bpl.s	_phDone
 		movea.l	a0,a5
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		bne.s	_phDone
 		move.b	InteractFlags(a5),d0
 		andi.b	#$82,d0
@@ -2162,7 +2162,7 @@ RotateFacingCW:
 		move.b	RotationAndSize(a5),d0
 		addi.b	#$40,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		rts
 
@@ -2171,7 +2171,7 @@ RotateFacingCCW:
 		move.b	RotationAndSize(a5),d0
 		subi.b	#$40,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		rts
 
@@ -2269,7 +2269,7 @@ _dfScan:
 		beq.s	_dfRts
 		cmp.b	BehavParam(a5),d0
 		bne.s	_dfScan
-		bchg	#$06,InteractFlags(a5)
+		bchg	#IF_NO_DRAW,InteractFlags(a5)
 		cmpi.b	#$FF,1(a0)
 		bne.s	_dfRts
 		moveq	#$2,d0
@@ -2303,11 +2303,11 @@ _fsStep:
 		move.b	RotationAndSize(a5),d1
 		addi.b	#$40,d1
 		andi.b	#$C0,d1
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		bra.w	EB_DecayFlash
 
 ; Cmd $61: mirror of EB_FlashSpinAppear - spins faster as it fades.
@@ -2367,7 +2367,7 @@ MoveSpriteWithPlatform:
 		bsr.w	UpdateCarriedSpritePos
 		move.w	SpriteUnderneath(a5),d0
 		bmi.s	_carryRts
-		btst	#$02,InteractFlags(a5)
+		btst	#IF_FRICTIONLESS,InteractFlags(a5)
 		bne.s	_carryRts
 		lea	(Player_X).l,a0
 		adda.w	d0,a0
@@ -2407,7 +2407,7 @@ _carryRts:
 MoveSpriteWithPlatformZ:
 		move.w	SpriteUnderneath(a5),d0
 		bmi.s	_mspzRts
-		btst	#$06,StateFlags(a5)
+		btst	#SF_CARRIED,StateFlags(a5)
 		bne.s	_mspzRts
 		lea	(Player_X).l,a0
 		adda.w	d0,a0
@@ -2469,7 +2469,7 @@ _psjRts:
 ; player's head (fireballs keep their own facing); grabbed (bit 5)
 ; inherits Player_SpriteUnderneath.
 UpdateCarriedSpritePos:
-		btst	#$06,StateFlags(a5)
+		btst	#SF_CARRIED,StateFlags(a5)
 		beq.s	_grabbed
 		move.w	(Player_HitBoxZEnd).l,d0
 		move.w	d0,HitBoxZEnd(a5)
@@ -2482,7 +2482,7 @@ UpdateCarriedSpritePos:
 		beq.s	_carriedPos
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 
 _carriedPos:
@@ -2496,7 +2496,7 @@ _carriedPos:
 		rts
 
 _grabbed:
-		btst	#$05,StateFlags(a5)
+		btst	#SF_GRABBED,StateFlags(a5)
 		beq.s	_ucsRts
 		move.w	(Player_SpriteUnderneath).l,SpriteUnderneath(a5)
 
@@ -2516,7 +2516,7 @@ _ffsLoop:
 		bmi.s	_ffsFound
 		cmpi.w	#$7F7F,d0
 		bne.s	_ffsNext
-		btst	#$00,StateFlags(a1)
+		btst	#SF_HIDDEN,StateFlags(a1)
 		bne.s	_ffsFound
 
 _ffsNext:
@@ -2548,7 +2548,7 @@ InitSpawnedSprite:
 		movem.l	(sp)+,a1
 		move.b	RotationAndSize(a1),d1
 		bsr.w	SetSpriteRotationAnimFlags
-		bset	#$07,RenderFlags(a1)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a1)
 		tst.w	SPRITE_SIZE(a1)
 		bne.s	_issBehav
 		move.w	#$FFFF,SPRITE_SIZE(a1)

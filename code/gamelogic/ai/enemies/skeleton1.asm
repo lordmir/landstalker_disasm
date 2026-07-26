@@ -12,7 +12,7 @@ EnemyAI_Skeleton1_B:
 
 ; A routine, run every tick.
 EnemyAI_Skeleton1_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -43,7 +43,7 @@ EnemyAI_Skeleton1:
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep

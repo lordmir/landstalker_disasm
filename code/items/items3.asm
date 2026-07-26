@@ -414,7 +414,7 @@ PostUseEinsteinWhistle:
 		movem.l	d0,-(sp)
 		move.w	#ROOM_GREENMAZE_CUTTER,(g_CurrentRoom).l	  ; Wood cutter	area
 		move.w	#$1732,(Player_X).l
-		bset	#$06,(Player_InteractFlags).l
+		bset	#IF_NO_DRAW,(Player_InteractFlags).l
 		SetFlag	FLAG_EINSTEIN_WHISTLE_USED
 		bsr.w	WarpToRoom
 		trap	#$00			  ; Trap00Handler
@@ -426,7 +426,7 @@ PostUseEinsteinWhistle:
 		move.w	#ROOM_GREENMAZE_SUNSTONE,(g_CurrentRoom).l	  ; Sunstone
 		movem.l	(sp)+,d0
 		move.l	d0,(Player_X).l
-		bclr	#$06,(Player_InteractFlags).l
+		bclr	#IF_NO_DRAW,(Player_InteractFlags).l
 		ClearFlag	FLAG_EINSTEIN_WHISTLE_USED
 		bsr.w	WarpToRoom
 		move.b	(g_BGM).l,d0

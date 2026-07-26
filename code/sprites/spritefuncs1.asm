@@ -33,12 +33,12 @@ UpdateSpriteFrame:
 		move.w	PrevAction(a0),d2
 		move.w	QueuedAction(a0),d0
 		move.w	d0,PrevAction(a0)
-		btst	#$01,InteractFlags(a0)
+		btst	#IF_HURT,InteractFlags(a0)
 		beq.s	_chkAnim
 		move.b	RenderFlags(a0),d1
 		andi.b	#$07,d1
 		bne.s	_chkAnim
-		bchg	#$06,InteractFlags(a0)
+		bchg	#IF_NO_DRAW,InteractFlags(a0)
 
 _chkAnim:
 		move.b	AnimCtrl(a0),d1
@@ -58,7 +58,7 @@ _chkAction:
 		beq.w	_pickupFrame
 		tst.w	d0
 		beq.s	LoadIdleAnimFrame	  ; Idle
-		btst	#$00,InteractFlags(a0)
+		btst	#IF_NO_ROTATE,InteractFlags(a0)
 		bne.s	_usfDone
 		move.w	d0,d1
 		andi.w	#ACT_DAMAGE,d1		  ; Take Dmg
@@ -75,7 +75,7 @@ _chkAction:
 		rts
 
 _clrForce:
-		andi.b	#$7F,AnimCtrl(a0)
+		andi.b	#($FF-(1<<AC_FRAME_DIRTY)),AnimCtrl(a0)
 
 _usfDone:
 		rts
@@ -83,21 +83,21 @@ _usfDone:
 ; External entry (dialogue actions): force the frame dirty and reset
 ; sprite a0 to its facing-appropriate idle frame.
 ForceIdleFrame:
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		move.b	AnimFlags(a0),d3
 		bra.s	_resetFrame
 
 LoadIdleAnimFrame:
 		btst	#$00,d3
 		beq.w	_idleCycle
-		btst	#$00,InteractFlags(a0)
+		btst	#IF_NO_ROTATE,InteractFlags(a0)
 		bne.s	_usfDone
 		bsr.w	CheckAnimActionChanged
 
 _resetFrame:
 		clr.w	AnimationFrame(a0)
 		move.w	#$0000,d1
-		btst	#$06,CombatFlags(a0)		  ; True for mimic, mushroom
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a0)		  ; True for mimic, mushroom
 		beq.w	_chkNoRotate
 		move.w	#$0008,d1
 
@@ -119,23 +119,23 @@ GetRotatedFrame:
 GetSWFrame:
 		addq.w	#$04,d1
 		move.w	d1,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 GetNWFrame:
 		move.w	d1,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 GetSEFrame:
 		move.w	d1,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 		rts
 
 GetNEFrame:
 		addq.w	#$04,d1
 		move.w	d1,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 
 _rotDone:
 		rts
@@ -143,7 +143,7 @@ _rotDone:
 ; QueuedAction $FF: pick-up/put-down pose, staged from the previous
 ; action's carry/attack bits.
 _pickupFrame:
-		btst	#$00,InteractFlags(a0)
+		btst	#IF_NO_ROTATE,InteractFlags(a0)
 		bne.s	_rotDone
 		clr.w	PrevAction(a0)
 		bsr.w	CheckAnimActionChanged
@@ -164,7 +164,7 @@ _pickupNoAlt:
 _pickupIdle:
 		clr.w	AnimationFrame(a0)
 		move.w	#$0000,d1
-		btst	#$06,CombatFlags(a0)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a0)
 		beq.w	GetRotatedFrame		  ; Bit	4 - Do not rotate
 		move.w	#$0008,d1
 		bra.w	GetRotatedFrame		  ; Bit	4 - Do not rotate
@@ -189,7 +189,7 @@ _idleStep:
 		addq.b	#$04,d1
 		andi.b	#$04,d1
 		move.b	d1,AnimationFrame1(a0)
-		bset	#$07,AnimCtrl(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
 
 _idleDone:
 		rts
@@ -221,7 +221,7 @@ _walkTick8:
 _walk4:
 		move.b	#$0C,d5
 		clr.w	d4
-		btst	#$06,CombatFlags(a0)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a0)
 		beq.s	_walkPhase
 		move.w	#$0018,d4
 
@@ -239,7 +239,7 @@ _walkTick:
 		move.w	#$0002,d7
 
 _walkAdv:
-		btst	#$01,CombatFlags(a0)
+		btst	#CF_WALK_BACKWARDS,CombatFlags(a0)
 		beq.s	_walkFwd
 		sub.b	d7,d1
 		bra.s	_walkWrap
@@ -260,11 +260,11 @@ _walkWrap:
 		addq.b	#$04,d1
 		and.b	d5,d1
 		move.b	d1,AnimationFrame1(a0)
-		bset	#$07,AnimCtrl(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
 
 _walkFacing:
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,CombatFlags(a0)
+		btst	#CF_WALK_BACKWARDS,CombatFlags(a0)
 		beq.s	_walkRotChk
 		eori.b	#DIR_FLIP,d0
 
@@ -281,12 +281,12 @@ _walkRotChk:
 
 _walkNoFlip:
 		move.w	d4,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)
+		bclr	#TS_HFLIP,TileSource(a0)
 		rts
 
 _walkFlip:
 		move.w	d4,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)
+		bset	#TS_HFLIP,TileSource(a0)
 
 _walkDone:
 		rts
@@ -300,7 +300,7 @@ _walk2:
 		beq.s	_walkDone
 		move.b	#$04,d5
 		clr.w	d4
-		btst	#$06,CombatFlags(a0)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a0)
 		beq.w	_walkPhase
 		move.w	#$0008,d4
 		bra.w	_walkPhase
@@ -338,7 +338,7 @@ _attackFrames:
 
 GetRotatedAnimIdx:
 		move.b	RotationAndSize(a0),d0
-		btst	#$01,CombatFlags(a0)
+		btst	#CF_WALK_BACKWARDS,CombatFlags(a0)
 		beq.s	_raiFacing
 		eori.b	#DIR_FLIP,d0
 
@@ -352,7 +352,7 @@ _raiFacing:
 
 _raiFlip:
 		move.w	d2,AnimationIndex(a0)
-		bset	#$03,TileSource(a0)	  ; Set	HFlip
+		bset	#TS_HFLIP,TileSource(a0)	  ; Set	HFlip
 		rts
 
 _raiNEIdx:
@@ -360,7 +360,7 @@ _raiNEIdx:
 
 _raiNoFlip:
 		move.w	d2,AnimationIndex(a0)
-		bclr	#$03,TileSource(a0)	  ; Clear HFlip
+		bclr	#TS_HFLIP,TileSource(a0)	  ; Clear HFlip
 		rts
 
 LoadJumpAnimFrame:
@@ -407,7 +407,7 @@ CheckAnimActionChanged:
 		clr.w	d2
 
 _markDirty:
-		bset	#$07,AnimCtrl(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
 		rts
 
 _noChange:

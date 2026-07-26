@@ -96,7 +96,7 @@ _Next7:
 		bsr.w	HideSpriteAtD0
 		lea	(Sprite1_X).l,a1
 		move.w	#$1012,X(a1)
-		andi.b	#$3F,RotationAndSize(a1)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1)
 		TestFlag	FLAG_MASSAN_RESCUE_DONE
 		bne.s	_mayorAltPose
 		clr.b	d1
@@ -109,13 +109,13 @@ _Next7:
 		bra.w	EndCustomRoomAction
 
 _mayorAltPose:
-		andi.b	#$3F,RotationAndSize(a1)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1)
 		move.b	#$40,d1
 		or.b	d1,RotationAndSize(a1)
 		bsr.w	SetSpriteRotationAnimFlags
 		lea	(Sprite2_X).l,a1
 		move.w	#$1210,(a1)
-		andi.b	#$3F,RotationAndSize(a1)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a1)
 		move.b	#$80,d1
 		or.b	d1,RotationAndSize(a1)
 		bsr.w	SetSpriteRotationAnimFlags

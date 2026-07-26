@@ -18,7 +18,7 @@ MoveSpriteOffscreen:
 ; Fully hides the sprite: hidden flag (StateFlags bit 0) + parked
 ; offscreen.
 HideSprite:
-		ori.b	#$01,StateFlags(a5)
+		ori.b	#(1<<SF_HIDDEN),StateFlags(a5)
 		bra.s	MoveSpriteOffscreen
 
 ; Tail of the ghost respawn (CheckRespawnGhost): the spawn spot is
@@ -28,16 +28,16 @@ FinishGhostRespawn:
 		clr.w	QueuedAction(a5)
 		move.w	#$FFFF,PrevAction(a5)
 		clr.w	AnimationFrame(a5)
-		ori.b	#$80,AnimCtrl(a5)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a5)
 		cmpi.b	#SpriteB_Ghost,SpriteGraphic(a5)
 		bne.s	_ghostPlainAnim
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		bsr.w	RunEnemyAI_B
 		rts
 
 _ghostPlainAnim:
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		clr.w	AnimationIndex(a5)
 		rts
 
@@ -285,7 +285,7 @@ StartEnemyChase:
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; Short-callable thunks for the AI bank.

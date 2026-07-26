@@ -12,7 +12,7 @@ EnemyAI_Skeleton2_B:
 
 ; A routine, run every tick. Being hurt drops the block.
 EnemyAI_Skeleton2_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -21,7 +21,7 @@ EnemyAI_Skeleton2_A:
 		bra.w	_attackStates
 
 _hurtTick:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 
@@ -41,11 +41,11 @@ _idle:
 ; Aggro / attack-over / hitstun recovery: drop the block and start
 ; chasing the player (behaviour 6, AIState $10).
 EnemyAI_Skeleton2:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep
@@ -196,13 +196,13 @@ _attackStates:
 ; Run-jump: sword raised (ACT_ATTACK1) while rising; the hit box ($19
 ; ahead) goes live with ACT_ATTACK2 on the way down.
 _runJump:
-		btst	#$05,Action1(a5)	; ACT_JUMP bit
+		btst	#ACTB_JUMP,Action1(a5)	; ACT_JUMP bit
 		beq.s	_rjFall
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		bra.s	_rjTick
 
 _rjFall:
-		btst	#$04,Action1(a5)	; ACT_FALL bit
+		btst	#ACTB_FALL,Action1(a5)	; ACT_FALL bit
 		beq.s	_rjTick
 		move.w	#$0019,d1
 		move.w	#$0009,d2
@@ -217,7 +217,7 @@ _rjTick:
 ; Block: hold the block pose (ACT_ATTACK4), invincible (CombatFlags
 ; bit 0), for $28 ticks; the reset drops the flag.
 _block:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$28,AnimPhase(a5)

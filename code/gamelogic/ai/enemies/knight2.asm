@@ -8,7 +8,7 @@ EnemyAI_Knight2_B:
 
 ; A routine, run every tick.
 EnemyAI_Knight2_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -190,11 +190,11 @@ _guard:
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$17,AnimPhase(a5)
 		bcs.s	_guardHold
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		bra.w	EnemyAI_Knight2
 
 _guardHold:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		rts
 
 ; Sword thrust: ACT_ATTACK1 windup for $F ticks, then the hit box

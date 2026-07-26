@@ -11,7 +11,7 @@ EnemyAI_Ninja3_B:
 
 ; A routine, run every tick.
 EnemyAI_Ninja3_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -275,11 +275,11 @@ _applySpot:
 
 _landed:
 		movem.w	(sp)+,d1
-		bset	#$05,Action1(a5)	; ACT_JUMP bit - drop in from the air
+		bset	#ACTB_JUMP,Action1(a5)	; ACT_JUMP bit - drop in from the air
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eor.b	d1,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		movem.l	(sp)+,d0
 		move.b	#$23,AIState(a5)

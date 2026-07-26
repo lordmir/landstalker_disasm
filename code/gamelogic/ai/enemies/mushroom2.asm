@@ -10,7 +10,7 @@ EnemyAI_Mushroom2_B:
 
 ; A routine, run every tick.
 EnemyAI_Mushroom2_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -38,11 +38,11 @@ _idle:
 ; Aggro / attack-over / hitstun recovery: drop the disguise and chase
 ; the player (behaviour 6, AIState $10).
 EnemyAI_Mushroom2:
-		bclr	#$06,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing (or sitting shrunken, if disguised). Try each
@@ -60,7 +60,7 @@ _chase:
 		bsr.w	_tryMelee
 
 _chaseTick:
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_chaseRts
 		bsr.w	j_j_OnTick
 
@@ -76,7 +76,7 @@ _tryMorph:
 		move.b	Action1(a5),d0
 		andi.b	#$30,d0
 		bne.w	_morphMiss
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_tryReveal
 		move.w	#$0020,d5
 		move.w	#$0020,d6
@@ -91,7 +91,7 @@ _tryMorph:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		clr.b	AnimPhase(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		move.w	Z(a5),HitBoxZEnd(a5)
 		ori	#$01,ccr
 		rts
@@ -121,7 +121,7 @@ _morphMiss:
 ; in front): 13-in-1000 chance to stop and wait (state $21,
 ; BHVS_PAUSE_32_AI).
 _tryWait:
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_waitMiss
 		move.w	#$0038,d5
 		move.w	#$FFD0,d6
@@ -146,7 +146,7 @@ _waitMiss:
 ; Player in the $18-$20 band directly ahead: 63-in-1000 chance to
 ; release a spore burst (state $22).
 _trySpore:
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_sporeMiss
 		move.w	#$0020,d5
 		move.w	#$FFE8,d6
@@ -172,7 +172,7 @@ _sporeMiss:
 ; standing still (state $23), else advancing (state $24,
 ; BHVS_ADVANCE).
 _tryMelee:
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_meleeMiss
 		move.w	#$0018,d5
 		move.w	#$0000,d6
@@ -284,7 +284,7 @@ _rise3:
 		bne.s	_morphRts
 		move.b	#$FF,Action1(a5)
 		move.w	#$0040,PrevAction(a5)
-		bclr	#$06,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bra.w	EnemyAI_Mushroom2
 
 _morphRts:

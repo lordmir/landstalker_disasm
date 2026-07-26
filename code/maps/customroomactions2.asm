@@ -14,7 +14,7 @@ _twSpriteLoop:
 		bmi.w	_Done
 		tst.b	InteractFlags(a5)
 		bpl.s	_twNext
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		bne.s	_twNext
 		jsr	(j_HideSprite).l
 
@@ -30,7 +30,7 @@ _Next24:
 		move.b	#$00,d0
 		ext.w	d0
 		lsl.w	#$07,d0
-		bclr	#$00,StateFlags(a5,d0.w)
+		bclr	#SF_HIDDEN,StateFlags(a5,d0.w)
 		bra.w	_Done
 
 _Next25:
@@ -41,7 +41,7 @@ _Next25:
 		move.b	#$02,d0
 		ext.w	d0
 		lsl.w	#$07,d0
-		bclr	#$00,StateFlags(a5,d0.w)
+		bclr	#SF_HIDDEN,StateFlags(a5,d0.w)
 		bra.w	_Done
 
 _Next26:
@@ -62,14 +62,14 @@ _Next26:
 		move.b	#$0F,(SPRITE_SIZE*2+SpriteType)(a0)
 		move.b	#$0F,(SPRITE_SIZE*3+SpriteType)(a0)
 		move.b	#$0F,(SPRITE_SIZE*4+SpriteType)(a0)
-		ori.b	#$60,(SPRITE_SIZE+TileSource)(a0)
-		ori.b	#$60,(SPRITE_SIZE*2+TileSource)(a0)
-		ori.b	#$60,(SPRITE_SIZE*3+TileSource)(a0)
-		ori.b	#$60,(SPRITE_SIZE*4+TileSource)(a0)
-		bset	#$07,(SPRITE_SIZE+RenderFlags)(a0)
-		bset	#$07,(SPRITE_SIZE*2+RenderFlags)(a0)
-		bset	#$07,(SPRITE_SIZE*3+RenderFlags)(a0)
-		bset	#$07,(SPRITE_SIZE*4+RenderFlags)(a0)
+		ori.b	#TSBF_PALETTE,(SPRITE_SIZE+TileSource)(a0)
+		ori.b	#TSBF_PALETTE,(SPRITE_SIZE*2+TileSource)(a0)
+		ori.b	#TSBF_PALETTE,(SPRITE_SIZE*3+TileSource)(a0)
+		ori.b	#TSBF_PALETTE,(SPRITE_SIZE*4+TileSource)(a0)
+		bset	#RF_LAYOUT_DIRTY,(SPRITE_SIZE+RenderFlags)(a0)
+		bset	#RF_LAYOUT_DIRTY,(SPRITE_SIZE*2+RenderFlags)(a0)
+		bset	#RF_LAYOUT_DIRTY,(SPRITE_SIZE*3+RenderFlags)(a0)
+		bset	#RF_LAYOUT_DIRTY,(SPRITE_SIZE*4+RenderFlags)(a0)
 		move.b	#$0B,(SPRITE_SIZE+Height)(a0)
 		move.b	#$0B,(SPRITE_SIZE*2+Height)(a0)
 		move.b	#$0B,(SPRITE_SIZE*3+Height)(a0)
@@ -117,7 +117,7 @@ _Next29:
 		bne.w	_Next30			  ; Cave Spinner
 		TestFlag	FLAG_RAFT2_BUILT
 		beq.w	_Done
-		bclr	#$00,(Sprite1_StateFlags).l
+		bclr	#SF_HIDDEN,(Sprite1_StateFlags).l
 		bra.w	_Done
 
 _Next30:
@@ -125,7 +125,7 @@ _Next30:
 		bne.w	_Next31			  ; Cave Ifrit
 		TestFlag	FLAG_LABYRINTH_SPINNER_DEAD
 		beq.w	_Done
-		bclr	#$00,(Sprite2_StateFlags).l
+		bclr	#SF_HIDDEN,(Sprite2_StateFlags).l
 		bra.w	_Done
 
 _Next31:
@@ -133,7 +133,7 @@ _Next31:
 		bne.w	_Next32			  ; Cave Miro
 		TestFlag	FLAG_LABYRINTH_IFRIT_DEAD
 		beq.w	_Done
-		bclr	#$00,(Sprite1_StateFlags).l
+		bclr	#SF_HIDDEN,(Sprite1_StateFlags).l
 		bra.w	_Done
 
 _Next32:
@@ -141,7 +141,7 @@ _Next32:
 		bne.w	_Next33			  ; Mir's tower first room
 		TestFlag	FLAG_LABYRINTH_MIRO_DEAD
 		beq.w	_Done
-		bclr	#$00,(Sprite1_StateFlags).l
+		bclr	#SF_HIDDEN,(Sprite1_StateFlags).l
 		bra.w	_Done
 
 _Next33:

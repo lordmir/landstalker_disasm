@@ -20,7 +20,7 @@ EnemyAI_Spinner_B:
 ; A routine, run every tick. No idle: anything that is not the chase
 ; ($10) dispatches as an attack state, including the initial state 0.
 EnemyAI_Spinner_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		cmpi.b	#$10,d0
@@ -34,17 +34,17 @@ _hurtTick:
 ; Attack-over / hitstun recovery: drop the ball form and chase
 ; (BHVS_RESUME_CHASE also clears the walk-backwards flag).
 EnemyAI_Spinner:
-		bclr	#$06,CombatFlags(a5)
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_RESUME_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing - try each move in turn.
 _chase:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	CentreX(a5),(g_Scratch1800).l
 		move.w	CentreY(a5),(g_Scratch1804).l
 		bsr.s	_tryRoll
@@ -196,8 +196,8 @@ _roll:
 		move.w	#ACT_ATTACK6,QueuedAction(a5)
 		cmpi.b	#$14,AICounter(a5)
 		bcs.s	_rollTick
-		bset	#$06,CombatFlags(a5)
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_CHARGE_TO_WALL,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 
@@ -211,7 +211,7 @@ _rollTick:
 ; lateral) is live with ACT_ATTACK3 to $F, ACT_ATTACK4 to $14, then
 ; back to chasing. The rush and leap variants keep moving.
 _slash:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$05,AICounter(a5)

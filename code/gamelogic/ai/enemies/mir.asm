@@ -17,9 +17,9 @@ EnemyAI_Mir_B:
 
 ; A routine, run every tick.
 EnemyAI_Mir_A:
-		bset	#$00,InteractFlags(a5)
-		bclr	#$01,CombatFlags(a5)
-		btst	#$01,InteractFlags(a5)
+		bset	#IF_NO_ROTATE,InteractFlags(a5)
+		bclr	#CF_WALK_BACKWARDS,CombatFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.w	_tick
 		move.b	AIState(a5),d0
 		cmpi.b	#$10,d0
@@ -32,7 +32,7 @@ EnemyAI_Mir:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: hover. Turn to face the player, then keep the ring
@@ -43,9 +43,9 @@ _hover:
 		bsr.w	GetDirToPlayer
 		move.b	d2,d1
 		movea.l	a5,a1
-		bclr	#$00,InteractFlags(a5)
+		bclr	#IF_NO_ROTATE,InteractFlags(a5)
 		jsr	(j_SetSpriteRotationAnimFlags).l
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		clr.b	AnimCtrl(a5)
 		move.w	(Player_CentreX).l,d0
 		subi.w	#$0070,d0
@@ -128,17 +128,17 @@ _dirRts:
 ; restore the facing; then recover (frame 4, ACT_ATTACK2) until
 ; tick $1E.
 _cast:
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		bsr.w	GetDirToPlayer
 		move.b	d2,d1
 		movea.l	a5,a1
-		bclr	#$00,InteractFlags(a5)
+		bclr	#IF_NO_ROTATE,InteractFlags(a5)
 		jsr	(j_SetSpriteRotationAnimFlags).l
-		bset	#$00,InteractFlags(a5)
+		bset	#IF_NO_ROTATE,InteractFlags(a5)
 		andi.w	#$0004,AnimationIndex(a5)
 		addi.w	#$0008,AnimationIndex(a5)
 		move.b	#$01,AnimCtrl(a5)
-		andi.b	#$BF,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_NO_DRAW)),InteractFlags(a5)
 		addq.b	#$01,AICounter(a5)
 		move.w	#$0000,AnimationFrame(a5)
 		move.w	#ACT_ATTACK1,QueuedAction(a5)
@@ -161,7 +161,7 @@ _castThrow:
 		bsr.w	GetDirToPlayer
 		move.b	RotationAndSize(a5),d0
 		movem.w	d0,-(sp)
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		move.b	#$01,d0
 		move.w	#$0300,d1

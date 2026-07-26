@@ -136,7 +136,7 @@ CSA_0009:
 		bsr.w	LoadCutsceneDialogue
 		movem.l	(sp)+,a5
 		movea.l	a5,a0
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		bsr.w	ForceIdleFrame
 		jsr	(j_LoadSprites).l
 		move.w	#$0013,d0	  ; Cutscene $013: *: "Orc King! Orc King!"
@@ -271,7 +271,7 @@ CSA_0014:
 		bsr.w	PlaybackInput
 		move.w	#$0019,d0	  ; Cutscene $019: *: "I heard them! I heard them!"
 		bsr.w	LoadCutsceneDialogue
-		bset	#$01,(Player_CombatFlags).l
+		bset	#CF_WALK_BACKWARDS,(Player_CombatFlags).l
 		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 ; ---------------------------------------------------------------------------
@@ -281,7 +281,7 @@ CSA_0014:
 CSA_0015:
 		move.w	#$001A,d0	  ; Cutscene $01A: *: "The mayor was killed by the thieves! What a.." (+1)
 		bsr.w	LoadCutsceneDialogue
-		bclr	#$01,(Player_CombatFlags).l
+		bclr	#CF_WALK_BACKWARDS,(Player_CombatFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -373,7 +373,7 @@ CSA_001D:
 		jsr	(j_FadeOutToDarkness).l
 		move.b	#$11,(Player_X).l
 		move.b	#$10,(Player_Y).l
-		bclr	#$06,(Player_InteractFlags).l
+		bclr	#IF_NO_DRAW,(Player_InteractFlags).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitRoomDisplayAndFadeIn).l
@@ -411,7 +411,7 @@ CSA_001F:
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		move.b	#$0D,d0
 		bsr.w	PlaybackInput
-		ori.b	#$C0,(Player_RotationAndSize).l
+		ori.b	#DIR_NW,(Player_RotationAndSize).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -448,9 +448,9 @@ CSA_0022:
 CSA_0023:
 		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
-		bset	#$07,AnimCtrl(a5)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -632,9 +632,9 @@ CSA_0031:
 		movem.l	a5,-(sp)
 		move.b	#$01,(Sprite1_Speed).l
 		lea	(Sprite1_X).l,a1
-		bset	#$07,InteractFlags(a1)
-		bset	#$07,InitInteractFlags(a1)
-		bclr	#$04,InteractFlags(a1)
+		bset	#IF_HOSTILE,InteractFlags(a1)
+		bset	#IF_HOSTILE,InitInteractFlags(a1)
+		bclr	#IF_TALKABLE,InteractFlags(a1)
 		clr.w	d0
 		move.b	(g_Flags+FLAGBYTE_FAHL_WINS).l,d0
 		move.b	FahlEnemyList(pc,d0.w),d0
@@ -667,7 +667,7 @@ _fahlApplySprite:
 ; ---------------------------------------------------------------------------
 		jsr	(j_CopyBasePaletteToActivePalette).l
 		lea	(Sprite1_X).l,a1
-		bset	#$07,RenderFlags(a1)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a1)
 		jmp	(j_LoadSprites).l
 
 ; ---------------------------------------------------------------------------
@@ -734,8 +734,8 @@ FahlEnemyList:	dc.b SPR_ORC1
 CSA_0032:
 		lea	(Sprite1_X).l,a1
 		clr.w	BehavParam(a1)
-		bclr	#$07,InteractFlags(a1)
-		bclr	#$07,InitInteractFlags(a1)
+		bclr	#IF_HOSTILE,InteractFlags(a1)
+		bclr	#IF_HOSTILE,InitInteractFlags(a1)
 		move.b	#$01,d0
 		move.b	d0,SpriteType(a1)
 		bsr.w	LookupSpriteGfxIndex
@@ -809,7 +809,7 @@ _c0032End:
 		clr.b	(g_PlayerHurtTimer).l
 		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
-		bclr	#$00,(Player_InteractFlags).l
+		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
 		bclr	#$04,(g_PlayerStatus).l
 		bclr	#$02,(g_LockPlayerActions).l
 		clr.w	(Sprite1_BehavParam).l
@@ -826,10 +826,10 @@ _c0032End:
 ; Used by: LoadPlayerSpecialAnimation (spritefuncs2) when the player's
 ; collapse animation ends during Fahl's challenge.
 CSA_0033:
-		bset	#$04,InteractFlags(a5)
+		bset	#IF_TALKABLE,InteractFlags(a5)
 		lea	(Player_X).l,a0
-		bset	#$07,AnimCtrl(a0)
-		bset	#$07,RenderFlags(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
 		move.w	(Player_TempHealth).l,(Player_CurrentHealth).l
@@ -841,7 +841,7 @@ CSA_0033:
 		clr.b	(g_PlayerHurtTimer).l
 		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
-		bclr	#$00,(Player_InteractFlags).l
+		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
 		bclr	#$04,(g_PlayerStatus).l
 		bclr	#$02,(g_LockPlayerActions).l
 		move.w	#$003E,d0	  ; Cutscene $03E: Fahl: "Ha, ha, ha! You need more experience!" (+1)
@@ -855,7 +855,7 @@ CSA_0034:
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	_c0034Rts
 		SetFlag	FLAG_SCRATCH_EVENT_DONE
-		bset	#$05,(Sprite2_InteractFlags).l
+		bset	#IF_LIFTABLE,(Sprite2_InteractFlags).l
 
 _c0034Rts:
 		rts
@@ -1065,9 +1065,9 @@ _c0043Spin:
 		move.b	RotationAndSize(a0),d0
 		addi.b	#$40,d0
 		andi.b	#$C0,d0
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
@@ -1135,14 +1135,14 @@ CSA_0046:
 CSA_0047:
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		move.w	#$0054,d0	  ; Cutscene $054: Arthur: "If anyone discovers I'm a member here, I sh.." (+1)
 		bsr.w	LoadCutsceneDialogue
 		movem.l	(sp)+,a5
 		clr.w	AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1150,7 +1150,7 @@ CSA_0047:
 ; 2F Private Room 2 [Lord Arthur].
 CSA_0048:
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1169,7 +1169,7 @@ CSA_0049:
 CSA_004A:
 		move.w	#$0004,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		move.w	#$0055,d0	  ; Cutscene $055: Julie: "No!" (+7)
 		bra.w	LoadCutsceneDialogue
@@ -1243,15 +1243,15 @@ CSA_0052:
 		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d1
 		andi.b	#$C0,d1
 		movem.w	d1,-(sp)
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
 		movem.w	(sp)+,d1
 		lea	(Player_X).l,a0
-		bset	#$07,AnimCtrl(a0)
-		andi.b	#$3F,RotationAndSize(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		eori.b	#DIR_FLIP,d1
 		or.b	d1,RotationAndSize(a0)
 		jsr	(j_SetPlayerIdlePose).l
@@ -1287,13 +1287,13 @@ _c0053Warp:
 		jsr	(j_InitRoomDisplay).l
 		clr.b	(g_PlayerHurtTimer).l
 		clr.b	(g_PlayerPendingHit).l
-		bclr	#$06,(Player_InteractFlags).l
-		bclr	#$00,(Player_InteractFlags).l
+		bclr	#IF_NO_DRAW,(Player_InteractFlags).l
+		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
 		bclr	#$05,(Player_Action).l
-		bclr	#$05,(Player_PrevAction).l
+		bclr	#ACTB_JUMP,(Player_PrevAction).l
 		move.w	#$0044,(Player_AnimationIndex).l
 		move.w	#$0008,(Player_AnimationFrame).l
-		bset	#$07,(Player_RenderFlags).l
+		bset	#RF_LAYOUT_DIRTY,(Player_RenderFlags).l
 		jsr	(j_LoadSprites).l
 		jsr	(j_FadeInFromDarkness).l
 		movem.l	(sp)+,d0
@@ -1304,7 +1304,7 @@ _c0053Warp:
 ; ---------------------------------------------------------------------------
 
 _c0053No:
-		bset	#$01,(Player_CombatFlags).l
+		bset	#CF_WALK_BACKWARDS,(Player_CombatFlags).l
 		move.b	#$1B,d0
 		bra.w	PlaybackInput
 ; ---------------------------------------------------------------------------
@@ -1336,7 +1336,7 @@ _c0055Msg:
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
 		lea	(Player_X).l,a0
 		jsr	(j_SetPlayerIdlePose).l
-		bset	#$07,(Player_RenderFlags).l
+		bset	#RF_LAYOUT_DIRTY,(Player_RenderFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1356,7 +1356,7 @@ CSA_0057:
 		bne.s	_c0057Jump
 		move.b	#$11,(g_PlayerHurtTimer).l
 		bset	#$05,(Player_Action).l
-		bclr	#$05,(Player_PrevAction).l
+		bclr	#ACTB_JUMP,(Player_PrevAction).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_NigelHit2
@@ -1365,7 +1365,7 @@ CSA_0057:
 		move.w	#$0100,d6
 		jsr	(j_GenerateRandomNumber).l
 		andi.b	#$C0,d7
-		andi.b	#$3F,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
 		or.b	d7,(Player_RotationAndSize).l
 
 _c0057Jump:
@@ -1383,7 +1383,7 @@ CSA_0058:
 ; (Ink & Wally) [Invisible Cube].
 CSA_0059:
 		jsr	(j_SetUpTextDisplay).l
-		bclr	#$01,(Player_CombatFlags).l
+		bclr	#CF_WALK_BACKWARDS,(Player_CombatFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1563,7 +1563,7 @@ _collapseStep:
 		cmpi.b	#$02,(g_PlayerAnimation).l
 		bne.s	_csFrame8
 		move.w	#$0004,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1571,7 +1571,7 @@ _csFrame8:
 		cmpi.b	#$0F,(g_PlayerAnimation).l
 		bne.s	_csFrame12
 		move.w	#$0008,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1579,7 +1579,7 @@ _csFrame12:
 		cmpi.b	#$14,(g_PlayerAnimation).l
 		bne.s	_csFrame16
 		move.w	#$000C,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -1587,7 +1587,7 @@ _csFrame16:
 		cmpi.b	#$19,(g_PlayerAnimation).l
 		bne.s	_csRts
 		move.w	#$0010,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 
 _csRts:
 		rts
@@ -1690,7 +1690,7 @@ _c0069Clash:
 _showClashFrame:
 		movem.l	a5,-(sp)
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -1733,7 +1733,7 @@ CSA_006B:
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
 		eori.b	#DIR_FLIP,d1
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movea.l	a5,a1
 		bsr.w	SetSpriteRotationAnimFlags
 		jsr	(j_LoadSprites).l
@@ -1769,7 +1769,7 @@ CSA_006D:
 ; (After Lighthouse Broken) [Sailor].
 CSA_006E:
 		move.b	(g_Flags+FLAGBYTE_SCRATCH).l,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		rts
 ; ---------------------------------------------------------------------------
@@ -1785,7 +1785,7 @@ CSA_006F:
 ; Used by: behaviour scripts: Mercator Castle/1F/Outside West/032 Ver1
 ; (First Visit) [Blue Ribbon].
 CSA_0070:
-		bset	#$05,InteractFlags(a5)
+		bset	#IF_LIFTABLE,InteractFlags(a5)
 		move.w	#$0070,d0	  ; Cutscene $070: Friday: "What a beautiful ribbon! Did somebody drop.."
 		bsr.w	LoadCutsceneDialogue
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation1).l
@@ -1807,7 +1807,7 @@ CSA_0071:
 CSA_0072:
 		move.w	#$000C,AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
 		move.w	#$0028,d0	  ; Cutscene $028: Friday: "No! No!"
@@ -2098,7 +2098,7 @@ CSA_008C:
 		movem.l	a5,-(sp)
 		move.w	#$0038,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
 		move.b	#$40,(g_PlayerPendingHit).l
@@ -2122,7 +2122,7 @@ CSA_008E:
 
 _showAnim38:
 		move.w	#$0038,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_FlushDMACopyQueue).l
 		movem.l	(sp)+,a5
@@ -2185,8 +2185,8 @@ CSA_0094:
 ; Used by: behaviour scripts: Mir's Tower/8F/782 Skeletons, Miro
 ; [Invisible Cube].
 CSA_0095:
-		bclr	#$07,(Sprite9_InteractFlags).l
-		bclr	#$07,(Sprite9_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite9_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite9_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -2202,17 +2202,17 @@ CSA_0096:
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	$00000001(a1),BehavParam(a5)
-		bclr	#$07,InteractFlags(a5)
-		bclr	#$07,InitInteractFlags(a5)
-		bclr	#$01,InteractFlags(a5)
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InitInteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		rts
 
 ; Used by: behaviour scripts: Mir's Tower/10F/784 Mir's Room [Invisible
 ; Cube]; called directly by CSA_0099.
 CSA_0097:
-		bclr	#$07,(Sprite4_InteractFlags).l
-		bclr	#$07,(Sprite4_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite4_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite4_InitInteractFlags).l
 		rts
 
 ; ---------------------------------------------------------------------------
@@ -2244,8 +2244,8 @@ CSA_0099:
 ; Cube]; called directly by CSA_00F6.
 CSA_009A:
 		move.w	#$161C,(Player_X).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_WarpPad
@@ -2341,7 +2341,7 @@ _sfLoop:
 _showSwingFrame:
 		movem.l	a5,-(sp)
 		move.w	#$0010,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -2658,7 +2658,7 @@ _flapCommon:
 		bne.s	_flapRts
 		addq.b	#$04,AnimationFrame1(a5)
 		andi.b	#$0C,AnimationFrame1(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Slash1
@@ -2691,7 +2691,7 @@ CSA_00B4:
 _showAnim8Frame:
 		movem.l	a5,-(sp)
 		move.w	#$0008,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -2801,9 +2801,9 @@ CSA_00C2:
 
 _c00C2Turn:
 		lea	(Player_X).l,a0
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		or.b	d0,RotationAndSize(a0)
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
@@ -2860,9 +2860,9 @@ CSA_00C6:
 		move.w	#$00AA,d0	  ; Cutscene $0AA: Friday: "Just a minute! How come you know our names?.." (+5) [Einstein Whistle]
 		bsr.w	LoadCutsceneDialogue
 		lea	(Player_X).l,a0
-		andi.b	#$3F,RotationAndSize(a0)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a0)
 		ori.b	#DIR_SW,RotationAndSize(a0)
-		ori.b	#$80,AnimCtrl(a0)
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		movem.l	a5,-(sp)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
@@ -3038,8 +3038,8 @@ CSA_00D2:
 ; ---------------------------------------------------------------------------
 		moveq	#$00000000,d0
 		jsr	(j_DisplayIslandMap).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		SetFlag	FLAG_SAILED_TO_VERLA
 		move.w	#ROOM_SHIP_TO_VERLA,(g_CurrentRoom).l	  ; Ship
 		move.w	#$2724,(Player_X).l
@@ -3284,7 +3284,7 @@ CSA_00E8:
 ; Used by: behaviour scripts: Overworld/09 - Destel, Lake/488 Lake (Duke
 ; Cutscene) [Duke Chair].
 CSA_00E9:
-		bset	#$05,InteractFlags(a5)
+		bset	#IF_LIFTABLE,InteractFlags(a5)
 		move.w	#$00D6,d0	  ; Cutscene $0D6: Duke: "Well, hello, Nigel! Are you still alive? Pi.." (+4)
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -3381,7 +3381,7 @@ CSA_00F2:
 _showAnim28Frame:
 		movem.l	a5,-(sp)
 		move.w	#$0028,AnimationIndex(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		jsr	(j_LoadSprites).l
 		jsr	(j_EnableDMAQueueProcessing).l
 		movem.l	(sp)+,a5
@@ -3405,22 +3405,22 @@ CSA_00F3:
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	$00000001(a1),BehavParam(a5)
-		bclr	#$07,InteractFlags(a5)
-		bclr	#$07,InitInteractFlags(a5)
-		bclr	#$01,InteractFlags(a5)
-		bclr	#$06,InteractFlags(a5)
-		bclr	#$06,CombatFlags(a5)
-		bclr	#$00,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InitInteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		bclr	#IF_NO_ROTATE,InteractFlags(a5)
 		move.b	#$01,AnimFlags(a5)
-		bset	#$04,InteractFlags(a5)
+		bset	#IF_TALKABLE,InteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Used by: behaviour scripts: Lake Shrine/B3F/348 Treasure Room
 ; [Invisible Cube].
 CSA_00F4:
-		bclr	#$07,(Sprite5_InteractFlags).l
-		bclr	#$07,(Sprite5_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite5_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite5_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3451,8 +3451,8 @@ _c00F5Sink:
 		lea	(Player_X).l,a5
 		bsr.w	RemoveHealth
 		movem.l	(sp)+,a5
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_EnemyNoise
@@ -3498,7 +3498,7 @@ _c00F6Rise:
 		bsr.w	RefreshHUD
 		movem.l	(sp)+,a5
 		lea	(Player_X).l,a1
-		andi.b	#$3F,Player_RotationAndSize-Player_X(a1)
+		andi.b	#($FF-DIR_MASK),Player_RotationAndSize-Player_X(a1)
 		clr.b	d1
 		bsr.w	SetSpriteRotationAnimFlags
 		bset	#$07,$00000048(a1)
@@ -3522,7 +3522,7 @@ _c00F6Rise:
 ; Northeast (Godess Statue, Bridge) [Zak].
 CSA_00F7:
 		move.w	#$0120,Z(a5)
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		rts
 
 ; One glide tick: two alt-flaps plus a redraw.
@@ -3594,8 +3594,8 @@ CSA_00FA:
 ; Used by: behaviour scripts: Mountainous Region/Overground/492 North
 ; (Zak) [Invisible Cube].
 CSA_00FB:
-		bclr	#$07,(Sprite4_InteractFlags).l
-		bclr	#$07,(Sprite4_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite4_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite4_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3603,7 +3603,7 @@ CSA_00FB:
 ; (Zak) [Invisible Cube].
 CSA_00FC:
 		bsr.w	_restartBGM
-		bset	#$04,(Sprite4_InteractFlags).l
+		bset	#IF_TALKABLE,(Sprite4_InteractFlags).l
 		move.w	#$00E2,d0	  ; Cutscene $0E2: Zak: "You...you won! I can't believe you're just.." (+3) [Gola's Eye]
 		bsr.w	LoadCutsceneDialogue
 		movea.l	a5,a0
@@ -3613,18 +3613,18 @@ CSA_00FC:
 		move.l	a1,BehaviourLUTPtr(a5)
 		move.b	(a1),BehavCmd(a5)
 		move.b	Y(a1),BehavParam(a5)
-		bclr	#$07,InteractFlags(a5)
-		bclr	#$07,InitInteractFlags(a5)
+		bclr	#IF_HOSTILE,InteractFlags(a5)
+		bclr	#IF_HOSTILE,InitInteractFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Used by: behaviour scripts: Mountainous Region/Overground/492 North
 ; (Zak) [Zak].
 CSA_00FD:
-		bclr	#$04,(Sprite4_InteractFlags).l
+		bclr	#IF_TALKABLE,(Sprite4_InteractFlags).l
 		move.b	(Player_RotationAndSize).l,d1
 		andi.b	#$C0,d1
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
 		rts
 ; ---------------------------------------------------------------------------
@@ -3782,8 +3782,8 @@ CSA_010C:
 _c010CScan:
 		tst.w	(a0)
 		bmi.s	_c010CRts
-		bclr	#$07,InteractFlags(a0)
-		bclr	#$07,InitInteractFlags(a0)
+		bclr	#IF_HOSTILE,InteractFlags(a0)
+		bclr	#IF_HOSTILE,InitInteractFlags(a0)
 		beq.s	_c010CNext
 		clr.w	BehavParam(a0)
 
@@ -3804,8 +3804,8 @@ CSA_010D:
 		move.w	#ROOM_INTRO_2,(g_OriginalRoom).l
 		move.w	#$2014,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		jsr	(j_WarpToRoom).l
 		move.w	#$00FE,(g_ControllerPlayback).l	; Lock controls
 		movem.l	(sp)+,d0
@@ -3822,7 +3822,7 @@ CSA_010E:
 		move.w	#ROOM_INTRO_3,(g_OriginalRoom).l
 		move.w	#$2C2C,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
-		ori.b	#$C0,(Player_RotationAndSize).l
+		ori.b	#DIR_NW,(Player_RotationAndSize).l
 		jsr	(j_WarpToRoom).l
 		move.w	#$00FE,(g_ControllerPlayback).l	; Lock Controls
 		movem.l	(sp)+,d0
@@ -3839,8 +3839,8 @@ CSA_010F:
 		move.w	#ROOM_INTRO_4,(g_OriginalRoom).l
 		move.w	#$2F1D,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
-		ori.b	#$C0,(Player_RotationAndSize).l
-		ori.b	#$40,(Player_InteractFlags).l
+		ori.b	#DIR_NW,(Player_RotationAndSize).l
+		ori.b	#(1<<IF_NO_DRAW),(Player_InteractFlags).l
 		jsr	(j_WarpToRoom).l
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
@@ -3857,7 +3857,7 @@ CSA_010F:
 
 ; Used by: behaviour scripts: Intro/142 Kalva Harbor [Old Man].
 CSA_0110:
-		andi.b	#$BF,(Player_InteractFlags).l
+		andi.b	#($FF-(1<<IF_NO_DRAW)),(Player_InteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -3967,8 +3967,8 @@ _c0112Wait:
 		move.w	#ROOM_INTRO_5,(g_OriginalRoom).l
 		move.w	#$2119,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		jsr	(j_FadeOutToDarkness).l
 		move.b	#FRIDAY_PERCH,(g_FridayAnimation1).l
 		move.b	#FRIDAY_PERCH,(g_FridayAnimation2).l
@@ -3989,8 +3989,8 @@ CSA_0113:
 		move.w	#ROOM_CAVE_GAME_BEGIN,(g_CurrentRoom).l	  ; Game begin
 		move.w	#$2026,(Player_X).l
 		move.w	#$0808,(Player_SubX).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		ClearFlag	FLAG_INTRO_IN_PROGRESS
 		move.w	#$0090,(Player_Z).l
 		jsr	(j_FadeOutToDarkness).l
@@ -4511,10 +4511,10 @@ CSA_0143:
 
 ; Used by: behaviour scripts: Labyrinth/B6F/410 Spinner [Chest].
 CSA_0144:
-		bclr	#$07,(Sprite3_InteractFlags).l
-		bclr	#$07,(Sprite3_InitInteractFlags).l
-		bclr	#$04,(Sprite3_InteractFlags).l
-		bclr	#$04,(Sprite3_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite3_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite3_InitInteractFlags).l
+		bclr	#IF_TALKABLE,(Sprite3_InteractFlags).l
+		bclr	#IF_TALKABLE,(Sprite3_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4530,10 +4530,10 @@ CSA_0145:
 
 ; Used by: behaviour scripts: Labyrinth/B3F/417 Miro [Chest].
 CSA_0146:
-		bclr	#$07,(Sprite2_InteractFlags).l
-		bclr	#$07,(Sprite2_InitInteractFlags).l
-		bclr	#$04,(Sprite2_InteractFlags).l
-		bclr	#$04,(Sprite2_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite2_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite2_InitInteractFlags).l
+		bclr	#IF_TALKABLE,(Sprite2_InteractFlags).l
+		bclr	#IF_TALKABLE,(Sprite2_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4670,11 +4670,11 @@ CSA_014E:
 		or.w	d0,$00000940(a2)
 		move.w	#$0140,d0	  ; Cutscene $140: Nole: "Rrrrrrrrr... Rrrrrrrr.... Rrrrrr.... Rrrrrr.." (+2)
 		bsr.w	LoadCutsceneDialogue
-		bclr	#$06,InteractFlags(a5)
-		bclr	#$06,InitInteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InitInteractFlags(a5)
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0014,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4683,7 +4683,7 @@ CSA_014E:
 		jsr	(j_Sleep).l
 		move.w	#$000C,AnimationIndex(a5)
 		move.w	#$0010,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4692,15 +4692,15 @@ CSA_014E:
 		jsr	(j_Sleep).l
 		move.w	#$0004,AnimationIndex(a5)
 		move.w	#$0000,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		rts
 ; ---------------------------------------------------------------------------
 
 ; Used by: behaviour scripts: King Nole's Palace/Treasure Hall/Treasure
 ; Room/111 Ver1 (Nole) [Invisible Cube].
 CSA_014F:
-		bclr	#$07,(Sprite3_InteractFlags).l
-		bclr	#$07,(Sprite3_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite3_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite3_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4732,8 +4732,8 @@ CSA_0151:
 ; Used by: behaviour scripts: King Nole's Palace/Treasure Hall/Treasure
 ; Room/112 Ver2 (Gola) [Invisible Cube].
 CSA_0152:
-		bclr	#$07,(Sprite2_InteractFlags).l
-		bclr	#$07,(Sprite2_InitInteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite2_InteractFlags).l
+		bclr	#IF_HOSTILE,(Sprite2_InitInteractFlags).l
 		rts
 ; ---------------------------------------------------------------------------
 
@@ -4748,7 +4748,7 @@ CSA_0153:
 ; ---------------------------------------------------------------------------
 		move.w	#$0008,AnimationIndex(a5)
 		move.w	#$0004,AnimationFrame(a5)
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
 		movem.l	(sp)+,a5
@@ -4792,9 +4792,9 @@ _mirFlicker:
 		moveq	#$00000005,d7
 
 _mfLoop:
-		bset	#$07,(Sprite3_RenderFlags).l
-		bset	#$00,(Sprite3_RenderFlags).l
-		bset	#$01,(Sprite3_InteractFlags).l
+		bset	#RF_LAYOUT_DIRTY,(Sprite3_RenderFlags).l
+		bset	#RF_HIT_MAGIC,(Sprite3_RenderFlags).l
+		bset	#IF_HURT,(Sprite3_InteractFlags).l
 		movem.w	d7,-(sp)
 		movem.l	a5,-(sp)
 		jsr	(j_LoadSprites).l
@@ -4839,9 +4839,9 @@ _c0154Fill:
 		jsr	(j_QueueFullHUDTilemapDMA).l
 		move.w	#ROOM_PALACE_BOSS_ARENA_END,(g_CurrentRoom).l	  ; Gola defeated
 		move.w	#$1C19,(Player_X).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
-		ori.b	#$80,AnimCtrl(a0)
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
+		ori.b	#(1<<AC_FRAME_DIRTY),AnimCtrl(a0)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LookupWarpDestination).l
 		clr.b	d0
@@ -5018,7 +5018,7 @@ _c0158Scan:
 		tst.b	(a1)
 		bmi.s	_c0158Rts
 		move.b	#$01,Speed(a1)
-		bclr	#$05,InteractFlags(a1)
+		bclr	#IF_LIFTABLE,InteractFlags(a1)
 		lea	SPRITE_SIZE(a1),a1
 		dbf	d7,_c0158Scan
 
@@ -5074,7 +5074,7 @@ SetRoomNumber:
 ; Swaps the on-screen appearance of sprites d0+1 and d1+1: their VDP
 ; piece buffers (g_Sprite1VdpPieces + n*$40) and the struct fields
 ; that drive rendering (RotationAndSize, TileSource, AnimCtrl,
-; AnimationIndex/Frame, SpriteType and the Unk6E/AnimFlags word).
+; AnimationIndex/Frame, SpriteType and the Pad6E/AnimFlags word).
 SwapSpriteAppearance:
 		ext.w	d0
 		ext.w	d1
@@ -5114,9 +5114,9 @@ _ssaVdpSwap:
 		move.b	SpriteType(a0),d0
 		move.b	SpriteType(a1),SpriteType(a0)
 		move.b	d0,SpriteType(a1)
-		move.w	Unk6E(a0),d0
-		move.w	Unk6E(a1),Unk6E(a0)
-		move.w	d0,Unk6E(a1)
+		move.w	Pad6E(a0),d0
+		move.w	Pad6E(a1),Pad6E(a0)
+		move.w	d0,Pad6E(a1)
 		rts
 
 ; The player receives King Nole's treasure: quake, equip the Magic

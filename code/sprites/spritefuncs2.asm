@@ -14,8 +14,8 @@ SpriteFuncs2	module
 LoadPlayerSpecialAnimation:
 		tst.b	(g_PlayerAnimation).l
 		beq.w	_done
-		bset	#$00,(Player_InteractFlags).l
-		andi.b	#$7F,(Player_AnimCtrl).l
+		bset	#IF_NO_ROTATE,(Player_InteractFlags).l
+		andi.b	#($FF-(1<<AC_FRAME_DIRTY)),(Player_AnimCtrl).l
 		move.b	(Player_RotationAndSize).l,d0
 		addi.b	#$40,d0			  ; facing SE/SW selects the
 		andi.b	#$80,d0			  ; +4 animation bank
@@ -27,7 +27,7 @@ LoadPlayerSpecialAnimation:
 		bne.s	_chkStage2
 		move.w	d0,(Player_AnimationIndex).l
 		move.w	#$0004,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 
 _chkStage2:
@@ -35,7 +35,7 @@ _chkStage2:
 		bne.s	_chkStage3
 		move.w	d0,(Player_AnimationIndex).l
 		move.w	#$0008,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 
 _chkStage3:
@@ -43,7 +43,7 @@ _chkStage3:
 		bne.s	_chkStage4
 		move.w	d0,(Player_AnimationIndex).l
 		move.w	#$000C,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		rts
 
 _chkStage4:
@@ -51,7 +51,7 @@ _chkStage4:
 		bne.s	_chkFaintEnd
 		move.w	d0,(Player_AnimationIndex).l
 		move.w	#$0010,(Player_AnimationFrame).l
-		ori.b	#$80,(Player_AnimCtrl).l
+		ori.b	#(1<<AC_FRAME_DIRTY),(Player_AnimCtrl).l
 		TestFlag	FLAG_FAHL_DUEL_ACTIVE
 		beq.s	_stage4Done
 		move.b	#$32,d0			  ; CSA_0032: reset the dojo opponent
@@ -70,7 +70,7 @@ _chkFaintEnd:
 		bra.w	ProcessDialogueScriptAction
 
 OnFaint:
-		bclr	#$00,(Player_InteractFlags).l
+		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
 		cmpi.w	#ROOM_MASSAN_WATERFALL,(g_CurrentRoom).l	  ; Waterfall Shrine Entrance
 		bne.s	EkeEkeRecover
 		TestFlag	FLAG_MASSAN_RESCUE_DONE
@@ -98,8 +98,8 @@ _waitFriday:
 		bne.s	_waitFriday
 		move.b	#FRIDAY_FLY_DOWN,(g_FridayAnimation2).l
 		lea	(Player_X).l,a0
-		bset	#$07,AnimCtrl(a0)
-		bset	#$07,RenderFlags(a0)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a0)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a0)
 		jsr	(j_SetPlayerIdlePose).l
 		jsr	(j_LoadSprites).l
 		bsr.w	UpdateEkeEkeHUD
@@ -132,9 +132,9 @@ _massanRescue:
 		move.w	#ROOM_MASSAN_MAYORS_HOUSE,(g_OriginalRoom).l
 		move.b	#$10,(Player_X).l
 		move.b	#$0F,(Player_Y).l
-		bset	#$06,(Player_InteractFlags).l
-		andi.b	#$3F,(Player_RotationAndSize).l
-		ori.b	#$80,(Player_RotationAndSize).l
+		bset	#IF_NO_DRAW,(Player_InteractFlags).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
+		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		clr.b	d0
 		jsr	(j_LoadRoom_0).l
 		jsr	(j_InitRoomDisplay).l

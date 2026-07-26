@@ -47,9 +47,9 @@ _setPos:
 		move.w	#BHVS_ENEMY_PROJECTILE,BehaviourLUTIndex(a1)
 		move.b	#$04,Speed(a1)
 		jsr	(j_InitSpawnedSprite).l
-		bset	#$00,CombatFlags(a1)
-		bset	#$07,InteractFlags(a1)
-		bset	#$07,InitInteractFlags(a1)
+		bset	#CF_INVINCIBLE,CombatFlags(a1)
+		bset	#IF_HOSTILE,InteractFlags(a1)
+		bset	#IF_HOSTILE,InitInteractFlags(a1)
 		tst.b	d0
 		rts
 

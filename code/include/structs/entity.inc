@@ -6,6 +6,13 @@ SubY:                 equ $03
 RotationAndSize:      equ $04
 Height:               equ $05
 TileSource:           equ $06
+; TileSource packs the sprite's VRAM tile source with two attributes:
+;   3   = Horizontal flip (SE/SW frames set it, NW/NE clear it)
+;   5-6 = Palette select (2-bit field; see SetSpritePalette in spritefuncs3)
+TS_HFLIP:             equ 3
+TS_PAL_LO:            equ 5    ; palette-select low bit
+TS_PAL_HI:            equ 6    ; palette-select high bit
+TSBF_PALETTE:         equ $60  ; mask of the two palette-select bits
 ; StateFlags bits:
 ;   0 = Hidden/inactive. Set by HideSprite, cleared to (re)enable a sprite
 ;       (customroomactions2). Skips drawing (gamelogic3:ProjectSpriteToScreen), collision,
@@ -19,6 +26,13 @@ TileSource:           equ $06
 ;   6 = Carried above player's head (pickup stage 2; Z tracks
 ;       Player_HitBoxZEnd; cleared when thrown). Bits 1-2 and 7 appear unused.
 StateFlags:           equ $08
+; StateFlags bit numbers, for bset/bclr/btst/bchg. For a mask (ori/andi)
+; use (1<<SF_x).
+SF_HIDDEN:            equ 0    ; hidden/inactive
+SF_SHOP_LIFTED:       equ 3    ; shop-item pick-up latch
+SF_HALF_SPEED:        equ 4    ; half movement speed
+SF_GRABBED:           equ 5    ; grabbed by player (pickup stage 1)
+SF_CARRIED:           equ 6    ; carried above player's head (pickup stage 2)
 Speed:                equ $09
 ; AnimCtrl: animation control byte.
 ;   Bits 0-6 = animation enabled: effectively a boolean -- only ever
@@ -30,6 +44,9 @@ Speed:                equ $09
 ;       render code (gamelogic3:_frameLoadSprite) to reload the sprite's frame
 ;       graphics, then cleared. Usually set together with RenderFlags bit 7.
 AnimCtrl:             equ $0A
+; AnimCtrl bit 7 = frame dirty (see the field comment above). Bits 0-6
+; are the anim-enabled boolean, only ever written whole as $00/$01.
+AC_FRAME_DIRTY:       equ 7
 SpriteGraphic:        equ $0B
 ; InteractFlags bits (bits 0/2/4/5/7 initialised from room sprite data byte 2):
 ;   0 = No rotation/auto-animation: sprite has a single orientation and its
@@ -46,6 +63,15 @@ SpriteGraphic:        equ $0B
 ;   7 = Hostile: deals contact damage, targetable by sword, loads enemy
 ;       stats on room init (EB_MakeHostile / EB_MakeNonHostile).
 InteractFlags:        equ $0C
+; InteractFlags bit numbers (also apply to InitInteractFlags). For a
+; mask (ori/andi) use (1<<IF_x) / ($FF-(1<<IF_x)).
+IF_NO_ROTATE:         equ 0    ; single orientation, manual AnimationIndex
+IF_HURT:              equ 1    ; hurt/knockback state
+IF_FRICTIONLESS:      equ 2    ; not dragged by the platform it stands on
+IF_TALKABLE:          equ 4    ; has dialogue
+IF_LIFTABLE:          equ 5    ; player can pick this up
+IF_NO_DRAW:           equ 6    ; skip drawing this frame (blink flicker)
+IF_HOSTILE:           equ 7    ; deals contact damage, sword-targetable
 ; AnimPhase: animation phase counter. UpdateSpriteFrame advances it by Speed
 ; (2x Speed for walk cycles) every tick; when it wraps its threshold
 ; ($3F idle, $07/$0F walk) AnimationFrame1 steps to the next frame.
@@ -74,6 +100,8 @@ HitBoxYEnd:           equ $1E
 ; (no speed, no behaviour parameter, not liftable), cleared when the
 ; sprite is picked up or thrown so it starts falling.
 FallRate:             equ $20
+; FallRate bit 7 = gravity disabled (see the field comment above).
+FALLR_NO_GRAVITY:     equ 7
 JumpRate:             equ $21
 GroundHeight:         equ $22
 GroundType:           equ $23
@@ -116,6 +144,13 @@ ChestIndex:           equ $37
 ;   7 = Shop-item put-down latch: set once by EB_ShopItem when a shop
 ;       item settles on a counter tile. Bits 3-5 appear unused.
 CombatFlags:          equ $38
+; CombatFlags bit numbers (also apply to InitCombatFlags). For a mask
+; (ori/andi) use (1<<CF_x) / ($FF-(1<<CF_x)).
+CF_INVINCIBLE:        equ 0    ; sword hits clink, no damage
+CF_WALK_BACKWARDS:    equ 1    ; facing/walk flipped 180
+CF_DIED:              equ 2    ; died this frame
+CF_ALT_ANIM_BANK:     equ 6    ; alternate animation bank (disguised form)
+CF_SHOP_PUTDOWN:      equ 7    ; shop-item put-down latch
 FloorHeight:          equ $39
 Dialogue:             equ $3A
 SpriteType:           equ $3B
@@ -142,6 +177,14 @@ InitTileSource:       equ $46
 ;       gamelogic3:_frameLoadSprite; set by AI/script code whenever it changes
 ;       the animation directly).
 RenderFlags:          equ $48
+; RenderFlags bit numbers. Bits 0-2 form the charged-hit-effect field;
+; RFBF_HIT_EFFECT is its mask (andi.b #($FF-RFBF_HIT_EFFECT) clears it).
+RF_HIT_MAGIC:         equ 0    ; charged Magic Sword hit effect
+RF_HIT_ICE:           equ 1    ; charged Ice Sword hit effect
+RF_HIT_THUNDER:       equ 2    ; charged Thunder Sword hit effect
+RFBF_HIT_EFFECT:      equ $07  ; mask of the three charged-hit bits
+RF_NOCLIP:            equ 6    ; skip collision during EB_MoveNoClip
+RF_LAYOUT_DIRTY:      equ 7    ; rebuild VDP piece layout / reload tiles
 ; SavedSpeed: Speed saved by CheckPickUpEntity when the player lifts
 ; this sprite; restored with the Saved* behaviour fields at $5E-$69.
 SavedSpeed:           equ $49
@@ -206,10 +249,15 @@ InitBehavCmd:         equ $6B
 ; practice the recompute always runs -- looks like a vestigial
 ; optimisation. Bits 4-7 unused.
 MovedDirFlags:        equ $6D
-; Unk6E: no writer or dedicated reader found; only touched because the
-; sprite-swap cutscene action (dialogueactions:SwapSpriteAppearance)
-; swaps the word at $6E to move AnimFlags between the two entities.
-Unk6E:                equ $6E
+; MovedDirFlags bit numbers (same layout as the Action1 walk bits).
+MDF_MOVED_NE:         equ 0    ; moved NE (-Y)
+MDF_MOVED_SW:         equ 1    ; moved SW (+Y)
+MDF_MOVED_NW:         equ 2    ; moved NW (-X)
+MDF_MOVED_SE:         equ 3    ; moved SE (+X)
+; Pad6E: unused padding byte. No writer or dedicated reader; it only
+; moves because SwapSpriteAppearance swaps AnimFlags ($6F) with a word
+; access at $6E, carrying this byte along as the word's high half.
+Pad6E:                equ $6E
 ; AnimFlags is not runtime state: it is a per-SpriteGraphic capability byte
 ; looked up from the SpriteAnimFlags table (spritefuncs1.asm) by
 ; LookupSpriteAnimFlags; defaults to $01 for graphics not in the table.
@@ -223,6 +271,14 @@ Unk6E:                equ $6E
 ;   6 = Extended animation set (larger frame mask, different attack/jump
 ;       anim indices)
 AnimFlags:            equ $6F
+; AnimFlags bit numbers (capability byte, not runtime state).
+AF_HAS_IDLE:          equ 0    ; has idle/stationary animation
+AF_IDLE_ALT_BANK:     equ 1    ; idle animation uses separate anim bank
+AF_HAS_JUMP:          equ 2    ; has jump animation
+AF_ALT_WALK:          equ 3    ; alternate walk animation handling
+AF_SINGLE_ORIENT:     equ 4    ; single orientation, no rotation frames
+AF_HAS_DAMAGE:        equ 5    ; has take-damage animation
+AF_EXTENDED_SET:      equ 6    ; extended animation set
 TileCopySource:       equ $71
 InitBehaviourLUTPtr:  equ $72
 InitGoldOrChestCont:  equ $76
@@ -234,10 +290,9 @@ ItemDrop:             equ $77
 ; guaranteed item drop and $0000 means never; a failed item roll drops
 ; GoldOrChestContents gold instead. The stat pair "$0001 with
 ; GoldOrChestContents = 0" never occurs on real enemies and serves as
-; a sentinel for permanent hostiles - indestructible obstacles (trees,
-; spiked balls) and respawning ghosts. They are excluded from the
-; hostile-enemy scans and the quake attack, stay solid during
-; hurt-invulnerability (FIX_COLL_1), and on death (the ghosts) respawn
+; a sentinel for indestructible obstacles (trees, spiked balls). They
+; are excluded from the hostile-enemy scans and the quake attack, stay
+; solid during hurt-invulnerability (FIX_COLL_1), and on death respawn
 ; hostile with $100 health instead of dying.
 ItemDropProbability:  equ $78
 InitDialogue:         equ $7A

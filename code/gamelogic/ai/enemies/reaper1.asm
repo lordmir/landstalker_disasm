@@ -16,7 +16,7 @@ EnemyAI_Reaper1_B:
 
 ; A routine, run every tick.
 EnemyAI_Reaper1_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -60,7 +60,7 @@ _chase:
 		clr.b	AICounter(a5)
 		bsr.s	_tryCastInPlace
 		bcs.s	_chaseTick
-		ori.b	#$40,InteractFlags(a5)
+		ori.b	#(1<<IF_NO_DRAW),InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		bsr.s	_tryTeleportBehind
@@ -74,7 +74,7 @@ _chaseTick:
 ; Countdown tick: keep hidden (InteractFlags bit 6) at the floating
 ; height, without running the behaviour.
 _stayHidden:
-		ori.b	#$40,InteractFlags(a5)
+		ori.b	#(1<<IF_NO_DRAW),InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		rts
@@ -228,11 +228,11 @@ _applySpot:
 
 _landed:
 		movem.w	(sp)+,d1
-		bset	#$05,Action1(a5)	; ACT_JUMP bit - drop in from the air
+		bset	#ACTB_JUMP,Action1(a5)	; ACT_JUMP bit - drop in from the air
 		move.b	(Player_RotationAndSize).l,d0
 		andi.b	#$C0,d0
 		eor.b	d1,d0
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d0,RotationAndSize(a5)
 		movem.l	(sp)+,d0
 		move.b	#$20,AIState(a5)
@@ -247,7 +247,7 @@ _landed:
 ; spawn the fireball (type 1, AttackStrength $300; abort if no free
 ; slot); then recover until tick $46.
 _cast:
-		andi.b	#$BF,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_NO_DRAW)),InteractFlags(a5)
 		clr.w	d0
 		move.b	FloorHeight(a5),d0
 		move.w	d0,Z(a5)

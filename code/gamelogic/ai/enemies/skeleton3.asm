@@ -11,7 +11,7 @@ EnemyAI_Skeleton3_B:
 
 ; A routine, run every tick. Being hurt drops the block.
 EnemyAI_Skeleton3_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -20,7 +20,7 @@ EnemyAI_Skeleton3_A:
 		bra.w	_attackStates
 
 _hurtTick:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 
@@ -40,11 +40,11 @@ _idle:
 ; Aggro / attack-over / hitstun recovery: drop the block and start
 ; chasing the player (behaviour 6, AIState $10).
 EnemyAI_Skeleton3:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep
@@ -204,7 +204,7 @@ _rushTick:
 ; Block: hold the block pose (ACT_ATTACK4), invincible (CombatFlags
 ; bit 0), for $28 ticks; the reset drops the flag.
 _block:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$28,AnimPhase(a5)

@@ -122,7 +122,7 @@ _sweepZRestoreNW:
 		bra.s	_sweepNextNW
 
 _sweepHitNW:
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		beq.s	_sweepDamageNW
 		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
@@ -196,7 +196,7 @@ _sweepZRestoreNE:
 		bra.s	_sweepNextNE
 
 _sweepHitNE:
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		beq.s	_sweepDamageNE
 		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
@@ -270,7 +270,7 @@ _sweepZRestoreSW:
 		bra.s	_sweepNextSW
 
 _sweepHitSW:
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		beq.s	_sweepDamageSW
 		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
@@ -344,7 +344,7 @@ _sweepZRestoreSE:
 		bra.s	_sweepNextSE
 
 _sweepHitSE:
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		beq.s	_sweepDamageSE
 		SetFlag	FLAG_SWEEP_ATTACK_HIT
 		trap	#$00			  ; Trap00Handler
@@ -391,25 +391,25 @@ _sweepDoneSE:
 StartEnemyHitstun:
 		bset	#ACTBH_DAMAGE,QueuedAction(a5)
 		clr.b	AIState(a5)
-		bset	#$01,InteractFlags(a5)
-		andi.b	#$F8,RenderFlags(a5)
+		bset	#IF_HURT,InteractFlags(a5)
+		andi.b	#($FF-RFBF_HIT_EFFECT),RenderFlags(a5)
 		move.b	(g_ChargedSword).l,d0
 		beq.s	_hitstunDone
 		cmpi.b	#ITM_MAGICSWORD,d0
 		bne.s	_notMagic
-		bset	#$00,RenderFlags(a5)
+		bset	#RF_HIT_MAGIC,RenderFlags(a5)
 		bra.s	_hitstunDone
 
 _notMagic:
 		cmpi.b	#ITM_THUNDERSWORD,d0
 		bne.s	_notThunder
-		bset	#$02,RenderFlags(a5)
+		bset	#RF_HIT_THUNDER,RenderFlags(a5)
 		bra.s	_hitstunDone
 
 _notThunder:
 		cmpi.b	#ITM_ICESWORD,d0
 		bne.s	_notIce
-		bset	#$01,RenderFlags(a5)
+		bset	#RF_HIT_ICE,RenderFlags(a5)
 		bra.s	_hitstunDone
 
 _notIce:
@@ -478,7 +478,7 @@ _quakeLoop:
 _quakeDamage:
 		tst.l	ScreenX(a5)
 		beq.s	_quakeMark
-		btst	#$00,CombatFlags(a5)
+		btst	#CF_INVINCIBLE,CombatFlags(a5)
 		bne.s	_quakeMark
 		move.w	Defence(a5),d0
 		bsr.w	CalculatePlayerDamageOutput
@@ -514,9 +514,9 @@ _quakeDone:
 
 
 MarkEnemyDead:
-		andi.b	#$7F,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_HOSTILE)),InteractFlags(a5)
 		clr.w	BehavParam(a5)
-		bset	#$02,CombatFlags(a5)
+		bset	#CF_DIED,CombatFlags(a5)
 		clr.b	AICounter(a5)
 		cmpi.b	#SPR_MUMMY3,SpriteType(a5)
 		bne.s	_markDeadDone
@@ -525,7 +525,7 @@ MarkEnemyDead:
 		cmpi.w	#50,d7
 		bcs.s	_markDeadDone
 		move.b	#$01,AICounter(a5)
-		andi.b	#$7F,InitInteractFlags(a5)
+		andi.b	#($FF-(1<<IF_HOSTILE)),InitInteractFlags(a5)
 
 _markDeadDone:
 		rts
@@ -614,7 +614,7 @@ ProcessDeadEnemies:
 _deadLoop:
 		tst.w	(a5)
 		bmi.s	_deadDone
-		bclr	#$02,CombatFlags(a5)
+		bclr	#CF_DIED,CombatFlags(a5)
 		beq.s	_deadNext
 		tst.b	AICounter(a5)
 		bne.w	_MummyRevive
@@ -650,7 +650,7 @@ _deathHide:
 		jmp	(j_HideSprite).l
 
 _ghostRespawn:
-		bset	#$07,InteractFlags(a5)
+		bset	#IF_HOSTILE,InteractFlags(a5)
 		move.w	#$0100,CurrentHealth(a5)
 		rts
 
@@ -718,16 +718,16 @@ _dropFinish:
 		clr.w	CurrentHealth(a5)
 		clr.b	CombatFlags(a5)
 		clr.w	FallRate(a5)
-		andi.b	#$7F,InteractFlags(a5)
-		andi.b	#$3F,RotationAndSize(a5)
-		bset	#$07,AnimCtrl(a5)
-		bset	#$07,RenderFlags(a5)
-		andi.b	#$9F,TileSource(a5)
-		ori.b	#$40,TileSource(a5)
+		andi.b	#($FF-(1<<IF_HOSTILE)),InteractFlags(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
+		andi.b	#($FF-TSBF_PALETTE),TileSource(a5)
+		ori.b	#(1<<TS_PAL_HI),TileSource(a5)
 		clr.w	AnimationIndex(a5)
 		clr.w	AnimationFrame(a5)
-		bset	#$00,InteractFlags(a5)
-		bclr	#$06,InteractFlags(a5)
+		bset	#IF_NO_ROTATE,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		movea.l	a5,a1
 		bsr.w	LookupSpriteAnimFlags
 		bsr.w	CalcSpriteHitbox
@@ -738,7 +738,7 @@ _exit:
 _deathScripted:
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_EnemyDie1
-		andi.b	#$7F,InteractFlags(a5)
+		andi.b	#($FF-(1<<IF_HOSTILE)),InteractFlags(a5)
 		SetFlag	FLAG_SCRATCH_EVENT_DONE
 		rts
 
@@ -764,8 +764,8 @@ _MummyRevive:
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		cmpi.b	#$38,AICounter(a5)
 		bcs.w	_reviveStep
-		ori.b	#$80,InteractFlags(a5)
-		ori.b	#$80,InitInteractFlags(a5)
+		ori.b	#(1<<IF_HOSTILE),InteractFlags(a5)
+		ori.b	#(1<<IF_HOSTILE),InitInteractFlags(a5)
 		move.w	MaxHealth(a5),CurrentHealth(a5)
 		movem.w	d7,-(sp)
 		jsr	(j_RunEnemyAI_B).l
@@ -773,7 +773,7 @@ _MummyRevive:
 		bra.w	_deadNext
 
 _reviveStep:
-		bset	#$02,CombatFlags(a5)
+		bset	#CF_DIED,CombatFlags(a5)
 		bra.w	_deadNext
 
 
@@ -813,7 +813,7 @@ _dmgKnockback:
 		bmi.s	_dmgFromFacing
 		andi.b	#$03,d1
 		eori.b	#$02,d1
-		andi.b	#$3F,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
 		move.b	d1,d0
 		lsl.b	#$06,d0
 		or.b	d0,(Player_RotationAndSize).l
@@ -835,7 +835,7 @@ _dmgRecoil:
 		bset	#ACTBH_DAMAGE,(Player_Action).l
 		trap	#$00			  ; Trap00Handler
 		dc.w SND_NigelHit1
-		bset	#$01,(Player_InteractFlags).l
+		bset	#IF_HURT,(Player_InteractFlags).l
 		clr.b	(g_PlayerPendingHit).l
 
 _dmgDone:
@@ -859,28 +859,28 @@ _UpdateHurtTimer:
 		addq.b	#$01,(g_PlayerHurtTimer).l
 		cmpi.b	#$02,(g_PlayerHurtTimer).l
 		bne.s	_hurtChk10
-		bset	#$00,(Player_InteractFlags).l
+		bset	#IF_NO_ROTATE,(Player_InteractFlags).l
 		rts
 
 _hurtChk10:
 		cmpi.b	#$10,(g_PlayerHurtTimer).l
 		bcs.s	_hurtDone
 		bne.s	_hurtChk40
-		andi.b	#$F8,(Player_RenderFlags).l
-		bclr	#$00,(Player_InteractFlags).l
+		andi.b	#($FF-RFBF_HIT_EFFECT),(Player_RenderFlags).l
+		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
 		rts
 
 _hurtChk40:
 		cmpi.b	#$40,(g_PlayerHurtTimer).l
 		bne.s	_hurtFlicker
 		clr.b	(g_PlayerHurtTimer).l
-		bclr	#$01,(Player_InteractFlags).l
+		bclr	#IF_HURT,(Player_InteractFlags).l
 
 _hurtFlicker:
 		move.b	(Player_RenderFlags).l,d0
 		andi.b	#$07,d0
 		bne.s	_hurtDone
-		bchg	#$06,(Player_InteractFlags).l
+		bchg	#IF_NO_DRAW,(Player_InteractFlags).l
 
 _hurtDone:
 		rts

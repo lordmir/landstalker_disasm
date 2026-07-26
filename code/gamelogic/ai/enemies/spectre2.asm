@@ -9,8 +9,8 @@ EnemyAI_Spectre2_B:
 
 ; A routine, run every tick. FallRate bit 7 keeps it airborne.
 EnemyAI_Spectre2_A:
-		bset	#$07,FallRate(a5)
-		btst	#$01,InteractFlags(a5)
+		bset	#FALLR_NO_GRAVITY,FallRate(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -46,7 +46,7 @@ EnemyAI_Spectre2:
 _chase:
 		tst.b	(g_PlayerHurtTimer).l
 		bne.s	_playerHurt
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		beq.s	_chaseMoves
 		addq.b	#$01,AICounter(a5)
 		cmpi.b	#$1E,AICounter(a5)
@@ -85,7 +85,7 @@ _tryVanish:
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00018,d7
 		bhi.s	_vanishMiss
-		bset	#$06,InteractFlags(a5)
+		bset	#IF_NO_DRAW,InteractFlags(a5)
 		move.w	#$0100,Z(a5)
 		move.w	#$0120,HitBoxZEnd(a5)
 		clr.b	AICounter(a5)
@@ -173,7 +173,7 @@ _swingMiss:
 ; the teleport in beside the player (at the player's height, hitbox
 ; top $F above) finds a clear spot - becoming visible again.
 _tryMaterialise:
-		btst	#$06,InteractFlags(a5)
+		btst	#IF_NO_DRAW,InteractFlags(a5)
 		beq.s	_materialise
 		move.w	#$000F,d1
 		bsr.w	TeleportBesidePlayer
@@ -182,7 +182,7 @@ _tryMaterialise:
 		rts
 
 _materialise:
-		bclr	#$06,InteractFlags(a5)
+		bclr	#IF_NO_DRAW,InteractFlags(a5)
 		ori	#$01,ccr
 		rts
 

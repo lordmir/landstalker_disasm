@@ -10,7 +10,7 @@ EnemyAI_Bubble1_B:
 
 ; A routine, run every tick.
 EnemyAI_Bubble1_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -54,7 +54,7 @@ EnemyAI_Bubble1:
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$00,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: stand and wobble - alternate ACT_ATTACK3/ACT_ATTACK4 every

@@ -24,7 +24,7 @@ EnemyAI_Gola_B:
 ; A routine, run every tick. Speed is pinned to 2.
 EnemyAI_Gola_A:
 		move.b	#$02,Speed(a5)
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_think
@@ -43,12 +43,12 @@ EnemyAI_Gola:
 ; Reset: drop the flags, idle behaviour, ready state ($10), and
 ; black out CRAM colours 0 and 15 (the fire glow).
 _reset:
-		bclr	#$06,CombatFlags(a5)
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		move.l	#$C0000000,(VDP_CTRL_REG).l
 		move.w	#$0000,(VDP_DATA_REG).l
 		move.l	#$C01E0000,(VDP_CTRL_REG).l
@@ -107,20 +107,20 @@ _trySwoop:
 		beq.s	_swoopWest
 		move.b	(Player_X).l,(a5)
 		move.b	#$16,Y(a5)
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		ori.b	#DIR_SW,RotationAndSize(a5)
-		bclr	#$03,TileSource(a5)
+		bclr	#TS_HFLIP,TileSource(a5)
 		bra.s	_swoopPlace
 
 _swoopWest:
 		move.b	#$19,X(a5)
 		move.b	(Player_Y).l,Y(a5)
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		ori.b	#DIR_SE,RotationAndSize(a5)
-		bset	#$03,TileSource(a5)
+		bset	#TS_HFLIP,TileSource(a5)
 
 _swoopPlace:
-		bset	#$07,RenderFlags(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
 		clr.w	SubX(a5)
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
@@ -239,10 +239,10 @@ _divePlace:
 		move.b	d1,Y(a5)
 		andi.b	#$0F,d3
 		move.b	d3,SubY(a5)
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
-		bset	#$07,RenderFlags(a5)
-		bset	#$07,AnimCtrl(a5)
+		bset	#RF_LAYOUT_DIRTY,RenderFlags(a5)
+		bset	#AC_FRAME_DIRTY,AnimCtrl(a5)
 		movea.l	a5,a1
 		jsr	(j_j_CalcSpriteHitbox).l
 		movem.l	(sp)+,d0
@@ -296,7 +296,7 @@ _riseMiss:
 ; here.
 		bsr.w	GetDirToPlayer
 		move.b	d2,d1
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d2,RotationAndSize(a5)
 		rts
 
@@ -496,7 +496,7 @@ _steerAlongX:
 		move.b	#$40,d1
 
 _steerApply:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		or.b	d1,RotationAndSize(a5)
 		bsr.w	j_j_OnTick
 
@@ -506,7 +506,7 @@ _steerDone:
 		rts
 
 _advDone:
-		bclr	#$00,InteractFlags(a5)
+		bclr	#IF_NO_ROTATE,InteractFlags(a5)
 		clr.b	AICounter(a5)
 		bra.w	_reset
 
@@ -564,9 +564,9 @@ _spawn:
 		move.b	#$04,Speed(a1)
 		move.b	#$80,FallRate(a1)
 		jsr	(j_InitSpawnedSprite).l
-		bset	#$00,CombatFlags(a1)
-		bset	#$07,InteractFlags(a1)
-		bset	#$07,InitInteractFlags(a1)
+		bset	#CF_INVINCIBLE,CombatFlags(a1)
+		bset	#IF_HOSTILE,InteractFlags(a1)
+		bset	#IF_HOSTILE,InitInteractFlags(a1)
 		tst.b	d0
 		rts
 

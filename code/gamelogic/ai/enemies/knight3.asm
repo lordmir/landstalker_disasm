@@ -12,7 +12,7 @@ EnemyAI_Knight3_B:
 
 ; A routine, run every tick.
 EnemyAI_Knight3_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -190,11 +190,11 @@ _guard:
 		move.w	#ACT_ATTACK4,QueuedAction(a5)
 		cmpi.b	#$17,AnimPhase(a5)
 		bcs.s	_guardHold
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		bra.w	EnemyAI_Knight3
 
 _guardHold:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 

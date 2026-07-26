@@ -17,7 +17,7 @@ EnemyAI_StoneWarrior_B:
 
 ; A routine, run every tick.
 EnemyAI_StoneWarrior_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -160,11 +160,11 @@ _behaviourTick:
 ; (SND_DoorLock) in the slam pose (ACT_ATTACK4); the next tick shakes
 ; the screen and returns to the chase. Contact does the damage.
 _slam:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.b	Action1(a5),d0
 		andi.b	#$30,d0
 		beq.w	_slamLanded
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 

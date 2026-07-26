@@ -366,7 +366,7 @@ _neLadder:
 		andi.b	#$E0,JumpRate(a5)
 
 _neLadderAnim:
-		andi.b	#$3F,RotationAndSize(a5)
+		andi.b	#($FF-DIR_MASK),RotationAndSize(a5)
 		addq.b	#$01,AnimPhase(a5)
 		clr.b	FallRate(a5)
 		move.b	(g_VBlankCounterLow).l,d7
@@ -429,7 +429,7 @@ _revertProbeNE:
 
 
 _neCommit:
-		btst	#$04,StateFlags(a5)
+		btst	#SF_HALF_SPEED,StateFlags(a5)
 		beq.s	_neApply
 		lsr	(g_PlayerSpeed).l
 		bsr.s	_revertProbeNE
@@ -481,9 +481,9 @@ _neScroll:
 _neFinish:
 		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_neDone
-		andi.b	#$3F,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
 		bset	#ACTB_WALK_NE,(Player_Action+1).l
-		bset	#$00,(Player_MovedDirFlags).l
+		bset	#MDF_MOVED_NE,(Player_MovedDirFlags).l
 
 _neDone:
 		rts
@@ -560,7 +560,7 @@ _revertProbeSE:
 
 
 _seCommit:
-		btst	#$04,StateFlags(a5)
+		btst	#SF_HALF_SPEED,StateFlags(a5)
 		beq.s	_seApply
 		lsr	(g_PlayerSpeed).l
 		bsr.s	_revertProbeSE
@@ -612,10 +612,10 @@ _seScroll:
 _seFinish:
 		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_seDone
-		andi.b	#$3F,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
 		ori.b	#DIR_SE,(Player_RotationAndSize).l
 		bset	#ACTB_WALK_SE,(Player_Action+1).l
-		bset	#$03,(Player_MovedDirFlags).l
+		bset	#MDF_MOVED_SE,(Player_MovedDirFlags).l
 
 _seDone:
 		rts
@@ -686,7 +686,7 @@ _revertProbeSW:
 
 
 _swCommit:
-		btst	#$04,StateFlags(a5)
+		btst	#SF_HALF_SPEED,StateFlags(a5)
 		beq.s	_swApply
 		lsr	(g_PlayerSpeed).l
 		bsr.s	_revertProbeSW
@@ -738,10 +738,10 @@ _swScroll:
 _swFinish:
 		bclr	#ACTBH_RIDING,(Player_Action).l
 		bne.s	_swDone
-		andi.b	#$3F,(Player_RotationAndSize).l
+		andi.b	#($FF-DIR_MASK),(Player_RotationAndSize).l
 		ori.b	#DIR_SW,(Player_RotationAndSize).l
 		bset	#ACTB_WALK_SW,(Player_Action+1).l
-		bset	#$01,(Player_MovedDirFlags).l
+		bset	#MDF_MOVED_SW,(Player_MovedDirFlags).l
 
 _swDone:
 		rts
@@ -851,7 +851,7 @@ _revertProbeNW:
 
 
 _nwCommit:
-		btst	#$04,StateFlags(a5)
+		btst	#SF_HALF_SPEED,StateFlags(a5)
 		beq.w	_nwApply
 		lsr	(g_PlayerSpeed).l
 		bsr.s	_revertProbeNW
@@ -906,7 +906,7 @@ _nwFinish:
 		bne.s	_nwDone
 		ori.b	#DIR_NW,(Player_RotationAndSize).l
 		bset	#ACTB_WALK_NW,(Player_Action+1).l
-		bset	#$02,(Player_MovedDirFlags).l
+		bset	#MDF_MOVED_NW,(Player_MovedDirFlags).l
 
 _nwDone:
 		rts
@@ -1273,7 +1273,7 @@ _fsuNext:
 		beq.s	_fsuNone
 		tst.w	BehavParam(a5)
 		bne.s	_fsuCheck
-		btst	#$05,InteractFlags(a5)
+		btst	#IF_LIFTABLE,InteractFlags(a5)
 		beq.s	_fsuNone
 		bra.s	_fsuCheck
 

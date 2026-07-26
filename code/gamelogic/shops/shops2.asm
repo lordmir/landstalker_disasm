@@ -9,7 +9,7 @@ GetSpeakerSpriteId:
 		moveq	#$E,d7
 
 _spkScan:
-		btst	#$04,InteractFlags(a0)
+		btst	#IF_TALKABLE,InteractFlags(a0)
 		beq.s	_spkNext
 		move.b	Dialogue(a0),d1
 		lsr.b	#$02,d1

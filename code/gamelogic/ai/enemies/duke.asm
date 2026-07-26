@@ -16,8 +16,8 @@ EnemyAI_Duke_B:
 ; A routine, run every tick. Being hurt drops the block (and his
 ; hitstun plays the damage animation from the alternate bank).
 EnemyAI_Duke_A:
-		bset	#$06,CombatFlags(a5)
-		btst	#$01,InteractFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -26,7 +26,7 @@ EnemyAI_Duke_A:
 		bra.w	_attackStates
 
 _hurtTick:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 
@@ -46,11 +46,11 @@ _idle:
 ; Aggro / attack-over / hitstun recovery: drop the block and start
 ; chasing the player (behaviour 6, AIState $10).
 EnemyAI_Duke:
-		bclr	#$00,CombatFlags(a5)
+		bclr	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep
@@ -212,7 +212,7 @@ _walkJabTick:
 ; Block: hold the guard pose (ACT_ATTACK2), invincible (CombatFlags
 ; bit 0), for $28 ticks; being hurt or the reset drops the flag.
 _block:
-		bset	#$00,CombatFlags(a5)
+		bset	#CF_INVINCIBLE,CombatFlags(a5)
 		move.w	#ACT_ATTACK2,QueuedAction(a5)
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$28,AnimPhase(a5)

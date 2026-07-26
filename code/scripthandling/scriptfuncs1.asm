@@ -18,7 +18,7 @@ _gsdScan:
 		bmi.s	_gsdDone		  ; End of sprite table (Z clear)
 		cmpi.w	#$7F7F,d0		  ; Empty slot
 		beq.s	_gsdSkip
-		btst	#$04,InteractFlags(a0)	  ; Has	dialogue
+		btst	#IF_TALKABLE,InteractFlags(a0)	  ; Has	dialogue
 		beq.s	_gsdSkip
 		move.b	Dialogue(a0),d0		  ; Dialogue Script
 		andi.b	#$FC,d0

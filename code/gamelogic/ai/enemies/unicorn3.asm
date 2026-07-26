@@ -11,8 +11,8 @@ EnemyAI_Unicorn3_B:
 ; A routine, run every tick. The walk-backwards flag only persists
 ; while the dodge state re-sets it each tick.
 EnemyAI_Unicorn3_A:
-		bclr	#$01,CombatFlags(a5)
-		btst	#$01,InteractFlags(a5)
+		bclr	#CF_WALK_BACKWARDS,CombatFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -43,8 +43,8 @@ EnemyAI_Unicorn3:
 		move.w	#BHVS_CHASE,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
-		bclr	#$01,CombatFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
+		bclr	#CF_WALK_BACKWARDS,CombatFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep
@@ -143,7 +143,7 @@ _tryDodge:
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#$0050,d7
 		bhi.s	_dodgeMiss
-		bset	#$01,CombatFlags(a5)
+		bset	#CF_WALK_BACKWARDS,CombatFlags(a5)
 		move.b	#$22,AIState(a5)
 		move.w	#BHVS_BACKSTEP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
@@ -261,7 +261,7 @@ _thrustTick:
 ; tick) while the backstep behaviour carries it away still facing the
 ; player; the behaviour's RunSpecialAI resets to the chase.
 _dodge:
-		bset	#$01,CombatFlags(a5)
+		bset	#CF_WALK_BACKWARDS,CombatFlags(a5)
 		bsr.w	j_j_OnTick
 		rts
 

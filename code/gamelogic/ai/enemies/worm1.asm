@@ -12,7 +12,7 @@ EnemyAI_Worm1_B:
 
 ; A routine, run every tick.
 EnemyAI_Worm1_A:
-		btst	#$01,InteractFlags(a5)
+		btst	#IF_HURT,InteractFlags(a5)
 		bne.s	_hurtTick
 		move.b	AIState(a5),d0
 		beq.s	_idle
@@ -45,7 +45,7 @@ EnemyAI_Worm1:
 		move.w	#BHVS_CHASE_NO_JUMP,BehaviourLUTIndex(a5)
 		bsr.w	j_j_LoadSpriteBehaviour
 		move.b	#$10,AIState(a5)
-		bclr	#$01,InteractFlags(a5)
+		bclr	#IF_HURT,InteractFlags(a5)
 		rts
 
 ; State $10: chasing. If the player is already in hitstun just keep
@@ -81,7 +81,7 @@ _tryEmerge:
 		move.b	AnimAction1(a5),d0
 		andi.b	#$30,d0
 		bne.w	_emergeMiss
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_emergeMiss
 		move.w	#$0038,d5
 		move.w	#$0038,d6
@@ -133,7 +133,7 @@ _tryBurrow:
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00031,d7
 		bhi.s	_burrowMiss
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		beq.s	_startEmerge
 		move.b	#$21,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
@@ -164,7 +164,7 @@ _tryBite:
 		jsr	(j_GenerateRandomNumber).l
 		cmpi.w	#00012,d7
 		bhi.s	_biteMiss
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		beq.w	_startEmerge
 		move.b	#$22,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
@@ -185,7 +185,7 @@ _tryBiteClose:
 		move.w	#$0008,d7
 		bsr.w	CheckPlayerInRange
 		bcc.s	_biteCloseMiss
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		beq.w	_startEmerge
 		move.b	#$23,AIState(a5)
 		move.w	#BHVS_IDLE,BehaviourLUTIndex(a5)
@@ -225,7 +225,7 @@ _emerge:
 		rts
 
 _emergeOk:
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 
 _emergeAnim:
 		addq.b	#$01,AnimPhase(a5)
@@ -268,7 +268,7 @@ _burrow:
 		addq.b	#$01,AnimPhase(a5)
 		cmpi.b	#$01,AnimPhase(a5)
 		bne.s	_burrowF2
-		bclr	#$06,CombatFlags(a5)
+		bclr	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		move.b	#$FF,Action1(a5)
 		move.w	#$0100,PrevAction(a5)
 		rts
@@ -309,7 +309,7 @@ _animRts:
 ; windup for $F ticks, the hit box ($19 ahead, 9 behind, 9 lateral)
 ; live with ACT_ATTACK4 until tick $1E, then back to chasing.
 _bite:
-		btst	#$06,CombatFlags(a5)
+		btst	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bne.s	_biteGo
 		bsr.w	_startEmerge
 		bra.w	_emerge
@@ -328,7 +328,7 @@ _biteGo:
 		bcs.s	_biteRts
 		clr.w	QueuedAction(a5)
 		clr.w	PrevAction(a5)
-		bset	#$06,CombatFlags(a5)
+		bset	#CF_ALT_ANIM_BANK,CombatFlags(a5)
 		bra.w	EnemyAI_Worm1
 
 _biteRts:
