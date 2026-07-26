@@ -1,4 +1,4 @@
-ScriptFuncs2	module
+ScriptFuncsSpeaker	module
 ; Speaker resolution: which character the player is talking to and
 ; which script runs for them. RoomDialogueTable holds, per room, a
 ; header word {bits 14-11: entry count, bits 10-0: room number}
@@ -45,7 +45,7 @@ _ptDone:
 ; g_SpeakerCharId and g_CurrentTextItem (so text can print the
 ; speaker's name). Sets the voice blip on the way (GetSpeakerSfx,
 ; whose closing tst means its error branch never takes). Carry set =
-; not found. Also used by the shop flow (shopscriptfuncs1).
+; not found. Also used by the shop flow (shopactions).
 GetSpeakerCharacter:
 		movem.l	d1-d2/d4/a0,-(sp)
 		bsr.w	GetDialogueForRoom

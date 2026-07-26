@@ -1,6 +1,6 @@
-GameSelectScreen2	module
+SaveWindowRender	module
 ; Save-window content renderers for the select screen
-; (gameloadscreen1): play time, gold, slot number, health and the
+; (saveselectmain): play time, gold, slot number, health and the
 ; heart gauge, drawn as tile cells straight into a window's spot in
 ; g_Buffer, plus the shared text-buffer helpers. Everything draws
 ; 2-tile columns: top tile at (a1), bottom on the next tile row

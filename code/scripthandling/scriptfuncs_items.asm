@@ -1,4 +1,4 @@
-ScriptFuncs8	module
+ScriptFuncsItems	module
 ; Item quantities and properties. g_Inventory holds one nibble per
 ; item (id & $3F; even ids in the low nibble of the byte, odd ids in
 ; the high), stored biased as count+1: nibble 0 = never carried,

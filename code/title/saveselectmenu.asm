@@ -1,6 +1,6 @@
-GameSelectScreen3	module
+SaveSelectMenu	module
 ; Save-window drawing, palette fades and the arrow-cursor menus for
-; the select screen (gameloadscreen1). Shares the a6 stack frame of
+; the select screen (saveselectmain). Shares the a6 stack frame of
 ; InitGameSelectScreen: -$02 cursor slot, -$0A arrow blink tick,
 ; -$0C action, -$0E palette fade budget. Window text strips: each
 ; save window owns 14 columns of tiles ($216/$232/$24E/$26A), the

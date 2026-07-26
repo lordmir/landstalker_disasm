@@ -1,4 +1,4 @@
-ScriptFuncs7	module
+ScriptFuncsSpecialChar	module
 
 ; Speaker switch to a special (non-room) character, id 1000+: set
 ; their voice blip from SpecialCharacterSfxList (entry 0 = Nigel).

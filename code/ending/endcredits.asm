@@ -1,12 +1,12 @@
-EndCredits1	module
+EndCredits	module
 ; The end credits: proportional 16px-tall 2bpp text rendered into
 ; dynamically allocated tiles and scrolled up plane B at one pixel
 ; per two frames. The HUD row buffers (g_HUD_Row1/2) are reused as
 ; a rolling window of plane rows, and EndCreditText is a stream of
 ; {delay, position, text bytes..., $00} records ($FF delay = end).
-; The renderer itself lives in endcredits2 (RenderCreditLine).
+; The renderer itself lives in creditrenderer (RenderCreditLine).
 ;
-; Stack frame (shared with the endcredits2 routines):
+; Stack frame (shared with the creditrenderer routines):
 ;   -$02 frame tick            -$04 tile allocation cursor
 ;   -$06 line position code    -$08 current line's base tile
 ;   -$0A line width            -$0C next-line time threshold
@@ -101,7 +101,7 @@ _finish:
 ; One credits frame: on even ticks update the plane-B vertical
 ; scroll (tick/2 + 16), feed the next buffer row into the plane
 ; when due (UpdateCreditScroll, every 16th tick), wait for VBlank
-; and advance both ticks. The endcredits2 renderer calls this
+; and advance both ticks. The renderer in creditrenderer calls this
 ; between glyphs so the scroll never stalls while text is drawn.
 AdvanceCreditFrame:
 		movem.l	d0-a6,-(sp)

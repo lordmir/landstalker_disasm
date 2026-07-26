@@ -1,15 +1,15 @@
-GameSelectScreen	module
+SaveSelectMain	module
 ; The save-slot select screen (reached from the title flow via
 ; LoadGameSelectScreen): four save windows in a 2x2 grid with a
 ; Nigel figure standing in the highlighted one. The action bar,
 ; window drawing and yes/no prompt helpers (RunActionBar, RunYesNoPrompt,
-; RedrawSaveWindow...) live in gameloadscreen2-4, which share this
+; RedrawSaveWindow...) live in savewindowrender/saveselectmenu/gamestartseq, which share this
 ; screen's stack frame and call back into the Nigel and highlight
 ; routines here.
 
 ; Entry, d0 = the initial cursor slot.
 ;
-; Stack frame (shared with the gameloadscreen3/4 helpers):
+; Stack frame (shared with the saveselectmenu/gamestartseq helpers):
 ;   -$02 cursor slot        -$04 first picked slot ($FFFF none)
 ;   -$06 second slot (copy) -$08 previous controller byte
 ;   -$0C action from the bar (0 play / 1 copy / 2+ erase)
@@ -260,7 +260,7 @@ _slotRight:
 
 ; Nigel reacts to a cursor move: switch to the react script
 ; (unless it is already playing) and restart its counters. Also
-; used by the title flow (gameloadscreen3/4).
+; used by the title flow (saveselectmenu/gamestartseq).
 StartSaveNigelAnim:
 		movea.l	-$00000016(a6),a0
 		cmpi.b	#$0F,(a0)

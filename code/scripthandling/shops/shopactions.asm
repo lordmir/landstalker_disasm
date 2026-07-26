@@ -1,4 +1,4 @@
-ShopScriptFuncs1	module
+ShopActions	module
 ; The shop system, part 1. Each shop room has a 14-byte ShopScript
 ; record: {room word, item price modifier byte, lifestock price
 ; modifier byte, then five script offset words - +$4 welcome,

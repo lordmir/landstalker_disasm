@@ -1,7 +1,7 @@
-TitleScreen3	module
+TitleReveal	module
 ; Title screen, part 3 of 3: the remaining build-up palette
 ; effects, the plane-A reveal of the finished title, and the
-; tilemap helpers shared with the title setup (titlescreen1).
+; tilemap helpers shared with the title setup (titlesetup).
 
 ; Silhouette collapse (done flag -$18, step counter -$0C): every
 ; other step, drives palette 0 up toward pure blue and palette 1

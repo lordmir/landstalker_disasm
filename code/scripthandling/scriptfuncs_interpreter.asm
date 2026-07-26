@@ -1,4 +1,4 @@
-ScriptFuncs6	module
+ScriptFuncsInterpreter	module
 ; The script-word interpreter and the textbox/session helpers.
 ;
 ; A script (reached via RunTextCmd/ScriptID) is a stream of words:

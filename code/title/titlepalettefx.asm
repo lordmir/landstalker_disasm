@@ -1,6 +1,6 @@
-TitleScreen2	module
+TitlePaletteFx	module
 ; Title screen, part 2 of 3: two of the build-up palette effects
-; driven by RunTitleSequence (titlescreen1). Each does nothing
+; driven by RunTitleSequence (titlesetup). Each does nothing
 ; until its done flag is clear and the frame counter (-$02) has
 ; passed its start frame, then advances its own step counter.
 

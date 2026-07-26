@@ -1,5 +1,5 @@
-EndCredits2	module
-; Credit line renderer for endcredits1. Lines are drawn glyph by
+CreditRenderer	module
+; Credit line renderer for endcredits. Lines are drawn glyph by
 ; glyph into a pixel canvas in g_ScreenBuffer, DMA'd into a rolling
 ; range of tiles ($200-$5FF), and their cells written into the
 ; plane-row window at g_HUD_Row2 as it scrolls by.

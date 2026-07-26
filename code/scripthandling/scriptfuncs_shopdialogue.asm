@@ -1,4 +1,4 @@
-ScriptFuncs1	module
+ScriptFuncsShopDialogue	module
 ; Shop dialogue helpers. The two message routines use an inline-data
 ; convention: the shop script stub does a bsr and places string-id
 ; words directly after it; the helper reads them through the return

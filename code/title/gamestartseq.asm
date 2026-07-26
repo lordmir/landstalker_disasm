@@ -1,4 +1,4 @@
-GameSelectScreen4	module
+GameStartSeq	module
 ; The game-start sequence after picking a save on the select screen
 ; (called from InitGameSelectScreen, whose a6 frame this shares).
 ; Everything but the picked window is retinted to the fadeable

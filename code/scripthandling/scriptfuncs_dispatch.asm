@@ -1,4 +1,4 @@
-ScriptFuncs3	module
+ScriptFuncsDispatch	module
 ; The script dispatcher and the flag-based value picker.
 
 ; (a0) = a value chosen by game flags. Inline data after the bsr:

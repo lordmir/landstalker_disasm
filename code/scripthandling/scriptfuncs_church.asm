@@ -1,4 +1,4 @@
-ScriptFuncs5	module
+ScriptFuncsChurch	module
 
 ; Church script helper: two inline words after the bsr - {script for
 ; a normal priest, script for the skeleton priest}. Looks up the

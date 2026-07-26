@@ -1,4 +1,4 @@
-ScriptFuncs4	module
+ScriptFuncsBranch	module
 ; Script-stub helpers for two-way branches. Each takes three inline
 ; words after the bsr - {selector, script A, script B} - runs one of
 ; the two script entries through RunTextCmd (offsets relative to the

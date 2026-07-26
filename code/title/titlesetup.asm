@@ -1,4 +1,4 @@
-TitleScreen1	module
+TitleSetup	module
 ; Title screen, part 1 of 3 (split by the incbin'd title assets;
 ; see titlescreen.asm): screen setup and the build-up driver.
 ; Parts 2/3 hold the palette effects.
@@ -9,7 +9,7 @@ TitleScreen1	module
 ; whose tilemap stays in g_Buffer with its region-specific logo/
 ; subtitle cells marked as palette line 1. All palettes start
 ; black; RunTitleSequence then fades the layers in, and
-; RevealTitle3 (titlescreen3) stamps the Title3 map over plane A.
+; RevealTitle3 (titlereveal) stamps the Title3 map over plane A.
 DisplayTitleScreen:
 		jsr	(j_DisableDisplayAndInts).l
 		move.w	#$8000,d0
@@ -191,7 +191,7 @@ _wsStart:
 ; ---------------------------------------------------------------------------
 
 ; The title build-up. A frame counter (-$02) drives the palette
-; effects in titlescreen2/3; each switches on once the counter
+; effects in titlepalettefx/titlereveal; each switches on once the counter
 ; passes its start frame (NTSC/PAL differ) and raises a done
 ; flag when finished:
 ;   >0    FadeInBluePalette    - artwork sweeps in, blue-tinted

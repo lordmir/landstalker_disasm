@@ -1,4 +1,4 @@
-ShopScriptFuncs2	module
+ShopPricing	module
 ; The shop system, part 2: pricing and shop-record lookup.
 
 ; Price the current shop item (g_ShopItemId): d0 = the item id
