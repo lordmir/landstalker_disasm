@@ -17,4 +17,5 @@
     include "code/include/constants/fridayanim.inc"
     include "code/include/constants/rooms.inc"
     include "code/include/constants/flags.inc"
+    include "code/include/constants/damage.inc"
     include "code/include/structs/entity.inc"

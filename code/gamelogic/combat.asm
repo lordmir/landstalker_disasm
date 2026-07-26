@@ -920,8 +920,11 @@ _pdmgDone:
 
 ; Charged-hit damage multiplier per sword (/$100):
 ; Magic 1.75x, Ice 1.5x, Thunder 2x, Gaia 1.25x
-ChargedSwordBoost:dc.w $01C0, $0180, $0200, $0140
-
+ChargedSwordBoost:
+		dc.w MAGIC_SWORD_BOOST
+		dc.w ICE_SWORD_BOOST
+		dc.w THUNDER_SWORD_BOOST
+		dc.w GAIA_SWORD_BOOST
 
 CalculateEnemyDamageOutput:
 		movem.w	d1/d6-d7,-(sp)

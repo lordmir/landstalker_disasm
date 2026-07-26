@@ -90,7 +90,12 @@ _updIndexOk:
 		move.w	ArmourDefence(pc,d0.w),(Player_Defence).l
 		rts
 
-ArmourDefence:	dc.w $0100,$00E6,$00CC,$00B3,$0080
+ArmourDefence:
+		dc.w	LEATHER_BREAST_DEFENCE
+		dc.w	STEEL_BREAST_DEFENCE
+		dc.w	CHROME_BREAST_DEFENCE
+		dc.w	SHELL_BREAST_DEFENCE
+		dc.w	HYPER_BREAST_DEFENCE
 
 ; Re-derive equipment slot d0 (0 sword / 1 armour / 2 boots /
 ; 3 ring; a0 = its g_Equipped* byte): GetEquippedItem picks the
