@@ -88,7 +88,7 @@ HandleFloorDoorSE:
 		beq.s	_doorSEDone
 		move.b	#$00,d0
 		jsr	(j_PlaybackInput).l
-		bset	#$07,(g_PlayerStatus).l
+		bset	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _doorSEDone:
 		rts
@@ -107,7 +107,7 @@ HandleFloorDoorSW:
 
 _doorSWGo:
 		move.w	(Player_GroundHeight).l,(g_PrevGroundHeight).l
-		bset	#$07,(g_PlayerStatus).l
+		bset	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _doorSWDone:
 		rts
@@ -127,7 +127,7 @@ _doorNWGo:
 
 _doorEnter:
 		move.w	(Player_GroundHeight).l,(g_PrevGroundHeight).l
-		bset	#$07,(g_PlayerStatus).l
+		bset	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 		bsr.w	CheckShopExit
 		bsr.s	DoorWarp
 		bsr.w	CheckShopEnter
@@ -578,9 +578,7 @@ ProcessActionButton:
 		move.b	(g_Controller1State).l,d0
 		andi.b	#CTRLBF_AC,d0
 		beq.s	UpdateSwordCharge
-		btst	#$00,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
-						  ; Bit	1: Can't attack
-						  ; Bit	2: Can't open menu
+		btst	#LPA_NO_PICKUP,(g_LockPlayerActions).l
 		bne.s	_chkChest
 		bsr.w	CheckPickUpEntity
 		bcs.s	UpdateSwordCharge
@@ -592,9 +590,7 @@ _chkChest:
 		bcs.s	UpdateSwordCharge
 		btst	#STATUS_CURSE,(g_PlayerStatus).l ; Curse
 		bne.s	UpdateSwordCharge
-		btst	#$01,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
-						  ; Bit	1: Can't attack
-						  ; Bit	2: Can't open menu
+		btst	#LPA_NO_ATTACK,(g_LockPlayerActions).l
 		bne.s	UpdateSwordCharge
 		bsr.w	SwordSwing
 		tst.w	(g_GoldenStatueTimer).l

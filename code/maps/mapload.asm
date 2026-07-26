@@ -260,10 +260,8 @@ SetRoomVisited:
 CheckTempHealthRestore:
 		ClearFlag	FLAG_FAHL_DUEL_ACTIVE
 		beq.s	_thrDone
-		bclr	#$04,(g_PlayerStatus).l
-		bclr	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
-						  ; Bit	1: Can't attack
-						  ; Bit	2: Can't open menu
+		bclr	#STATUS_NOHEAL,(g_PlayerStatus).l
+		bclr	#LPA_NO_MENU,(g_LockPlayerActions).l
 		move.w	(Player_TempHealth).l,(Player_CurrentHealth).l
 		jsr	(j_RefreshCurrentHealthHUD).l
 		jsr	(j_MarkHUDForUpdate).l
@@ -421,9 +419,7 @@ _revertForm:
 		move.w	#$0000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
 		ClearFlag	FLAG_PLAYER_IS_POCKETS
-		andi.b	#$F8,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
-						  ; Bit	1: Can't attack
-						  ; Bit	2: Can't open menu
+		andi.b	#($FF-LPABF_ALL),(g_LockPlayerActions).l ; Unlock all actions
 		bsr.w	LoadPlayerPalette
 
 _pocketsDone:

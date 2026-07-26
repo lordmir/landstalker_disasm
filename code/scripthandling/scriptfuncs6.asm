@@ -294,13 +294,13 @@ _ldcSet:
 ; redraw it empty, DMA its tilemap and point the raster split at it.
 LoadTextboxGraphics:
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(g_TextboxState).l
+		btst	#TBS_TEXTBOX_UP,(g_TextboxState).l
 		bne.s	_ltgDone
 		bsr.w	j_RefreshAndClearTextbox
 		jsr	(j_QueueTextboxTilemapDMA).l
 		jsr	(j_FlushDMACopyQueue).l
 		bsr.w	j_SetTextboxHInt
-		bset	#$00,(g_TextboxState).l
+		bset	#TBS_TEXTBOX_UP,(g_TextboxState).l
 
 _ltgDone:
 		movem.l	(sp)+,d0-a6
@@ -318,10 +318,10 @@ OpenTextbox:
 ; Take the textbox down again (if bit 0 says it is up).
 ClearTextbox:
 		movem.l	d0-a6,-(sp)
-		btst	#$00,(g_TextboxState).l
+		btst	#TBS_TEXTBOX_UP,(g_TextboxState).l
 		beq.s	_ctbDone
 		bsr.w	j_SetUpTextDisplay
-		bclr	#$00,(g_TextboxState).l
+		bclr	#TBS_TEXTBOX_UP,(g_TextboxState).l
 
 _ctbDone:
 		movem.l	(sp)+,d0-a6
@@ -355,21 +355,21 @@ _gynaClose:
 ; Shop "can't afford it" effect: stop the music and start the
 ; visual effect (script_visualfx), latched by g_TextboxState bit 1.
 NoMoneyEffect:
-		btst	#$01,(g_TextboxState).l
+		btst	#TBS_SHOP_NOMONEY,(g_TextboxState).l
 		bne.s	_nmeDone
 		trap	#$00			  ; Trap00Handler
 ; ---------------------------------------------------------------------------
 		dc.w SND_Stop
 ; ---------------------------------------------------------------------------
 		bsr.w	NoMoneyDarken
-		bset	#$01,(g_TextboxState).l
+		bset	#TBS_SHOP_NOMONEY,(g_TextboxState).l
 
 _nmeDone:
 		rts
 
 ; Undo the no-money effect and restart the room music.
 RestoreFromNoMoneyEffect:
-		btst	#$01,(g_TextboxState).l
+		btst	#TBS_SHOP_NOMONEY,(g_TextboxState).l
 		beq.s	_rnmDone
 		bsr.w	NoMoneyBrighten
 		trap	#$00			  ; Trap00Handler
@@ -377,7 +377,7 @@ RestoreFromNoMoneyEffect:
 		dc.w SND_MusicChestOpen
 ; ---------------------------------------------------------------------------
 		bsr.w	RestartBGM
-		bclr	#$01,(g_TextboxState).l
+		bclr	#TBS_SHOP_NOMONEY,(g_TextboxState).l
 
 _rnmDone:
 		rts

@@ -612,8 +612,8 @@ CSA_0030:
 		tst.b	(g_YesNoPromptResult).l
 		beq.s	_c0030Rts
 		SetFlag	FLAG_FAHL_DUEL_ACTIVE
-		bset	#$04,(g_PlayerStatus).l
-		bset	#$02,(g_LockPlayerActions).l
+		bset	#STATUS_NOHEAL,(g_PlayerStatus).l
+		bset	#LPA_NO_MENU,(g_LockPlayerActions).l
 		move.w	(Player_CurrentHealth).l,(Player_TempHealth).l
 		move.w	#$00FF,(Player_CurrentHealth).l
 		bsr.w	RefreshCurrentHealthHUD
@@ -810,8 +810,8 @@ _c0032End:
 		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
 		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
-		bclr	#$04,(g_PlayerStatus).l
-		bclr	#$02,(g_LockPlayerActions).l
+		bclr	#STATUS_NOHEAL,(g_PlayerStatus).l
+		bclr	#LPA_NO_MENU,(g_LockPlayerActions).l
 		clr.w	(Sprite1_BehavParam).l
 		clr.w	(Sprite2_BehavParam).l
 		movem.l	(sp)+,d0
@@ -842,8 +842,8 @@ CSA_0033:
 		clr.b	(g_PlayerPendingHit).l
 		clr.w	(g_ControllerPlayback).l
 		bclr	#IF_NO_ROTATE,(Player_InteractFlags).l
-		bclr	#$04,(g_PlayerStatus).l
-		bclr	#$02,(g_LockPlayerActions).l
+		bclr	#STATUS_NOHEAL,(g_PlayerStatus).l
+		bclr	#LPA_NO_MENU,(g_LockPlayerActions).l
 		move.w	#$003E,d0	  ; Cutscene $03E: Fahl: "Ha, ha, ha! You need more experience!" (+1)
 		bra.w	LoadCutsceneDialogue
 ; ---------------------------------------------------------------------------
@@ -987,7 +987,7 @@ _c003DRts:
 ; (the rites' transformation).
 _transformToPockets:
 		SetFlag	FLAG_PLAYER_IS_POCKETS
-		move.b	#$07,(g_LockPlayerActions).l
+		move.b	#LPABF_ALL,(g_LockPlayerActions).l ; Lock all actions
 		move.w	#$8141,(Player_AnimCtrl).l
 		move.b	#SPR_POCKETS,(Player_SpriteType).l
 		move.b	#$01,(Player_AnimFlags).l
@@ -1081,7 +1081,7 @@ _c0043Spin:
 		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
 		ClearFlag	FLAG_PLAYER_IS_POCKETS
-		andi.b	#$F8,(g_LockPlayerActions).l
+		andi.b	#($FF-LPABF_ALL),(g_LockPlayerActions).l ; Unlock all actions
 		jsr	(j_LoadPlayerPalette).l
 		jsr	(j_CopyBasePaletteToActivePalette).l
 		lea	(Player_X).l,a1
@@ -4176,7 +4176,7 @@ CSA_0125:
 ; ---------------------------------------------------------------------------
 		dc.w SND_DogTransform
 ; ---------------------------------------------------------------------------
-		move.b	#$07,(g_LockPlayerActions).l
+		move.b	#LPABF_ALL,(g_LockPlayerActions).l ; Lock all actions
 		bset	#STATUS_NOHEAL,(g_PlayerStatus).l
 		move.w	#$814D,(Player_AnimCtrl).l
 		move.b	#SPR_DOG,(Player_SpriteType).l
@@ -4215,7 +4215,7 @@ CSA_0129:
 		move.w	#$8000,(Player_AnimCtrl).l
 		move.b	#$00,(Player_AnimFlags).l
 		ClearFlag	FLAG_PLAYER_IS_POCKETS
-		andi.b	#$F8,(g_LockPlayerActions).l
+		andi.b	#($FF-LPABF_ALL),(g_LockPlayerActions).l ; Unlock all actions
 		bclr	#STATUS_NOHEAL,(g_PlayerStatus).l
 		jsr	(j_LoadPlayerPalette).l
 		jsr	(j_CopyBasePaletteToActivePalette).l

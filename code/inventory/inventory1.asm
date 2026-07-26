@@ -17,9 +17,7 @@ Inventory1	module
 CheckForMenuOpen:
 		tst.b	(g_Controller1State).l
 		bpl.w	_cmDone
-		btst	#$02,(g_LockPlayerActions).l ; Bit 0: Can't pick up items
-						  ; Bit	1: Can't attack
-						  ; Bit	2: Can't open menu
+		btst	#LPA_NO_MENU,(g_LockPlayerActions).l
 		bne.w	_cmDone
 		tst.b	(g_SwordSwingFrame).l
 		bne.w	_cmDone

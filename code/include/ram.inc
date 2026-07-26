@@ -545,6 +545,8 @@ g_EquippedArmour:                 equ $FF114F
 g_EquippedBoots:                  equ $FF1150
 g_EquippedRing:                   equ $FF1151
 g_ItemBeingUsed:                  equ $FF1152
+; Per-bit action lock (see lockactions.inc): bit 0 = no pickup/chest/
+; talk, bit 1 = no sword, bit 2 = no menu.
 g_LockPlayerActions:              equ $FF1153
 g_TalkSoundEffect:                equ $FF1154
 ; Talk-mode voice-blip counter (0 = not talking).

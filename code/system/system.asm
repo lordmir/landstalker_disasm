@@ -462,12 +462,12 @@ DisableDisplayAndInts:
 
 
 DisableVDPSpriteUpdate:
-		bclr	#$01,(g_InterruptFlags).l
+		bclr	#INTF_SPRITE_LOCK,(g_InterruptFlags).l
 		rts
 
 
 EnableVDPSpriteUpdate:
-		bset	#$01,(g_InterruptFlags).l
+		bset	#INTF_SPRITE_LOCK,(g_InterruptFlags).l
 		rts
 
 
@@ -735,10 +735,10 @@ ClearScrollPlanes:
 WaitUntilVBlank:
 		bsr.w	Return
 		bsr.w	UpdateFridayAnimation
-		bset	#$07,(g_InterruptFlags).l
+		bset	#INTF_FRAME,(g_InterruptFlags).l
 
 _vblankWait:
-		btst	#$07,(g_InterruptFlags).l
+		btst	#INTF_FRAME,(g_InterruptFlags).l
 		bne.s	_vblankWait
 		rts
 
@@ -756,7 +756,7 @@ _sleepLoop:
 
 
 EnableVRAMCopyQueueProcessing:
-		bset	#$00,(g_InterruptFlags).l
+		bset	#INTF_VRAM_COPY,(g_InterruptFlags).l
 		rts
 
 
@@ -766,7 +766,7 @@ FlushVRAMCopyQueue:
 
 
 EnableDMAQueueProcessing:
-		bset	#$03,(g_InterruptFlags).l
+		bset	#INTF_DMA_QUEUE,(g_InterruptFlags).l
 		rts
 
 
@@ -1387,7 +1387,7 @@ _hvSyncLoop:
 		bsr.w	ProcessPendingBlockCopies
 
 _procQueues:
-		btst	#$07,(g_InterruptFlags).l
+		btst	#INTF_FRAME,(g_InterruptFlags).l
 		beq.s	_hintDone
 		bsr.w	ProcessQueuedVDPActions
 
@@ -1409,7 +1409,7 @@ _fullWindow:
 ; (3600 frames -> minute -> hour).
 HandleVBlankInterrupt:
 		movem.l	d0-a6,-(sp)
-		bclr	#$07,(g_InterruptFlags).l
+		bclr	#INTF_FRAME,(g_InterruptFlags).l
 		beq.s	_vbCounters
 		bsr.w	_disableDisplayVBlank
 		bsr.w	RefreshVDPSpriteTable
@@ -1450,7 +1450,7 @@ ProcessQueuedVDPActions:
 
 
 ProcessVRAMCopyQueue:
-		bclr	#$00,(g_InterruptFlags).l
+		bclr	#INTF_VRAM_COPY,(g_InterruptFlags).l
 		beq.w	_cpqDone
 		tst.b	(g_VRAMCopyQueueLen).l
 		beq.w	_cpqDone
@@ -1497,7 +1497,7 @@ _cpqDone:
 
 
 ProcessVRAMReadOp:
-		bclr	#$04,(g_InterruptFlags).l
+		bclr	#INTF_VRAM_READ,(g_InterruptFlags).l
 		beq.s	_readDone
 		lea	(g_VRAMCopyQueue).l,a0
 		move.w	#$8F02,(VDP_CTRL_REG).l	  ; Set	auto-increment to 2
@@ -1519,7 +1519,7 @@ _readDone:
 
 
 RefreshVDPSpriteTable:
-		btst	#$01,(g_InterruptFlags).l
+		btst	#INTF_SPRITE_LOCK,(g_InterruptFlags).l
 		bne.s	_sprDone
 		bsr.w	UpdateVDPSpriteTableDMA
 
@@ -1528,7 +1528,7 @@ _sprDone:
 
 
 ProcessQueuedDMAOps:
-		bclr	#$03,(g_InterruptFlags).l
+		bclr	#INTF_DMA_QUEUE,(g_InterruptFlags).l
 		beq.s	_dmaOpsDone
 		tst.b	(g_NumQueuedDMAOps).l
 		beq.s	_dmaOpsDone

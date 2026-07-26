@@ -44,7 +44,7 @@ DebugMenuEnter:
 
 DebugMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		rts
 
 ; Interleaved {string id, routine offset} pairs; both indexed with
@@ -98,7 +98,7 @@ SoundMenuEnter:
 
 SoundMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		rts
 
 SfxList:	dc.b SND_SkeletonTalk
@@ -188,7 +188,7 @@ MusicMenuPlay:
 
 MusicMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		rts
 
 MusicList:	dc.b SND_MusicTown
@@ -264,7 +264,7 @@ MapMenuOpen:
 MapMenuEnter:
 		movem.l	d0-a6,-(sp)
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		asl.w	#$02,d1
 		lea	MapList(pc,d1.w),a0
 		move.w	(a0)+,d0
@@ -281,7 +281,7 @@ MapMenuEnter:
 
 MapMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		rts
 
 MapList:	dc.w $0250, $2130		  ; MASSAN
@@ -350,7 +350,7 @@ FlagMenuOpen:
 FlagMenuEnter:
 		movem.l	d0-a6,-(sp)
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		lea	(g_Flags).l,a0
 		moveq	#$00000007,d0
 
@@ -379,7 +379,7 @@ _fmWarp:
 
 FlagMenuExit:
 		bsr.w	ClearTextbox
-		bset	#$01,(g_DebugMenuFlags).l
+		bset	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		rts
 
 ; Per-option terminator flag (the comments give the chapter name and
@@ -425,11 +425,11 @@ JmpToDebugActionTableEntry:
 		clr.b	(g_DebugMenuFlags).l
 
 _menuLoop:
-		btst	#$00,(g_DebugMenuFlags).l
+		btst	#DBGF_REDRAW,(g_DebugMenuFlags).l
 		beq.s	_noRedraw
 		move.w	(a0),d0
 		jsr	(a0,d0.w)
-		bclr	#$00,(g_DebugMenuFlags).l
+		bclr	#DBGF_REDRAW,(g_DebugMenuFlags).l
 
 _noRedraw:
 		bsr.w	_pollInput
@@ -438,7 +438,7 @@ _noRedraw:
 		jsr	(a0,d0.w)
 
 _chkExit:
-		btst	#$01,(g_DebugMenuFlags).l
+		btst	#DBGF_CLOSE,(g_DebugMenuFlags).l
 		beq.s	_menuLoop
 		rts
 
@@ -449,7 +449,7 @@ DecrementVar:
 		move.w	d2,d1
 
 _decMark:
-		bset	#$00,(g_DebugMenuFlags).l
+		bset	#DBGF_REDRAW,(g_DebugMenuFlags).l
 		rts
 
 IncrementVar:
@@ -459,7 +459,7 @@ IncrementVar:
 		clr.w	d1
 
 _incMark:
-		bset	#$00,(g_DebugMenuFlags).l
+		bset	#DBGF_REDRAW,(g_DebugMenuFlags).l
 		rts
 
 ; Waits a frame and edge-detects pad 1: d0 = action table offset for

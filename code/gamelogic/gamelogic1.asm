@@ -184,11 +184,11 @@ _mwpzDone:
 ; through HandleDirectionalControl. Debug: holding C on pad 2 gives
 ; speed 8 instead of 2.
 HandleDirectionalInput:
-		bclr	#$06,(g_PlayerStatus).l
+		bclr	#STATUS_COLLIDED,(g_PlayerStatus).l
 		clr.w	d0
 		bsr.w	CheckForCollision
 		bcc.s	_speedSel
-		bset	#$06,(g_PlayerStatus).l
+		bset	#STATUS_COLLIDED,(g_PlayerStatus).l
 
 _speedSel:
 		tst.w	(DebugModeEnable).w
@@ -321,7 +321,7 @@ _leftFlip:
 HandleUpRight:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the NE (-Y) direction
 		bne.s	_neProbe
-		bclr	#$07,(g_PlayerStatus).l
+		bclr	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _neProbe:
 		move.w	HitBoxYStart(a5),d1
@@ -402,7 +402,7 @@ _neHurtPush:
 		bra.s	_neCollRes
 
 _neCollide:
-		btst	#$06,(g_PlayerStatus).l
+		btst	#STATUS_COLLIDED,(g_PlayerStatus).l
 	if	FIX_COLL_2
 		bne.s	_neHurtPush
 	else
@@ -491,7 +491,7 @@ _neDone:
 HandleDownRight:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the SE (+X) direction
 		bne.s	_seProbe
-		bclr	#$07,(g_PlayerStatus).l
+		bclr	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _seProbe:
 		bclr	#ACTBH_CLIMB,(Player_Action).l
@@ -533,7 +533,7 @@ _seHurtPush:
 		bra.s	_seCollRes
 
 _seCollide:
-		btst	#$06,(g_PlayerStatus).l
+		btst	#STATUS_COLLIDED,(g_PlayerStatus).l
 	if FIX_COLL_2
 		bne.s	_seHurtPush
 	else
@@ -623,7 +623,7 @@ _seDone:
 HandleDownLeft:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the SW (+Y) direction
 		bne.s	_swProbe
-		bclr	#$07,(g_PlayerStatus).l
+		bclr	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _swProbe:
 		bclr	#ACTBH_CLIMB,(Player_Action).l
@@ -659,7 +659,7 @@ _swHurtPush:
 		bra.s	_swCollRes
 
 _swCollide:
-		btst	#$06,(g_PlayerStatus).l
+		btst	#STATUS_COLLIDED,(g_PlayerStatus).l
 	if FIX_COLL_2
 		bne.s	_swHurtPush
 	else
@@ -749,7 +749,7 @@ _swDone:
 HandleUpLeft:
 		tst.w	(g_ControllerPlayback).l  ; Travel in the NW (-X) direction
 		bne.s	_nwProbe
-		bclr	#$07,(g_PlayerStatus).l
+		bclr	#STATUS_FLIP_DIR,(g_PlayerStatus).l
 
 _nwProbe:
 		move.w	HitBoxXStart(a5),d1
@@ -824,7 +824,7 @@ _nwHurtPush:
 		bra.s	_nwCollRes
 
 _nwCollide:
-		btst	#$06,(g_PlayerStatus).l
+		btst	#STATUS_COLLIDED,(g_PlayerStatus).l
 	if FIX_COLL_2
 		bne.s	_nwHurtPush
 	else

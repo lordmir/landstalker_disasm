@@ -320,7 +320,7 @@ _ttDone:
 ; Carry clear = instant mode (g_TextFlags bit 0 set), carry set =
 ; typewriter mode. Preserves d0.
 _testInstantMode:
-		btst	#$00,(g_TextFlags).l
+		btst	#TXTF_INSTANT,(g_TextFlags).l
 		beq.s	_timTypewriter
 		tst.b	d0
 		rts
