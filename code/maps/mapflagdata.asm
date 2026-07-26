@@ -1,8 +1,8 @@
-RoomGfxSwapFlags:           incbin  "assets_packed\roomdata\flagactions\roomgfxswapflags.bin"
+RoomGfxSwapFlags:           incbin  "assets_packed/roomdata/flagactions/roomgfxswapflags.bin"
                             Align   $2
-LockedDoorGfxSwapFlags:     incbin  "assets_packed\roomdata\flagactions\lockeddoorgfxswapflags.bin"
+LockedDoorGfxSwapFlags:     incbin  "assets_packed/roomdata/flagactions/lockeddoorgfxswapflags.bin"
                             Align   $2
-TreeWarpGfxSwapFlags:       incbin  "assets_packed\roomdata\flagactions\treewarpgfxswapflags.bin"
+TreeWarpGfxSwapFlags:       incbin  "assets_packed/roomdata/flagactions/treewarpgfxswapflags.bin"
                             Align   $2
-TileSwaps:                  incbin  "assets_packed\roomdata\flagactions\tileswaps.bin"
+TileSwaps:                  incbin  "assets_packed/roomdata/flagactions/tileswaps.bin"
                             Align   $2
