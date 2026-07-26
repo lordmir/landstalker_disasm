@@ -1,4 +1,4 @@
-EnemyAI3	module
+ProjectilePal1	module
 
 ; Loads a two-colour projectile glow into the sprite palettes: entry
 ; d0 (1-based, 2 colours / 4 bytes each) of ProjectilePalette1 (which

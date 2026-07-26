@@ -1,4 +1,4 @@
-EnemyAI5	module
+ProjectilePal2	module
 
 ; Loads the four ProjectilePalette2 colours (the file sits directly
 ; after this one in ROM, hence the pc-relative reads) into palette 3

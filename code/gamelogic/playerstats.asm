@@ -1,4 +1,4 @@
-GameFuncs	module
+PlayerStats	module
 
 ; Inflicts status d0 (STATUS_* bit number) on the player, unless the
 ; equipped ring blocks it: Mars Stone blocks poison AND paralysis

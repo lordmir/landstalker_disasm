@@ -1,4 +1,4 @@
-EnemyAI2	module
+EnemyAICommon	module
 ; Shared helpers for the enemy AI bank: hide/despawn, the ghost
 ; respawn tail, melee hit and player-detection box tests, the
 ; chase-state resets, and local thunks.

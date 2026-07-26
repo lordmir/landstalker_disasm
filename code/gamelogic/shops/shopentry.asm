@@ -1,4 +1,4 @@
-Shops1	module
+ShopEntry	module
 ; Unused entry point: dead load of a0 (immediately overwritten),
 ; then falls through into CheckShopEnter. Never referenced.
 CheckShopEnterUnused:

@@ -1,4 +1,4 @@
-EnemyAI1	module
+EnemyAIDispatch	module
 ; Per-tick AI entry for initially-hostile sprites (called from
 ; UpdateEntities whenever InitInteractFlags bit 7 is set, even while
 ; the slot is hidden). A hidden slot ($7F) may be a dead ghost

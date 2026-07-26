@@ -1,4 +1,4 @@
-GameLogic5	module
+ScreenInit	module
 ; Post-load game start: sets up the HUD (status bar gfx, window plane
 ; VDP regs, palettes, HUD sprites), scroll registers and blocks. A
 ; save in room $8B (the first intro room) runs the intro sequence

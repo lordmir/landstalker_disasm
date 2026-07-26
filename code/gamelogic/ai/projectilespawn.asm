@@ -1,4 +1,4 @@
-EnemyAI4	module
+ProjectileSpawn	module
 
 ; Spawns a small enemy projectile one grid cell ahead of this sprite:
 ; d0 = projectile type 1-3 (1 = small fireball, 2 = Nole's axe,

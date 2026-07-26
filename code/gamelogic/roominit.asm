@@ -1,4 +1,4 @@
-GameLogic6	module
+RoomInit	module
 ; Writes the two fixed HUD VDP sprites (tile $6B4 at Y $80) into
 ; slots 0-1 of the sprite table.
 LoadHUDSprites:
