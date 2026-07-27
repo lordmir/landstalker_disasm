@@ -1,4 +1,3 @@
-ItemUse2	module
 ; Item use, part 3: the rest of the pre-use handlers, the shared
 ; exits, and the post-use pass - RunItemPostUse runs after the menu
 ; has closed and the room reloaded, for the items whose effects

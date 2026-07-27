@@ -4,6 +4,28 @@ SRAM	module
 ; data). Layout: the magic word "KAN&MAKIKO" at SRAM_MagicWord, then
 ; four $400-byte slots, each ending in an 8-bit additive checksum.
 
+	if EXPANDED
+; Expanded-ROM SRAM guard (see the UnlockSRAM/LockSRAM macros). Masks
+; interrupts and halts the Z80 so the sound driver cannot fetch DAC/music
+; samples from the ROM window while SRAM ($A130F1) is mapped over it. The
+; caller saves/restores the prior interrupt state around the paired calls.
+SRAMBeginAccess:
+		move	#$2700,sr		  ; Mask interrupts
+		move.w	#$0100,(Z80_BUSREQ_REG0).l ; Request Z80 bus
+
+_sramBusReqWait:
+		btst	#$00,(Z80_BUSREQ_REG0).l  ; Wait until the Z80 has stopped
+		bne.s	_sramBusReqWait
+		move.b	#$03,(SEGA_TIME_SRAM_REG).l	  ; Map SRAM over $200000-$3FFFFF
+		rts
+
+SRAMEndAccess:
+		move.b	#$00,(SEGA_TIME_SRAM_REG).l	  ; Restore ROM at $200000-$3FFFFF
+		move.w	#$0000,(Z80_BUSREQ_REG0).l ; Release Z80 bus
+		rts
+	endif
+
+
 ; Boot-time SRAM check: if the magic word is missing, initialise the
 ; SRAM (write the magic, erase all four slots); otherwise validate
 ; each slot's checksum, erasing any corrupt slot.
@@ -16,7 +38,11 @@ CheckSRAM:
 _cmpMagicLoop:
 		move.b	(a1)+,d0
 		cmp.b	(a0),d0
+	if EXPANDED
+		bne.s	_magicMismatch	  ; Close the SRAM window before leaving
+	else
 		bne.s	SetSRAMMagicWord
+	endif
 		addq.w	#$02,a0
 		dbf	d7,_cmpMagicLoop
 		LockSRAM
@@ -26,6 +52,12 @@ _cmpMagicLoop:
 		bsr.s	ValidateSaveslot
 		bsr.s	ValidateSaveslot
 		rts
+
+	if EXPANDED
+_magicMismatch:
+		LockSRAM
+		bra.s	SetSRAMMagicWord
+	endif
 
 
 ; Verifies slot d0's checksum and erases the slot on mismatch, then

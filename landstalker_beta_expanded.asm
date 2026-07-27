@@ -124,6 +124,7 @@ BehaviourTriggerJumpTable:  include "code/scripthandling/triggeractionjumptable.
 BehaviourTriggerFuncs:      include "code/scripthandling/triggeractions.asm"
 CutsceneJumpTable:          include "code/scripthandling/dialogueactionjumptable.asm"
 CutsceneFuncs:              include "code/scripthandling/dialogueactions.asm"
+                            include "code/scripthandling/dialogueactionshelpers.asm"
                             include "code/gamelogic/combat.asm"
                             include "code/graphics/hud.asm"
                             include "code/graphics/statusanim.asm"

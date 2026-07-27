@@ -1,4 +1,4 @@
-ItemUse1	module
+ItemUse	module
 ; Item use, part 2: the first batch of pre-use handlers, reached
 ; through PreUseItemTable. The shared exits (ReturnSuccess /
 ; ReturnFailure / ConsumeItem) are in itemuse2.asm.
@@ -140,5 +140,3 @@ _crlUnlit:
 		move.b	#$FF,d7
 		tst.b	d0
 		rts
-
-	modend

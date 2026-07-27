@@ -32,7 +32,8 @@ _b10Done:
 		movem.l	(sp)+,d5-d7/a5-a6
 		rts
 
-PowersOf10:	dc.l 1000000000
+PowersOf10:
+		dc.l 1000000000
 		dc.l 0100000000
 		dc.l 0010000000
 		dc.l 0001000000

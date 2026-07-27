@@ -64,43 +64,6 @@
 ; but rank $1F makes it an endgame flag.
 
 ; ---------------------------------------------------------------------
-; Field extraction
-; ---------------------------------------------------------------------
-
-SetFlag     macro
-            if      narg<>1
-            inform  2,"Wrong number of arguments"
-            mexit
-            endif
-            bset    #(\1&7),(g_Flags+(\1>>3)).l
-            endm
-
-ClearFlag   macro
-            if      narg<>1
-            inform  2,"Wrong number of arguments"
-            mexit
-            endif
-            bclr    #(\1&7),(g_Flags+(\1>>3)).l
-            endm
-
-ToggleFlag  macro
-            if      narg<>1
-            inform  2,"Wrong number of arguments"
-            mexit
-            endif
-            bchg    #(\1&7),(g_Flags+(\1>>3)).l
-            endm
-
-; Z clear = flag set.
-TestFlag    macro
-            if      narg<>1
-            inform  2,"Wrong number of arguments"
-            mexit
-            endif
-            btst    #(\1&7),(g_Flags+(\1>>3)).l
-            endm
-
-; ---------------------------------------------------------------------
 ; Byte $00 - intro, Massan, Swamp Shrine
 ; ---------------------------------------------------------------------
 
