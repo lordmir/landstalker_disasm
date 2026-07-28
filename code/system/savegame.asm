@@ -130,8 +130,18 @@ _sumLoop:
 		add.b	(a0),d1
 		addq.w	#$02,a0
 		dbf	d7,_sumLoop
+	if EXPANDED
+; LockSRAM restores the caller's SR, condition codes included, so a compare
+; made before it would be undone. Read the stored checksum while SRAM is
+; still mapped and compare once the window is closed. d7 is free here: it is
+; this routine's own loop counter, exhausted, and no caller reads it back.
+		move.b	(a0),d7			  ; Stored checksum
+		LockSRAM
+		cmp.b	d7,d1
+	else
 		cmp.b	(a0),d1
 		LockSRAM
+	endif
 		rts
 
 
@@ -169,7 +179,9 @@ _saveByteLoop:
 
 _writeCSum:
 		bsr.s	VerifySaveslotCSum
+		UnlockSRAM			  ; VerifySaveslotCSum closed the window
 		move.b	d1,(a0)
+		LockSRAM
 		movem.l	(sp)+,d0-d1/d7-a2
 		rts
 
