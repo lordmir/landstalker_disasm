@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;         Cube / Idaware Sound Driver Disassembly for Landstalker          ;;
+;;         Cube / Iwadare Sound Driver Disassembly for Landstalker          ;;
 ;;         =======================================================          ;;
 ;;                                                                          ;;
 ;; BUILDOPTS: -D EXPANDED={0|1} (1 for the 4MB expanded version of the ROM) ;;
