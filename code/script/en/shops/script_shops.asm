@@ -68,7 +68,7 @@ ShopPrice_04:					  ; ID 0xC, Script 0x1,	Speaker	SpriteB_Nigel (0x00)
 Shop_04:
 		bsr.w	HandleShopInteraction
 ; ---------------------------------------------------------------------------
-		ScriptID    $52,$3		  ; Sale declined:     Run text	script at offset 0x02789A
+		ScriptID    $55,$0		  ; Sale prompt:       Run text	script at offset 0x02789A
 						  ; 0xE052: PRINT MSG 0x009F, MSGBOX CLEARED, END: "{5B}Welcome!{57}You	can take a rest, and{57}even buy supplies here!{5E}"
 		ScriptID    $56,$1		  ; Sale confirmation: Run text	script at offset 0x0278A2
 						  ; 0xE056: PRINT MSG 0x00A3, MSGBOX CLEARED, END: "{5B}Thank you.{57}Use it in	good health.{5E}"
